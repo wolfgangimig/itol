@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.web.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<GridPane fx:id="rootGrid" hgap="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="520.0" prefWidth="634.0" styleClass="rootgrid" vgap="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.IssueTaskPane">
+  <columnConstraints>
+    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+  </columnConstraints>
+  <rowConstraints>
+    <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
+      <RowConstraints minHeight="10.0" vgrow="ALWAYS" />
+    <RowConstraints minHeight="25.0" vgrow="NEVER" />
+    <RowConstraints minHeight="25.0" vgrow="NEVER" />
+      <RowConstraints minHeight="25.0" vgrow="NEVER" />
+      <RowConstraints minHeight="50.0" vgrow="NEVER" />
+  </rowConstraints>
+   <children>
+       <TextField fx:id="edSubject" promptText="%edSubject.prompt" GridPane.columnSpan="3">
+         <font>
+            <Font name="System Bold" size="12.0" />
+         </font>
+      </TextField>
+      <ChoiceBox fx:id="cbTracker" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2" />
+      <ChoiceBox fx:id="cbPriority" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      <HBox fx:id="hboxAssignee" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.rowIndex="3">
+         <children>
+            <ChoiceBox fx:id="cbAssignee" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+            <TextField fx:id="edAssignee" maxWidth="1.7976931348623157E308" promptText="%edAssignTo.prompt" HBox.hgrow="ALWAYS" />
+            <Button fx:id="bnAssignee" mnemonicParsing="false" text="..." HBox.hgrow="NEVER" />
+         </children>
+      </HBox>
+      <HBox fx:id="hboxCategory" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2">
+         <children>
+            <ChoiceBox fx:id="cbCategory" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+            <TextField fx:id="edCategory" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+            <Button fx:id="bnCategory" mnemonicParsing="false" text="..." HBox.hgrow="NEVER" />
+         </children>
+      </HBox>
+        <ChoiceBox fx:id="cbStatus" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+       <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnSpan="2" GridPane.rowIndex="4" GridPane.rowSpan="2" GridPane.vgrow="ALWAYS">
+         <children>
+            <Label fx:id="lbAttachments" alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="lbAttachments" text="%lbAttachments.text" textAlignment="CENTER" wrapText="true" VBox.vgrow="ALWAYS" />
+            <ListView fx:id="lvAttachments" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
+               <contextMenu>
+                  <ContextMenu>
+                    <items>
+                      <MenuItem mnemonicParsing="false" text="Insert ..." />
+                        <MenuItem mnemonicParsing="false" text="Delete" />
+                    </items>
+                  </ContextMenu>
+               </contextMenu>
+            </ListView>
+         </children>
+      </VBox>
+      <Button fx:id="bnCreate" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onCreateIssue" text="Create issue" textFill="#007800" GridPane.columnIndex="2" GridPane.rowIndex="5" GridPane.vgrow="ALWAYS">
+         <font>
+            <Font name="System Bold" size="18.0" />
+         </font>
+      </Button>
+      <MenuButton fx:id="cbMilestone" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="MenuButton" GridPane.columnIndex="2" GridPane.rowIndex="2">
+        <items>
+          <MenuItem mnemonicParsing="false" text="Action 1" />
+          <MenuItem mnemonicParsing="false" text="Action 2" />
+        </items>
+      </MenuButton>
+      <Button maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="%bnDetails.text" GridPane.columnIndex="2" GridPane.rowIndex="4" />
+      <WebView fx:id="edDescription" minHeight="-Infinity" prefHeight="263.0" prefWidth="614.0" GridPane.columnSpan="3" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS" />
+   </children>
+   <padding>
+      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+   </padding>
+</GridPane>

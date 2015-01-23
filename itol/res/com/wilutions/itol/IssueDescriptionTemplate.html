@@ -1,0 +1,26 @@
+<html>
+<head>
+<script
+	src="{0}/javascripts/jstoolbar/jstoolbar-textile.min.js?1420968012"
+	type="text/javascript"></script>
+<script src="{0}/javascripts/jstoolbar/lang/jstoolbar-en.js?1420968012"
+	type="text/javascript"></script>
+<link href="{0}/stylesheets/jstoolbar.css?1420968012" media="screen"
+	rel="stylesheet" type="text/css" />
+<script src="{0}/javascripts/context_menu.js?1420968012"
+	type="text/javascript"></script>
+<link href="{0}/stylesheets/context_menu.css?1420968012" media="screen"
+	rel="stylesheet" type="text/css" />
+</head>
+<body>
+	<textarea class="wiki-edit" style="width:100%;height:90%" cols="60" id="issue_notes"
+		name="issue[notes]" rows="10">{1}</textarea>
+	<script type="text/javascript">
+		//<![CDATA[
+		var wikiToolbar = new jsToolBar(document.getElementById('issue_notes'));
+		wikiToolbar.setHelpLink('/help/en/wiki_syntax.html');
+		wikiToolbar.draw();
+		//]]>
+	</script>
+</body>
+</html>

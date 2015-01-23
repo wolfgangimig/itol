@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<customUI onLoad="onLoadRibbon"
+	xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+	<backstage>
+		<tab id="ItolBackstageTab" label="Issue Tracker">
+			<firstColumn>
+				<group id="regularGroup" label="Issue Tracker Configuration">
+					<bottomItems>
+					{0}
+					</bottomItems>
+				</group>
+			</firstColumn>
+		</tab>
+	</backstage>
+</customUI>
+
+

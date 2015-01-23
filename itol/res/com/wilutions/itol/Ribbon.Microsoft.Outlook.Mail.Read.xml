@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+-->
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui"
+	onLoad="onLoadRibbon">
+	<ribbon>
+		<tabs>
+			<tab id="itolTab" label="Issue Tracker">
+				<group id="grpIssue" label="Issue View">
+					<button id="NewIssue" tag="Animals-Running-Rabbit-icon.png"
+						size="large" label="New" onAction="NewIssue_onAction" getImage="getRibbonIcon" />
+					<button id="IssueHistory" tag="Animals-Running-Rabbit-icon.png"
+						size="large" label="History" onAction="IssueHistory_onAction" getImage="getRibbonIcon" />
+				</group>
+			</tab>
+		</tabs>
+	</ribbon>
+</customUI>

@@ -1,0 +1,30 @@
+body {
+	font-family: Arial;
+}
+
+.propertyTable {
+	width: 100%;
+	height: 100%;
+	border-spacing: 5px;
+	font-size: 12px;
+}
+
+.propertyName {
+	font-weight: bold;
+	vertical-align: top;
+	background-color: #F8F8F8;
+}
+
+.propertyValue20 {
+	font-weight: normal;
+	background-color: #F8F8F8;
+	vertical-align: top;
+	height: 20px;
+}
+
+.propertyValueMaxHeight {
+	font-weight: normal;
+	background-color: #F8F8F8;
+	vertical-align: top;
+	height: 100%;
+}

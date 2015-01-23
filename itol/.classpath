@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="res"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="src-gen">
+		<attributes>
+			<attribute name="optional" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/itol-db"/>
+	<classpathentry kind="lib" path="D:/git/joa/java/lib/joa.jar" sourcepath="D:/git/joa/java/lib/joa-src.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
