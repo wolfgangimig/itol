@@ -15,9 +15,10 @@ public class IssueApplication extends AddinApplication {
 		
 		if (args.length == 0) {
 			try {
-				String logFile = "D:\\java\\workspace_itol\\itol\\logging.properties";
+				String logFile = "D:\\git\\itol\\itol\\logging.properties";
 				LogManager.getLogManager().readConfiguration(new FileInputStream(logFile));
 			} catch (Throwable e) {
+				e.printStackTrace();
 			}
 	
 			try {

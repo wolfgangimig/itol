@@ -501,6 +501,7 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 				var str = "Upload attachment " + trackerAttachment.getFileName();
 				str += ", " + makeAttachmentSizeString(trackerAttachment.getContentLength());
 				pgUpload = progressCallback.createChild(str);
+				pgUpload.setTotal(trackerAttachment.getContentLength());
 			}
 			redmineAttachment = writeAttachment(trackerAttachment, pgUpload);
 			redmineIssue.uploads.push(redmineAttachment);
@@ -574,11 +575,12 @@ function findCloseIssues(searchId) {
 
 function extractIssueIdFromMailSubject(subject) {
 	var issueId = "";
-	var p = subject.indexOf("[");
+	var startTag = "[ITOL-";
+	var p = subject.indexOf(startTag);
 	if (p == 0) {
 		var q = subject.indexOf("]");
 		if (q >= 0) {
-			var str = subject.substring(p, q);
+			var str = subject.substring(p + startTag.length, q);
 			p = str.indexOf("-");
 			if (p >= 0) {
 				issueId = str.substring(p+1);
@@ -592,7 +594,7 @@ function extractIssueIdFromMailSubject(subject) {
 };
 
 function injectIssueIdIntoMailSubject(subject, iss) {
-	var ret = "[";
+	var ret = "[ITOL-";
 	switch (iss.getType()) {
 	case "1":
 		ret += "B";
@@ -635,6 +637,10 @@ function writeAttachment(trackerAttachment, progressCallback) {
 	redmineAttachment.token = uploadResult.upload.token;
 	redmineAttachment.filename = trackerAttachment.getFileName();
 	redmineAttachment.content_type = trackerAttachment.getContentType();
+	
+	if (progressCallback) {
+		progressCallback.setFinished();
+	}
 	
 	log.info(")writeAttachment=" + redmineAttachment);
 	return redmineAttachment;

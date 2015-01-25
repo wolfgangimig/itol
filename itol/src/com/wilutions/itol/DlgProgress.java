@@ -36,14 +36,15 @@ public class DlgProgress extends ModalDialogFX<Boolean> implements Initializable
 
 		public void setProgress(final double current) {
 			super.setProgress(current);
+			double currentSum = childSum + current;
+			final double quote = currentSum / total;
+			int percent = (int) Math.ceil(100.0 * quote);
+			if (percent > lastPercent) {
+				lastPercent = percent;
+			}
+
 			Platform.runLater(() -> {
-				log.info("setprogress " + current + "/" + total);
-				double quote = current / total;
-				int percent = (int) Math.ceil(100.0 * quote);
-				if (percent > lastPercent) {
-					pgProgressBar.setProgress(quote);
-					lastPercent = percent;
-				}
+				pgProgressBar.setProgress(quote);
 			});
 		}
 
@@ -130,7 +131,7 @@ public class DlgProgress extends ModalDialogFX<Boolean> implements Initializable
 	}
 
 	public ProgressCallback startProgress(long totalBytes) {
-		this.progressCallback = new MyProgressCallback("Create Issue");
+		this.progressCallback = new MyProgressCallback("Create issue");
 		this.progressCallback.setTotal(totalBytes);
 		return progressCallback;
 	}

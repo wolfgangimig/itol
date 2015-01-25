@@ -63,6 +63,7 @@
          <contextMenu>
             <ContextMenu>
                <items>
+                  <MenuItem fx:id="mnOpenAttachment" mnemonicParsing="false" onAction="#onOpenAttachment" text="%mnAttachment.Open" />
                   <MenuItem fx:id="mnInsertAttachment" mnemonicParsing="false" onAction="#onInsertAttachment" text="%mnAttachment.Insert" />
                   <MenuItem fx:id="mnRemoveAttachment" mnemonicParsing="false" onAction="#onRemoveAttachment" onMenuValidation="#onValidateRemoveAttachment" text="%mnAttachment.Remove" />
                </items>
