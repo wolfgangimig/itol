@@ -105,6 +105,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private MenuItem mnInsertAttachment;
 	@FXML
 	private MenuItem mnRemoveAttachment;
+	@FXML
+	private MenuItem mnOpenAttachment;
 
 	private DescriptionHtmlEditor descriptionHtmlEditor;
 	private WebView webView;
@@ -600,7 +602,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				saveHandler.save();
 			} else if (file.exists()) {
 				Attachment att = new Attachment();
-				att.setSubject(mailItem.getSubject());
+				att.setSubject(file.getName());
 				att.setContentType(getFileContentType(file.getName()));
 				att.setContentLength(file.length());
 				att.setFileName(file.getName());
@@ -708,11 +710,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	@FXML
 	private void onInsertAttachment() {
-		System.out.println("onInsertAttachment");
-		FileChooser fileChooser = new FileChooser();
-		fileChooser.setTitle("Open Resource File");
-		List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
-		lvAttachments.getItems().addAll(selectedFiles);
+		try {
+			FileChooser fileChooser = new FileChooser();
+			fileChooser.setTitle("Open Resource File");
+			List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
+			if (selectedFiles != null) {
+				lvAttachments.getItems().addAll(selectedFiles);
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 	}
 
 	@FXML
@@ -731,6 +738,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 
 		lvAttachments.setItems(FXCollections.observableArrayList(newItems));
+	}
+
+	@FXML
+	private void onOpenAttachment() {
+		showSelectedIssueAttachment();
 	}
 
 	@FXML
