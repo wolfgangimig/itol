@@ -2,8 +2,6 @@ package com.wilutions.itol.db.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -23,6 +21,7 @@ import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueUpdate;
+import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClasses;
 
@@ -115,7 +114,7 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public Issue updateIssue(Issue iss) {
+	public Issue updateIssue(Issue iss, ProgressCallback cb) {
 		String id = String.valueOf(issues.size() + 1);
 		Issue copy = new Issue(id, iss);
 		issues.put(id, copy);
@@ -232,7 +231,6 @@ public class IssueServiceImpl implements IssueService {
 			att.setId(props.getProperty("id"));
 			att.setContentType(props.getProperty("contentType"));
 			att.setSubject(props.getProperty("subject"));
-			att.setFileName(props.getProperty("fileName"));
 
 			att.setContentLength(contentFile.length());
 			att.setStream(new FileInputStream(contentFile));
@@ -243,66 +241,6 @@ public class IssueServiceImpl implements IssueService {
 			}
 		}
 		return att;
-	}
-
-	@Override
-	public Attachment writeAttachment(Attachment att) throws IOException {
-
-		boolean isFileExt = att.getContentType().indexOf('.') == 0;
-		String fileExt = isFileExt ? att.getContentType() : ".data";
-
-		File contentFile = File.createTempFile("issue", fileExt, tempDir);
-
-		// File name is attachment ID
-		att.setId(getAttachmentIdForFile(contentFile));
-
-		writeAttachmentContent(att, contentFile);
-
-		File propertiesFile = new File(contentFile.getAbsolutePath() + ".properties");
-		wirteAttachmentProperties(att, propertiesFile, contentFile);
-
-		return att;
-	}
-
-	private void wirteAttachmentProperties(Attachment att, File propertiesFile, File contentFile) throws IOException {
-
-		Properties props = new Properties();
-		props.put("id", att.getId());
-		props.put("contentType", att.getContentType());
-		props.put("subject", att.getSubject());
-		props.put("contentLength", "" + contentFile.length());
-		props.put("fileName", att.getFileName());
-
-		FileOutputStream fos = null;
-		try {
-			fos = new FileOutputStream(propertiesFile);
-			props.store(fos, "Attachment properties");
-		} finally {
-			if (fos != null) {
-				fos.close();
-			}
-		}
-	}
-
-	protected void writeAttachmentContent(Attachment att, File file) throws FileNotFoundException, IOException {
-		FileOutputStream fos = null;
-		InputStream istream = null;
-		try {
-			istream = att.getStream();
-			fos = new FileOutputStream(file);
-			byte[] buf = new byte[10 * 1000];
-			int len = 0;
-			while ((len = istream.read(buf)) != -1) {
-				fos.write(buf, 0, len);
-			}
-		} finally {
-			if (fos != null) {
-				fos.close();
-			}
-			if (istream != null) {
-				istream.close();
-			}
-		}
 	}
 
 	@Override
@@ -337,6 +275,18 @@ public class IssueServiceImpl implements IssueService {
 
 	@Override
 	public DescriptionHtmlEditor getDescriptionHtmlEditor(Issue issue) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getShowIssueUrl(String issueId) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getMsgFileType() throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

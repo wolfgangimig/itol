@@ -5,12 +5,24 @@
 	onLoad="onLoadRibbon">
 	<ribbon>
 		<tabs>
-			<tab id="itolTab" label="Issue Tracker">
-				<group id="grpIssue" label="Issue View">
-					<button id="NewIssue" tag="Animals-Running-Rabbit-icon.png"
-						size="large" label="New" onAction="NewIssue_onAction" getImage="getRibbonIcon" />
-					<button id="IssueHistory" tag="Animals-Running-Rabbit-icon.png"
-						size="large" label="History" onAction="IssueHistory_onAction" getImage="getRibbonIcon" />
+			<tab idMso="TabReadMessage">
+				<group id="grpIssue" label="Tracker" getVisible="Button_getVisible">
+				<!-- Icon from http://www.doublejdesign.co.uk 
+				http://www.iconarchive.com/show/childish-icons-by-double-j-design.html -->
+					<button id="NewIssue" tag="Alert-icon-32.png"
+						size="large" 
+						getLabel="Button_getLabel"
+						onAction="Button_onAction" 
+						getEnabled="Button_getEnabled"
+						getVisible="Button_getVisible"
+						getImage="getRibbonIcon" />
+					<button id="ShowIssue" tag="Note-icon.png"
+						size="large" 
+						getLabel="Button_getLabel"
+						onAction="Button_onAction" 
+						getEnabled="Button_getEnabled"
+						getVisible="Button_getVisible"
+						getImage="getRibbonIcon" />
 				</group>
 			</tab>
 		</tabs>

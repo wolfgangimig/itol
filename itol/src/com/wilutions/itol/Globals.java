@@ -1,6 +1,7 @@
 package com.wilutions.itol;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -161,5 +162,18 @@ public class Globals {
 			}
 		}
 		return resb;
+	}
+	
+	public static File getTempDir() {
+		File dir = new File("."); 
+		try {
+			dir = File.createTempFile("itol", ".tmp");
+			dir.delete();
+			dir.mkdirs();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		return dir;
 	}
 }

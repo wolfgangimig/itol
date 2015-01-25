@@ -6,10 +6,15 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.EventHandler;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.util.Callback;
 
 import javax.swing.filechooser.FileSystemView;
@@ -17,7 +22,7 @@ import javax.swing.filechooser.FileSystemView;
 public class FileListViewHandler {
 
 	public static void apply(ListView<File> listView) {
-		
+
 		listView.setCellFactory(new Callback<ListView<File>, ListCell<File>>() {
 			@Override
 			public ListCell<File> call(ListView<File> list) {
@@ -25,8 +30,36 @@ public class FileListViewHandler {
 			}
 		});
 
+		listView.setOnDragOver(new EventHandler<DragEvent>() {
+			@Override
+			public void handle(DragEvent event) {
+				Dragboard db = event.getDragboard();
+				if (db.hasFiles()) {
+					event.acceptTransferModes(TransferMode.COPY);
+				} else {
+					event.consume();
+				}
+			}
+		});
+
+		// Dropping over surface
+		listView.setOnDragDropped(new EventHandler<DragEvent>() {
+			@Override
+			public void handle(DragEvent event) {
+				Dragboard db = event.getDragboard();
+				boolean success = false;
+				if (db.hasFiles()) {
+					success = true;
+					for (File file : db.getFiles()) {
+						listView.getItems().add(file);
+					}
+				}
+				event.setDropCompleted(success);
+				event.consume();
+			}
+		});
 	}
-	
+
 	private static class AttachmentListCell extends ListCell<File> {
 		@Override
 		public void updateItem(File item, boolean empty) {
@@ -35,13 +68,13 @@ public class FileListViewHandler {
 				setGraphic(null);
 				setText(null);
 			} else {
-				
+
 				Image fxImage = getFileIcon(item);
 				if (fxImage != null) {
 					ImageView imageView = new ImageView(fxImage);
 					setGraphic(imageView);
 				}
-				
+
 				setText(item.getName());
 			}
 		}

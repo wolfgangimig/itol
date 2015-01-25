@@ -44,17 +44,20 @@ var config = {
 	url : "http://192.168.0.11",
 	apiKey : "... see \"Redmine / My account / API access key\" ... ",
 	projectNames : "",
+	msgFileType : ".msg",
 
 	// Property IDs of configuration data.
 	// IDs are member names to simplify function fromProperties
 	PROPERTY_ID_URL : "url",
 	PROPERTY_ID_API_KEY : "apiKey",
 	PROPERTY_ID_PROJECT_NAMES : "projectNames",
+	PROPERTY_ID_MSG_FILE_TYPE : "msgFileType",
 
 	toProperties : function() {
 		return [ new Property(this.PROPERTY_ID_URL, this.url),
 				new Property(this.PROPERTY_ID_API_KEY, this.apiKey),
-				new Property(this.PROPERTY_ID_PROJECT_NAMES, this.projectNames) ];
+				new Property(this.PROPERTY_ID_PROJECT_NAMES, this.projectNames),
+				new Property(this.PROPERTY_ID_MSG_FILE_TYPE, this.msgFileType)];
 	},
 
 	fromProperties : function(props) {
@@ -73,10 +76,10 @@ var config = {
 
 var httpClient = {
 
-	send : function(method, headers, params, content) {
+	send : function(method, headers, params, content, progressCallback) {
 		var destUrl = config.url + params;
 		this._addAuthHeader(headers);
-		var response = JHttpClient.send(destUrl, method, headers, content);
+		var response = JHttpClient.send(destUrl, method, headers, content, progressCallback ? progressCallback : null);
 		if (response.status < 200 || response.status >= 300) {
 			var msg = "";
 			if (response.status) {
@@ -99,15 +102,20 @@ var httpClient = {
 		return response;
 	},
 
-	post : function(params, content) {
+	post : function(params, content, progressCallback) {
 		var headers = [ "Content-Type: application/json" ];
-		return JSON.parse(this.send("POST", headers, params, JSON
-				.stringify(content)).content);
+		var jsonStr = JSON.stringify(content);
+		var ret = this.send("POST", headers, params, jsonStr, progressCallback);
+		return JSON.parse(ret.content);
 	},
 
-	upload : function(params, file) {
-		var headers = [ "Content-Type: application/octet-stream" ];
-		return JSON.parse(this.send("POST", headers, params, file).content);
+	upload : function(params, content, contentLength, progressCallback) {
+		var headers = [ "Content-Type: application/octet-stream"];
+		if (contentLength) {
+			headers.push("Content-Length: " + contentLength);
+		}
+		var ret = this.send("POST", headers, params, content, progressCallback);
+		return JSON.parse(ret.content);
 	},
 
 	get : function(params) {
@@ -231,10 +239,17 @@ function readProjectMembers(project) {
 	log.info(")readProjectMembers");
 }
 
-function writeIssue(issue) {
+function writeIssue(issue, progressCallback) {
 	log.info("writeIssue(");
 	dump("send", issue);
-	var ret = httpClient.post("/issues.json", issue);
+	
+	var pgIssue = null;
+	if (progressCallback) {
+		if (progressCallback.isCancelled()) return;
+		pgIssue = progressCallback.createChild("Write issue");
+	}
+	
+	var ret = httpClient.post("/issues.json", issue, pgIssue);
 	dump("recv", ret);
 	log.info(")writeIssue=");
 	return ret;
@@ -265,6 +280,14 @@ function initializePropertyClasses() {
 	propertyClasses.add(PropertyClass.TYPE_STRING,
 			config.PROPERTY_ID_PROJECT_NAMES,
 			"Projects (optional, comma separated)");
+	propertyClasses.add(PropertyClass.TYPE_STRING,
+			config.PROPERTY_ID_MSG_FILE_TYPE,
+			"Attach mail as");
+	
+	var propMsgFileType = propertyClasses.get(config.PROPERTY_ID_MSG_FILE_TYPE);
+	propMsgFileType.setSelectList([ new IdName(".msg", "Outlook (.msg)"),
+	                  			new IdName(".mhtml", "MIME HTML (.mhtml)"),
+	                  			new IdName(".rtf", "Rich Text Format (.rtf)") ]);
 
 	// Initialize select list for some issue properties
 
@@ -279,9 +302,12 @@ function initializePropertyClasses() {
 
 	var propIssueStatus = propertyClasses.get(Property.STATE);
 	propIssueStatus.setSelectList([ new IdName(1, "New issue"),
-			new IdName(2, "In progress"), new IdName(3, "Resolved"),
-			new IdName(4, "Feedback"), new IdName(5, "Closed"),
-			new IdName(6, "Rejected") ]);
+	        // Field status_id seems to be ignored when creating a new issue.  
+	        // Although it works on the web page.
+//			new IdName(2, "In progress"), new IdName(3, "Resolved"),
+//			new IdName(4, "Feedback"), new IdName(5, "Closed"),
+//			new IdName(6, "Rejected") 
+	]);
 
 	var propMilestones = propertyClasses.get(Property.MILESTONES);
 	propMilestones.setName("Versions");
@@ -344,7 +370,7 @@ function getMilestones(issue) {
 };
 
 function getAssignees(issue) {
-	var ret = [];
+	var ret = [new IdName(-1, "Unassigned")];
 	var projectId = issue ? issue.getCategory() : 0;
 	var project = data.projects[projectId];
 	log.info("project=" + project);
@@ -358,8 +384,6 @@ function getAssignees(issue) {
 			var member = project.members[i];
 			ret.push(new IdName(member.id, member.name));
 		}
-	} else {
-		ret.push(new IdName(-1, "No members"));
 	}
 	return ret;
 };
@@ -407,6 +431,14 @@ function getDescriptionHtmlEditor(issue) {
 	return editor;
 }
 
+function getShowIssueUrl(issueId) {
+	return config.url + "/issues/" + issueId;
+}
+
+function getMsgFileType() {
+	return config.msgFileType;
+}
+
 function createIssue() {
 	config.checkValid();
 	
@@ -415,6 +447,7 @@ function createIssue() {
 	iss.setType(1); // Bug
 	iss.setPriority(2); // Normal priority
 	iss.setState(1); // New issue
+	iss.setAssignee(-1);
 
 	var projects = getCategories(null);
 	iss.setCategory(projects[0].getId());
@@ -422,39 +455,84 @@ function createIssue() {
 	return iss;
 };
 
-function updateIssue(trackerIssue) {
+function updateIssue(trackerIssue, progressCallback) {
+	log.info("updateIssue(trackerIssue=" + trackerIssue + ", progressCallback=" + progressCallback);
 	config.checkValid();
 
 	var redmineIssue = {};
-	toRedmineIssue(trackerIssue, redmineIssue);
+	toRedmineIssue(trackerIssue, redmineIssue, progressCallback);
 
-	redmineIssue = writeIssue({
-		issue : redmineIssue
-	}).issue;
+	var issueParam = {	issue : redmineIssue };
+	redmineIssue = writeIssue(issueParam, progressCallback).issue;
 
 	toTrackerIssue(redmineIssue, trackerIssue);
 
+	log.info(")updateIssue=" + trackerIssue);
 	return trackerIssue;
 };
 
-function toRedmineIssue(trackerIssue, redmineIssue) {
-
-	redmineIssue.project_id = "" + trackerIssue.getCategory();
-	redmineIssue.tracker_id = "" + trackerIssue.getType();
-	redmineIssue.status_id = "" + trackerIssue.getState();
-	redmineIssue.priority_id = "" + trackerIssue.getPriority();
+function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
+	log.info("toRedmineIssue(trackerIssue=" + trackerIssue + ", redmineIssue=" + redmineIssue + ", progressCallback=" + progressCallback);
+	redmineIssue.project_id = parseInt(trackerIssue.getCategory());
+	redmineIssue.tracker_id = parseInt(trackerIssue.getType());
+	redmineIssue.status_id = parseInt(trackerIssue.getState());
+	redmineIssue.priority_id = parseInt(trackerIssue.getPriority());
 	redmineIssue.subject = "" + trackerIssue.getSubject();
 	redmineIssue.description = "" + trackerIssue.getDescription();
 
-	if (trackerIssue.getAssignee() >= 0) {
-		redmineIssue.assigned_to_id = "" + trackerIssue.getAssignee();
+	if (trackerIssue.getAssignee().length() != 0) {
+		var userId = parseInt(trackerIssue.getAssignee());
+		if (userId >= 0) {
+			redmineIssue.assigned_to_id = userId;
+		}
 	}
 
 	if (trackerIssue.getMilestones().length) {
-		redmineIssue.fixed_version_id = "" + trackerIssue.getMilestones()[0];
+		redmineIssue.fixed_version_id = parseInt(trackerIssue.getMilestones()[0]);
+	}
+	
+	redmineIssue.uploads = [];
+	try {
+		for (var i = 0; i < trackerIssue.getAttachments().size(); i++) {
+			var trackerAttachment = trackerIssue.getAttachments().get(i);
+			var pgUpload = null;
+			if (progressCallback) {
+				if (progressCallback.isCancelled()) break;
+				var str = "Upload attachment " + trackerAttachment.getFileName();
+				str += ", " + makeAttachmentSizeString(trackerAttachment.getContentLength());
+				pgUpload = progressCallback.createChild(str);
+			}
+			redmineAttachment = writeAttachment(trackerAttachment, pgUpload);
+			redmineIssue.uploads.push(redmineAttachment);
+		}
+	}
+	catch (ex) {
+		for (var i = 0; i < redmineIssue.uploads.length; i++) {
+			var token = redmineIssue.uploads[i];
+			try {
+				deleteAttachment(token);
+			}
+			catch (ex2) {}
+		}
 	}
 
+	log.info(")toRedmineIssue=" + redmineIssue);
 	return redmineIssue;
+}
+
+function makeAttachmentSizeString(contentLength) {
+	var dims = ["Bytes", "KB", "MB", "GB", "TB"];
+	var dimIdx = 0;
+	var c = contentLength;
+	for (var i = 0; i < dims.length; i++) {
+		var nb = c;
+		c = Math.floor(c / 1000);
+		if (c == 0) {
+			dimIdx = i;
+			break;
+		}
+	}
+	return nb + dims[dimIdx];
 }
 
 function toTrackerIssue(redmineIssue, trackerIssue) {
@@ -495,7 +573,22 @@ function findCloseIssues(searchId) {
 };
 
 function extractIssueIdFromMailSubject(subject) {
-	return "1";
+	var issueId = "";
+	var p = subject.indexOf("[");
+	if (p == 0) {
+		var q = subject.indexOf("]");
+		if (q >= 0) {
+			var str = subject.substring(p, q);
+			p = str.indexOf("-");
+			if (p >= 0) {
+				issueId = str.substring(p+1);
+			}
+			else {
+				issueId = str;
+			}
+		}
+	}
+	return issueId;
 };
 
 function injectIssueIdIntoMailSubject(subject, iss) {
@@ -529,8 +622,22 @@ function readAttachment(attachmentId) {
 	return null;
 };
 
-function writeAttachment(att) {
-	return null;
+function writeAttachment(trackerAttachment, progressCallback) {
+	log.info("writeAttachment(" + trackerAttachment + ", progressCallback=" + progressCallback);
+	var content = trackerAttachment.getStream();
+	
+	var uploadResult =  httpClient.upload("/uploads.json", content, trackerAttachment.getContentLength(), progressCallback);
+	dump(uploadResult);
+	
+	trackerAttachment.setId(uploadResult.upload.token);
+	
+	var redmineAttachment = {};
+	redmineAttachment.token = uploadResult.upload.token;
+	redmineAttachment.filename = trackerAttachment.getFileName();
+	redmineAttachment.content_type = trackerAttachment.getContentType();
+	
+	log.info(")writeAttachment=" + redmineAttachment);
+	return redmineAttachment;
 };
 
 function deleteAttachment(attachmentId) {

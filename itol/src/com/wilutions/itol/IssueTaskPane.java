@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -14,6 +15,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -29,23 +31,27 @@ import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
 
 import com.wilutions.com.AsyncResult;
+import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.DescriptionHtmlEditor;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueService;
-import com.wilutions.itol.db.IssueUpdate;
+import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.mslib.office.CustomTaskPane;
+import com.wilutions.mslib.outlook.Attachments;
 import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.OlSaveAsType;
 
@@ -104,19 +110,40 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private WebView webView;
 	private final MailInspector mailInspector;
 	private final MailItem mailItem;
-
+	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
+	private File tempDir;
 	private ResourceBundle resb;
 
 	public IssueTaskPane(MailInspector mailInspector, MailItem mailItem) {
 		this.mailInspector = mailInspector;
 		this.mailItem = mailItem;
 		Globals.getThisAddin().getRegistry().readFields(this);
+		tempDir = new File(Globals.getTempDir(), MsgFileTypes.makeValidFileName(mailItem.getSubject()));
+		tempDir.mkdirs();
+	}
+
+	public String getIssueId() {
+		String issueId = "";
+		try {
+			String subject = mailItem.getSubject();
+			issueId = Globals.getIssueService().extractIssueIdFromMailSubject(subject);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return issueId;
 	}
 
 	@Override
 	public void close() {
 		super.close();
 		Globals.getThisAddin().getRegistry().writeFields(this);
+		for (Runnable run : resourcesToRelease) {
+			try {
+				run.run();
+			} catch (Throwable ignored) {
+			}
+		}
+		tempDir.delete();
 	}
 
 	@Override
@@ -184,7 +211,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			webView = new WebView();
 			webView.getEngine().loadContent(descriptionHtmlEditor.getHtmlContent());
 
-			rootGrid.add(webView, 0, 1, 3, 1);
+			HBox hbox = new HBox();
+			hbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+			hbox.getChildren().add(webView);
+
+			rootGrid.add(hbox, 0, 1, 3, 1);
 		} else {
 			edDescription.setHtmlText("<pre>" + descr + "</pre>");
 		}
@@ -194,8 +225,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	// This method is called by the FXMLLoader when initialization is complete
 	public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
 		try {
-			//lvAttachments.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-			
+			lvAttachments.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+			lvAttachments.setOnMouseClicked(new EventHandler<MouseEvent>() {
+				@Override
+				public void handle(MouseEvent click) {
+					if (click.getClickCount() == 2) {
+						showSelectedIssueAttachment();
+					}
+				}
+			});
+
 			// Details currently not supported.
 			bnDetails.setVisible(false);
 
@@ -302,8 +342,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		if (descriptionHtmlEditor != null) {
 			String elementId = descriptionHtmlEditor.getElementId();
 			String scriptToGetDescription = "document.getElementById('" + elementId + "').value";
-			String text = (String) webView.getEngine().executeScript(scriptToGetDescription);
-			issue.setDescription(text);
+			try {
+				String text = (String) webView.getEngine().executeScript(scriptToGetDescription);
+				issue.setDescription(text);
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
 		} else {
 			String text = edDescription.getHtmlText().trim();
 			issue.setDescription(text);
@@ -428,76 +472,224 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private void initAttachments() {
-		
+	private interface MailSaveHandler {
+		public void save() throws IOException;
+	}
+
+	private HashMap<File, MailSaveHandler> mapFileToSaveHandler = new HashMap<File, MailSaveHandler>();
+
+	private class MailBodySaveHandler implements MailSaveHandler {
+
+		private final File msgFile;
+
+		public MailBodySaveHandler(File msgFile) {
+			this.msgFile = msgFile;
+		}
+
+		public void save() throws IOException {
+
+			// Already saved when double-clicked in listbox.
+			if (!msgFile.exists()) {
+				String ext = Globals.getIssueService().getMsgFileType();
+				OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
+
+				resourcesToRelease.add(() -> msgFile.delete());
+				System.out.println("save mail to " + msgFile);
+				mailItem.SaveAs(msgFile.getAbsolutePath(), saveAsType);
+			}
+
+			Attachment att = new Attachment();
+			att.setSubject(mailItem.getSubject());
+			att.setContentType(getFileContentType(msgFile.getName()));
+			att.setContentLength(msgFile.length());
+			att.setFileName(msgFile.getName());
+			att.setStream(new FileInputStream(msgFile));
+			issue.getAttachments().add(att);
+		}
+	}
+
+	private class MailAttachmentSaveHandler implements MailSaveHandler {
+
+		private final com.wilutions.mslib.outlook.Attachment matt;
+		private final File mattFile;
+
+		MailAttachmentSaveHandler(com.wilutions.mslib.outlook.Attachment matt, File mattFile) {
+			this.matt = matt;
+			this.mattFile = mattFile;
+		}
+
+		public void save() throws IOException {
+
+			// Already saved when double-clicked in listbox.
+			if (!mattFile.exists()) {
+				resourcesToRelease.add(() -> mattFile.delete());
+				System.out.println("save attachment to " + mattFile);
+				matt.SaveAsFile(mattFile.getAbsolutePath());
+			}
+
+			Attachment att = new Attachment();
+			att.setSubject(matt.getFileName());
+			att.setContentType(getFileContentType(mattFile.getName()));
+			att.setContentLength(mattFile.length());
+			att.setFileName(mattFile.getName());
+			att.setStream(new FileInputStream(mattFile));
+			issue.getAttachments().add(att);
+		}
+	}
+
+	private void initAttachments() throws IOException {
 		FileListViewHandler.apply(lvAttachments);
-		
+
+		String ext = Globals.getIssueService().getMsgFileType();
+		OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
+		String msgFileName = MsgFileTypes.makeMsgFileName(mailItem.getSubject(), saveAsType);
+
 		List<File> items = new ArrayList<File>();
-		items.add(new File(mailItem.getSubject() + ".msg"));
-		items.add(new File(mailItem.getSubject() + ".pdf"));
-		items.add(new File(mailItem.getSubject() + ".txt"));
-//		items.add(new File(mailItem.getSubject() + ".zip"));
-//		items.add(new File(mailItem.getSubject() + ".cpp"));
-//		items.add(new File(mailItem.getSubject() + ".jar"));
-		
+		File msgFile = new File(tempDir, msgFileName);
+		items.add(msgFile);
+
+		mapFileToSaveHandler.put(msgFile, new MailBodySaveHandler(msgFile));
+
+		if (!MsgFileTypes.isContainerFormat(saveAsType)) {
+			Attachments mailAtts = mailItem.getAttachments();
+			int n = mailAtts.getCount();
+			for (int i = 1; i <= n; i++) {
+				com.wilutions.mslib.outlook.Attachment matt = mailAtts.Item(i);
+				File mattFile = new File(tempDir, matt.getFileName());
+				items.add(mattFile);
+				mapFileToSaveHandler.put(mattFile, new MailAttachmentSaveHandler(matt, mattFile));
+			}
+		}
+
 		ObservableList<File> lvitems = FXCollections.observableArrayList(items);
 		lvAttachments.setItems(lvitems);
+
 	}
 
-	private Attachment createMailAttachment() throws IOException {
-		IssueService srv = Globals.getIssueService();
-		File tempFile = File.createTempFile("issue", ".msg");
-		mailItem.SaveAs(tempFile.getAbsolutePath(), OlSaveAsType.olMSG);
-		Attachment att = new Attachment();
-		att.setSubject(mailItem.getSubject());
-		att.setContentType(".msg");
-		att.setStream(new FileInputStream(tempFile));
-		att.setContentLength(tempFile.length());
-		att = srv.writeAttachment(att);
-		tempFile.delete();
-		return att;
-	}
-
-	private void addAttachment(IssueUpdate isu, Attachment att) {
-		Property propAttachments = isu.getProperty(Property.ATTACHMENTS);
-		if (propAttachments.isNull()) {
-			propAttachments = new Property(Property.ATTACHMENTS, new Attachment[] { att });
-		} else {
-			Attachment[] atts = (Attachment[]) propAttachments.getValue();
-			Attachment[] atts2 = new Attachment[atts.length + 1];
-			System.arraycopy(atts, 0, atts2, 0, atts.length);
-			atts2[atts2.length - 1] = att;
-			propAttachments = new Property(Property.ATTACHMENTS, atts2);
+	private void showSelectedIssueAttachment() {
+		File selectedFile = lvAttachments.getSelectionModel().getSelectedItem();
+		if (selectedFile != null) {
+			if (!selectedFile.exists()) {
+				MailSaveHandler saveHandler = mapFileToSaveHandler.get(selectedFile);
+				try {
+					saveHandler.save();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			String url = selectedFile.getAbsolutePath();
+			url = url.replace("\\", "/");
+			IssueApplication.showDocument("file:///" + url);
 		}
-		isu.setProperty(propAttachments);
+	}
+
+	private static String getFileContentType(String fname) {
+		String ext = ".";
+		int p = fname.lastIndexOf('.');
+		if (p >= 0) {
+			ext = fname.substring(p);
+		}
+		return ContentTypes.getContentType(ext.toLowerCase());
+	}
+
+	private long addIssueAttachments() throws IOException {
+		long totalBytes = 0;
+		for (File file : lvAttachments.getItems()) {
+			MailSaveHandler saveHandler = mapFileToSaveHandler.get(file);
+			if (saveHandler != null) {
+				saveHandler.save();
+			} else if (file.exists()) {
+				Attachment att = new Attachment();
+				att.setSubject(mailItem.getSubject());
+				att.setContentType(getFileContentType(file.getName()));
+				att.setContentLength(file.length());
+				att.setFileName(file.getName());
+				att.setStream(new FileInputStream(file));
+				issue.getAttachments().add(att);
+			}
+		}
+		for (Attachment att : issue.getAttachments()) {
+			totalBytes += att.getContentLength();
+		}
+		return totalBytes;
 	}
 
 	@FXML
 	private void onCreateIssue() throws IOException {
-		onRemoveAttachment();
-		
-//		IssueService srv = Globals.getIssueService();
-//		try {
-//			updateData(true);
-//
-//			Attachment att = createMailAttachment();
-//			addAttachment(issue.getLastUpdate(), att);
-//
-//			issue = srv.updateIssue(issue);
-//
-//			String mailSubject = srv.injectIssueIdIntoMailSubject(mailItem.getSubject(), issue);
-//			mailItem.setSubject(mailSubject);
-//			mailItem.Save();
-//
-//			MessageBox.show(this, "Created", "Issue " + issue.getId() + " has been created", (succ, ex) -> {
-//				IssueTaskPane.this.mailInspector.setIssueTaskPaneVisible(false);
-//				// IssueTaskPane.this.mailInspector.setHistoryTaskPaneVisible(true);
-//				});
-//
-//		} catch (Throwable e) {
-//			e.printStackTrace();
-//			MessageBox.show(this, "Error", "Failed to create issue, " + e.toString(), null);
-//		}
+
+		// Show progress dialog
+		final DlgProgress dlgProgress = new DlgProgress("Create Issue");
+		dlgProgress.showAsync(this, (succ, ex) -> {
+			if (succ) {
+				Globals.getThisAddin().onIssueCreated(mailInspector);
+			}
+		});
+
+		IssueService srv = Globals.getIssueService();
+		try {
+			// Save dialog elements into data members
+			updateData(true);
+
+			// Create attachment objects, open attachment files,
+			// compute number of bytes to upload.
+			issue.getAttachments().clear();
+			long totalBytes = addIssueAttachments();
+
+			// Initialize DlgProgress.
+			// Total bytes to upload: #attachment-bytes + some bytes for the
+			// issue's JSON object
+			final ProgressCallback progressCallback = dlgProgress.startProgress(totalBytes + 20 * 1000);
+
+			// Create issue in background.
+			// Currently, we are in the UI thread. The progress dialog would not
+			// be updated,
+			// If we processed updating the issue here.
+			BackgTask.run(() -> {
+				try {
+
+					// Create issue
+					issue = srv.updateIssue(issue, progressCallback);
+
+					// If process was not cancelled...
+					if (dlgProgress.getResult()) {
+
+						// ... save the mail with different subject
+						String mailSubjectPrev = mailItem.getSubject();
+						String mailSubject = srv.injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
+						if (!mailSubjectPrev.equals(mailSubject)) {
+							mailItem.setSubject(mailSubject);
+							progressCallback.setParams("Save mail as \"" + mailSubject + "\n");
+							mailItem.Save();
+						}
+
+						// // Progress dialog tells that the issue has been
+						// // created.
+						// progressCallback.setParams("Issue " + issue.getId() +
+						// " has been created");
+						// progressCallback.setFinished();
+						// dlgProgress.setButtonOK();
+						dlgProgress.finish(true);
+					}
+
+				} catch (Throwable e) {
+					if (!progressCallback.isCancelled()) {
+						e.printStackTrace();
+						MessageBox.show(this, "Error", "Failed to create issue, " + e.toString(), null);
+						if (dlgProgress != null) {
+							dlgProgress.finish(false);
+						}
+					}
+				}
+			});
+
+		} catch (Throwable e) {
+			e.printStackTrace();
+			MessageBox.show(this, "Error", "Failed to create issue, " + e.toString(), null);
+			if (dlgProgress != null) {
+				dlgProgress.finish(false);
+			}
+		} finally {
+		}
 	}
 
 	@FXML
@@ -517,23 +709,33 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private void onInsertAttachment() {
 		System.out.println("onInsertAttachment");
-		lvAttachments.getSelectionModel().getSelectedItems();
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Open Resource File");
+		List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
+		lvAttachments.getItems().addAll(selectedFiles);
 	}
-	
+
 	@FXML
 	private void onRemoveAttachment() {
 		System.out.println("onRemoveAttachment");
-		ObservableList<Integer> selectedIndexes = lvAttachments.getSelectionModel().getSelectedIndices();
-		for (Integer idx : selectedIndexes) {
-			lvAttachments.getItems().remove(idx);
-			break;
+
+		List<File> oldItems = lvAttachments.getItems();
+		List<File> newItems = new ArrayList<File>(oldItems.size());
+
+		HashSet<Integer> selectedIndices = new HashSet<Integer>(lvAttachments.getSelectionModel().getSelectedIndices());
+
+		for (int i = 0; i < oldItems.size(); i++) {
+			if (!selectedIndices.contains(i)) {
+				newItems.add(oldItems.get(i));
+			}
 		}
+
+		lvAttachments.setItems(FXCollections.observableArrayList(newItems));
 	}
-	
+
 	@FXML
 	private void onValidateRemoveAttachment() {
 		System.out.println("onValidateRemoveAttachment");
 	}
-	
-	
+
 }

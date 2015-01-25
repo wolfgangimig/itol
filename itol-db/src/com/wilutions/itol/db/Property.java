@@ -40,7 +40,7 @@ public class Property {
 
 	/**
 	 * Array of attachments.
-	 * Value is of type Attachment[].
+	 * Value is of type List<Attachment>.
 	 */
 	public final static String ATTACHMENTS = "IssueProperty.Attachments";
 

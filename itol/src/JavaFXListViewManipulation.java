@@ -39,6 +39,16 @@ public class JavaFXListViewManipulation extends Application {
         }
       }
     });
+    final Button removeAllButton = new Button("Remove all selected");
+    removeAllButton.setOnAction(new EventHandler<ActionEvent>() {
+      @Override public void handle(ActionEvent event) {
+        for (int selectedIdx : listView.getSelectionModel().getSelectedIndices()) {
+          String itemToRemove = listView.getItems().get(selectedIdx);
+          listView.getItems().remove(selectedIdx);
+          status.setText("Removed " + itemToRemove);
+        }
+      }
+    });
     final Button resetButton = new Button("Reset List");
     resetButton.setOnAction(new EventHandler<ActionEvent>() {
       @Override public void handle(ActionEvent event) {
@@ -48,7 +58,7 @@ public class JavaFXListViewManipulation extends Application {
     });
     final HBox controls = new HBox(10);
     controls.setAlignment(Pos.CENTER);
-    controls.getChildren().addAll(removeButton, resetButton);
+    controls.getChildren().addAll(removeButton, removeAllButton, resetButton);
  
     final VBox layout = new VBox(10);
     layout.setAlignment(Pos.CENTER);

@@ -104,6 +104,7 @@ public class Issue implements Serializable {
 		Object ret = getLastUpdate().getProperty(propertyId).getValue();
 		if (ret == null) {
 			ret = defaultValue;
+			setLastUpdatePropertyValue(propertyId, ret);
 		}
 		return ret;
 	}
@@ -182,4 +183,12 @@ public class Issue implements Serializable {
 		setLastUpdatePropertyValue(Property.DESCRIPTION, value);
 	}
 	
+	@SuppressWarnings("unchecked")
+	public List<Attachment> getAttachments() {
+		return (List<Attachment>)getLastUpdatePropertyValue(Property.ATTACHMENTS, new ArrayList<Attachment>(0));
+	}
+	
+	public void setAttachments(List<Attachment> atts) {
+		setLastUpdatePropertyValue(Property.ATTACHMENTS, atts);
+	}
 }

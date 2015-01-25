@@ -65,11 +65,13 @@ public class BackstageConfig {
 	}
 
 	private void appendField(StringBuilder sbuf, Property configProp) throws IOException {
-		
+
 		IssueService srv = Globals.getIssueService();
-		PropertyClasses propertyClasses = srv.getPropertyClasses(); 
+		PropertyClasses propertyClasses = srv.getPropertyClasses();
 		PropertyClass propClass = propertyClasses.get(configProp.getId());
-		if (propClass == null) throw new IllegalStateException("Undefined property class=" + configProp.getId());
+		if (propClass == null)
+			throw new IllegalStateException("Undefined property class=" + configProp.getId());
+		List<IdName> selectList = propClass.getSelectList();
 
 		String elm = "editBox";
 		switch (propClass.getType()) {
@@ -79,6 +81,10 @@ public class BackstageConfig {
 		case PropertyClass.TYPE_PASSWORD:
 			elm = "button";
 			break;
+		default:
+			if (selectList != null && selectList.size() != 0) {
+				elm = "comboBox";
+			}
 		}
 
 		sbuf.append("<").append(elm).append(" ");
@@ -93,14 +99,81 @@ public class BackstageConfig {
 			sbuf.append("onAction=\"Button_onAction\" ");
 			break;
 		case PropertyClass.TYPE_STRING:
-			// sbuf.append("text=\"").append(configProp.getName()).append("\" ");
-			sbuf.append("sizeString=\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\" ");
-			sbuf.append("onChange=\"EditBox_onChange\" ");
-			sbuf.append("getText=\"EditBox_getText\" ");
+			if (selectList != null && selectList.size() != 0) {
+				sbuf.append("getItemCount=\"ComboBox_getItemCount\" ");
+				sbuf.append("getItemLabel=\"ComboBox_getItemLabel\" ");
+				sbuf.append("onChange=\"ComboBox_onChange\" ");
+				sbuf.append("getText=\"ComboBox_getText\" ");
+			} else {
+				sbuf.append("sizeString=\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\" ");
+				sbuf.append("onChange=\"EditBox_onChange\" ");
+				sbuf.append("getText=\"EditBox_getText\" ");
+			}
 			break;
 		}
 
 		sbuf.append("/>");
+	}
+
+	public int ComboBox_getItemCount(IRibbonControl control) {
+		List<IdName> selectList = getPropertySelectList(control);
+		int ret = selectList != null ? selectList.size() : 0;
+		return ret;
+	}
+
+	public String ComboBox_getItemLabel(IRibbonControl control, int idx) {
+		List<IdName> selectList = getPropertySelectList(control);
+		String ret = selectList != null && idx < selectList.size() ? selectList.get(idx).getName() : "";
+		return ret;
+	}
+
+	public void ComboBox_onChange(IRibbonControl control, String text) {
+		Property configProp = getPropertyForControl(control);
+		if (configProp != null) {
+			List<IdName> selectList = getPropertySelectList(control);
+			if (selectList != null) {
+				for (IdName idn : selectList) {
+					if (idn.getName().equals(text)) {
+						configProp.setValue(idn.getId());
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	public String ComboBox_getText(IRibbonControl control) {
+		String ret = "";
+		String propId = getPropertyIdFromControl(control);
+		Property configProp = getPropertyById(propId);
+		if (configProp != null) {
+			List<IdName> selectList = getPropertySelectList(control);
+			if (selectList != null) {
+				for (IdName idn : selectList) {
+					if (configProp.getValue().equals(idn.getId())) {
+						ret = idn.getName();
+						break;
+					}
+				}
+			}
+		}
+		return ret;
+	}
+
+	private List<IdName> getPropertySelectList(IRibbonControl control) {
+		List<IdName> selectList = null;
+		try {
+			Property configProp = getPropertyForControl(control);
+			if (configProp != null) {
+				IssueService srv = Globals.getIssueService();
+				PropertyClasses propertyClasses = srv.getPropertyClasses();
+				PropertyClass propClass = propertyClasses.get(configProp.getId());
+				selectList = propClass.getSelectList();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return selectList;
 	}
 
 	public void EditBox_onChange(IRibbonControl control, String text) {
@@ -115,7 +188,7 @@ public class BackstageConfig {
 		String propId = getPropertyIdFromControl(control);
 		Property configProp = getPropertyById(propId);
 		if (configProp != null) {
-			ret = (String)configProp.getValue();
+			ret = (String) configProp.getValue();
 		}
 		return ret;
 	}
@@ -159,7 +232,7 @@ public class BackstageConfig {
 	private void onPropertyControlAction(IRibbonControl control) throws IOException {
 		final Property configProp = getPropertyForControl(control);
 		PropertyClass propClass = Globals.getIssueService().getPropertyClasses().get(configProp.getId());
-		 
+
 		if (propClass.getType() == PropertyClass.TYPE_PASSWORD) {
 			DlgPassword dlg = new DlgPassword();
 			dlg.showAsync(getOwnerWindow(), (succ, ex) -> {

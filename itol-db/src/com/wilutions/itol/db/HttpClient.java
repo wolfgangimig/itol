@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -21,14 +22,18 @@ import java.util.logging.Logger;
 public class HttpClient {
 
 	private final static Logger log = Logger.getLogger(HttpClient.class.getName());
-
-	public static HttpResponse send(String url, String method, String[] headers, Object content) {
+	
+	public static HttpResponse send(String url, String method, String[] headers, Object content, ProgressCallback cb) {
 		log.info("send(url=" + url);
 
 		if (log.isLoggable(Level.FINE)) {
 			log.fine("method=" + method);
 			log.fine("headers=" + Arrays.toString(headers));
 			log.fine("content=" + content);
+		}
+		
+		if (cb == null) {
+			cb = new ProgressCallbackImpl("HttpClient.send");
 		}
 
 		HttpURLConnection conn = null;
@@ -38,7 +43,10 @@ public class HttpClient {
 			conn = (HttpURLConnection) (new URL(url).openConnection());
 			conn.setRequestMethod(method);
 			conn.setDoOutput(content != null);
-
+			
+			long contentLength = -1;
+			String contentDisposition = "";
+			
 			for (String header : headers) {
 				int p = header.indexOf(":");
 				String key = header.trim();
@@ -48,22 +56,49 @@ public class HttpClient {
 					value = header.substring(p + 1).trim();
 				}
 				conn.setRequestProperty(key, value);
-			}
-
-			if (content != null) {
-				if (content instanceof String) {
-					writeStringIntoStream(conn.getOutputStream(), ((String) content));
-				} else if (content instanceof File) {
-					writeFileIntoStream(conn.getOutputStream(), ((File) content));
+				
+				if (key.equalsIgnoreCase("Content-Length")) {
+					try {
+						contentLength = Long.parseLong(value);
+					}
+					catch (NumberFormatException ignored) {
+					}
 				}
 			}
 
+
+			if (content != null) {
+				
+				conn.setUseCaches(false);
+				if (contentLength >= 0) {
+					conn.setFixedLengthStreamingMode(contentLength);
+				}
+				else {
+					conn.setChunkedStreamingMode(9000);
+				}
+
+				ProgressCallback subcb = cb.createChild("upload");
+				if (content instanceof String) {
+					writeStringIntoStream(conn.getOutputStream(), ((String) content), subcb);
+				} else if (content instanceof File) {
+					writeFileIntoStream(conn.getOutputStream(), ((File) content), subcb);
+				} else if (content instanceof InputStream) {
+					writeFileIntoStream(conn.getOutputStream(), ((InputStream) content), contentLength, subcb);
+				}
+				subcb.setFinished();
+			}
+			
+
+			ProgressCallback subcbRecv = cb.createChild("receive");
 			if (log.isLoggable(Level.FINE))
 				log.fine("getResponseCode...");
 			ret.setStatus(conn.getResponseCode());
 			if (log.isLoggable(Level.FINE))
 				log.fine("getResponseCode=" + ret.getStatus());
-
+			
+			contentLength = -1;
+			contentDisposition = "";
+			
 			ArrayList<String> responseHeaders = new ArrayList<String>();
 			for (String headerName : conn.getHeaderFields().keySet()) {
 				List<String> headerValues = conn.getHeaderFields().get(headerName);
@@ -74,21 +109,46 @@ public class HttpClient {
 				if (headerValues.size() != 0) {
 					headerValue = headerValues.get(0);
 				}
-				String header = headerName + ": " + headerValue;
+				
+				String header = (headerName != null ? headerName : "") + ": " + headerValue;
 				responseHeaders.add(header);
+				
+				if (headerName == null) {
+					
+				}
+				else if (headerName.equalsIgnoreCase("Content-Length")) {
+					try {
+						contentLength = Long.parseLong(headerValue);
+					}
+					catch (NumberFormatException ignored) {
+					}
+				}
+				else if (headerName.equalsIgnoreCase("Content-Disposition")) {
+					contentDisposition = headerValue;
+				}
+
 			}
 			ret.setHeaders(responseHeaders.toArray(new String[responseHeaders.size()]));
-
+			subcbRecv.setFinished();
+			
+			ProgressCallback subcbDownload = cb.createChild("download");
+			if (contentDisposition != null && contentDisposition.length() != 0) {
+				subcbDownload.setParams(contentDisposition);
+			}
+			
 			try {
 				if (log.isLoggable(Level.FINE))
 					log.fine("read from input...");
-				ret.setContent(readStringFromStream(conn.getInputStream()));
+				ret.setContent(readStringFromStream(conn.getInputStream(), contentLength, subcbDownload));
 			} catch (IOException e) {
 				log.info("send failed, exception=" + e);
 				ret.setErrorMessage(e.getMessage());
 				if (log.isLoggable(Level.FINE))
 					log.fine("read from error...");
-				ret.setContent(readStringFromStream(conn.getErrorStream()));
+				ret.setContent(readStringFromStream(conn.getErrorStream(), contentLength, subcbDownload));
+			}
+			finally {
+				subcbDownload.setFinished();
 			}
 
 		} catch (IOException e) {
@@ -106,32 +166,48 @@ public class HttpClient {
 		return ret;
 	}
 
-	private static void writeStringIntoStream(OutputStream os, String s) throws IOException {
+	private static void writeStringIntoStream(OutputStream os, String s, ProgressCallback cb) throws IOException {
+		cb.setProgress(0);
+		cb.setTotal(s.length());
 		OutputStreamWriter wr = new OutputStreamWriter(os, "UTF-8");
 		try {
 			wr.write(s);
 		} finally {
 			wr.close();
 		}
+		cb.setProgress(s.length());
 	}
 
-	private static void writeFileIntoStream(OutputStream os, File file) throws IOException {
-		FileInputStream fis = null;
+	private static void writeFileIntoStream(OutputStream os, File file, ProgressCallback cb) throws IOException {
+		writeFileIntoStream(os, new FileInputStream(file), file.length(), cb);
+	}
+
+	private static void writeFileIntoStream(OutputStream os, InputStream stream, long contentLength, ProgressCallback cb) throws IOException {
+		cb.setTotal(contentLength);
+		cb.setProgress(0);
 		try {
-			fis = new FileInputStream(file);
 			byte[] buf = new byte[10000];
 			int len = 0;
-			while ((len = fis.read(buf)) != -1) {
+			double sum = 0;
+			while ((len = stream.read(buf)) != -1) {
 				os.write(buf, 0, len);
+				
+				if (cb.isCancelled()) {
+					throw new InterruptedIOException();
+				}
+				
+				sum += (double)len;
+				cb.setProgress(sum);
 			}
 		} finally {
-			if (fis != null) {
-				fis.close();
+			if (stream != null) {
+				stream.close();
 			}
 		}
 	}
 
-	private static String readStringFromStream(InputStream is) {
+	private static String readStringFromStream(InputStream is, long contentLength, ProgressCallback cb) {
+		cb.setTotal(contentLength);
 		String ret = null;
 		if (is != null) {
 			Reader rd = null;
@@ -140,8 +216,16 @@ public class HttpClient {
 				StringBuilder sbuf = new StringBuilder();
 				char[] buf = new char[10000];
 				int len = 0;
+				double sum = 0;
 				while ((len = rd.read(buf)) != -1) {
 					sbuf.append(buf, 0, len);
+					
+					if (cb.isCancelled()) {
+						throw new InterruptedIOException();
+					}
+					
+					sum += len;
+					cb.setProgress(sum);
 				}
 				ret = sbuf.toString();
 			} catch (IOException e) {
@@ -157,16 +241,16 @@ public class HttpClient {
 		return ret;
 	}
 
-	public static HttpResponse post(String url, String[] headers, String content) {
-		return send(url, "POST", headers, content);
+	public static HttpResponse post(String url, String[] headers, String content, ProgressCallback cb) {
+		return send(url, "POST", headers, content, cb);
 	}
 
-	public static HttpResponse get(String url, String[] headers) {
-		return send(url, "GET", headers, null);
+	public static HttpResponse get(String url, String[] headers, ProgressCallback cb) {
+		return send(url, "GET", headers, null, cb);
 	}
 
-	public static HttpResponse upload(String url, String[] headers, File file) {
-		return send(url, "POST", headers, file);
+	public static HttpResponse upload(String url, String[] headers, File file, ProgressCallback cb) {
+		return send(url, "POST", headers, file, cb);
 	}
 
 	public static String makeBasicAuthenticationHeader(String userName, String userPwd)

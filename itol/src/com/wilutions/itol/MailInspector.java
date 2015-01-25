@@ -21,6 +21,10 @@ public class MailInspector extends InspectorWrapper {
 		historyPane = new IssueHistoryTaskPane(this, mailItem);
 
 	}
+	
+	public String getIssueId() {
+		return issuePane.getIssueId();
+	}
 
 	public void setIssueTaskPaneVisible(boolean visible) {
 		if (!issuePane.hasWindow() && visible) {

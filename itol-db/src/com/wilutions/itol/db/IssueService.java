@@ -30,7 +30,7 @@ public interface IssueService {
 
 	Issue validateIssue(Issue iss) throws IOException;
 
-	Issue updateIssue(Issue iss) throws IOException;
+	Issue updateIssue(Issue iss, ProgressCallback cb) throws IOException;
 
 	Issue readIssue(String issueId) throws IOException;
 
@@ -46,11 +46,11 @@ public interface IssueService {
 
 	Attachment readAttachment(String attachmentId) throws IOException;
 
-	Attachment writeAttachment(Attachment stream) throws IOException;
-	
 	void deleteAttachment(String attachmentId) throws IOException;
 
 	IdName getCurrentUser() throws IOException;
 
+	String getShowIssueUrl(String issueId) throws IOException;
 
+	String getMsgFileType() throws IOException;
 }
