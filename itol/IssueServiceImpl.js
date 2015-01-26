@@ -559,20 +559,6 @@ function validateIssue(iss) {
 	return ret;
 };
 
-function findFirstIssues(findInfo, idx, max) {
-	// TODO Auto-generated method stub
-	return null;
-};
-
-function findNextIssues(searchId, idx, max) {
-	// TODO Auto-generated method stub
-	return null;
-};
-
-function findCloseIssues(searchId) {
-	// TODO Auto-generated method stub
-};
-
 function extractIssueIdFromMailSubject(subject) {
 	var issueId = "";
 	var startTag = "[ITOL-";
@@ -616,14 +602,6 @@ function injectIssueIdIntoMailSubject(subject, iss) {
 	return ret;
 };
 
-function readIssue(issueId) {
-	return issues.get(issueId);
-};
-
-function readAttachment(attachmentId) {
-	return null;
-};
-
 function writeAttachment(trackerAttachment, progressCallback) {
 	log.info("writeAttachment(" + trackerAttachment + ", progressCallback=" + progressCallback);
 	var content = trackerAttachment.getStream();
@@ -644,9 +622,6 @@ function writeAttachment(trackerAttachment, progressCallback) {
 	
 	log.info(")writeAttachment=" + redmineAttachment);
 	return redmineAttachment;
-};
-
-function deleteAttachment(attachmentId) {
 };
 
 initializePropertyClasses();

@@ -25,7 +25,7 @@ import com.wilutions.itol.db.IssueUpdate;
 import com.wilutions.itol.db.Property;
 
 
-public class IssueToHtml implements Closeable {
+public class IssueToHtml_off implements Closeable {
 
 	private final ResourceBundle resb = Globals.getResourceBundle();
 
@@ -38,7 +38,7 @@ public class IssueToHtml implements Closeable {
 	private final File tempDir;
 	private final List<File> tempFiles = new ArrayList<File>();
 
-	public IssueToHtml(Issue issue) throws IOException {
+	public IssueToHtml_off(Issue issue) throws IOException {
 		this.issue = issue;
 		trafos = new TrafosIdToName();
 		tempDir = new File(new File(System.getProperty("java.io.tmpdir"), "itol"), "issuetohtml");
@@ -166,7 +166,7 @@ public class IssueToHtml implements Closeable {
 					httpExchange.sendResponseHeaders(200, att.getContentLength());
 					
 					IssueService srv = Globals.getIssueService();
-					Attachment attWithStream = srv.readAttachment(att.getId());
+					Attachment attWithStream = new Attachment(); //srv.readAttachment(att.getId());
 					InputStream istream = attWithStream.getStream();
 					
 					try {
