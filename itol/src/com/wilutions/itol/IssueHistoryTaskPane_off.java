@@ -28,13 +28,13 @@ import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.mslib.outlook.MailItem;
 
-public class IssueHistoryTaskPane extends TaskPaneFX implements Initializable {
+public class IssueHistoryTaskPane_off extends TaskPaneFX implements Initializable {
 
 	private ResourceBundle resb;
 	private final MailInspector mailInspector;
 	private final MailItem mailItem;
 	private Issue issue;
-	private IssueToHtml issueToHtml;
+	private IssueToHtml_off issueToHtml;
 
 	@FXML
 	WebView wviewInitial;
@@ -42,7 +42,7 @@ public class IssueHistoryTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	WebView wviewIssueUpdates;
 
-	public IssueHistoryTaskPane(MailInspector inspector, MailItem mailItem) {
+	public IssueHistoryTaskPane_off(MailInspector inspector, MailItem mailItem) {
 		this.mailInspector = inspector;
 		this.mailItem = mailItem;
 		Globals.getThisAddin().getRegistry().readFields(this);
@@ -54,7 +54,7 @@ public class IssueHistoryTaskPane extends TaskPaneFX implements Initializable {
 			IssueService srv = Globals.getIssueService();
 			String subject = mailItem.getSubject();
 			String issueId = srv.extractIssueIdFromMailSubject(subject);
-			issue = srv.readIssue(issueId);
+			issue = null; //srv.readIssue(issueId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -101,7 +101,7 @@ public class IssueHistoryTaskPane extends TaskPaneFX implements Initializable {
 	public void initialize(URL location, ResourceBundle resources) {
 		issue = readIssue();
 		try {
-			issueToHtml = new IssueToHtml(issue);
+			issueToHtml = new IssueToHtml_off(issue);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}

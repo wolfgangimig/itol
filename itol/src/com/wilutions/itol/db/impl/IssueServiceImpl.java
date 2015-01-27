@@ -113,7 +113,6 @@ public class IssueServiceImpl implements IssueService {
 		return iss;
 	}
 
-	@Override
 	public Issue updateIssue(Issue iss, ProgressCallback cb) {
 		String id = String.valueOf(issues.size() + 1);
 		Issue copy = new Issue(id, iss);
@@ -135,19 +134,16 @@ public class IssueServiceImpl implements IssueService {
 		return ret;
 	}
 
-	@Override
 	public FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
 	public FindIssuesResult findNextIssues(String searchId, int idx, int max) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
 	public void findCloseIssues(String searchId) {
 		// TODO Auto-generated method stub
 	}
@@ -196,17 +192,12 @@ public class IssueServiceImpl implements IssueService {
 		return sbuf.toString();
 	}
 
-	@Override
 	public Issue readIssue(String issueId) {
 		return issues.get(issueId);
 	}
 
 	private File getFileForAttachmentId(String attachmentId) {
 		return new File(tempDir, attachmentId);
-	}
-
-	private String getAttachmentIdForFile(File file) {
-		return file.getName();
 	}
 
 	public Attachment readAttachment(String attachmentId) throws IOException {
@@ -243,7 +234,6 @@ public class IssueServiceImpl implements IssueService {
 		return att;
 	}
 
-	@Override
 	public void deleteAttachment(String attachmentId) throws IOException {
 		File file = new File(attachmentId);
 		file.delete();

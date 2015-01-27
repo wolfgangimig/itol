@@ -30,27 +30,28 @@ public interface IssueService {
 
 	Issue validateIssue(Issue iss) throws IOException;
 
-	Issue updateIssue(Issue iss, ProgressCallback cb) throws IOException;
-
-	Issue readIssue(String issueId) throws IOException;
-
 	String extractIssueIdFromMailSubject(String subject) throws IOException;
 
 	String injectIssueIdIntoMailSubject(String subject, Issue iss) throws IOException;
-
-	FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) throws IOException;
-
-	FindIssuesResult findNextIssues(String searchId, int idx, int max) throws IOException;
-
-	void findCloseIssues(String searchId) throws IOException;
-
-	Attachment readAttachment(String attachmentId) throws IOException;
-
-	void deleteAttachment(String attachmentId) throws IOException;
 
 	IdName getCurrentUser() throws IOException;
 
 	String getShowIssueUrl(String issueId) throws IOException;
 
 	String getMsgFileType() throws IOException;
+
+	Issue updateIssue(Issue iss, ProgressCallback cb) throws IOException;
+
+//	Issue readIssue(String issueId) throws IOException;
+//
+//	FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) throws IOException;
+//
+//	FindIssuesResult findNextIssues(String searchId, int idx, int max) throws IOException;
+//
+//	void findCloseIssues(String searchId) throws IOException;
+//
+//	Attachment readAttachment(String attachmentId) throws IOException;
+//
+//	void deleteAttachment(String attachmentId) throws IOException;
+
 }

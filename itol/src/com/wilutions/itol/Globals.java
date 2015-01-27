@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
@@ -31,7 +32,10 @@ public class Globals {
 	private static Registry registry;
 
 	@DeclRegistryValue
-	private String serviceFactoryClass;
+	private String serviceFactoryClass = "com.wilutions.itol.db.impl.IssueServiceFactory_JS";
+	
+	@DeclRegistryValue
+	private List<String> serviceFactoryParams = Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT);
 	
 	@DeclRegistryValue
 	private List<Property> configProps;
@@ -63,18 +67,18 @@ public class Globals {
 		
 		readData();
 		
+		IssueServiceFactory fact = null;
 		if (globalData.serviceFactoryClass != null && globalData.serviceFactoryClass.length() != 0) {
 			try {
 				Class<?> clazz = Class.forName(globalData.serviceFactoryClass);
-				IssueServiceFactory fact = (IssueServiceFactory)clazz.newInstance();
-				issueService = fact.getService();
+				fact = (IssueServiceFactory)clazz.newInstance();
 			} catch (Throwable e) {
 				e.printStackTrace();
+				throw new IOException(e);
 			}
 		}
-		
-		issueService = new IssueServiceFactory_JS().getService(); 
-		
+		issueService = fact.getService(globalData.serviceFactoryParams);
+	
 		BackgTask.run(() -> {
 			try {
 				issueService.setConfig(globalData.configProps);
@@ -128,7 +132,7 @@ public class Globals {
 		globalData.configProps = configProps;
 		writeData();
 		readData();
-		issueService = new IssueServiceFactory_JS().getService(); 
+		issueService = new IssueServiceFactory_JS().getService(globalData.serviceFactoryParams); 
 		issueService.setConfig(configProps);
 	}
 

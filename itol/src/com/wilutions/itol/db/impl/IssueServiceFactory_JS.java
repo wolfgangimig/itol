@@ -1,8 +1,8 @@
 package com.wilutions.itol.db.impl;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.List;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -13,21 +13,19 @@ import com.wilutions.itol.db.IssueServiceFactory;
 
 public class IssueServiceFactory_JS implements IssueServiceFactory {
 
-	private File tempDir;
-
-	public final static int TYPE_BUG = 1;
-	public final static int TYPE_FEATURE_REQUEST = 2;
-	public final static int TYPE_SUPPORT = 3;
-	public final static int TYPE_DOCUMENTATION = 4;
+	public static final String DEFAULT_SCIRPT = "IssueServiceImpl.js";
 
 	public IssueServiceFactory_JS() {
-		tempDir = new File(new File(System.getProperty("java.io.tmpdir"), "itol"), "issuetracker");
-		tempDir.mkdirs();
 	}
 
-	public IssueService getService() throws IOException {
+	public IssueService getService(List<String> params) throws IOException {
 		IssueService srv = null;
 		Reader rd = null;
+		
+		if (params == null || params.size() == 0) {
+			params.add(DEFAULT_SCIRPT);
+		}
+		
 		try {
 //			ClassLoader classLoader = this.getClass().getClassLoader();
 //			InputStream istream = classLoader.getResourceAsStream("com/wilutions/itol/db/impl/IssueServiceImpl.js");
@@ -46,13 +44,10 @@ public class IssueServiceFactory_JS implements IssueServiceFactory {
 			
 			ScriptEngine engine = new ScriptEngineManager().getEngineByName("JavaScript");
 			
-			engine.eval("load(\"" + "IssueServiceImpl.js" + "\");");
+			engine.eval("load(\"" + params.get(0) + "\");");
 			
 			srv = ((Invocable)engine).getInterface(IssueService.class);
 		}
-//		catch (IOException e) {
-//			throw e;
-//		}
 		catch (Throwable e) {
 			throw new IOException(e);
 		}

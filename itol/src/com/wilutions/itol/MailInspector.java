@@ -10,7 +10,7 @@ import com.wilutions.mslib.outlook.MailItem;
 public class MailInspector extends InspectorWrapper {
 
 	private final IssueTaskPane issuePane;
-	private final IssueHistoryTaskPane historyPane;
+	private final IssueHistoryTaskPane_off historyPane;
 
 	public MailInspector(Inspector inspector, IDispatch currentItem) throws ComException {
 		super(inspector, currentItem);
@@ -18,7 +18,7 @@ public class MailInspector extends InspectorWrapper {
 		MailItem mailItem = currentItem.as(MailItem.class);
 
 		issuePane = new IssueTaskPane(this, mailItem);
-		historyPane = new IssueHistoryTaskPane(this, mailItem);
+		historyPane = new IssueHistoryTaskPane_off(this, mailItem);
 
 	}
 	
