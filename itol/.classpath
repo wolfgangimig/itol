@@ -9,7 +9,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/itol-db"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/joa"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/joa-private"/>
+	<classpathentry kind="lib" path="D:/git/joa/java/lib/joa.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
