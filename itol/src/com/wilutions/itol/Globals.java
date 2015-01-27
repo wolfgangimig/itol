@@ -32,10 +32,10 @@ public class Globals {
 	private static Registry registry;
 
 	@DeclRegistryValue
-	private String serviceFactoryClass = "com.wilutions.itol.db.impl.IssueServiceFactory_JS";
+	private String serviceFactoryClass;
 	
 	@DeclRegistryValue
-	private List<String> serviceFactoryParams = Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT);
+	private List<String> serviceFactoryParams;
 	
 	@DeclRegistryValue
 	private List<Property> configProps;
@@ -67,17 +67,14 @@ public class Globals {
 		
 		readData();
 		
-		IssueServiceFactory fact = null;
-		if (globalData.serviceFactoryClass != null && globalData.serviceFactoryClass.length() != 0) {
-			try {
-				Class<?> clazz = Class.forName(globalData.serviceFactoryClass);
-				fact = (IssueServiceFactory)clazz.newInstance();
-			} catch (Throwable e) {
-				e.printStackTrace();
-				throw new IOException(e);
-			}
+		try {
+			Class<?> clazz = Class.forName(globalData.serviceFactoryClass);
+			IssueServiceFactory fact = (IssueServiceFactory)clazz.newInstance();
+			issueService = fact.getService(globalData.serviceFactoryParams);
+		} catch (Throwable e) {
+			e.printStackTrace();
+			throw new IOException(e);
 		}
-		issueService = fact.getService(globalData.serviceFactoryParams);
 	
 		BackgTask.run(() -> {
 			try {
@@ -94,14 +91,18 @@ public class Globals {
 	private static void readData() {
 		getRegistry().readFields(globalData);
 		
-		if (globalData.serviceFactoryClass == null) {
-			globalData.serviceFactoryClass = IssueServiceFactory_JS.class.getName();
+		if (globalData.serviceFactoryClass == null || globalData.serviceFactoryClass.length() == 0) {
+			 globalData.serviceFactoryClass = IssueServiceFactory_JS.class.getName();
+		}
+		
+		if (globalData.serviceFactoryParams == null || globalData.serviceFactoryParams.size() == 0) {
+			globalData.serviceFactoryParams = Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT);
 		}
 		
 		if (globalData.configProps == null) {
-			globalData.configProps = new ArrayList<Property>();
+			globalData.configProps = new ArrayList<Property>(0);
 		}
-
+		
 		for (Property configProp : globalData.configProps) {
 			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
 			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
