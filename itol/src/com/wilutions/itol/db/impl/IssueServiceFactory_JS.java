@@ -1,5 +1,6 @@
 package com.wilutions.itol.db.impl;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
@@ -18,7 +19,7 @@ public class IssueServiceFactory_JS implements IssueServiceFactory {
 	public IssueServiceFactory_JS() {
 	}
 
-	public IssueService getService(List<String> params) throws IOException {
+	public IssueService getService(File instDir, List<String> params) throws IOException {
 		IssueService srv = null;
 		Reader rd = null;
 		
@@ -44,7 +45,9 @@ public class IssueServiceFactory_JS implements IssueServiceFactory {
 			
 			ScriptEngine engine = new ScriptEngineManager().getEngineByName("JavaScript");
 			
-			engine.eval("load(\"" + params.get(0) + "\");");
+			File jsFile= new File(instDir, params.get(0));
+			String jsName = jsFile.getAbsolutePath().replace("\\", "/");
+			engine.eval("load(\"" + jsName + "\");");
 			
 			srv = ((Invocable)engine).getInterface(IssueService.class);
 		}

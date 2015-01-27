@@ -30,6 +30,7 @@ public class Globals {
 	private static ResourceBundle resb;
 	private static IssueService issueService;
 	private static Registry registry;
+	private static File appDir;
 
 	@DeclRegistryValue
 	private String serviceFactoryClass;
@@ -60,7 +61,9 @@ public class Globals {
 		return registry;
 	}
 
-	public static void initIssueService() throws IOException {
+	public static void initIssueService(File appDir) throws IOException {
+		
+		Globals.appDir = appDir;
 		
 		// Required for PasswordEncryption.decrypt 
 		com.sun.org.apache.xml.internal.security.Init.init();
@@ -70,7 +73,7 @@ public class Globals {
 		try {
 			Class<?> clazz = Class.forName(globalData.serviceFactoryClass);
 			IssueServiceFactory fact = (IssueServiceFactory)clazz.newInstance();
-			issueService = fact.getService(globalData.serviceFactoryParams);
+			issueService = fact.getService(appDir, globalData.serviceFactoryParams);
 		} catch (Throwable e) {
 			e.printStackTrace();
 			throw new IOException(e);
@@ -133,7 +136,7 @@ public class Globals {
 		globalData.configProps = configProps;
 		writeData();
 		readData();
-		issueService = new IssueServiceFactory_JS().getService(globalData.serviceFactoryParams); 
+		issueService = new IssueServiceFactory_JS().getService(appDir, globalData.serviceFactoryParams); 
 		issueService.setConfig(configProps);
 	}
 
