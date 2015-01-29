@@ -1,0 +1,1135 @@
+
+importClass(Packages.de.elo.client.scripting.constants.CONSTANTS);
+importClass(Packages.de.elo.client.scripting.internal.ParameterScriptEvent); 
+importPackage(Packages.java.awt);
+importPackage(Packages.java.util);
+importPackage(Packages.de.elo.ix.client);
+importPackage(Packages.org.apache.commons.io);
+
+//@include lib_ELOtodoLayout
+//@include lib_ELOtodoCallback
+
+var ToDoConfig = {
+  root: "¶Administration¶ToDoConfig",
+  data: "¶07.  Entwicklung¶Public¶ToDo",
+  maskName: "ToDoItem",
+  prioPrefix: "Prio ",
+  donePrefix: "Erledigt",
+  activePrefix1: "In Arbeit",
+  activePrefix2: "In Bearbeitung"
+}
+
+// ELO Standard Events
+
+function eloWorkspaceStarted(){
+  todo.init();
+}
+
+function eloScriptsReloaded(){
+  todo.init();
+}
+
+function getExtraBands(){
+  return "Verwalten,10,Auswahl;Verwalten,20,Neu;Verwalten,30,Bearbeiten;Verwalten,40,Ansicht;Verwalten,50,Vote";
+}
+
+function getExtraTabs(){
+  return "62,Verwalten,ToDo-Tools";
+}
+
+function getScriptButton520Name() {
+  return "Aufgabe";
+}
+
+function getScriptButton520Tooltip() {
+  return "Eine neue Aufgabe im aktuellen Projekt und Bereich anlegen.";
+}
+
+function eloScriptButton520Start() {
+  todo.addItem();
+}
+
+function getScriptButton521Name() {
+  return "Projekt";
+}
+
+function getScriptButton521Tooltip() {
+  return "In ein anderes Projekt wechseln. Ein Dialog mit einer Auswahliste der Projekte wird angezeigt.";
+}
+
+function eloScriptButton521Start() {
+  todo.selectProject(true);
+}
+
+function getScriptButton522Name() {
+  return "Bereich";
+}
+
+function getScriptButton522Tooltip() {
+  return "In einen anderen Bereich des Projekt wechseln. Ein Dialog mit einer Auswahliste der Bereiche wird angezeigt.";
+}
+
+function eloScriptButton522Start() {
+  todo.selectArea(todo.activeProject, true);
+}
+
+function getScriptButton523Name() {
+  return "Aufgabe bearbeiten";
+}
+
+function getScriptButton523Tooltip() {
+  return "Die ausgewählte Aufgabe zur Bearbeitung öffnen.";
+}
+
+function eloScriptButton523Start() {
+  todo.editSelection();
+}
+
+function getScriptButton524Name() {
+  return "Projekt anlegen";
+}
+
+function getScriptButton524Tooltip() {
+  return "Legt ein neues ToDo Projekt an. Die Bereiche werden aus dem Standard-Template kopiert";
+}
+
+function eloScriptButton524Start() {
+  todo.addProject();
+}
+
+function getScriptButton525Name() {
+  return "Zuständigkeit festlegen";
+}
+
+function getScriptButton525Tooltip() {
+  return "Die zuständigen Anwender der ausgewählten Aufgabe festlegen.";
+}
+
+function eloScriptButton525Start() {
+  todo.addUser();
+}
+
+function getScriptButton526Name() {
+  return "Verschieben";
+}
+
+function getScriptButton526Tooltip() {
+  return "Die ausgewählte Aufgabe in einen anderen Bereich verschieben. Es können mehrere Aufgaben gleichzeitig verschoben werden.";
+}
+
+function eloScriptButton526Start() {
+  todo.moveItem();
+}
+
+function getScriptButton527Name() {
+  return "Gehe zu";
+}
+
+function getScriptButton527Tooltip() {
+  return "Zum Ordner der Aufgabe im Archiv springen. Dies dient der Anzeige der Attachments.";
+}
+
+function eloScriptButton527Start() {
+  todo.gotoItem();
+}
+
+function getScriptButton528Name() {
+  return "Sehr wichtig";
+}
+
+function getScriptButton528Tooltip() {
+  return "Höchste Priorität, sollte unbedingt erledigt werden.";
+}
+
+function eloScriptButton528Start() {
+  todo.vote(5);
+}
+
+function getScriptButton529Name() {
+  return "Wichtig";
+}
+
+function getScriptButton529Tooltip() {
+  return "Hohe Priorität, sollte erledigt werden.";
+}
+
+function eloScriptButton529Start() {
+  todo.vote(4);
+}
+
+function getScriptButton530Name() {
+  return "Mittel";
+}
+
+function getScriptButton530Tooltip() {
+  return "Mittlere Priorität, kann erledigt werden.";
+}
+
+function eloScriptButton530Start() {
+  todo.vote(3);
+}
+
+function getScriptButton531Name() {
+  return "Unwichtig";
+}
+
+function getScriptButton531Tooltip() {
+  return "Geringe Priorität, kann später erneut überprüft werden.";
+}
+
+function eloScriptButton531Start() {
+  todo.vote(2);
+}
+
+function getScriptButton532Name() {
+  return "Nicht ausführen";
+}
+
+function getScriptButton532Tooltip() {
+  return "Keine Priorität, sollte nicht erledigt werden.";
+}
+
+function eloScriptButton532Start() {
+  todo.vote(1);
+}
+
+function getScriptButton533Name() {
+  return "Sortieren";
+}
+
+function getScriptButton533Tooltip() {
+  return "Überträgt die mittlere Priorität in die Kurzbezeichnung zur Sortierung der Anzeige";
+}
+
+function eloScriptButton533Start() {
+  todo.sortVotes();
+}
+
+function getScriptButton534Name() {
+  return "Abstimmung löschen";
+}
+
+function getScriptButton534Tooltip() {
+  return "Löscht die Abstimmungsergebnisse aus diesem Bereich";
+}
+
+function eloScriptButton534Start() {
+  todo.clearVotes();
+}
+
+function getScriptButton535Name() {
+  return "Diagramm";
+}
+
+function getScriptButton535Tooltip() {
+  return "Erzeugt ein Kanban Diagramm zum aktuellen Projektstatus";
+}
+
+function eloScriptButton535Start() {
+  todo.kanban();
+}
+
+function getScriptButton536Name() {
+  return "Liste";
+}
+
+function getScriptButton536Tooltip() {
+  return "Erzeugt eine Listenausgabe des aktuellen Bereichs";
+}
+
+function eloScriptButton536Start() {
+  todo.createList();
+}
+
+function getScriptButton537Name() {
+  return "Kopieren";
+}
+
+function getScriptButton537Tooltip() {
+  return "Erzeugt eine verlinkte Kopie in ein anderes Projekt";
+}
+
+function eloScriptButton537Start() {
+  todo.doCopyItem();
+}
+
+function eloScriptButton538Name() {
+  return "Als ToDo Liste";
+}
+
+function eloScriptButton538Start() {
+  todo.searchAsList();
+}
+
+function getScriptButton538Tooltip() {
+  return "Verwendet die aktuelle Trefferliste als ToDo Liste";
+}
+
+function getScriptButtonPositions() {
+  var data = archive.getElementByArcpath(ToDoConfig.data);
+  todo.editProjects = data.sord.access & AccessC.LUR_LIST;
+    
+  var pos = "";
+  
+  if (todo.editProjects) {
+    pos = "524,Verwalten,Neu;";
+  }
+  
+  pos += "520,Verwalten,Neu;521,Verwalten,Auswahl;522,Verwalten,Auswahl;523,Verwalten,Bearbeiten;525,Verwalten,Bearbeiten;526,Verwalten,Bearbeiten;537,Verwalten,Bearbeiten;527,Verwalten,Ansicht;535,Verwalten,Ansicht;536,Verwalten,Ansicht;528,Verwalten,Vote;529,Verwalten,Vote;530,Verwalten,Vote;531,Verwalten,Vote;532,Verwalten,Vote;533,Verwalten,Vote;534,Verwalten,Vote;538,home,view";
+  
+  return pos;
+}
+
+function eloGotoStart(){
+  var sel = workspace.activeView.firstSelected;
+  if (sel && (sel.docMaskName == ToDoConfig.maskName)){
+    var path = sel.sord.refPaths[0].pathAsString;
+    if (path.startsWith( ToDoConfig.data ) ){
+      
+      // passendes Projekt und Bereich anzeigen
+      var area = sel.parent;
+      var project = area.parent;
+      todo.activeProject = project;
+      todo.activeArea = area;
+      todo.activate();
+      view.show();
+      
+      // TODO Aufgabe selektieren
+      todo.selectItem( sel );
+      
+      return -1;
+    }
+  }
+}
+
+// Script Events
+function onToDoActivation() {
+  todo.activate();
+}
+
+function todoListSelectionChanged(){
+  todo.updateFunctions();
+}
+
+function todoCopyDone() {
+  todo.copyDone();
+}
+
+function todoCopyAndLinkDone() {
+  todo.copyAndLinkDone();
+}
+
+// Script Functions
+var todo = {
+  toDoView: null,
+  mainGrid: null,
+  activeProject: null,
+  activeArea: null,
+  activeSearchView: null,
+  title: null,
+  itemsList: null,
+  newProjectName: null,
+  editProjects : false,
+  
+  // initializes the todo grid panel with the items list
+  // and adds a todo button in the navigation area
+  init: function() {
+    var mainGrid = components.createGridPanel(1, 2);
+    this.mainGrid = mainGrid;
+    
+    this.title = mainGrid.addLabel(1, 1, 1, "<Projekt>");
+    this.title.fontSize = 16;
+
+    this.itemsList = mainGrid.addList(1, 2, 1, 2);
+    this.itemsList.addChangeEvent( "todoListSelectionChanged" );
+    
+    workspace.removeView( "ToDo" );
+    view = workspace.addView( "ToDo", false, this.mainGrid, null );
+    this.toDoView = view;
+    view.setHasPreview( true );
+    view.setContextTaskGroup( "ToDo-Tools" );
+    view.setActivateEvent( "onToDoActivation" );
+    var icon = archive.getElementByArcpath(ToDoConfig.root + "¶FunctionIcon");
+    view.setIcon( icon );
+    
+    this.loadOptions();
+  },
+  
+  searchAsList: function() {
+    this.activeSearchView = workspace.activeView;
+    this.activeProject = null;
+    this.activeArea = null;
+    this.toDoView.show();
+    this.activateItems();
+  },
+  
+  getSelectedItem: function() {
+    var listEntry = this.itemsList.firstSelected;
+    if (listEntry) {
+      var item = listEntry.getInternalData("element");
+      return item;
+    }
+    
+    return null;
+  },
+
+  doCopyItem: function() {
+    var item = this.getSelectedItem();
+    if (!item) {
+      return;
+    }
+    
+    var destProject = this.selectProject(false);
+    if (destProject) {
+      var destArea = this.selectArea(destProject, false);
+      if (destArea) {
+        this.copyDestination = destArea;
+        this.copyItem = item;
+        
+        destArea.addCopy(item.id, false, false, false, false, "todoCopyAndLinkDone");
+        workspace.setFeedbackMessage("Copy and Link to " + destProject.name + " - " + destArea.name);
+      }
+    }
+  },
+  
+  copyAndLinkDone: function() {
+    var newItem = archive.getElementByArcpathRelative(this.copyDestination.id, "¶"+ this.copyItem.name);
+  
+    var project = this.copyDestination.parent;
+    newItem.setObjKeyValue("TODOPROJ", project.name);
+    newItem.setObjKeyValue("TODOSTATUS", this.copyDestination.name);
+    newItem.saveSord();
+    
+    ixc.linkSords(this.copyItem.id, [newItem.id], LinkSordC.PAIR);
+    
+    if ((typeof(todoCallback) == "object") && (todoCallback.copyDone)) {
+      if (todoCallback.copyDone(this.copyItem, this.activeArea, newItem, this.copyDestination)) {
+        this.copyDestination.saveSord();
+      }
+    }
+  },
+  
+  addProject : function() {
+    var projectName = workspace.showInputBox("ToDo", "Geben Sie bitte den Namen für das neue Projekt ein", "", 1, 50, false, 2);
+    if (!projectName) {
+      return;
+    }
+    
+    this.newProjectName = projectName;
+    var todo = archive.getElementByArcpath(ToDoConfig.data);
+    var template = archive.getElementByArcpath(ToDoConfig.root + "¶Template");
+    todo.addCopy(template.id, false, false, false, false, "todoCopyDone");
+  },
+  
+  copyDone : function() {
+    var template = archive.getElementByArcpath(ToDoConfig.data + "¶Template");
+    template.name = this.newProjectName;
+    template.saveSord();
+  },
+  
+  kanban : function() {
+    if (!this.activeProject) {
+      workspace.setFeedbackMessage("Bitte wählen Sie zuerst ein Projekt aus.");
+      return;
+    }
+    
+    var template = archive.getElementByArcpath(ToDoConfig.root + "¶KanbanTemplate");
+    var templateText = String(FileUtils.readFileToString(template.file));
+    var body = this.collectKanbanTable();
+    templateText = templateText.replace(/KANBANCONTENT/, body);
+    
+    var intray = workspace.directories.inTrayDir;
+    var dest = utils.getUniqueFile(intray, "kanban.html");
+    FileUtils.writeStringToFile(dest, templateText, "utf-8");
+    
+    Desktop.desktop.open(dest);
+  },
+  
+  collectKanbanTable : function() {
+    var builder = new Array();
+    builder.push('<div class="kanbanboard"><h1>' + this.activeProject.name + '</h1></div>');
+    builder.push("<table><tr>");
+    var children = this.activeProject.children;
+    
+    while (children.hasMoreElements()) {
+      var child = children.nextElement();
+      if (this.checkOption(child, "hidden")) {
+        continue;
+      }
+      
+      builder.push('<td valign="top"><div class="kanbanrow">');
+      this.collectKanbanPart(builder, child);
+      builder.push("</div></td>");
+    }
+    
+    builder.push("</tr></table>");
+    return builder.join("\r\n");
+  },
+  
+  collectKanbanPart: function(builder, child) {
+    builder.push('<table><tr><td><div class="kanbangroup">');
+    builder.push(child.name);
+    builder.push('</div>');
+    
+    var children = child.children;
+    while (children.hasMoreElements()) {
+      var item = children.nextElement();
+      var prioText = item.getObjKeyValue("TODOPRIO");
+      var prioClass = "B";
+
+      if (( prioText == "A") ||  ( prioText == "B") || ( prioText == "C") || ( prioText == "X")) {
+        prioClass = prioText;
+      }
+     
+      builder.push('</td></tr><tr><td><div class="kanbanitem' + prioClass + '"><div class="kanbantitle">');
+      builder.push('<a href="elodms://' + item.id + '" style="text-decoration:none">');
+      builder.push(item.name);
+      builder.push('</a>');
+      builder.push('</div><div class="kanbaninfo">');
+      var user = item.getObjKeyValue("TODOW1");
+      builder.push("Bearbeiter: " + user + "<br>");
+      
+      var aktiviert = String(item.getObjKeyValue("TODOW2"));
+      if (aktiviert) {
+        var dt = utils.displayDateFromIso(item.getObjKeyValue("TODOSTART"));
+        builder.push("Start: " + aktiviert + " - " + dt + "<br>");
+      }
+      
+      var abgeschlossen = String(item.getObjKeyValue("TODOW3"));
+      if (abgeschlossen) {
+        var dt = utils.displayDateFromIso(item.getObjKeyValue("TODODONE"));
+        builder.push("Ende: " + abgeschlossen + " - " + dt + "<br>");
+      }
+      
+      var desc = String(item.sord.desc);
+      if (desc) {
+        if (desc.length > 200) {
+          desc = desc.substring(0, 200) + "[...]";
+        }
+        
+        builder.push('</div><div class="kanbanmsg">');
+        builder.push(desc);
+      }
+      
+      builder.push('</div></div>');
+    }
+    
+    builder.push("</td></tr></table>");
+  },
+  
+  createList : function() {
+    if (!this.activeArea && !this.activeSearchView) {
+      workspace.setFeedbackMessage("Bitte wählen Sie zuerst einen Bereich aus.");
+      return;
+    }
+    
+    var option = this.selectListOption();
+    if (option < 1) {
+      return;
+    }
+    
+    var projectName = (this.activeProject) ? this.activeProject.name : "Aktuelle Trefferliste";
+    var areaName = (this.activeArea) ? this.activeArea.name : "-/-";
+    
+    var template = archive.getElementByArcpath(ToDoConfig.root + "¶ListTemplate2");
+    var templateText = String(FileUtils.readFileToString(template.file));
+    var body = this.collectListTable(option);
+    templateText = templateText.replace(/LISTCONTENT/, body);
+    templateText = templateText.replace(/LISTPROJECT/, projectName);
+    templateText = templateText.replace(/LISTAREA/, areaName);
+    
+    var intray = workspace.directories.inTrayDir;
+    var dest = utils.getUniqueFile(intray, "list.html");
+    FileUtils.writeStringToFile(dest, templateText, "utf-8");
+    
+    Desktop.desktop.open(dest);
+  },
+  
+  collectListTable : function(option) {
+    var builder = new Array();
+    
+    var children = (this.activeArea) ? this.activeArea.children : this.activeSearchView.elements;
+    
+    while (children.hasMoreElements()) {
+      var child = children.nextElement();
+      
+      var text = todoLayout.layoutItem(child, true, option);
+      builder.push(text);
+    }
+    
+    return builder.join("\n");
+  },
+  
+  selectListOption : function() {
+    var result = workspace.showCommandLinkDialog("Bereichsliste erstellen",
+      "Wählen Sie aus, welche Bereichsliste Sie erstellen möchten",
+      "", CONSTANTS.DIALOG_ICON.QUESTION, 
+      ["Nur Bezeichnung", "Normale Darstellung", "Vollständige Liste"], [], []);
+      
+    return result;
+  },
+  
+  updateFunctions : function() {
+    var areaOK = (this.activeProject != null) && (this.activeArea != null);
+    var selectionCount = this.itemsList.selectionCount;
+    var activitySelected = this.itemsList.selectionCount > 0;
+    var allowVote = areaOK && this.checkOption(this.activeArea, "allowvote");
+    
+    workspace.setScriptButtonEnabled( 520, areaOK ); // Neue Aufgabe
+    workspace.setScriptButtonEnabled( 523, activitySelected ); // Aufgabe bearbeiten
+    workspace.setScriptButtonEnabled( 525, areaOK && activitySelected ); // Zuständigkeit
+    workspace.setScriptButtonEnabled( 526, areaOK && activitySelected ); // Verschieben
+    workspace.setScriptButtonEnabled( 537, activitySelected ); // Kopieren
+    workspace.setScriptButtonEnabled( 527, activitySelected ); // Gehe zu
+    workspace.setScriptButtonEnabled( 535, areaOK ); // Diagram
+    
+    workspace.setScriptButtonEnabled( 528, allowVote && activitySelected ); // Wertung
+    workspace.setScriptButtonEnabled( 529, allowVote && activitySelected ); // Wertung
+    workspace.setScriptButtonEnabled( 530, allowVote && activitySelected ); // Wertung
+    workspace.setScriptButtonEnabled( 531, allowVote && activitySelected ); // Wertung
+    workspace.setScriptButtonEnabled( 532, allowVote && activitySelected ); // Wertung
+    
+    workspace.setScriptButtonEnabled( 533, allowVote ); // Sortieren
+    workspace.setScriptButtonEnabled( 534, areaOK ); // Sortierung löschen
+    
+    if (selectionCount == 0){
+      preview.showMessage( "Kein Aufgabe ausgewählt" );
+    } else if (selectionCount == 1){
+      var listEntry = this.itemsList.firstSelected;
+      if (listEntry) {
+        var item = listEntry.getInternalData("element");
+        preview.showId( item.id );
+      }
+    } else {
+      preview.showMessage( "Mehrfachauswahl (" + selectionCount + " Aufgaben)" );
+    }
+  },
+
+  checkOption : function(area, option) {
+    try {
+      var check = area.getObjKeyValue("ELOINDEX");
+      return check.indexOf( option ) != -1;
+    } catch(e) {
+      log.info("Invalid area folder: " + e);
+      return false;
+    }
+  },
+  
+  loadOptions: function() {  
+    try {
+      var preset = archive.getUserOption( "EloJ.S.Script.ToDo.ActArea", "" );
+      if (preset != "") {
+        var ids = preset.split(",");
+        this.activeProject = archive.getElement(ids[0]);
+        if (ids.length > 1) {
+          this.activeArea = archive.getElement(ids[1]);
+        }
+      }
+    } catch(e) {
+      log.info("Invalid Option ignored: " + e);
+    }
+  },
+  
+  saveOptions: function() {
+    var opt = "";
+    if (this.activeProject) {
+      opt = this.activeProject.id;
+      if (this.activeArea) {
+        opt += "," + this.activeArea.id; 
+      }
+    }
+
+    archive.setUserOption(  "EloJ.S.Script.ToDo.ActArea", opt );   
+  },
+  
+  activateItems: function() {
+    var title = "<html>Search List Entries</html>";
+    this.fillList(this.itemsList, this.activeSearchView);
+    this.title.text = title;
+    
+    this.updateFunctions();
+  },
+  
+  activate: function() {
+    var title = "...";
+    if (this.activeProject) {
+      title = "<html>Projekt: <b> " + this.activeProject.name + "</b>";
+      
+      if (this.activeArea) {
+        title += " - Bereich: <b>" + this.activeArea.name + "</b>"; 
+        this.fillList(this.itemsList, this.activeArea);
+        this.loadUsers();
+      } else {
+        this.itemsList.setData( [] );
+      }
+      
+      title += "</html>";
+    }
+    this.title.text = title;
+    this.saveOptions();
+    
+    this.updateFunctions();
+  },
+  
+  // ribbon button "new item" pressed, create a new todo item
+  // in the actual project and group
+  addItem: function() {
+    var params = { name: "", message: "" };
+    if (this.editItemDialog("Neue Aufgabe",params)) {
+      var newItemSord = this.activeArea.prepareStructure("ToDoItem");
+      newItemSord.name = params.name;
+      newItemSord.desc = params.message;
+      utils.setObjKeyValue(newItemSord, "TODOPROJ", this.activeProject.name);
+      utils.setObjKeyValue(newItemSord, "TODOSTATUS", this.activeArea.name);
+      utils.setObjKeyValue(newItemSord, "TODOID", "RID" + workspace.incCounter("PMREQID", 10000));
+      
+      var newItem = this.activeArea.addStructure(newItemSord);
+      this.fillList(this.itemsList, this.activeArea);
+    }
+  },
+  
+  vote: function(prio) {
+    var listEntry = this.itemsList.firstSelected;
+    if (listEntry) {
+      var item = listEntry.getInternalData("element");
+      var reloadItem = archive.getElement(item.id);
+      var oldVote = String(reloadItem.getObjKeyValue("TODOVOTE"));
+      var newVote = oldVote + String(prio);
+      reloadItem.setObjKeyValue("TODOVOTE", newVote);
+      reloadItem.saveSord();
+      workspace.setFeedbackMessage("Vote: " + newVote);
+    } else {
+      workspace.setFeedbackMessage("Bitte wählen Sie zuerst einen Eintrag aus");
+    }
+  },
+  
+  switchSortOrderAlphabetically: function(item, direction) {
+    var sord = item.sord;
+    var sortOrder = (direction) ? SortOrderC.ALPHA : SortOrderC.IALPHA;
+    
+    sord.details.sortOrder = sortOrder;
+    
+    item.sord = sord;
+    item.saveSord();
+  },
+  
+  sortVotes: function() {
+    this.switchSortOrderAlphabetically(this.activeArea, false);
+    
+    var children = this.activeArea.children;
+    
+    while (children.hasMoreElements()) {
+      var child = children.nextElement();
+      var count = 0;
+      var sum = 0;
+      var votes = String(child.getObjKeyValue("TODOVOTE"));
+      for (var i = 0; i < votes.length; i++) {
+        sum += Number(votes.substring(i, i + 1));
+        count++;
+      }
+      
+      var addShort = "[0.0]";
+      if (count > 0) {
+        sum = Math.round(10 * sum / count);
+        var text = String(sum);
+        if (text.length < 2) {
+          addShort = "[0." + text + "]";
+        } else {
+          addShort = "[" + text.substring(0, 1) + "." + text.substring(1, 2) + "]";
+        }
+      }
+      
+      var name = child.name;
+      if ((name.charAt(0) == 91) && (name.charAt(4) == 93)) {
+        name = name.substring( 6 );
+      }
+      name = addShort + " " + name;
+      
+      if (name.length > 127) {
+        name = name.substring(0, 127);
+      }
+      
+      child.name = name;
+      child.saveSord();
+    }
+    
+    this.fillList(this.itemsList, this.activeArea);
+  },
+  
+  clearVotes: function() {
+    this.switchSortOrderAlphabetically(this.activeArea, true);
+    
+    var result = workspace.showCommandLinkDialog("Abstimmungen entfernen",
+      "Wählen Sie aus, welche Abstimmungen Sie entfernen möchten",
+      "", CONSTANTS.DIALOG_ICON.QUESTION, 
+      ["Vorgang abbrechen, nichts löschen", "Alle Abstimmungen", "Nur die selektierten Abstimmungen"], [], []);
+
+    if (result < 2) {
+      return;
+    }
+    
+    if (result == 2) {
+      var children = this.activeArea.children;
+    
+      while (children.hasMoreElements()) {
+        var child = children.nextElement();
+        this.clearItem(child);
+      }
+    } else {
+      var allSelected = this.itemsList.selected;
+      
+      for (var sel = 0; sel < allSelected.length; sel++) {
+        var selected = allSelected[sel];
+        var item = selected.getInternalData("element");
+        this.clearItem(item);
+      }
+    }
+    
+    this.fillList(this.itemsList, this.activeArea);
+  },
+  
+  clearItem: function(child) {
+    child.setObjKeyValue("TODOVOTE", "");
+    
+    var name = child.name;
+    if ((name.charAt(0) == 91) && (name.charAt(4) == 93)) {
+      name = name.substring( 6 );
+    }
+    child.name = name;
+    child.saveSord();
+  },
+  
+  gotoItem: function() {
+    var listEntry = this.itemsList.firstSelected;
+    if (listEntry) {
+      var item = listEntry.getInternalData("element");
+      workspace.gotoId(item.id);
+    }
+  },
+  
+  moveItem: function() {
+    if (this.itemsList.selectionCount == 0) {
+      workspace.setFeedbackMessage("Bitte wählen Sie zuerst einen Eintrag aus");
+      return;
+    }
+    
+    var selection = this.showCommandLinkDialog(this.activeProject.children, "Verschieben", "Bitte wählen Sie den gewünschten Zielbereich aus");
+    if (selection) {
+      var destName = selection.name;
+      var listEntries = this.itemsList.selected;
+      for (var i = 0; i < listEntries.length; i++) {
+        var listEntry = listEntries[i];
+        var item = listEntry.getInternalData("element");
+      
+        item.setObjKeyValue("TODOPROJ", this.activeProject.name);
+        item.setObjKeyValue("TODOSTATUS", destName);
+        if (destName.indexOf(ToDoConfig.donePrefix) >= 0) {
+          item.setObjKeyValue("TODODONE", utils.isoFromDate(new Date()));
+          item.setObjKeyValue("TODOW3", workspace.userName);
+        } else if ((destName.indexOf(ToDoConfig.activePrefix1) >= 0) || (destName.indexOf(ToDoConfig.activePrefix2) >= 0)) {
+          this.startWork(item);
+          item.setObjKeyValue("TODOW2", workspace.userName);
+        } else if (destName.indexOf(ToDoConfig.prioPrefix) == 0) {
+          var prefixLen = ToDoConfig.prioPrefix.length;
+          item.setObjKeyValue("TODOPRIO", destName.substring(prefixLen, prefixLen + 1));
+        }
+        
+        item.saveSord();
+        item.moveToFolder(selection, true);
+
+        if ((typeof(todoCallback) == "object") && (todoCallback.moveDone)) {
+          if (todoCallback.moveDone(item, this.activeArea, selection)) {
+            item.saveSord();
+          }
+        }
+      }
+      
+      this.fillList(this.itemsList, this.activeArea);
+    }
+    this.updateFunctions();
+  },
+  
+  // Aufgabe bearbeiten
+  editSelection: function() {
+    var listEntry = this.itemsList.firstSelected;
+    if (listEntry) {
+      var item = listEntry.getInternalData("element");
+      var params = { name: item.name, message: item.sord.desc };
+      if (this.editItemDialog("Aufgabe bearbeiten",params)) {
+        // Neue Werte speichern
+        var sord = item.sord;
+        sord.name = params.name;
+        sord.desc = params.message;
+        item.sord = sord;
+        this.updateSelectedItem();
+      }
+    } else {
+      workspace.setFeedbackMessage("Bitte selektieren Sie zuerst einen Eintrag");
+    }
+  },
+  
+  // Anzeige der aktuellen Selektion erneuern
+  updateSelectedItem: function() {
+    var listEntry = this.itemsList.firstSelected;
+    var item = listEntry.getInternalData("element");
+    var label = listEntry.getInternalData("label");
+    label.text = this.getText(item);
+    this.itemsList.repaint();
+  },
+  
+  // Dialog "Aufgabe bearbeiten"
+  editItemDialog: function(title,item) {
+    var dlg = workspace.createGridDialog(title, 4, 4);
+    var panel = dlg.gridPanel;
+    
+    var label = panel.addLabel(1, 1, 1, "Bezeichnung");
+    var title = panel.addTextField(2, 1, 3);
+    title.text = item.name;
+    
+    label = panel.addLabel(1, 2, 1, "Beschreibung");
+    var desc = panel.addTextArea(2,2,3,4);
+    desc.text = item.message;
+    
+    if (dlg.show()) {
+      item.name = title.text;
+      item.message = desc.text;
+ 
+      return true;
+    }
+    
+    return false;
+  },
+  
+  // ribbon button "select project" pressed, show available
+  // projects and switch to the selection
+  selectProject: function(withActivation) {
+    var projects = this.getProjects();
+    var selection = this.showCommandLinkDialog(projects, "Neues Projekt auswählen", "Bitte wählen Sie das gewünschte Zielprojekt aus");
+    if (selection) {
+      if (withActivation) {
+        this.activeProject = selection;
+        this.activeArea = null;
+        this.activate();
+        return this.selectArea(selection, withActivation);
+      } else {
+        return selection;
+      }
+    }
+    
+    return null;
+  },
+  
+  selectArea: function(activeProject, withActivation) {
+    if (!activeProject) {
+      workspace.showAlertBox("ELO ToDo", "Bitte wählen Sie zuerst ein Projekt aus.");
+      return;
+    }
+    
+    var selection = this.showCommandLinkDialog(activeProject.children, "Neuen Bereich auswählen", "Bitte wählen Sie den gewünschten Zielbereich aus");
+    if (selection) {
+      if (withActivation) {
+        this.activeArea = selection;
+        this.activate();
+      }
+      
+      return selection;
+    }
+    
+    return null;
+  },
+  
+  startWork: function(item) {
+    item.setObjKeyValue("TODOSTART", utils.isoFromDate(new Date()));
+    this.insertUser(item, String(workspace.userName));
+  },
+  
+  // Zuständigkeit festlegen
+  addUser: function() {
+    var listEntry = this.itemsList.firstSelected;
+    if (listEntry) {
+      var item = listEntry.getInternalData("element");
+      
+      var users = item.getObjKeyValue("TODOW1");
+      log.debug( "users=[" + users + "]" );
+     
+      var userNames = this.selectUser(users);
+      if (userNames != "-1") {
+        item.setObjKeyValue("TODOW1", userNames);
+        item.saveSord();
+        this.updateSelectedItem();
+      }
+    }
+  },
+  
+  // Private Utility Functions
+  // insert User into worker list
+  insertUser: function(item, userName) {
+    var users = String(item.getObjKeyValue("TODOW1").trim()).split("¶");
+    for (var i = 0; i < users.length; i++) {
+      if (users[i] == userName) {
+        return false;
+      }
+    }
+    
+    users.push(userName);
+    item.setObjKeyValue("TODOW1", users.join("¶"));
+    return true;
+  },
+  
+  // Select the Project Users
+  selectUser: function(users) {
+    var ul = this.userList;
+    if (ul && (ul.length == 1) && (ul[0] == "*")) {
+      return this.selectUserSystem(users);
+    } else {
+      return this.selectUserLocal(users);
+    }
+  },
+  
+  selectUserSystem: function(users) {
+    var names = workspace.showUserSelectionDialog(true, 1, 5, true, false);
+    if (names) {
+      var users = names[0].name;
+      for (var i = 1; i < names.length; i++) {
+        var user = names[i];
+        users = users + "¶" + user.name;
+      }
+    }
+    
+    return users
+  },
+  
+  selectUserLocal: function(users) {
+    log.debug( "users=[" + users + "]" );
+    
+    var dialog = workspace.createGridDialog( "Anwenderauswahl", 1, 5 );
+    var panel = dialog.gridPanel;
+    panel.addLabel( 1,1,1,"Wählen Sie, welche Anwender die Aufgabe zuständig sind:" );
+    var list = panel.addList( 1,2,1,5 );
+    list.setData( this.userList );
+    
+    if (users.length() > 0) {
+      var userSplit = users.split("¶");
+      list.selected = userSplit;
+    }
+    
+    var ok = dialog.show();
+    if (ok) {
+      var sel = list.selected;
+      if (sel.length < 1) {
+        users = "";
+      } else {
+        var users = sel[0];
+        for (var i = 1; i < sel.length; i++) {
+          var user = sel[i];
+          users = users + "¶" + user;
+        }
+      }
+    } 
+    
+    return users;
+  },
+  
+  // Load Project Users List
+  loadUsers: function() {
+    var config;
+    var projectName = this.activeProject.name;
+    var configPathRoot = ToDoConfig.root + "¶Project¶";
+    try {
+      config = archive.getElementByArcpath(configPathRoot + projectName );
+    } catch(e) {
+      config = archive.getElementByArcpath(configPathRoot + "All" );
+    }
+    
+    var props = config.properties;
+    var users = props.getProperty("users", "none");
+    this.userList = users.split("\\|");
+  },
+  
+  // Return "Projects" children collection
+  getProjects: function() {
+    var projectsFolder = archive.getElementByArcpath( ToDoConfig.data );
+    return projectsFolder.children;
+  },
+  
+  // Show CommandLinkDialog from Iterator, returns null on Abort
+  showCommandLinkDialog: function( items, title, message ) {
+    var optionNames = new Array();
+    var optionTexts = new Array();
+    var optionElements = new Array();
+    
+    while (items.hasMoreElements()) {
+      var item = items.nextElement();
+      
+      optionNames.push(item.name);
+      
+      var desc = item.sord.desc;
+      if (desc && desc.length() && desc.startsWith("<html>")) {
+        optionTexts.push(item.sord.desc);
+      } else {
+        optionTexts.push("");
+      }
+      
+      optionElements.push(item);
+    }
+
+    var result = workspace.showCommandLinkDialog( title, message, "",
+      CONSTANTS.DIALOG_ICON.QUESTION, optionNames, optionTexts, []);   
+      
+    if (result > 0) {
+      return optionElements[result - 1];
+    } else {
+      return null;
+    }
+  },
+  
+  // Fill List with area items
+  fillList: function(list, parent) {
+    workspace.updateSordLists();
+    
+    var children = (parent.children) ? parent.children : parent.elements;
+    var listData = new ArrayList();
+    
+    while (children.hasMoreElements()) {
+      var child = children.nextElement();
+      var text = this.getText( child );
+      var panel = components.createGridPanel( 1, 1 );
+      var label = panel.addLabel( 1, 1, 1, text );
+      panel.setInternalData("label", label);
+      panel.setInternalData("element", child);
+      listData.add(panel);
+    } 
+    list.setData(listData);
+  
+    this.updateFunctions();
+  },
+  
+  getText: function(item) {
+    
+    return todoLayout.layoutItem( item );
+  },
+  
+  // If field is filled push content to destination array
+  conditionalPush: function(destinationArray, item, fieldName) {
+    var text = item.getObjKeyValue(fieldName);
+    if (text != "") {
+      destinationArray.push(text);
+    }
+  },
+  
+  // Selects one item in the current list
+  selectItem: function(archiveElement) {
+    var data = this.itemsList.data;
+    for( i=0; i<data.size(); i++){
+      var item = data.get(i);
+      var itemEntry = item.getInternalData("element");
+      if (itemEntry.id == archiveElement.id) {
+        this.itemsList.setSelected( item );
+        this.itemsList.repaint();
+        return true;
+      }
+    }
+    return false;
+  }
+  
+}

@@ -26,7 +26,7 @@ public interface IssueService {
 	
 	DescriptionHtmlEditor getDescriptionHtmlEditor(Issue issue) throws IOException;
 
-	Issue createIssue() throws IOException;
+	Issue createIssue(String subject, String description) throws IOException;
 
 	Issue validateIssue(Issue iss) throws IOException;
 

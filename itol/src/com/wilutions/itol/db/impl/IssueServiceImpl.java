@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -102,7 +103,7 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public Issue createIssue() {
+	public Issue createIssue(String subject, String description) {
 		IssueUpdate issi = new IssueUpdate();
 		issi.setProperty(new Property(Property.ISSUE_TYPE, getIssueTypes(Issue.NULL).get(0).getId()));
 		issi.setProperty(new Property(Property.ASSIGNEE, getAssignees(Issue.NULL).get(0).getId()));
@@ -110,6 +111,8 @@ public class IssueServiceImpl implements IssueService {
 		issi.setProperty(new Property(Property.PRIORITY, getPriorities(Issue.NULL).get(2).getId()));
 		issi.setProperty(new Property(Property.STATE, getIssueStates(Issue.NULL).get(0).getId()));
 		Issue iss = new Issue("0", issi);
+		iss.setSubject(subject);
+		iss.setDescription(description);
 		return iss;
 	}
 

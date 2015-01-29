@@ -1,0 +1,909 @@
+
+//@include lib_ELOttsLayout
+//@include lib_ELOttsAssign
+
+importClass(Packages.de.elo.client.scripting.constants.CONSTANTS); 
+importPackage(Packages.java.util);
+importPackage(Packages.java.awt);
+importPackage(Packages.com.jacob.com);
+importPackage(Packages.com.jacob.activeX);
+importPackage(Packages.com.ms.activeX);
+importPackage(Packages.com.ms.com);
+
+// ELO Standard Events
+
+function eloWorkspaceStarted(){
+  tts.init();
+}
+
+function eloScriptsReloaded(){
+  tts.init();
+}
+
+function getExtraBands(){
+  return "TTS,10,Auswahl;TTS,20,Neu;TTS,30,Bearbeiten;TTS,40,Ansicht";
+}
+
+function getExtraTabs(){
+  return "63,TTS,Tracker";
+}
+
+function getScriptButton400Name() {
+  return "Aufgabe";
+}
+
+function getScriptButton400Tooltip() {
+  return "Eine neue Aufgabe im aktuellen Projekt und Bereich anlegen.";
+}
+
+function eloScriptButton400Start() {
+  tts.addItem();
+}
+
+function getScriptButton401Name() {
+  return "Projekt";
+}
+
+function getScriptButton401Tooltip() {
+  return "In ein anderes Projekt wechseln. Ein Dialog mit einer Auswahliste der Projekte wird angezeigt.";
+}
+
+function eloScriptButton401Start() {
+  tts.selectProject();
+}
+
+function getScriptButton402Name() {
+  return "Bereich";
+}
+
+function getScriptButton402Tooltip() {
+  return "In einen anderen Bereich des Projekt wechseln. Ein Dialog mit einer Auswahliste der Bereiche wird angezeigt.";
+}
+
+function eloScriptButton402Start() {
+  tts.selectArea();
+}
+
+function getScriptButton403Name() {
+  return "Aufgabe bearbeiten";
+}
+
+function getScriptButton403Tooltip() {
+  return "Die ausgewählte Aufgabe zur Bearbeitung öffnen.";
+}
+
+function eloScriptButton403Start() {
+  tts.editSelection();
+}
+
+function getScriptButton404Name() {
+  return "Report erzeugen";
+}
+
+function getScriptButton404Tooltip() {
+  return "Das ausgewählte Projekt/ Bereich in einen Report übertragen.";
+}
+
+function eloScriptButton404Start() {
+  tts.createReport();
+}
+
+function getScriptButton405Name() {
+  return "Beschreibung öffnen";
+}
+
+function getScriptButton405Tooltip() {
+  return "Das Word-Dokument mit der Beschreibung des Problems zur Ansicht öffnen.";
+}
+
+function eloScriptButton405Start() {
+  tts.openDescriptionDocument();
+}
+
+function getScriptButton406Name() {
+  return "Verschieben";
+}
+
+function getScriptButton406Tooltip() {
+  return "Die ausgewählte Aufgabe in einen anderen Bereich verschieben. Es können mehrere Aufgaben gleichzeitig verschoben werden.";
+}
+
+function eloScriptButton406Start() {
+  tts.moveItem();
+}
+
+function getScriptButton407Name() {
+  return "Gehe zu";
+}
+
+function getScriptButton407Tooltip() {
+  return "Zum Ordner der Aufgabe im Archiv springen. Dies dient der Anzeige der Attachments.";
+}
+
+function eloScriptButton407Start() {
+  tts.gotoItem();
+}
+
+function getScriptButton408Name() {
+  return "Liste";
+}
+
+function getScriptButton408Tooltip() {
+  return "Erzeugt eine Listenausgabe des aktuellen Bereichs";
+}
+
+function eloScriptButton408Start() {
+  tts.createList();
+}
+
+
+function getScriptButtonPositions() {
+  return "400,TTS,Neu;401,TTS,Auswahl;402,TTS,Auswahl;403,TTS,Bearbeiten;405,TTS,Ansicht;406,TTS,Bearbeiten;407,TTS,Ansicht;404,TTS,Ansicht;408,TTS,Ansicht";
+}
+
+function eloIndexDialogSetDocMask() {
+  tts.setDocMask();
+}
+
+function eloIndexDialogObjKey8Exit() {
+  tts.checkUser();
+}
+
+function eloGotoStart() {
+  return tts.checkGoto();
+}
+
+// Script Events
+function onTtsActivation() {
+  tts.activate();
+}
+
+function onTtsChangeUser() {
+  tts.changeUser(0);
+}
+
+function onTtsChangeQSUser() {
+  tts.changeUser(1);
+}
+
+function ttsListSelectionChanged(){
+  tts.updateFunctions();
+}
+
+function onTtsChangeFilter() {
+  tts.fillList(tts.itemsList, tts.activeArea);
+}
+
+// Script Functions
+var tts = {
+  mainGrid: null,
+  activeProject: null,
+  activeArea: null,
+  title: null,
+  itemsList: null,
+  
+  // initializes the tracking grid panel with the items list
+  // and adds a tracking button in the navigation area
+  init: function() {
+    var mainGrid = components.createGridPanel(2, 2);
+    this.mainGrid = mainGrid;
+    
+    this.title = mainGrid.addLabel(1, 1, 1, "<Projekt>");
+    this.title.fontSize = 16;
+
+    this.filter = mainGrid.addCheckBox(2, 1, 1, "Nur eigene Einträge", false);
+    this.filter.addChangeEvent("onTtsChangeFilter");
+    
+    this.itemsList = mainGrid.addList(1, 2, 2, 2);
+    this.itemsList.addChangeEvent( "ttsListSelectionChanged" );
+    
+    workspace.removeView( "Tracking" );
+    view = workspace.addView( "Tracking", false, this.mainGrid, null );
+    view.setHasPreview( true );
+    view.setContextTaskGroup( "Tracker" );
+    view.setActivateEvent( "onTtsActivation" );
+    var icon = archive.getElementByArcpath( "¶Administration¶TtsConfig¶FunctionIcon" );
+    view.setIcon( icon );
+    this.tracker = view;
+    
+    this.loadOptions();
+  },
+  
+  setDocMask: function() {
+    if ((indexDialog.docMaskName == "TrackItem") && (workspace.activeView.name == "Tracking")) {
+      log.info("editSord, access: " + indexDialog.sord.access);
+      this.addTrackId();
+      indexDialog.addButton(1, 31, 8, 3, "...", "onTtsChangeUser");
+      indexDialog.addButton(1, 66, 8, 3, "...", "onTtsChangeQSUser");
+      indexDialog.setMasksListVisible(false);
+    }
+  },
+  
+  checkGoto: function() {
+    try {
+      var item = workspace.activeView.firstSelected;
+      if (item && (item.docMaskName == "TrackItem")) {
+        var produkt = item.getObjKeyValue("EFS_PROD");
+        var kategorie = item.getObjKeyValue("EFS_KAT");
+        
+        if (produkt && kategorie) {
+          this.activeProject = archive.getElementByArcpath( "¶07.  Entwicklung¶TTS¶" + produkt );
+          this.activeArea = archive.getElementByArcpathRelative( this.activeProject.id, "¶" + kategorie );
+          this.tracker.show();
+          this.activate();
+          
+          this.selectItem(item);
+          return -1;
+        }
+      }
+    } catch(e) {
+      // im Fehlerfall die Standardoperation ausführen
+    }
+  },
+  
+  // Selects one item in the current list
+  selectItem: function(archiveElement) {
+    var data = this.itemsList.data;
+    for( i = 0; i < data.size(); i++){
+      var item = data.get(i);
+      var itemEntry = item.getInternalData("element");
+      if (itemEntry.id == archiveElement.id) {
+        this.itemsList.setSelected( item );
+        this.itemsList.repaint();
+        return true;
+      }
+    }
+    return false;
+  },
+  
+  addTrackId: function() {
+    if (indexDialog.docMaskName == "TrackItem") {
+      var nr = indexDialog.getObjKeyValue("EFS_NR");
+      var name = indexDialog.name;
+      if (!name.startsWith(nr)) {
+        indexDialog.name = nr + ": " + name;
+      }
+    }
+  },
+  
+  checkUser: function() {
+    if (indexDialog.docMaskName == "TrackItem") {
+      var text = indexDialog.getObjKeyValue(8).toLowerCase();
+      log.info("CheckUser for: " + text);
+      
+      var actUser = indexDialog.getObjKeyValue("EFS_USER");
+      if (actUser == "") {
+        var userName = this.lookupUserName(text);
+        indexDialog.setObjKeyValue("EFS_USER", userName);
+      }
+    }
+  },
+  
+  lookupUserName: function(text) {
+    for (var user = 0; user < ELOttsAssignments.length; user++) {
+      log.info("Test user: " + ELOttsAssignments[user].user);
+      
+      var keys = ELOttsAssignments[user].assignments;
+      for (var key = 0; key < keys.length; key++) {
+        log.info("Test key: " + keys[key]);
+        if (text.indexOf(keys[key]) >= 0) {
+          log.info("Found");
+          return ELOttsAssignments[user].user;
+        }
+      }
+    }
+    
+    return "";
+  },
+  
+  changeUser: function(mode) {
+    var groupName = (mode == 0) ? "EFS_USER" : "EFS_QSUSER";
+    var messageUser = (mode == 0) ? "Bearbeiter" : "Eigentümer";
+    
+    var project = indexDialog.getObjKeyValue("EFS_PROD");
+    var area = indexDialog.getObjKeyValue("EFS_KAT");
+    
+    var userList = this.getProjectUsers(mode, project);
+    var result = workspace.showCommandLinkDialog( "Tracking", "Bitte wählen Sie den neuen Bearbeiter aus", "",
+      CONSTANTS.DIALOG_ICON.QUESTION, userList, [], []);   
+
+    if (result > 0) {
+      var selectedUser = userList[result - 1];
+      var oldUser = indexDialog.getObjKeyValue(groupName);
+      
+      if (oldUser != "") {
+        var text = "[ " + workspace.userName + "] " + messageUser + " am " + this.getToday() + " von " + oldUser + " geändert in " + selectedUser;
+      
+        var memo = indexDialog.memo;
+        memo = text + "\r\n------------------------------\r\n\r\n" + memo;
+        indexDialog.memo = memo;
+      }
+      
+      indexDialog.setObjKeyValue(groupName, selectedUser);
+      if (mode == 0) {
+        indexDialog.setObjKeyValue("EFS_MOVETO", selectedUser);
+      } else {
+        indexDialog.setObjKeyValue("EFS_CHECKBY", selectedUser);
+      }
+    }
+  },
+  
+  getTrackId: function() {
+    var id = workspace.incCounter("TTS_ID", 1);
+    var sid = "00000" + id;
+    if (sid.length > 6) {
+      sid = sid.substring(sid.length - 6);
+    }
+    
+    return "TTS" + sid;
+  },
+  
+  getProjectUsers: function(mode, projectName) {
+    var proj = archive.getElementByArcpath( "¶Administration¶TtsConfig¶" + projectName );
+    var props = proj.properties;
+    var userList;
+    
+    if (mode == 0) {
+      userList = props.getProperty("user");
+    } else {
+      userList = props.getProperty("qsuser");
+    }
+    
+    if (!userList) {
+      userList = "";
+    }
+    
+    return userList.split("\\|");
+  },
+  
+  updateFunctions : function() {
+    var areaOK = (this.activeProject != undefined) && (this.activeArea != undefined);
+    var selectionCount = this.itemsList.selectionCount;
+    var activitySelected = selectionCount > 0;
+    
+    workspace.setScriptButtonEnabled( 400, areaOK ); // Neue Aufgabe
+    workspace.setScriptButtonEnabled( 403, areaOK && activitySelected ); // Aufgabe bearbeiten
+    workspace.setScriptButtonEnabled( 405, areaOK && activitySelected ); // Zuständigkeit
+    workspace.setScriptButtonEnabled( 406, areaOK && activitySelected ); // Verschieben
+    workspace.setScriptButtonEnabled( 407, areaOK && activitySelected ); // Gehe zu
+    
+    if (selectionCount == 0){
+      preview.showMessage( "Kein Aufgabe ausgewählt" );
+    } else if (selectionCount == 1){
+      var listEntry = this.itemsList.firstSelected;
+      if (listEntry) {
+        var item = listEntry.getInternalData("element");
+        preview.showId( item.id );
+      }
+    } else {
+      preview.showMessage( "Mehrfachauswahl (" + selectionCount + " Aufgaben)" );
+    }
+  },
+
+  loadOptions: function() {  
+    try {
+      var preset = archive.getUserOption( "EloJ.S.Script.tts.ActArea", "" );
+      if (preset != "") {
+        var ids = preset.split(",");
+        this.activeProject = archive.getElement(ids[0]);
+        if (ids.length > 1) {
+          this.activeArea = archive.getElement(ids[1]);
+        }
+      }
+    } catch(e) {
+      log.info("Invalid Option ignored: " + e);
+    }
+  },
+  
+  saveOptions: function() {
+    var opt = "";
+    if (this.activeProject) {
+      opt = this.activeProject.id;
+      if (this.activeArea) {
+        opt += "," + this.activeArea.id; 
+      }
+    }
+
+    archive.setUserOption(  "EloJ.S.Script.tts.ActArea", opt );   
+  },
+  
+  activate: function() {
+    var title = "...";
+    if (this.activeProject) {
+      title = "<html>Projekt: <b> " + this.activeProject.name + "</b>";
+      
+      if (this.activeArea) {
+        title += " - Bereich: <b>" + this.activeArea.name + "</b>"; 
+        this.fillList(this.itemsList, this.activeArea);
+        this.loadUsers();
+      } else {
+        this.itemsList.setData( [] );
+      }
+      
+      title += "</html>";
+    }
+    this.title.text = title;
+    this.saveOptions();
+    
+    this.updateFunctions();
+  },
+  
+  // ribbon button "new item" pressed, create a new tts item
+  // in the actual project and group
+  addItem: function() {
+    if (this.activeProject && this.activeArea) {
+      var newItemSord = this.activeArea.prepareStructure("TrackItem");
+      var trackId = this.getTrackId();
+      newItemSord.name = trackId + ": ";
+      log.info("newItemSord, access: " + newItemSord.access);
+      
+      utils.setObjKeyValue(newItemSord, "EFS_PROD", this.activeProject.name);
+      utils.setObjKeyValue(newItemSord, "EFS_KAT", this.activeArea.name);
+      utils.setObjKeyValue(newItemSord, "EFS_NR", trackId);
+      utils.setObjKeyValue(newItemSord, "EFS_OPEN", utils.isoFromDate( utils.today ));
+      
+      if (indexDialog.editSord(newItemSord, true, "Tracking")) {
+        newItemSord.desc = "##*\r\n" + newItemSord.desc;
+        var newItem = this.activeArea.addStructure(newItemSord);
+        this.fillList(this.itemsList, this.activeArea);
+        this.processItem(newItem);
+      }
+    } else {
+      workspace.setFeedbackMessage("Sie müssen in einem Bereich stehen um eine neue Aufgabe anlegen zu können.");
+      return;
+    }
+  },
+  
+  processItem: function(item) {
+    workspace.gotoId(item.id);
+    var name = item.getObjKeyValue("EFS_NR") + ": Beschreibung";
+    var sord = item.prepareDocument("0");
+    sord.name = name;
+    sord.lockId = workspace.userId;
+    var doc = item.addStructure(sord);
+    doc.setLock();
+    sord.id = doc.id;
+    var template = this.getDescriptionTemplate(this.activeProject.name);
+    var file = checkout.addDocument(sord, template);
+    Desktop.getDesktop().edit(file);
+  },
+  
+  getDescriptionTemplate: function(projectName) {
+    var template;
+    try {
+      template = archive.getElementByArcpath( "¶Administration¶TtsConfig¶" + projectName + "¶Beschreibung" );
+    } catch(e) {
+      template = archive.getElementByArcpath( "¶Administration¶TtsConfig¶Project¶Beschreibung" );
+    }
+    
+    return template.file;
+  },
+  
+  getReportTemplate: function(projectName) {
+    var template;
+    try {
+      template = archive.getElementByArcpath( "¶Administration¶TtsConfig¶" + projectName + "¶Report" );
+    } catch(e) {
+      template = archive.getElementByArcpath( "¶Administration¶TtsConfig¶Project¶Report" );
+    }
+    
+    return template.file;
+  },
+  
+  gotoItem: function() {
+    var listEntry = this.itemsList.firstSelected;
+    if (listEntry) {
+      var item = listEntry.getInternalData("element");
+      workspace.gotoId(item.id);
+    }
+  },
+  
+  openDescriptionDocument: function() {
+    var listEntry = this.itemsList.firstSelected;
+    if (listEntry) {
+      var item = listEntry.getInternalData("element"); // StructureElement
+      var name = item.getObjKeyValue("EFS_NR") + ": Beschreibung";
+      var children = item.getChildren()
+      while( children.hasMoreElements() ) {
+        var document = children.nextElement();
+        if ((document.name == name) || (document.name == "Beschreibung")) {
+          document.open();
+          break;
+        }
+      }
+    }
+  },
+  
+  moveItem: function() {
+    if (this.itemsList.selectionCount == 0) {
+      workspace.setFeedbackMessage("Bitte wählen Sie zuerst einen Eintrag aus");
+      return;
+    }
+    
+    var selection = this.showCommandLinkDialog(this.activeProject.children, "Verschieben", "Bitte wählen Sie den gewünschten Zielbereich aus", true, true);
+    if (selection) {
+      var comment = workspace.showInputBox("Tracker", "Geben Sie bitte einen kurzen Kommentar zur Weiterleitung ein.", "", 1, 200, false, 2);
+      if (comment == null) {
+        return;
+      }
+      
+      var destName = selection.name;
+      var listEntries = this.itemsList.selected;
+      for (var i = 0; i < listEntries.length; i++) {
+        var listEntry = listEntries[i];
+        var item = listEntry.getInternalData("element");
+        var sourceName = item.parent.name;
+      
+        item.setObjKeyValue("EFS_PROD", this.activeProject.name);
+        item.setObjKeyValue("EFS_KAT", destName);
+        item.setObjKeyValue("EFS_COMMENT", comment);
+        item.setObjKeyValue("EFS_STATECHG", utils.isoFromDate( utils.today ));
+        
+        if (destName.indexOf("Geschlossen") >= 0) {
+          item.setObjKeyValue("EFS_CLOSED", utils.isoFromDate( utils.today ));
+        } else if (sourceName.indexOf("Geschlossen") >= 0) {
+          item.setObjKeyValue("EFS_CLOSED", "");
+          item.setObjKeyValue("EFS_DONE", "");
+        }
+        
+        if (destName.indexOf("Erledigt") >= 0) {
+          item.setObjKeyValue("EFS_DONE", utils.isoFromDate( utils.today ));
+        } else if ((sourceName.indexOf("Erledigt") >= 0) && (destName.indexOf("Geschlossen") < 0)) {
+          item.setObjKeyValue("EFS_DONE", "");
+        }
+        
+        var sord = item.sord;
+        var desc = sord.desc;
+        var text = "[ " + workspace.userName + "] Eintrag am " + this.getToday() + " von " + this.activeArea.name + " nach " + destName + " verschoben.";
+        desc = text + "\r\n\r\n" + comment + "\r\n-------------------\r\n\r\n" + desc;
+        sord.desc = desc;
+        item.sord = sord;
+        item.moveToFolder(selection, true);
+      }
+      
+      this.fillList(this.itemsList, this.activeArea);
+    }
+    this.updateFunctions();
+  },
+  
+  // Aufgabe bearbeiten
+  editSelection: function() {
+    var listEntry = this.itemsList.firstSelected;
+    if (listEntry) {
+      var item = listEntry.getInternalData("element");
+      var sord = item.sord;
+      if (indexDialog.editSord(sord, true, "Tracking")) {
+        item.sord = sord;
+        this.updateSelectedItem();
+      }
+    } else {
+      workspace.setFeedbackMessage("Bitte selektieren Sie zuerst einen Eintrag");
+    }
+  },
+  
+  // Anzeige der aktuellen Selektion erneuern
+  updateSelectedItem: function() {
+    var listEntry = this.itemsList.firstSelected;
+    var item = listEntry.getInternalData("element");
+    var label = listEntry.getInternalData("label");
+    label.text = this.getText(item);
+    this.itemsList.repaint();
+  },
+  
+  // ribbon button "select project" pressed, show available
+  // projects and switch to the selection
+  selectProject: function() {
+    var projects = this.getProjects();
+    var selection = this.showCommandLinkDialog(projects, "Neues Projekt auswählen", "Bitte wählen Sie das gewünschte Zielprojekt aus");
+    if (selection) {
+      this.activeProject = selection;
+      this.activeArea = null;
+      this.selectArea();
+    }
+  },
+  
+  selectArea: function() {
+    if (!this.activeProject) {
+      workspace.showErrorBox("ELO TTS", "Bitte wählen Sie zuerst ein Projekt aus.");
+      return;
+    }
+    
+    var selection = this.showCommandLinkDialog(this.activeProject.children, "Neuen Bereich auswählen", "Bitte wählen Sie den gewünschten Zielbereich aus");
+    if (selection) {
+      this.activeArea = selection;
+      this.activate();
+    }
+  },
+  
+  // Private Utility Functions
+  
+  // actual date in display format
+  getToday: function() {
+    return utils.displayDateFromIsoWithTime( utils.isoFromDate( utils.today ) );
+  },
+  
+  // Select the Project Users
+  selectUser: function(users) {
+    log.debug( "users=[" + users + "]" );
+    
+    var dialog = workspace.createGridDialog( "Anwenderauswahl", 1, 5 );
+    var panel = dialog.gridPanel;
+    panel.addLabel( 1,1,1,"Wählen Sie, welche Anwender die Aufgabe zuständig sind:" );
+    var list = panel.addList( 1,2,1,5 );
+    list.setData( this.userList );
+    
+    if (users.length() > 0) {
+      var userSplit = users.split("¶");
+      list.selected = userSplit;
+    }
+    
+    var ok = dialog.show();
+    if (ok) {
+      var sel = list.selected;
+      if (sel.length < 1) {
+        users = "";
+      } else {
+        var users = sel[0];
+        for (var i = 1; i < sel.length; i++) {
+          var user = sel[i];
+          users = users + "¶" + user;
+        }
+      }
+    } 
+    
+    return users;
+  },
+  
+  // Load Project Users List
+  loadUsers: function() {
+    var config;
+    var projectName = this.activeProject.name;
+    var configPathRoot = "¶Administration¶TtsConfig¶Project¶";
+    try {
+      config = archive.getElementByArcpath(configPathRoot + projectName );
+    } catch(e) {
+      config = archive.getElementByArcpath(configPathRoot + "All" );
+    }
+    
+    var props = config.properties;
+    var users = props.getProperty("users", "none");
+    this.userList = users.split("\\|");
+  },
+  
+  // Return "Projects" children collection
+  getProjects: function() {
+    var projectsFolder = archive.getElementByArcpath( "¶07.  Entwicklung¶TTS" );
+    return projectsFolder.children;
+  },
+  
+  // Show CommandLinkDialog from Iterator, returns null on Abort
+  showCommandLinkDialog: function( items, title, message, onlyWriteable, omitDynReg ) {
+    var optionNames = new Array();
+    var optionElements = new Array();
+    
+    while (items.hasMoreElements()) {
+      var item = items.nextElement();
+      var sord = item.sord;
+      if (onlyWriteable && ((sord.access & AccessC.LUR_LIST) == 0)) {
+        continue;
+      }
+      
+      if (omitDynReg && sord.desc.startsWith("!")) {
+        continue;
+      }
+      
+      optionNames.push(item.name);
+      optionElements.push(item);
+    }
+
+    var result = workspace.showCommandLinkDialog( title, message, "",
+      CONSTANTS.DIALOG_ICON.QUESTION, optionNames, [], []);   
+      
+    if (result > 0) {
+      return optionElements[result - 1];
+    } else {
+      return null;
+    }
+  },
+  
+  // Fill List with area items
+  fillList: function(list, parent) {
+    workspace.updateSordLists();
+    
+    var children = parent.children;
+    var listData = new ArrayList();
+    var doFilter = this.filter.isChecked();
+    var myName = workspace.userName;
+    
+    while (children.hasMoreElements()) {
+      var child = children.nextElement();
+      if (doFilter) {
+        if (child.getObjKeyValue("EFS_USER") != myName) {
+          continue;
+        }
+      }
+      var text = this.getText( child );
+      var panel = components.createGridPanel( 1, 1 );
+      var label = panel.addLabel( 1, 1, 1, text );
+      panel.setInternalData("label", label);
+      panel.setInternalData("element", child);
+      listData.add(panel);
+    } 
+    
+    var selectedItem
+    var listEntry = list.firstSelected;
+    if (listEntry) {
+      selectedItem = listEntry.getInternalData("element");
+    }
+    
+    list.setData(listData);
+    
+    if (selectedItem) {
+      this.selectItem(selectedItem);
+    }
+  
+    this.updateFunctions();
+  },
+  
+  getText: function(item) {
+    var sord = item.sord;
+    var text = item.getObjKeyValue("EFS_USER");
+    var editors = text.split( "¶" );
+    var done = item.getObjKeyValue("EFS_CLOSED");
+    if (done != "") {
+      done = utils.displayDateFromIso(done);
+    }
+    
+    return ttsLayout.layoutItem( item, sord, editors, done );
+  },
+  
+  clipComment: function(desc) {
+   var pos = desc.indexOf("##*");
+    if (pos >= 0) {
+      desc = desc.substring(pos + 3);
+    }
+  
+    return desc;
+  },
+  
+  // If field is filled push content to destination array
+  conditionalPush: function(destinationArray, item, fieldName) {
+    var text = item.getObjKeyValue(fieldName);
+    if (text != "") {
+      destinationArray.push(text);
+    }
+  },
+  
+  // Excel Report erzeugen
+  createReport: function() {
+    if (!this.activeProject) {
+      workspace.setFeedbackMessage("Wählen Sie zuerst das Projekt aus.");
+      return;
+    }
+    
+    var projectName = this.activeProject.name;
+    var areaName = (this.activeArea) ? this.activeArea.name : "";
+    
+    var templateFile = this.getReportTemplate();
+    
+    var workfile = utils.getUniqueFile(workspace.directories.inTrayDir, "Report.xlsx");
+    if (!utils.copyFile(templateFile, workfile)) {
+      workspace.setFeedbackMessage("Die Arbeitsdatei konnte nicht angelegt werden");
+      return;
+    }
+    
+    ComThread.InitSTA();
+    try {
+      this.internalCreateReport(projectName, areaName, workfile);
+    } catch(e) {
+      throw("Es ist ein Fehler bei der Erstellung des Reports aufgetreten: <p>" + e);
+    } finally {
+      ComThread.Release();
+    } 
+
+    intray.refresh();
+    workspace.showIntrayView();
+    Desktop.getDesktop().edit(workfile);
+  },
+  
+  internalCreateReport: function(projectName, areaName, workfile) {
+    var app = new ActiveXComponent("Excel.Application");
+    var workbooks = Dispatch.get(app, "Workbooks").toDispatch();
+    var report = Dispatch.call(workbooks, "Open", workfile.path).toDispatch();
+    var sheet = Dispatch.call(report, "Sheets", 1).toDispatch(); 
+
+    this.setExcelCell(sheet, 3, 2, projectName);
+    this.setExcelCell(sheet, 2, 7, this.getToday());
+    this.setExcelCell(sheet, 2, 6, this.getToday());
+
+    this.xLine = 4;
+    
+    if (areaName == "") {
+      var children = this.activeProject.children;
+      while (children.hasMoreElements()) {
+        var child = children.nextElement();
+        this.createArea(projectName, child, sheet);
+      }
+    } else {
+      this.createArea(projectName, this.activeArea, sheet);
+    }
+    
+    Dispatch.call(report, "Save");
+    Dispatch.call(report, "Close");
+    report.safeRelease();
+    Dispatch.call(app, "Quit");
+    app.safeRelease();    
+  },
+  
+  createArea: function(projectName, area, sheet) {
+    this.setExcelCell(sheet, this.xLine++, 2, area.name);
+    
+    var children = area.children;
+    while (children.hasMoreElements()) {
+      var child = children.nextElement();
+      var text = this.clipComment(child.sord.desc);
+      
+      this.setExcelCell(sheet, this.xLine, 3, child.getObjKeyValue("EFS_NR"));
+      this.setExcelCell(sheet, this.xLine, 4, child.name + "\r\n\r\n" + text);
+      this.setExcelCell(sheet, this.xLine, 5, utils.displayDateFromIsoWithTime(child.getObjKeyValue("EFS_OPEN")));
+      this.setExcelCell(sheet, this.xLine, 6, utils.displayDateFromIsoWithTime(child.getObjKeyValue("EFS_DONE")));
+      this.setExcelCell(sheet, this.xLine + 1, 6, child.getObjKeyValue("EFS_USER"));
+      this.setExcelCell(sheet, this.xLine, 7, utils.displayDateFromIsoWithTime(child.getObjKeyValue("EFS_CLOSED")));
+      this.setExcelCell(sheet, this.xLine + 1, 7, child.getObjKeyValue("EFS_QSUSER"));
+      
+      this.xLine += 3;
+    }
+    
+    this.xLine += 4;
+  },
+  
+  setExcelCell: function(sheet, row, col, value, color) {
+    var cell = Dispatch.call(sheet, "Cells", row, col).toDispatch();
+    Dispatch.put(cell, "Value", String(value));
+    if (color) {
+      var interior = Dispatch.get(cell, "Interior").toDispatch();
+      Dispatch.put(interior, "ColorIndex", color);
+    }
+  },
+  
+
+  createList : function() {
+    if (!this.activeArea) {
+      workspace.setFeedbackMessage("Bitte wählen Sie zuerst einen Bereich aus.");
+      return;
+    }
+    
+    var projectName = (this.activeProject) ? this.activeProject.name : "Aktuelle Trefferliste";
+    var areaName = (this.activeArea) ? this.activeArea.name : "-/-";
+    
+    var template = archive.getElementByArcpath( "¶Administration¶ttsConfig¶ListTemplate2" );
+    var templateText = String(FileUtils.readFileToString(template.file));
+    var body = this.collectListTable();
+    templateText = templateText.replace(/LISTCONTENT/, body);
+    templateText = templateText.replace(/LISTPROJECT/, projectName);
+    templateText = templateText.replace(/LISTAREA/, areaName);
+    
+    var intray = workspace.directories.inTrayDir;
+    var dest = utils.getUniqueFile(intray, "list.html");
+    FileUtils.writeStringToFile(dest, templateText, "utf-8");
+    
+    Desktop.desktop.open(dest);
+  },
+  
+  collectListTable : function() {
+    var builder = new Array();
+    
+    var children = this.activeArea.children;
+    
+    while (children.hasMoreElements()) {
+      var child = children.nextElement();
+      
+      var text = this.getText(child);
+      builder.push(text);
+    }
+    
+    return builder.join("\n");
+  }
+  
+  
+}

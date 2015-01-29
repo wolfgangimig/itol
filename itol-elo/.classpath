@@ -4,6 +4,11 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/itol"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/itol-db"/>
 	<classpathentry kind="lib" path="D:/git/joa/java/lib/joa.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jre1.8.0_20"/>
+	<classpathentry kind="lib" path="lib/commons-codec-1.6.jar"/>
+	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/EloixClient.jar"/>
+	<classpathentry kind="lib" path="lib/javautils-1.2.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-1.2.17.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

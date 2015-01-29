@@ -439,11 +439,13 @@ function getMsgFileType() {
 	return config.msgFileType;
 }
 
-function createIssue() {
+function createIssue(subject, description) {
 	config.checkValid();
 	
 	var iss = new Issue();
 
+	iss.setSubject(subject);
+	iss.setDescription(description);
 	iss.setType(1); // Bug
 	iss.setPriority(2); // Normal priority
 	iss.setState(1); // New issue

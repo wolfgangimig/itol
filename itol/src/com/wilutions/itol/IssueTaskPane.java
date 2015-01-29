@@ -174,15 +174,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@Override
 	public void showAsync(final CustomTaskPane taskPane, AsyncResult<Boolean> asyncResult) throws ComException {
 		try {
-			issue = Globals.getIssueService().createIssue();
+			final String subject = mailItem.getSubject();
+			final String description = mailItem.getBody();
+			
+			issue = Globals.getIssueService().createIssue(subject, description);
 
 			super.showAsync(taskPane, (succ, ex) -> {
 				if (succ) {
-					String subject = mailItem.getSubject();
-					String descr = mailItem.getBody();
-					edSubject.setText(subject);
+					edSubject.setText(issue.getSubject());
 					try {
-						initDescription(descr);
+						initDescription(issue.getDescription());
 					} catch (Throwable e) {
 						e.printStackTrace();
 						ex = e;
@@ -204,8 +205,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initDescription(String descr) throws IOException {
 
-		issue.setDescription(descr);
-
 		descriptionHtmlEditor = Globals.getIssueService().getDescriptionHtmlEditor(issue);
 		if (descriptionHtmlEditor != null) {
 			edDescription.setVisible(false);
@@ -219,7 +218,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			rootGrid.add(hbox, 0, 1, 3, 1);
 		} else {
-			edDescription.setHtmlText("<pre>" + descr + "</pre>");
+			edDescription.setHtmlText(descr);
 		}
 	}
 
