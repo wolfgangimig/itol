@@ -1,0 +1,43 @@
+<html><head>
+  <SCRIPT src="http://java.com/js/dtjava.js"></SCRIPT>
+<script>
+    function launchApplication(jnlpfile) {
+        dtjava.launch(            {
+                url : 'Issue Tracker Addin for Microsoft Outlook.jnlp'
+            },
+            {
+                javafx : '8.0+'
+            },
+            {}
+        );
+        return false;
+    }
+</script>
+
+<script>
+    function javafxEmbed_appid() {
+        dtjava.embed(
+            {
+                id : 'appid',
+                url : 'Issue Tracker Addin for Microsoft Outlook.jnlp',
+                placeholder : 'javafx-app-placeholder',
+                width : 100,
+                height : 100
+            },
+            {
+                javafx : '8.0+'
+            },
+            {}
+        );
+    }
+    <!-- Embed FX application into web page once page is loaded -->
+    dtjava.addOnloadCallback(javafxEmbed_appid);
+</script>
+
+</head><body>
+<h2>Test page for <b>Issue Tracker Addin for Microsoft Outlook</b></h2>
+  <b>Webstart:</b> <a href='Issue Tracker Addin for Microsoft Outlook.jnlp' onclick="return launchApplication('Issue Tracker Addin for Microsoft Outlook.jnlp');">click to launch this app as webstart</a><br><hr><br>
+
+  <!-- Applet will be inserted here -->
+  <div id='javafx-app-placeholder'></div>
+</body></html>

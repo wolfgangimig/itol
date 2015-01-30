@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.DescriptionHtmlEditor;
+import com.wilutions.itol.db.DescriptionTextEditor;
 import com.wilutions.itol.db.FindIssuesInfo;
 import com.wilutions.itol.db.FindIssuesResult;
 import com.wilutions.itol.db.IdName;
@@ -280,6 +281,13 @@ public class IssueServiceImpl implements IssueService {
 
 	@Override
 	public String getMsgFileType() throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public DescriptionTextEditor getDescriptionTextEditor(Issue issue)
+			throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

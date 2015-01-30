@@ -62,6 +62,7 @@ var OutputStreamWriter = Java.type("java.io.OutputStreamWriter");
 var Integer = Java.type("java.lang.Integer");
 var JavaDate = Java.type("java.util.Date");
 var System = Java.type("java.lang.System");
+var FileInputStream = Java.type("java.io.FileInputStream");
 
 var Property = Java.type("com.wilutions.itol.db.Property");
 var PropertyClass = Java.type("com.wilutions.itol.db.PropertyClass");
@@ -70,9 +71,13 @@ var IdName = Java.type("com.wilutions.itol.db.IdName");
 var JHttpClient = Java.type("com.wilutions.itol.db.HttpClient");
 var HttpResponse = Java.type("com.wilutions.itol.db.HttpResponse");
 var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
+var Attachment = Java.type("com.wilutions.itol.db.Attachment");
 var Issue = Java.type("com.wilutions.itol.db.Issue");
 var DescriptionHtmlEditor = Java
-		.type("com.wilutions.itol.db.DescriptionHtmlEditor");
+.type("com.wilutions.itol.db.DescriptionHtmlEditor");
+var DescriptionTextEditor = Java
+.type("com.wilutions.itol.db.DescriptionTextEditor");
+
 
 var InetAddress = Java.type("java.net.InetAddress");
 var IXConnFactory = Java.type("de.elo.ix.client.IXConnFactory");
@@ -488,8 +493,44 @@ function getDescriptionHtmlEditor(issue) {
 	return null;
 }
 
+function getDescriptionTextEditor(issue) {
+//	var isBug = issue.getType() == ISSUE_TYPE_BUG;
+//	return new DescriptionTextEditor(issue.getDescription());
+	return null;
+}
+
 function getShowIssueUrl(issueId) {
-	return "";
+	var isBug = issueId.indexOf("TTS") == 0;
+	var objId = "OKEY:";
+	objId += isBug ? "EFS_NR" : "TODOID";
+	var folder = conn.ix().checkoutSord(objId + "=" + issueId, SordC.mbLean, LockC.NO);
+	
+	var arc = conn.ix().checkoutSord("1", SordC.mbMin, LockC.NO);
+	
+//	EP
+//	Alldo_prod
+//	G(D2DBEEE1-F1B7-8B54-E8AD-EC49502365A0)
+//	I5442908
+//	WTOP
+//	T
+	var CR = "\r\n";
+	var ecd = "EP" + CR + 
+		"A" + arc.name + CR +  
+		"G" + folder.guid + CR + 
+		"I" + folder.id + CR + 
+		"WTOP" + CR + 
+		"T" + CR;
+	
+	folder.desc = ecd; // trick: brauche einen java.lang.String für write()
+
+	var tempEcd = File.createTempFile(issueId, ".ecd");
+	var wr = new OutputStreamWriter(new FileOutputStream(tempEcd));
+	wr.write(folder.desc.toCharArray()); 
+	wr.close();
+	
+	var fname = tempEcd.getAbsolutePath();
+	fname = fname.replace(/\\\\/, "/");
+	return "file:////" + fname;
 }
 
 function getMsgFileType() {
@@ -500,26 +541,58 @@ function getMsgFileType() {
 // '{'font-size:26.0pt;font-family:\"Arial\";color:#17365D;'}'</style>" +
 // "</head><body contenteditable=\"true\">" +
 // "<p class=\"MsoTitle\">Problem/Fehler</p>" +
-// "<hr/>" +
+// "<hr>" +
 
-var descTemplate = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+var descTemplateBug = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
 		+ "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">"
 		+ "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"de\">"
 		+ "<head></head><body>\n"
 		+ "<h1>Beschreibung / Reproduktionsschritte:</h1>\n"
-		+ "<p><pre>{0}</pre></p>" + "<h1>Analyse:</h1>\n"
+		+ "<hr>\n"
+		+ "<p><br/><pre>{0}</pre><br/></p>" 
+		+ "<hr>\n"
+		+ "<h1>Analyse:</h1>\n"
 		+ "<p>&lt;Entwickler: Wie ist es zu diesem Problem gekommen?&gt;</p>\n"
 		+ "<h1>Korrektur / Lösung:</h1>\n"
 		+ "<p>&lt;Entwickler: Wie wurde das Problem gelöst&gt;</p>\n"
 		+ "</body></html>\n";
 
+var descTemplateTodo = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+	+ "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">"
+	+ "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"de\">"
+	+ "<head></head><body>\n"
+	+ "<h1>Beschreibung</h1>\n"
+	+ "<hr>\n"
+	+ "<p><br/><pre>{0}</pre><br/></p>" 
+	+ "<hr>\n"
+	+ "</body></html>\n";
+
+
+function getIssueDescriptionFromMailBody(issueType, mailbody) {
+	var isBug = issueType == ISSUE_TYPE_BUG;
+	var descTemplate = isBug ? descTemplateBug : descTemplateTodo;
+	
+	if (mailbody.length > 200) {
+		mailbody = mailbody.substring(0, 197) + "...";
+	}
+	
+	var issueDescription = MessageFormat.format(descTemplate, mailbody);
+	return issueDescription;
+};
+
 function createIssue(subject, mailDescription) {
 	config.checkValid();
-
-	if (mailDescription.length > 200) {
-		mailDescription = mailDescription.substring(0, 197) + "...";
+	
+	subject = stripIssueIdFromSubject(subject);
+	
+	if (subject.indexOf("AW:") == 0) {
+		subject = subject.substring(3).trim();
 	}
-	var issueDescription = MessageFormat.format(descTemplate, mailDescription);
+	else if (subject.indexOf("WG:") == 0) {
+		subject = subject.substring(3).trim();
+	}
+
+	var issueDescription = getIssueDescriptionFromMailBody(ISSUE_TYPE_BUG, mailDescription);
 
 	var iss = new Issue();
 
@@ -539,7 +612,16 @@ function createIssue(subject, mailDescription) {
 	return iss;
 };
 
-function saveHtmlDescriptionAsTempDoc(description) {
+function saveHtmlDescriptionAsTempDoc(description, progressCallback) {
+	
+	var pgSave = null;
+	if (progressCallback) {
+		if (progressCallback.isCancelled()) return null;
+		var str = "Save description";
+		pgSave = progressCallback.createChild(str);
+		pgSave.setTotal(10000);
+	}
+
 	try {
 		var htmlFile = File.createTempFile("issue", ".html");
 		var fos = new FileOutputStream(htmlFile);
@@ -549,17 +631,27 @@ function saveHtmlDescriptionAsTempDoc(description) {
 		var wr = new OutputStreamWriter(fos, "UTF-8");
 		wr.write(description.toCharArray());
 		wr.close();
+		if (pgSave) {
+			if (pgSave.isCancelled()) return null;
+			pgSave.setProgress(1000);
+		}
 
 		var word = new Dispatch("Word.Application");
+		pgSave.setProgress(3000);
 		var docs = word._get("Documents");
 		var doc = docs._call("Open", htmlFile.getAbsolutePath());
 		var docFile = File.createTempFile("issue", ".docx");
+		if (pgSave) {
+			if (pgSave.isCancelled()) return null;
+			pgSave.setProgress(6000);
+		}
 
 		// Format Nummern
 		// https://msdn.microsoft.com/en-us/library/bb238158%28v=office.12%29.aspx
 		var wdFormatXMLDocument = 12;
 		doc._call("SaveAs", docFile.getAbsolutePath(), new Integer(
 				wdFormatXMLDocument));
+		
 	} finally {
 		if (htmlFile) {
 			htmlFile["delete"]();
@@ -575,6 +667,9 @@ function saveHtmlDescriptionAsTempDoc(description) {
 				word._call("Quit");
 			} catch (ignore) {
 			}
+		}
+		if (pgSave) {
+			pgSave.setFinished();
 		}
 	}
 
@@ -755,15 +850,103 @@ function getIssueParentId(issue) {
 	return parentId;
 }
 
-function uploadAttachment(folder, name, file) {
+function getFileExt(fname) {
+	var ext = "";
+	var p = fname.lastIndexOf(".");
+	if (p >= 0) {
+		ext = fname.substring(p);
+	}
+	return ext;
+}
+
+function getFileNameWithoutExt(fname) {
+	var p = fname.lastIndexOf(".");
+	if (p >= 0) {
+		fname = fname.substring(0, p);
+	}
+	return fname;
+}
+
+function uploadAttachment(parentId, attachment, progressCallback) {
+	log.info("uploadAttachment(parentId=" + parentId + ", attachment=" + attachment);
 	
+	var fileSize = attachment.getContentLength();
+	
+	var pgUpload = null;
+	if (progressCallback) {
+		if (progressCallback.isCancelled()) return null;
+		var str = "Upload attachment " + attachment.getFileName();
+		str += ", " + makeAttachmentSizeString(fileSize);
+		pgUpload = progressCallback.createChild(str);
+		pgUpload.setTotal(fileSize);
+	}
+	
+	try {
+		var ed = conn.ix().createDoc(parentId, "", "", EditInfoC.mbSordDocAtt);
+		ed.sord.name = getFileNameWithoutExt(attachment.getFileName());
+		
+		var dv = new DocVersion();
+		dv.ext = getFileExt(attachment.getFileName());
+		dv.pathId = ed.sord.path;
+		ed.document.docs = [dv];
+		
+		ed.document = conn.ix().checkinDocBegin(ed.document);
+		var url = ed.document.docs[0].url;
+		log.info("url=" + url);
+		
+		if (pgUpload) {
+			if (pgUpload.isCancelled()) return null;
+			pgUpload.setProgress(fileSize/3);
+		}
+		
+		var uploadResult = conn.upload(url, attachment.getStream(), fileSize, attachment.getContentType());
+		log.info("uploadResult=" + uploadResult);
+		ed.document.docs[0].uploadResult = uploadResult;
+		pgUpload.setProgress(2*fileSize/3);
+		
+		var objId = conn.ix().checkinDocEnd(ed.sord, SordC.mbAll, ed.document, LockC.NO);
+		log.info("objId=" + objId);
+	}
+	finally {
+		if (pgUpload) {
+			pgUpload.setFinished();
+		}
+	}
+	
+	log.info(")uploadAttachment=" + objId);
+	return objId;
+}
+
+function getTodoDescFromIssue(issue) {
+	log.info("getTodoDescFromIssue(");
+	var ret = "Beschreibung s. Dokument";
+
+	var desc = issue.getDescription();
+	log.info("desc=" + desc);
+	
+	var p = desc.indexOf("<hr>");
+	log.info("hr at " + p);
+	if (p >= 0) {
+		p += 5;
+		var q = desc.indexOf("<hr>", p);
+		log.info("hr at " + q);
+		if (q >= 0) {
+			var str = desc.substring(p, q);
+			log.info("str=" + str);
+			// http://stackoverflow.com/questions/822452/strip-html-from-text-javascript
+			str = str.replace(/<(?:.|\n)*?>/gm, '');
+			ret = str;
+		}
+	}
+	log.info(")getTodoDescFromIssue=" + ret);
+	return ret;
 }
 
 function updateIssue(issue, progressCallback) {
 	log.info("updateIssue(issue=" + issue + ", progressCallback="
 			+ progressCallback);
 	config.checkValid();
-
+	
 	var isBug = issue.getType() == ISSUE_TYPE_BUG;
 	var maskId = isBug ? DOCMASK_BUG : DOCMASK_TODO;
 
@@ -774,47 +957,49 @@ function updateIssue(issue, progressCallback) {
 	var parentId = getIssueParentId(issue);
 	log.info("parentId=" + parentId);
 
-	var folder = conn.ix().createSord(parentId, maskId, SordC.mbAll);
-
-	if (isBug) {
-		folder.name = issueId + ": " + issue.getSubject();
-		folder.desc = "##*\r\n";
-		setObjKeysForBug(folder, issue);
-	} else {
-		folder.name = issue.getSubject();
-		setObjKeysForTodo(folder, issue);
-	}
-	
-	folder.id = conn.ix().checkinSord(folder, SordC.mbAll, LockC.NO);
-	log.info("folder=" + folder);
-
 	try {
-		var ed = conn.ix().createDoc(folder.id, "", "", EditInfoC.mbSordDocAtt);
-		ed.sord.name = "Beschreibung";
+	
+		var folder = conn.ix().createSord(parentId, maskId, SordC.mbAll);
+	
+		if (isBug) {
+			folder.name = issueId + ": " + issue.getSubject();
+			folder.desc = "##*\r\n";
+			setObjKeysForBug(folder, issue);
+		} else {
+			folder.name = issue.getSubject();
+			folder.desc = getTodoDescFromIssue(issue);
+			setObjKeysForTodo(folder, issue);
+		}
 		
-		var dv = new DocVersion();
-		dv.ext = ".docx";
-		dv.pathId = folder.path;
-		ed.document.docs = [dv];
+		folder.id = conn.ix().checkinSord(folder, SordC.mbAll, LockC.NO);
+		log.info("folder=" + folder);
 		
-		ed.document = conn.ix().checkinDocBegin(ed.document);
-		var url = ed.document.docs[0].url;
-		log.info("url=" + url);
+		var docFile = saveHtmlDescriptionAsTempDoc(issue.getDescription(), progressCallback);
+		var descriptionAttachment = new Attachment();
+		descriptionAttachment.setFileName("Beschreibung.docx");
+		descriptionAttachment.setStream(new FileInputStream(docFile));
+		descriptionAttachment.setContentType("application/docx");
+		descriptionAttachment.setContentLength(docFile.length());
+		uploadAttachment(folder.id, descriptionAttachment, progressCallback);
 		
-		var docFile = saveHtmlDescriptionAsTempDoc(issue.getDescription());
-		log.info("docFile=" + docFile);
-		var uploadResult = conn.upload(url, docFile);
-		log.info("uploadResult=" + uploadResult);
-		ed.document.docs[0].uploadResult = uploadResult;
-		
-		var objId = conn.ix().checkinDocEnd(ed.sord, SordC.mbAll, ed.document, LockC.NO);
-		log.info("objId=" + objId);
-	}
-	finally {
-		if (docFile) {
-			docFile["delete"]();
+		for (var i = 0; i < issue.getAttachments().size(); i++) {
+			var attachment = issue.getAttachments().get(i);
+			uploadAttachment(folder.id, attachment, progressCallback);
 		}
 	}
+	catch (ex) {
+		if (folder && folder.id) {
+			try {
+				conn.ix().deleteSord("", folder.id, LockC.NO, null);
+			}
+			catch (ignore) {
+			}
+		}
+		throw ex;
+	}
+	finally {
+	}
+	
 	return issue;
 };
 
@@ -833,26 +1018,28 @@ function makeAttachmentSizeString(contentLength) {
 	return nb + dims[dimIdx];
 }
 
-function toTrackerIssue(eloIssue, trackerIssue) {
-
-	trackerIssue.setId(eloIssue.id);
-
-	trackerIssue.setCategory(eloIssue.project.id);
-	trackerIssue.setType(eloIssue.tracker.id);
-	trackerIssue.setState(eloIssue.status.id);
-	trackerIssue.setPriority(eloIssue.priority.id);
-	trackerIssue.setSubject(eloIssue.subject);
-	trackerIssue.setDescription(eloIssue.description);
-
-	// trackerIssue.setAssignee(eloIssue.assigned_to.id);
-
-	if (eloIssue.fixed_version_id) {
-		trackerIssue.setMilestones([ eloIssue.fixed_version_id ]);
-	}
-}
-
 function validateIssue(iss) {
+	log.info("validateIssue(");
 	var ret = iss;
+	if (iss.getType() == ISSUE_TYPE_TODO) {
+		var description = iss.getDescription();
+		var wasBug = description.indexOf("<h1>Beschreibung / Reproduktionsschritte:</h1>") >= 0;
+		log.info("issue.type=" + iss.getType() + ", wasBug=" + wasBug);
+		if (wasBug) {
+			description = getIssueDescriptionFromMailBody(ISSUE_TYPE_TODO, "");
+			iss.setDescription(description);
+		}
+	}
+	else {
+		var description = iss.getDescription();
+		var wasTodo = description.indexOf("<h1>Beschreibung</h1>") >= 0; 
+		log.info("issue.type=" + iss.getType() + ", wasTodo=" + wasTodo);
+		if (wasTodo) {
+			description = getIssueDescriptionFromMailBody(ISSUE_TYPE_BUG, "");
+			iss.setDescription(description);
+		}
+	}
+	log.info(")validateIssue");
 	return ret;
 };
 
@@ -872,81 +1059,54 @@ function findCloseIssues(searchId) {
 
 function extractIssueIdFromMailSubject(subject) {
 	var issueId = "";
-	var startTag = "[ITOL-";
+	var startTag = "[TTS";
 	var p = subject.indexOf(startTag);
-	if (p == 0) {
-		var q = subject.indexOf("]");
+	if (p < 0) {
+		startTag = "[RID";
+		p = subject.indexOf(startTag);
+	}
+	if (p >= 0) {
+		var q = subject.indexOf("]", p);
 		if (q >= 0) {
-			var str = subject.substring(p + startTag.length, q);
-			p = str.indexOf("-");
-			if (p >= 0) {
-				issueId = str.substring(p + 1);
-			} else {
-				issueId = str;
-			}
+			issueId = subject.substring(p + 1, q);
 		}
 	}
 	return issueId;
 };
 
-function injectIssueIdIntoMailSubject(subject, iss) {
-	// var ret = "[ITOL-";
-	// switch (iss.getType()) {
-	// case "1":
-	// ret += "B";
-	// break;
-	// case "2":
-	// ret += "F";
-	// break;
-	// case "3":
-	// ret += "S";
-	// break;
-	// default:
-	// sbuf.append("U");
-	// break;
-	// }
-	//
-	// ret += "-" + iss.getId() + "]";
-	// ret += subject;
-	//
-	// return ret;
+function stripFirstIssueIdFromSubject(subject) {
+	var startTag = "[TTS";
+	var p = subject.indexOf(startTag);
+	if (p < 0) {
+		startTag = "[RID";
+		p = subject.indexOf(startTag);
+	}
+	if (p >= 0) {
+		var q = subject.indexOf("]", p);
+		if (q >= 0) {
+			subject = subject.substring(q+1).trim();
+		}
+	}
+	return subject;
+}
 
+function stripIssueIdFromSubject(mailSubject) {
+	var subject = stripFirstIssueIdFromSubject(mailSubject);
+	while (subject != mailSubject) {
+		mailSubject = subject;
+		subject = stripFirstIssueIdFromSubject(subject);
+	}
+	return subject;
+}
+
+function injectIssueIdIntoMailSubject(mailSubject, iss) {
+	var subject = stripIssueIdFromSubject(mailSubject);
+	subject = "[" + iss.getId() + "] " + subject.trim();
 	return subject;
 };
 
 function readIssue(issueId) {
 	return issues.get(issueId);
-};
-
-function readAttachment(attachmentId) {
-	return null;
-};
-
-function writeAttachment(trackerAttachment, progressCallback) {
-	log.info("writeAttachment(" + trackerAttachment + ", progressCallback="
-			+ progressCallback);
-	var content = trackerAttachment.getStream();
-
-	var uploadResult = httpClient.upload("/uploads.json", content,
-			trackerAttachment.getContentLength(), progressCallback);
-	dump(uploadResult);
-
-	trackerAttachment.setId(uploadResult.upload.token);
-
-	var eloAttachment = {};
-	eloAttachment.token = uploadResult.upload.token;
-	eloAttachment.filename = trackerAttachment.getFileName();
-	eloAttachment.content_type = trackerAttachment.getContentType();
-
-	if (progressCallback) {
-		progressCallback.setFinished();
-	}
-
-	log.info(")writeAttachment=" + eloAttachment);
-	return eloAttachment;
-};
-
-function deleteAttachment(attachmentId) {
 };
 
 initializePropertyClasses();

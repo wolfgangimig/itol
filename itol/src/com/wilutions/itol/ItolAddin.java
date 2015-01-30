@@ -98,9 +98,7 @@ public class ItolAddin extends OutlookAddinEx {
 			MailInspector mailInspector = (MailInspector) getInspectorWrapper(inspector);
 			String issueId = mailInspector.getIssueId();
 			boolean hasIssueId = issueId != null && issueId.length() != 0;
-			if (controlId.equals("NewIssue")) {
-				ret = !hasIssueId;
-			} else if (controlId.equals("ShowIssue")) {
+			if (controlId.equals("ShowIssue")) {
 				ret = hasIssueId;
 				// } else if (controlId.equals("grpIssue")) {
 				// ret = !hasIssueId;
