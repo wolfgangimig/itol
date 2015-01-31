@@ -50,6 +50,9 @@ public class IssueServiceFactory_JS implements IssueServiceFactory {
 			engine.eval("load(\"" + jsName + "\");");
 			
 			srv = ((Invocable)engine).getInterface(IssueService.class);
+			if (srv == null) {
+				throw new IllegalStateException(jsName + " does not implement all functions of the service interface");
+			}
 		}
 		catch (Throwable e) {
 			throw new IOException(e);

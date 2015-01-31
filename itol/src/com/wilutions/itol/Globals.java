@@ -11,7 +11,6 @@ import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 import com.wilutions.com.BackgTask;
-import com.wilutions.com.reg.DeclRegistryValue;
 import com.wilutions.com.reg.Registry;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.IssueService;
@@ -26,21 +25,17 @@ public class Globals {
 
 	private static ItolAddin addin;
 	private static MailExport mailExport = new MailExport();
-	private static Globals globalData = new Globals();
 	private static ResourceBundle resb;
 	private static IssueService issueService;
 	private static Registry registry;
 	private static File appDir;
 
-	@DeclRegistryValue
-	private String serviceFactoryClass;
+	private static Config config = new Config();
 	
-	@DeclRegistryValue
-	private List<String> serviceFactoryParams;
+	public static Config getConfig() {
+		return config;
+	}
 	
-	@DeclRegistryValue
-	private List<Property> configProps;
-
 	protected static void setThisAddin(ItolAddin addin) {
 		Globals.addin = addin;
 	}
@@ -56,7 +51,7 @@ public class Globals {
 	
 	public static Registry getRegistry() {
 		if (registry == null) {
-			registry = new Registry("Issue Tracker for Outlook", "WILUTIONS");
+			registry = new Registry(config.manufacturerName, config.appName);
 		}	
 		return registry;
 	}
@@ -71,9 +66,9 @@ public class Globals {
 		readData();
 		
 		try {
-			Class<?> clazz = Class.forName(globalData.serviceFactoryClass);
+			Class<?> clazz = Class.forName(config.serviceFactoryClass);
 			IssueServiceFactory fact = (IssueServiceFactory)clazz.newInstance();
-			issueService = fact.getService(appDir, globalData.serviceFactoryParams);
+			issueService = fact.getService(appDir, config.serviceFactoryParams);
 		} catch (Throwable e) {
 			e.printStackTrace();
 			throw new IOException(e);
@@ -81,7 +76,7 @@ public class Globals {
 	
 		BackgTask.run(() -> {
 			try {
-				issueService.setConfig(globalData.configProps);
+				issueService.setConfig(config.configProps);
 				System.out.println("Issue service initialized.");
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -92,21 +87,9 @@ public class Globals {
 	}
 	
 	private static void readData() {
-		getRegistry().readFields(globalData);
+		getRegistry().readFields(config);
 		
-		if (globalData.serviceFactoryClass == null || globalData.serviceFactoryClass.length() == 0) {
-			 globalData.serviceFactoryClass = IssueServiceFactory_JS.class.getName();
-		}
-		
-		if (globalData.serviceFactoryParams == null || globalData.serviceFactoryParams.size() == 0) {
-			globalData.serviceFactoryParams = Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT);
-		}
-		
-		if (globalData.configProps == null) {
-			globalData.configProps = new ArrayList<Property>(0);
-		}
-		
-		for (Property configProp : globalData.configProps) {
+		for (Property configProp : config.configProps) {
 			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
 			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
 				try {
@@ -119,7 +102,7 @@ public class Globals {
 	}
 	
 	private static void writeData() {
-		for (Property configProp : globalData.configProps) {
+		for (Property configProp : config.configProps) {
 			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
 			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
 				try {
@@ -129,14 +112,14 @@ public class Globals {
 				}
 			}
 		}
-		getRegistry().writeFields(globalData);
+		getRegistry().writeFields(config);
 	}
 	
 	public static void setConfig(List<Property> configProps) throws IOException {
-		globalData.configProps = configProps;
+		config.configProps = configProps;
 		writeData();
 		readData();
-		issueService = new IssueServiceFactory_JS().getService(appDir, globalData.serviceFactoryParams); 
+		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams); 
 		issueService.setConfig(configProps);
 	}
 

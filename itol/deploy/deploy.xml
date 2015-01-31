@@ -63,7 +63,7 @@
 		Dependencies. A semicolon separated list of all JARs this project depends on.
 		This JARs have to be also listed in the task <fx:resources>.
 	-->
-	<property name="application.classpath" value="joa.jar" />
+	<property name="application.classpath" value="joa-without-dlls.jar" />
 	
 	<!--
 		Set this property "true", if the Add-in should be installed
@@ -84,6 +84,11 @@
 		The following properties do not need to be modified 
 		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 	-->
+
+	<!-- 
+		Directory for 32/64 bit DLL 
+	-->
+	<property name="dll.dir" value="${lib.dir}/bin" />
 
 	<!-- 
 		Target directory, the MSI will be placed in ./dist/32/bundles/ 
@@ -129,11 +134,11 @@
 		<echo message="Creating a ${sun.arch.data.model}bit installer" />
 		
 		<!-- 
-			Check property ${lib.dir}: joa.jar must exist.
+			Check property ${lib.dir}: joa-without-dlls.jar must exist.
 		 -->
-		<fail message="Missing: ${lib.dir}/joa.jar">
+		<fail message="Missing: ${lib.dir}/joa-without-dlls.jar">
 		    <condition><not>
-		        <available file="${lib.dir}/joa.jar" />
+		        <available file="${lib.dir}/joa-without-dlls.jar" />
 		    </not></condition>
 		</fail>
 		
@@ -171,7 +176,8 @@
 				<!--
 					Add dependencies from ${application.classpath} 
 				-->
-				<fx:fileset dir="${lib.dir}" includes="joa.jar" />
+				<fx:fileset dir="${lib.dir}" includes="joa-without-dlls.jar" />
+				<fx:fileset dir="${dll.dir}" includes="joa${sun.arch.data.model}.dll" type="data" />
 				<fx:fileset dir="${dist.dir}" includes="*.jar" />
 				<fx:fileset dir="${project.dir}" includes="*.js" />
 				<fx:fileset dir="${project.dir}" includes="*.txt" />

@@ -401,6 +401,10 @@ function getDetails(issue) {
 
 }
 
+function getDescriptionTextEditor(issue) {
+	return null;
+}
+
 function getDescriptionHtmlEditor(issue) {
 	var htmlTemplate = "<html>"
 			+ "<head>"

@@ -4,15 +4,29 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javafx.stage.Stage;
 
 import com.wilutions.com.ComException;
+import com.wilutions.itol.db.Property;
+import com.wilutions.itol.db.impl.IssueServiceFactory_JS;
 import com.wilutions.joa.AddinApplication;
 
 public class IssueApplication extends AddinApplication {
+
+	static
+	{
+		Config config = Globals.getConfig();
+		config.appName = "JOA Issue Tracker";
+		config.manufacturerName = "WILUTIONS";
+		config.serviceFactoryClass = IssueServiceFactory_JS.class.getName();
+		config.serviceFactoryParams = Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT);
+		config.configProps = new ArrayList<Property>(0);
+	}
 
 	public static File getAppDir() {
 		File ret = new File(System.getProperty("user.dir"));
@@ -54,7 +68,7 @@ public class IssueApplication extends AddinApplication {
 			istream = new FileInputStream(logFile);
 			LogManager.getLogManager().readConfiguration(istream);
 		} catch (Throwable e) {
-			e.printStackTrace();
+			System.out.println("Logger configuration not found or inaccessible. " + e);
 		} finally {
 			if (istream != null) {
 				try {
@@ -74,7 +88,6 @@ public class IssueApplication extends AddinApplication {
 	}
 
 	public static void main(String[] args) {
-
 		main(IssueApplication.class, IssueApplication.class, args);
 	}
 
