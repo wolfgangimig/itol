@@ -4,8 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
@@ -87,7 +85,21 @@ public class Globals {
 	}
 	
 	private static void readData() {
-		getRegistry().readFields(config);
+		Config newConfig = (Config)getRegistry().read("Config");
+		
+		if (newConfig != null) {
+			if (newConfig.serviceFactoryClass != null) {
+				config.serviceFactoryClass = newConfig.serviceFactoryClass;
+			}
+			
+			if (newConfig.serviceFactoryParams != null) {
+				config.serviceFactoryParams = newConfig.serviceFactoryParams;
+			}
+			
+			if (newConfig.configProps != null) {
+				config.configProps = newConfig.configProps;
+			}
+		}
 		
 		for (Property configProp : config.configProps) {
 			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
@@ -112,7 +124,7 @@ public class Globals {
 				}
 			}
 		}
-		getRegistry().writeFields(config);
+		getRegistry().write("Config", config);
 	}
 	
 	public static void setConfig(List<Property> configProps) throws IOException {
