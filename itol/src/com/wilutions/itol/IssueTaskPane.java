@@ -176,14 +176,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		try {
 			final String subject = mailItem.getSubject();
 			final String description = mailItem.getBody();
-			
 			issue = Globals.getIssueService().createIssue(subject, description);
 
 			super.showAsync(taskPane, (succ, ex) -> {
 				if (succ) {
-					edSubject.setText(issue.getSubject());
 					try {
-						initDescription(issue.getDescription());
+						initDescription();
 					} catch (Throwable e) {
 						e.printStackTrace();
 						ex = e;
@@ -203,22 +201,27 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private void initDescription(String descr) throws IOException {
-
+	private void initDescription() throws IOException {
+		
 		descriptionHtmlEditor = Globals.getIssueService().getDescriptionHtmlEditor(issue);
 		if (descriptionHtmlEditor != null) {
-			edDescription.setVisible(false);
-
-			webView = new WebView();
+			
+			if (webView == null) {
+				edDescription.setVisible(false);
+	
+				webView = new WebView();
+	
+				HBox hbox = new HBox();
+				hbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+				hbox.getChildren().add(webView);
+	
+				rootGrid.add(hbox, 0, 1, 3, 1);
+			}
+			
 			webView.getEngine().loadContent(descriptionHtmlEditor.getHtmlContent());
 
-			HBox hbox = new HBox();
-			hbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
-			hbox.getChildren().add(webView);
-
-			rootGrid.add(hbox, 0, 1, 3, 1);
 		} else {
-			edDescription.setHtmlText(descr);
+			edDescription.setHtmlText(issue.getDescription());
 		}
 	}
 
@@ -280,6 +283,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					issue = srv.validateIssue(issue);
 
 					updateData(false);
+					
+					if (cb == cbTracker) {
+						initDescription();
+					}
+					
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -314,6 +322,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				saveEditOrChoiceBox(cbCategory, edCategory, Property.CATEGORY);
 				saveMilestones();
 			} else {
+				initSubject();
+				
 				initChoiceBox(cbTracker, srv.getIssueTypes(issue),
 						issue.getLastUpdate().getProperty(Property.ISSUE_TYPE));
 				initChoiceBox(cbPriority, srv.getPriorities(issue), issue.getLastUpdate()
@@ -332,6 +342,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void initSubject() {
+		edSubject.setText(issue.getSubject());
 	}
 
 	private void initAssignee(IssueService srv) throws IOException {

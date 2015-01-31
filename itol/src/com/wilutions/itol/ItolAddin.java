@@ -1,3 +1,4 @@
+
 package com.wilutions.itol;
 
 import java.io.IOException;
@@ -17,7 +18,7 @@ import com.wilutions.mslib.outlook.Inspector;
 import com.wilutions.mslib.outlook.OlObjectClass;
 
 @CoClass(progId = "ItolAddin.Class", guid = "{6da82554-8fea-4395-bd73-33f823a6dc24}")
-@DeclAddin(application = OfficeApplication.Outlook, loadBehavior = LoadBehavior.LoadOnStart, friendlyName = "Issue Tracker", description = "Issue Tracker for Outlook based on JOA")
+@DeclAddin(application = OfficeApplication.Outlook, loadBehavior = LoadBehavior.LoadOnStart, friendlyName = "JOA Issue Tracking", description = "Outlook Addin for Issual Tracking")
 public class ItolAddin extends OutlookAddinEx {
 
 	private AttachmentHttpServer httpServer = new AttachmentHttpServer();
@@ -98,9 +99,7 @@ public class ItolAddin extends OutlookAddinEx {
 			MailInspector mailInspector = (MailInspector) getInspectorWrapper(inspector);
 			String issueId = mailInspector.getIssueId();
 			boolean hasIssueId = issueId != null && issueId.length() != 0;
-			if (controlId.equals("NewIssue")) {
-				ret = !hasIssueId;
-			} else if (controlId.equals("ShowIssue")) {
+			if (controlId.equals("ShowIssue")) {
 				ret = hasIssueId;
 				// } else if (controlId.equals("grpIssue")) {
 				// ret = !hasIssueId;
