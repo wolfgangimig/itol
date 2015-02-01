@@ -27,7 +27,7 @@ import com.wilutions.mslib.outlook.Inspector;
 import com.wilutions.mslib.outlook.OlObjectClass;
 
 @CoClass(progId = "ItolAddin.Class", guid = "{6da82554-8fea-4395-bd73-33f823a6dc24}")
-@DeclAddin(application = OfficeApplication.Outlook, loadBehavior = LoadBehavior.LoadOnStart, friendlyName = "JOA Issue Tracking", description = "Outlook Addin for Issual Tracking")
+@DeclAddin(application = OfficeApplication.Outlook, loadBehavior = LoadBehavior.LoadOnStart, friendlyName = "ITOL", description = "Issue Tracker Addin for Microsoft Outlook and Redmine")
 public class ItolAddin extends OutlookAddinEx {
 
 	private AttachmentHttpServer httpServer = new AttachmentHttpServer();

@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
@@ -28,6 +29,7 @@ import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
 import com.wilutions.itol.db.PropertyClasses;
 import com.wilutions.itol.db.impl.IssueServiceFactory_JS;
+import com.wilutions.joa.OfficeAddinUtil;
 
 public class Globals {
 
@@ -39,15 +41,15 @@ public class Globals {
 	private static File appDir;
 
 	private static Config config = new Config();
-	
+
 	public static Config getConfig() {
 		return config;
 	}
-	
+
 	protected static void setThisAddin(ItolAddin addin) {
 		Globals.addin = addin;
 	}
-	
+
 	public static void printAssignees1() {
 		try {
 			List<IdName> assignees = getIssueService().getAssignees(null);
@@ -56,32 +58,32 @@ public class Globals {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static Registry getRegistry() {
 		if (registry == null) {
 			registry = new Registry(config.manufacturerName, config.appName);
-		}	
+		}
 		return registry;
 	}
 
 	public static void initIssueService(File appDir) throws IOException {
-		
+
 		Globals.appDir = appDir;
-		
-		// Required for PasswordEncryption.decrypt 
+
+		// Required for PasswordEncryption.decrypt
 		com.sun.org.apache.xml.internal.security.Init.init();
-		
+
 		readData();
-		
+
 		try {
 			Class<?> clazz = Class.forName(config.serviceFactoryClass);
-			IssueServiceFactory fact = (IssueServiceFactory)clazz.newInstance();
+			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
 			issueService = fact.getService(appDir, config.serviceFactoryParams);
 		} catch (Throwable e) {
 			e.printStackTrace();
 			throw new IOException(e);
 		}
-	
+
 		BackgTask.run(() -> {
 			try {
 				issueService.setConfig(config.configProps);
@@ -90,45 +92,44 @@ public class Globals {
 				e.printStackTrace();
 			}
 		});
-		
-		
+
 	}
-	
+
 	private static void readData() {
-		Config newConfig = (Config)getRegistry().read("Config");
-		
+		Config newConfig = (Config) getRegistry().read("Config");
+
 		if (newConfig != null) {
 			if (newConfig.serviceFactoryClass != null) {
 				config.serviceFactoryClass = newConfig.serviceFactoryClass;
 			}
-			
+
 			if (newConfig.serviceFactoryParams != null) {
 				config.serviceFactoryParams = newConfig.serviceFactoryParams;
 			}
-			
+
 			if (newConfig.configProps != null) {
 				config.configProps = newConfig.configProps;
 			}
 		}
-		
+
 		for (Property configProp : config.configProps) {
 			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
 			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
 				try {
-					configProp.setValue(PasswordEncryption.decrypt((String)configProp.getValue()));
+					configProp.setValue(PasswordEncryption.decrypt((String) configProp.getValue()));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 	}
-	
+
 	private static void writeData() {
 		for (Property configProp : config.configProps) {
 			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
 			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
 				try {
-					configProp.setValue(PasswordEncryption.encrypt((String)configProp.getValue()));
+					configProp.setValue(PasswordEncryption.encrypt((String) configProp.getValue()));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -136,12 +137,12 @@ public class Globals {
 		}
 		getRegistry().write("Config", config);
 	}
-	
+
 	public static void setConfig(List<Property> configProps) throws IOException {
 		config.configProps = configProps;
 		writeData();
 		readData();
-		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams); 
+		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams);
 		issueService.setConfig(configProps);
 	}
 
@@ -176,17 +177,30 @@ public class Globals {
 		}
 		return resb;
 	}
-	
+
 	public static File getTempDir() {
-		File dir = new File("."); 
+		File dir = new File(".");
 		try {
 			dir = File.createTempFile("itol", ".tmp");
 			dir.delete();
 			dir.mkdirs();
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return dir;
+	}
+
+	public static String getVersion() {
+		String ret = "";
+		try {
+			byte[] buf = OfficeAddinUtil.getResourceAsBytes(BackstageConfig.class,
+					"Version.properties");
+			Properties props = new Properties();
+			props.load(new ByteArrayInputStream(buf));
+			ret = props.getProperty("Version");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return ret;
 	}
 }

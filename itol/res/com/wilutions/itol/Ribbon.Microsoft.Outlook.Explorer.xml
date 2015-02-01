@@ -4,7 +4,7 @@
 	<backstage>
 		<tab id="ItolBackstageTab" label="Issue Tracker">
 			<firstColumn>
-				<group id="regularGroup" label="Issue Tracker Configuration">
+				<group id="regularGroup" label="Issue Tracker Configuration {1}">
 					<bottomItems>
 					{0}
 					</bottomItems>

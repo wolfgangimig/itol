@@ -55,8 +55,9 @@ public class BackstageConfig {
 		sbuf.append("<button id=\"").append(CONTROL_ID_PREFIX)
 				.append("bnCancel\" label=\"Cancel\" onAction=\"Button_onAction\" />");
 		sbuf.append("</layoutContainer>");
-
-		String ui = MessageFormat.format(customUITemplate, sbuf.toString());
+		
+		String version = Globals.getVersion();
+		String ui = MessageFormat.format(customUITemplate, sbuf.toString(), version);
 
 		return ui;
 	}
