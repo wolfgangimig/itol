@@ -456,6 +456,14 @@ function getMsgFileType() {
 function createIssue(subject, description) {
 	config.checkValid();
 	
+	subject = stripIssueIdFromMailSubject(subject);
+	
+	// strip RE:, FW:, AW:, WG: ...
+	var cp = subject.indexOf(":");
+	if (cp == 2) {
+		subject = subject.substring(3).trim();
+	}
+	
 	var iss = new Issue();
 
 	iss.setSubject(subject);
@@ -577,44 +585,44 @@ function validateIssue(iss) {
 
 function extractIssueIdFromMailSubject(subject) {
 	var issueId = "";
-	var startTag = "[ITOL-";
+	var startTag = "[R-";
 	var p = subject.indexOf(startTag);
-	if (p == 0) {
-		var q = subject.indexOf("]");
+	if (p >= 0) {
+		var q = subject.indexOf("]", p);
 		if (q >= 0) {
-			var str = subject.substring(p + startTag.length, q);
-			p = str.indexOf("-");
-			if (p >= 0) {
-				issueId = str.substring(p+1);
-			}
-			else {
-				issueId = str;
-			}
+			issueId = subject.substring(p + startTag.length, q);
 		}
 	}
 	return issueId;
 };
 
-function injectIssueIdIntoMailSubject(subject, iss) {
-	var ret = "[ITOL-";
-	switch (iss.getType()) {
-	case "1":
-		ret += "B";
-		break;
-	case "2":
-		ret += "F";
-		break;
-	case "3":
-		ret += "S";
-		break;
-	default:
-		sbuf.append("U");
-		break;
+function stripOneIssueIdFromMailSubject(subject) {
+	log.info("stripOneIssueIdFromMailSubject(" + subject);
+	var ret = subject;
+	var startTag = "[R-";
+	var p = subject.indexOf(startTag);
+	if (p >= 0) {
+		var q = subject.indexOf("]", p);
+		if (q >= 0) {
+			ret = subject.substring(q+1).trim();
+		}
 	}
+	log.info(")stripOneIssueIdFromMailSubject=" + ret);
+	return ret;
+};
 
-	ret += "-" + iss.getId() + "]";
+function stripIssueIdFromMailSubject(subject) {
+	var ret = stripOneIssueIdFromMailSubject(subject);
+	while (ret != subject) {
+		subject = ret;
+		ret = stripOneIssueIdFromMailSubject(subject);
+	}
+	return ret;
+}
+
+function injectIssueIdIntoMailSubject(subject, iss) {
+	var ret = "[R-" + iss.getId() + "] ";
 	ret += subject;
-
 	return ret;
 };
 
