@@ -87,4 +87,7 @@ public class Attachment {
 		this.fileName = fileName;
 	}
 
+	public String toString() {
+		return "["  + fileName + ", length=" + contentLength + "]"; 
+	}
 }

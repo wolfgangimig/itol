@@ -123,7 +123,7 @@ var config = {
 		}
 	},
 
-	url : "http://srvpelo1:9090/ix-lldo_prod/ix",
+	url : "http://srvpelo1:6080/ix-lldo_prod/ix",
 	projectNames : "",
 	msgFileType : ".msg",
 
@@ -702,7 +702,7 @@ function setObjKeysForTodo(folder, issue) {
 	var project = data.todoProjects[issue.getCategory()];
 
 	var assigneeName = conn.ix().getUserNames([ issue.getAssignee() ],
-			CheckoutUsersC.BY_IDS).name;
+			CheckoutUsersC.BY_IDS)[0].name;
 	log.info("assigneeName=" + assigneeName);
 
 	for (var i = 0; i < folder.objKeys.length; i++) {
@@ -807,6 +807,7 @@ function setObjKeysForBug(folder, issue) {
 		case "EFS_QSUSER": // line.name=QS Verantwortlicher
 			break;
 		case "EFS_USER": // line.name=Ausführender
+			value = assigneeName;
 			break;
 		case "EFS_COMMENT": // line.name=Letzter Kommentar
 			break;

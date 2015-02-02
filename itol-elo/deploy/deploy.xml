@@ -63,7 +63,7 @@
 		Dependencies. A semicolon separated list of all JARs this project depends on.
 		This JARs have to be also listed in the task <fx:resources>.
 	-->
-	<property name="application.classpath" value="joa.jar;commons-codec-1.6.jar;commons-logging-1.1.1.jar;EloixClient.jar;javautils-1.2.jar;log4j-1.2.17.jar" />
+	<property name="application.classpath" value="joa-without-dlls.jar;commons-codec-1.6.jar;commons-logging-1.1.1.jar;EloixClient.jar;javautils-1.2.jar;log4j-1.2.17.jar" />
 	
 	<!--
 		Set this property "true", if the Add-in should be installed
@@ -76,7 +76,7 @@
 		lib.dir contains the JARs and DLLs from:
 		https://github.com/wolfgangimig/joa/tree/master/java/lib 
 	-->
-	<property name="lib.dir" value="d:/git/joa/java/lib" />
+	<property name="lib.dir" value="../../itol/lib" />
 
 
 	<!--
@@ -84,6 +84,11 @@
 		The following properties do not need to be modified 
 		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 	-->
+
+	<!-- 
+		Directory for 32/64 bit DLL 
+	-->
+	<property name="dll.dir" value="${lib.dir}/bin" />
 
 	<!-- 
 		Target directory, the MSI will be placed in ./dist/32/bundles/ 
@@ -129,11 +134,11 @@
 		<echo message="Creating a ${sun.arch.data.model}bit installer" />
 		
 		<!-- 
-			Check property ${lib.dir}: joa.jar must exist.
+			Check property ${lib.dir}: joa-without-dlls.jar must exist.
 		 -->
-		<fail message="Missing: ${lib.dir}/joa.jar">
+		<fail message="Missing: ${lib.dir}/joa-without-dlls.jar">
 		    <condition><not>
-		        <available file="${lib.dir}/joa.jar" />
+		        <available file="${lib.dir}/joa-without-dlls.jar" />
 		    </not></condition>
 		</fail>
 		
@@ -161,6 +166,7 @@
 			<fileset dir="${project.dir}/bin" />
 			<fileset dir="${project.dir}/../itol/bin" />
 			<fileset dir="${project.dir}/../itol-db/bin" />
+
 		</fx:jar>
 
 		<fx:deploy verbose="true" width="${javafx.run.width}" height="${javafx.run.height}" nativeBundles="msi" outdir="${dist.dir}" outfile="${application.name}">
@@ -172,10 +178,12 @@
 				<!--
 					Add dependencies from ${application.classpath} 
 				-->
-				<fx:fileset dir="${lib.dir}" includes="joa.jar" />
+				<fx:fileset dir="${lib.dir}" includes="joa-without-dlls.jar" />
 				<fx:fileset dir="${project.dir}/lib" includes="*.jar" />
 				<fx:fileset dir="${dist.dir}" includes="*.jar" />
 				<fx:fileset dir="${project.dir}" includes="*.js" />
+				<fx:fileset dir="${dll.dir}" includes="joa${sun.arch.data.model}.dll" type="data" />
+				
 			</fx:resources>
 
 			<!-- install per user -->
