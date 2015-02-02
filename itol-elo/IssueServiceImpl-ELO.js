@@ -807,6 +807,7 @@ function setObjKeysForBug(folder, issue) {
 		case "EFS_QSUSER": // line.name=QS Verantwortlicher
 			break;
 		case "EFS_USER": // line.name=Ausführender
+			value = assigneeName;
 			break;
 		case "EFS_COMMENT": // line.name=Letzter Kommentar
 			break;
