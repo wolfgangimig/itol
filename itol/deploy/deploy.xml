@@ -46,8 +46,8 @@
 		IMPORTANT: Property ${application.name} must also be the name of the 
 		WiX customization file at ./package/windows/${application.name}.wxs.
 	-->
-	<property name="application.name" value="JOA Issue Tracker for Microsoft Outlook" />
-	<property name="application.version" value="1.0" />
+	<property name="application.name" value="Issue Tracker for Microsoft Outlook ${sun.arch.data.model}bit" />
+	<property name="application.version" value="1.1" />
 	<property name="application.vendor" value="WILUTIONS" />
 	<property name="application.title" value="${application.name}" />
 
