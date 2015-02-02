@@ -1,0 +1,14 @@
+Issue Tracker Addin for Microsoft Outlook
+Version History
+
+
+Version 1.1 2015-02-01 
+
+- #3: Now, priority names are read from Redmine. 
+
+- #2: Now, tracker types are read from Redmine. 
+
+
+
+ 
+Version 1.0 2015-01-31

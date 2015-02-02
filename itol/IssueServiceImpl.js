@@ -158,10 +158,28 @@ var data = {
 	 * Current user.
 	 */
 	user : {},
+	
+	/**
+	 * Array of tracker IdName objects
+	 */
+	trackers: [],
+	
+	/**
+	 * Array of priority IdName objects
+	 */
+	priorities: [],
+	
+	/**
+	 * Default priority ID. 
+	 */
+	defaultPriority: 0,
 
 	clear : function() {
 		this.projects = {};
 		this.user = {};
+		this.trackers = [];
+		this.priorities = [];
+		this.defaultPriority = 0;
 	}
 
 }
@@ -273,8 +291,39 @@ function initialize() {
 	readProjects(data);
 
 	readCurrentUser(data);
+	
+	readTrackers(data);
+	
+	readPriorities(data);
 
 	config.valid = true;
+}
+
+function readTrackers(data) {
+	log.info("readTrackers(");
+	var trackersResponse = httpClient.get("/trackers.json");
+	dump("trackersResponse", trackersResponse);
+	for (var i = 0; i < trackersResponse.trackers.length; i++) {
+		var tracker = trackersResponse.trackers[i];
+		data.trackers.push(new IdName(tracker.id, tracker.name));
+	}
+	
+	log.info(")readTrackers");
+}
+
+function readPriorities(data) {
+	log.info("readPriorities(");
+	var prioritiesResponse = httpClient.get("/enumerations/issue_priorities.json");
+	dump("prioritiesResponse", prioritiesResponse);
+	for (var i = 0; i < prioritiesResponse.issue_priorities.length; i++) {
+		var priority = prioritiesResponse.issue_priorities[i];
+		data.priorities.push(new IdName(priority.id, priority.name));
+		if (priority.is_default) {
+			data.defaultPriority = priority.id;
+		}
+	}
+	log.info(")readPriorities");
+
 }
 
 function initializePropertyClasses() {
@@ -300,15 +349,6 @@ function initializePropertyClasses() {
 	                  			new IdName(".rtf", "Rich Text Format (.rtf)") ]);
 
 	// Initialize select list for some issue properties
-
-	var propIssueType = propertyClasses.get(Property.ISSUE_TYPE);
-	propIssueType.setSelectList([ new IdName(1, "Bug"),
-			new IdName(2, "Feature Request"), new IdName(3, "Support") ]);
-
-	var propPriority = propertyClasses.get(Property.PRIORITY);
-	propPriority.setSelectList([ new IdName(1, "Low priority"),
-			new IdName(2, "Normal priority"), new IdName(3, "High priority"),
-			new IdName(4, "Urgent"), new IdName(5, "Immediate") ]);
 
 	var propIssueStatus = propertyClasses.get(Property.STATE);
 	propIssueStatus.setSelectList([ new IdName(1, "New issue"),
@@ -341,11 +381,11 @@ function getPropertyClasses() {
 }
 
 function getIssueTypes(issue) {
-	return getPropertyClasses().get(Property.ISSUE_TYPE).getSelectList();
+	return data.trackers;
 };
 
 function getPriorities(issue) {
-	return getPropertyClasses().get(Property.PRIORITY).getSelectList();
+	return data.priorities;
 };
 
 function getCategories(issue) {
@@ -469,7 +509,7 @@ function createIssue(subject, description) {
 	iss.setSubject(subject);
 	iss.setDescription(description);
 	iss.setType(1); // Bug
-	iss.setPriority(2); // Normal priority
+	iss.setPriority(data.defaultPriority); // Normal priority
 	iss.setState(1); // New issue
 	iss.setAssignee(-1);
 
