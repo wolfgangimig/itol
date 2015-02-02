@@ -194,7 +194,7 @@ public class Globals {
 		String ret = "";
 		try {
 			byte[] buf = OfficeAddinUtil.getResourceAsBytes(BackstageConfig.class,
-					"Version.properties");
+					"version.properties");
 			Properties props = new Properties();
 			props.load(new ByteArrayInputStream(buf));
 			ret = props.getProperty("Version");
