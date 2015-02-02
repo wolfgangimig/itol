@@ -76,7 +76,7 @@
 		lib.dir contains the JARs and DLLs from:
 		https://github.com/wolfgangimig/joa/tree/master/java/lib 
 	-->
-	<property name="lib.dir" value="d:/git/joa/java/lib" />
+	<property name="lib.dir" value="../../itol/lib" />
 
 
 	<!--
