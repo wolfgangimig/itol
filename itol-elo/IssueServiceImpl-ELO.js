@@ -74,10 +74,9 @@ var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
 var Attachment = Java.type("com.wilutions.itol.db.Attachment");
 var Issue = Java.type("com.wilutions.itol.db.Issue");
 var DescriptionHtmlEditor = Java
-.type("com.wilutions.itol.db.DescriptionHtmlEditor");
+		.type("com.wilutions.itol.db.DescriptionHtmlEditor");
 var DescriptionTextEditor = Java
-.type("com.wilutions.itol.db.DescriptionTextEditor");
-
+		.type("com.wilutions.itol.db.DescriptionTextEditor");
 
 var InetAddress = Java.type("java.net.InetAddress");
 var IXConnFactory = Java.type("de.elo.ix.client.IXConnFactory");
@@ -94,6 +93,7 @@ var Document = Java.type("de.elo.ix.client.Document");
 var DocVersion = Java.type("de.elo.ix.client.DocVersion");
 var EditInfo = Java.type("de.elo.ix.client.EditInfo");
 var EditInfoC = Java.type("de.elo.ix.client.EditInfoC");
+var ClientInfo = Java.type("de.elo.ix.client.ClientInfo");
 
 var Dispatch = Java.type("com.wilutions.com.Dispatch");
 
@@ -124,6 +124,7 @@ var config = {
 	},
 
 	url : "http://srvpelo1:6080/ix-lldo_prod/ix",
+	credentials : "",
 	projectNames : "",
 	msgFileType : ".msg",
 
@@ -132,10 +133,12 @@ var config = {
 	PROPERTY_ID_URL : "url",
 	PROPERTY_ID_PROJECT_NAMES : "projectNames",
 	PROPERTY_ID_MSG_FILE_TYPE : "msgFileType",
+	PROPERTY_ID_CREDENTIALS : "credentials",
 
 	toProperties : function() {
 		return [
 				new Property(this.PROPERTY_ID_URL, this.url),
+				new Property(this.PROPERTY_ID_CREDENTIALS, this.credentials),
 				new Property(this.PROPERTY_ID_PROJECT_NAMES, this.projectNames),
 				new Property(this.PROPERTY_ID_MSG_FILE_TYPE, this.msgFileType) ];
 	},
@@ -171,10 +174,18 @@ var data = {
 	 * (assignees). this.projects[.].versions contains an array of versions
 	 * (milestones).
 	 */
-	projects : {},
+	todoProjects : {},
+	ttsProjects : {},
 
+	/**
+	 * Array of IdName objects for users.
+	 */
+	users : [],
+	
 	clear : function() {
-		this.projects = {};
+		this.todoProjects = {};
+		this.ttsProjects = {};
+		this.users = [];
 	}
 
 }
@@ -236,11 +247,30 @@ function getProjectUserNames(sord) {
 		if (idx >= 0) {
 			var userList = desc.substring(idx);
 			ret = userList.split("|");
-		} else {
-
+			break;
 		}
 	}
+	ret = ret.sort();
 	log.info(")getProjectUserNames=" + ret);
+	return ret;
+}
+
+function getProjectUserNamesQS(sord) {
+	log.info("getProjectUserNamesQS(" + sord + ", desc=" + sord.desc);
+	var ret = [];
+	var descLines = sord.desc.split("\n");
+	for (var lineIdx = 0; lineIdx < descLines.length; lineIdx++) {
+		var desc = descLines[lineIdx].trim();
+		var idx = -1;
+		if (desc.indexOf("qsuser=") == 0) {
+			idx = 7;
+			var userList = desc.substring(idx);
+			ret = userList.split("|");
+			break;
+		}
+	}
+	ret = ret.sort();
+	log.info(")getProjectUserNamesQS=" + ret);
 	return ret;
 }
 
@@ -248,8 +278,10 @@ function isMyProject(sord) {
 	log.info("isMyProject(" + sord);
 	var isMyProject = false;
 	var userNames = getProjectUserNames(sord);
-	for (var i = 0; !isMyProject && i < userNames.length; i++) {
-		isMyProject = isMe(userNames[i]);
+	var userNamesQS = getProjectUserNamesQS(sord);
+	var projectUsers = userNames.concat(userNamesQS);
+	for (var i = 0; !isMyProject && i < projectUsers.length; i++) {
+		isMyProject = isMe(projectUsers[i]);
 	}
 	log.info(")isMyProject=" + isMyProject);
 	return isMyProject;
@@ -293,7 +325,7 @@ function readProjects(data) {
 		if (sord.name == "Java Server") {
 			continue;
 		}
-		
+
 		var myproj = isMyProject(sord);
 		log.info("sord=" + sord + ", isMyProject=" + myproj + ", desc="
 				+ sord.desc);
@@ -328,18 +360,30 @@ function readProjectVersions(project) {
 	log.info(")readProjectVersions");
 }
 
+function getUserIdName(userName) {
+	var ret = null;
+	userName = userName.toLowerCase();
+	for (var i = 0; i < data.users.length; i++) {
+		var idn = data.users[i];
+		if (idn.name.toLowerCase().equals(userName)) {
+			ret = idn;
+		}
+	}	
+	return ret;
+}
+
 function readProjectMembers(project) {
 	log.info("readProjectMembers(project.id=" + project.id);
 	checkValid();
 
 	var userNames = getProjectUserNames(project.sord);
-	var userNameObjs = conn.ix().getUserNames(userNames.sort(),
-			CheckoutUsersC.BY_IDS);
 
 	project.members = [];
-	for (var i = 0; i < userNameObjs.length; i++) {
-		var idn = new IdName(userNameObjs[i].id, userNameObjs[i].name);
-		project.members.push(idn);
+	for (var i = 0; i < userNames.length; i++) {
+		var idn = getUserIdName(userNames[i]);
+		if (idn) {
+			project.members.push(idn);
+		}
 	}
 
 	dump("project.members", project.members);
@@ -365,9 +409,31 @@ function initialize() {
 		}
 	}
 
+	var computerName = InetAddress.getLocalHost().getHostName();
 	var connFact = new IXConnFactory(config.url,
 			"ELO Issue Tracker for Outlook", "1.0");
-	conn = connFact.createSso(InetAddress.getLocalHost().getHostName());
+	
+	
+	if (config.credentials) {
+		var p = config.credentials.indexOf(";");
+		if (p >= 0) {
+			var userName = config.credentials.substring(0, p);
+			var password = config.credentials.substring(p+1);
+			conn = connFact.create(userName, password, computerName, "");
+		}
+		else {
+			var ci = new ClientInfo();
+			ci.ticket = config.credentials;
+			conn = connFact.createFromTicket(ci);
+		}
+	} else {
+		conn = connFact.createSso(computerName);
+	}
+	
+	var userNameObjs = conn.ix().getUserNames(null, CheckoutUsersC.ALL_USERS);
+	for (var i = 0; i < userNameObjs.length; i++) {
+		data.users.push(new IdName(userNameObjs[i].id, userNameObjs[i].name));
+	}
 
 	readProjects(data);
 
@@ -387,6 +453,8 @@ function initializePropertyClasses() {
 			"Projects (optional, comma separated)");
 	propertyClasses.add(PropertyClass.TYPE_STRING,
 			config.PROPERTY_ID_MSG_FILE_TYPE, "Attach mail as");
+	propertyClasses.add(PropertyClass.TYPE_STRING,
+			config.PROPERTY_ID_CREDENTIALS, "Credentials");
 
 	var propMsgFileType = propertyClasses.get(config.PROPERTY_ID_MSG_FILE_TYPE);
 	propMsgFileType.setSelectList([ new IdName(".msg", "Outlook (.msg)"),
@@ -494,8 +562,8 @@ function getDescriptionHtmlEditor(issue) {
 }
 
 function getDescriptionTextEditor(issue) {
-//	var isBug = issue.getType() == ISSUE_TYPE_BUG;
-//	return new DescriptionTextEditor(issue.getDescription());
+	// var isBug = issue.getType() == ISSUE_TYPE_BUG;
+	// return new DescriptionTextEditor(issue.getDescription());
 	return null;
 }
 
@@ -503,31 +571,28 @@ function getShowIssueUrl(issueId) {
 	var isBug = issueId.indexOf("TTS") == 0;
 	var objId = "OKEY:";
 	objId += isBug ? "EFS_NR" : "TODOID";
-	var folder = conn.ix().checkoutSord(objId + "=" + issueId, SordC.mbLean, LockC.NO);
-	
+	var folder = conn.ix().checkoutSord(objId + "=" + issueId, SordC.mbLean,
+			LockC.NO);
+
 	var arc = conn.ix().checkoutSord("1", SordC.mbMin, LockC.NO);
-	
-//	EP
-//	Alldo_prod
-//	G(D2DBEEE1-F1B7-8B54-E8AD-EC49502365A0)
-//	I5442908
-//	WTOP
-//	T
+
+	// EP
+	// Alldo_prod
+	// G(D2DBEEE1-F1B7-8B54-E8AD-EC49502365A0)
+	// I5442908
+	// WTOP
+	// T
 	var CR = "\r\n";
-	var ecd = "EP" + CR + 
-		"A" + arc.name + CR +  
-		"G" + folder.guid + CR + 
-		"I" + folder.id + CR + 
-		"WTOP" + CR + 
-		"T" + CR;
-	
+	var ecd = "EP" + CR + "A" + arc.name + CR + "G" + folder.guid + CR + "I"
+			+ folder.id + CR + "WTOP" + CR + "T" + CR;
+
 	folder.desc = ecd; // trick: brauche einen java.lang.String für write()
 
 	var tempEcd = File.createTempFile(issueId, ".ecd");
 	var wr = new OutputStreamWriter(new FileOutputStream(tempEcd));
-	wr.write(folder.desc.toCharArray()); 
+	wr.write(folder.desc.toCharArray());
 	wr.close();
-	
+
 	var fname = tempEcd.getAbsolutePath();
 	fname = fname.replace(/\\\\/, "/");
 	return "file:////" + fname;
@@ -547,52 +612,44 @@ var descTemplateBug = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
 		+ "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">"
 		+ "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"de\">"
 		+ "<head></head><body>\n"
-		+ "<h1>Beschreibung / Reproduktionsschritte:</h1>\n"
-		+ "<hr>\n"
-		+ "<p><br/><pre>{0}</pre><br/></p>" 
-		+ "<hr>\n"
-		+ "<h1>Analyse:</h1>\n"
+		+ "<h1>Beschreibung / Reproduktionsschritte:</h1>\n" + "<hr>\n"
+		+ "<p><br/><pre>{0}</pre><br/></p>" + "<hr>\n" + "<h1>Analyse:</h1>\n"
 		+ "<p>&lt;Entwickler: Wie ist es zu diesem Problem gekommen?&gt;</p>\n"
 		+ "<h1>Korrektur / Lösung:</h1>\n"
 		+ "<p>&lt;Entwickler: Wie wurde das Problem gelöst&gt;</p>\n"
 		+ "</body></html>\n";
 
 var descTemplateTodo = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
-	+ "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">"
-	+ "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"de\">"
-	+ "<head></head><body>\n"
-	+ "<h1>Beschreibung</h1>\n"
-	+ "<hr>\n"
-	+ "<p><br/><pre>{0}</pre><br/></p>" 
-	+ "<hr>\n"
-	+ "</body></html>\n";
-
+		+ "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">"
+		+ "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"de\">"
+		+ "<head></head><body>\n" + "<h1>Beschreibung</h1>\n" + "<hr>\n"
+		+ "<p><br/><pre>{0}</pre><br/></p>" + "<hr>\n" + "</body></html>\n";
 
 function getIssueDescriptionFromMailBody(issueType, mailbody) {
 	var isBug = issueType == ISSUE_TYPE_BUG;
 	var descTemplate = isBug ? descTemplateBug : descTemplateTodo;
-	
+
 	if (mailbody.length > 200) {
 		mailbody = mailbody.substring(0, 197) + "...";
 	}
-	
+
 	var issueDescription = MessageFormat.format(descTemplate, mailbody);
 	return issueDescription;
 };
 
 function createIssue(subject, mailDescription) {
 	config.checkValid();
-	
+
 	subject = stripIssueIdFromSubject(subject);
-	
+
 	if (subject.indexOf("AW:") == 0) {
 		subject = subject.substring(3).trim();
-	}
-	else if (subject.indexOf("WG:") == 0) {
+	} else if (subject.indexOf("WG:") == 0) {
 		subject = subject.substring(3).trim();
 	}
 
-	var issueDescription = getIssueDescriptionFromMailBody(ISSUE_TYPE_BUG, mailDescription);
+	var issueDescription = getIssueDescriptionFromMailBody(ISSUE_TYPE_BUG,
+			mailDescription);
 
 	var iss = new Issue();
 
@@ -613,10 +670,11 @@ function createIssue(subject, mailDescription) {
 };
 
 function saveHtmlDescriptionAsTempDoc(description, progressCallback) {
-	
+
 	var pgSave = null;
 	if (progressCallback) {
-		if (progressCallback.isCancelled()) return null;
+		if (progressCallback.isCancelled())
+			return null;
 		var str = "Save description";
 		pgSave = progressCallback.createChild(str);
 		pgSave.setTotal(10000);
@@ -632,7 +690,8 @@ function saveHtmlDescriptionAsTempDoc(description, progressCallback) {
 		wr.write(description.toCharArray());
 		wr.close();
 		if (pgSave) {
-			if (pgSave.isCancelled()) return null;
+			if (pgSave.isCancelled())
+				return null;
 			pgSave.setProgress(1000);
 		}
 
@@ -642,7 +701,8 @@ function saveHtmlDescriptionAsTempDoc(description, progressCallback) {
 		var doc = docs._call("Open", htmlFile.getAbsolutePath());
 		var docFile = File.createTempFile("issue", ".docx");
 		if (pgSave) {
-			if (pgSave.isCancelled()) return null;
+			if (pgSave.isCancelled())
+				return null;
 			pgSave.setProgress(6000);
 		}
 
@@ -651,7 +711,7 @@ function saveHtmlDescriptionAsTempDoc(description, progressCallback) {
 		var wdFormatXMLDocument = 12;
 		doc._call("SaveAs", docFile.getAbsolutePath(), new Integer(
 				wdFormatXMLDocument));
-		
+
 	} finally {
 		if (htmlFile) {
 			htmlFile["delete"]();
@@ -834,7 +894,7 @@ function getIssueParentId(issue) {
 	var isBug = issue.getType() == ISSUE_TYPE_BUG;
 	var prioName = getPrioAsString(issue);
 
-	var projects = isBug ? data.ttsProjects : data.todoProjects; 
+	var projects = isBug ? data.ttsProjects : data.todoProjects;
 	var project = projects[issue.getCategory()];
 	dump("project", project);
 
@@ -869,51 +929,55 @@ function getFileNameWithoutExt(fname) {
 }
 
 function uploadAttachment(parentId, attachment, progressCallback) {
-	log.info("uploadAttachment(parentId=" + parentId + ", attachment=" + attachment);
-	
+	log.info("uploadAttachment(parentId=" + parentId + ", attachment="
+			+ attachment);
+
 	var fileSize = attachment.getContentLength();
-	
+
 	var pgUpload = null;
 	if (progressCallback) {
-		if (progressCallback.isCancelled()) return null;
+		if (progressCallback.isCancelled())
+			return null;
 		var str = "Upload attachment " + attachment.getFileName();
 		str += ", " + makeAttachmentSizeString(fileSize);
 		pgUpload = progressCallback.createChild(str);
 		pgUpload.setTotal(fileSize);
 	}
-	
+
 	try {
 		var ed = conn.ix().createDoc(parentId, "", "", EditInfoC.mbSordDocAtt);
 		ed.sord.name = getFileNameWithoutExt(attachment.getFileName());
-		
+
 		var dv = new DocVersion();
 		dv.ext = getFileExt(attachment.getFileName());
 		dv.pathId = ed.sord.path;
-		ed.document.docs = [dv];
-		
+		ed.document.docs = [ dv ];
+
 		ed.document = conn.ix().checkinDocBegin(ed.document);
 		var url = ed.document.docs[0].url;
 		log.info("url=" + url);
-		
+
 		if (pgUpload) {
-			if (pgUpload.isCancelled()) return null;
-			pgUpload.setProgress(fileSize/3);
+			if (pgUpload.isCancelled())
+				return null;
+			pgUpload.setProgress(fileSize / 3);
 		}
-		
-		var uploadResult = conn.upload(url, attachment.getStream(), fileSize, attachment.getContentType());
+
+		var uploadResult = conn.upload(url, attachment.getStream(), fileSize,
+				attachment.getContentType());
 		log.info("uploadResult=" + uploadResult);
 		ed.document.docs[0].uploadResult = uploadResult;
-		pgUpload.setProgress(2*fileSize/3);
-		
-		var objId = conn.ix().checkinDocEnd(ed.sord, SordC.mbAll, ed.document, LockC.NO);
+		pgUpload.setProgress(2 * fileSize / 3);
+
+		var objId = conn.ix().checkinDocEnd(ed.sord, SordC.mbAll, ed.document,
+				LockC.NO);
 		log.info("objId=" + objId);
-	}
-	finally {
+	} finally {
 		if (pgUpload) {
 			pgUpload.setFinished();
 		}
 	}
-	
+
 	log.info(")uploadAttachment=" + objId);
 	return objId;
 }
@@ -924,7 +988,7 @@ function getTodoDescFromIssue(issue) {
 
 	var desc = issue.getDescription();
 	log.info("desc=" + desc);
-	
+
 	var p = desc.indexOf("<hr>");
 	log.info("hr at " + p);
 	if (p >= 0) {
@@ -947,7 +1011,7 @@ function updateIssue(issue, progressCallback) {
 	log.info("updateIssue(issue=" + issue + ", progressCallback="
 			+ progressCallback);
 	config.checkValid();
-	
+
 	var isBug = issue.getType() == ISSUE_TYPE_BUG;
 	var maskId = isBug ? DOCMASK_BUG : DOCMASK_TODO;
 
@@ -959,9 +1023,9 @@ function updateIssue(issue, progressCallback) {
 	log.info("parentId=" + parentId);
 
 	try {
-	
+
 		var folder = conn.ix().createSord(parentId, maskId, SordC.mbAll);
-	
+
 		if (isBug) {
 			folder.name = issueId + ": " + issue.getSubject();
 			folder.desc = "##*\r\n";
@@ -971,36 +1035,34 @@ function updateIssue(issue, progressCallback) {
 			folder.desc = getTodoDescFromIssue(issue);
 			setObjKeysForTodo(folder, issue);
 		}
-		
+
 		folder.id = conn.ix().checkinSord(folder, SordC.mbAll, LockC.NO);
 		log.info("folder=" + folder);
-		
-		var docFile = saveHtmlDescriptionAsTempDoc(issue.getDescription(), progressCallback);
+
+		var docFile = saveHtmlDescriptionAsTempDoc(issue.getDescription(),
+				progressCallback);
 		var descriptionAttachment = new Attachment();
 		descriptionAttachment.setFileName("Beschreibung.docx");
 		descriptionAttachment.setStream(new FileInputStream(docFile));
 		descriptionAttachment.setContentType("application/docx");
 		descriptionAttachment.setContentLength(docFile.length());
 		uploadAttachment(folder.id, descriptionAttachment, progressCallback);
-		
+
 		for (var i = 0; i < issue.getAttachments().size(); i++) {
 			var attachment = issue.getAttachments().get(i);
 			uploadAttachment(folder.id, attachment, progressCallback);
 		}
-	}
-	catch (ex) {
+	} catch (ex) {
 		if (folder && folder.id) {
 			try {
 				conn.ix().deleteSord("", folder.id, LockC.NO, null);
-			}
-			catch (ignore) {
+			} catch (ignore) {
 			}
 		}
 		throw ex;
+	} finally {
 	}
-	finally {
-	}
-	
+
 	return issue;
 };
 
@@ -1024,16 +1086,16 @@ function validateIssue(iss) {
 	var ret = iss;
 	if (iss.getType() == ISSUE_TYPE_TODO) {
 		var description = iss.getDescription();
-		var wasBug = description.indexOf("<h1>Beschreibung / Reproduktionsschritte:</h1>") >= 0;
+		var wasBug = description
+				.indexOf("<h1>Beschreibung / Reproduktionsschritte:</h1>") >= 0;
 		log.info("issue.type=" + iss.getType() + ", wasBug=" + wasBug);
 		if (wasBug) {
 			description = getIssueDescriptionFromMailBody(ISSUE_TYPE_TODO, "");
 			iss.setDescription(description);
 		}
-	}
-	else {
+	} else {
 		var description = iss.getDescription();
-		var wasTodo = description.indexOf("<h1>Beschreibung</h1>") >= 0; 
+		var wasTodo = description.indexOf("<h1>Beschreibung</h1>") >= 0;
 		log.info("issue.type=" + iss.getType() + ", wasTodo=" + wasTodo);
 		if (wasTodo) {
 			description = getIssueDescriptionFromMailBody(ISSUE_TYPE_BUG, "");
@@ -1085,7 +1147,7 @@ function stripFirstIssueIdFromSubject(subject) {
 	if (p >= 0) {
 		var q = subject.indexOf("]", p);
 		if (q >= 0) {
-			subject = subject.substring(q+1).trim();
+			subject = subject.substring(q + 1).trim();
 		}
 	}
 	return subject;

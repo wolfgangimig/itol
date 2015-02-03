@@ -2,6 +2,7 @@ pushd "D:\git\itol\itol-elo"
 set CP=D:\git\itol\itol-elo\bin
 set CP=%CP%;D:\git\itol\itol\bin
 set CP=%CP%;D:\git\itol\itol-db\bin
+set CP=%CP%;D:\git\itol\itol\lib
 set CP=%CP%;D:\git\itol\itol\lib\joa.jar
 set CP=%CP%;D:\git\itol\itol-elo\lib\commons-codec-1.6.jar
 set CP=%CP%;D:\git\itol\itol-elo\lib\commons-logging-1.1.1.jar
