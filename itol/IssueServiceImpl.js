@@ -8,12 +8,23 @@
       MIT License, http://opensource.org/licenses/MIT
 
  */
-//load("nashorn:mozilla_compat.js");
-//importPackage(com.wilutions.itol.db);
 
+/**
+ * Maximum number of projects to be read.
+ * This value constraints the number of combo box items in the UI.
+ */
 var MAX_PROJECTS = 20;
+
+/**
+ * Maximum number of users per project.
+ * This value constraints the number of combo box items in the UI.
+ */
 var MAX_USERS = 20;
 
+
+/**
+ * Import requried Java classes
+ */
 var IOException = Java.type("java.io.IOException");
 var Property = Java.type("com.wilutions.itol.db.Property");
 var PropertyClass = Java.type("com.wilutions.itol.db.PropertyClass");
@@ -24,37 +35,61 @@ var HttpResponse = Java.type("com.wilutions.itol.db.HttpResponse");
 var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
 var Issue = Java.type("com.wilutions.itol.db.Issue");
 var DescriptionHtmlEditor = Java.type("com.wilutions.itol.db.DescriptionHtmlEditor");
-
 var Logger = Java.type("java.util.logging.Logger");
 var log = Logger.getLogger("IssueServiceImpl.js");
 
+
+/**
+ * Dump JavaScript objects into the log file.
+ * @param name String, used as title.
+ * @param obj Object to be dumped.
+ */
 function dump(name, obj) {
 	var str = JSON.stringify(obj, null, 2);
 	log.info(name + "=" + str);
 }
 
+
+/**
+ * Configuration values.
+ * This values can be edited in the configuration page "Issue Tracker" 
+ * in the backstage view of Outlook's main window.
+ * If you want to add a new configuration property, 
+ * follow the instructions in the lines marked with MY_CONFIG_PROPERTY.
+ */
 var config = {
 
 	/**
-	 * This property is set as true, if initialization succeeds. All
-	 * IssueService functions have to check this member.
+	 * Redmine URL
 	 */
-	valid : false,
-
-	/**
-	 * Throw exception if configuration is invalid.
-	 */
-	checkValid : function() {
-		if (!this.valid) {
-			throw new IOException(
-					"Initialization failed. Check configuration properties on backstage view.");
-		}
-	},
-
 	url : "http://192.168.0.11",
+	
+	/**
+	 * API key for authentication. 
+	 */
 	apiKey : "... see \"Redmine / My account / API access key\" ... ",
+	
+	/**
+	 * Comma separated list of project names.
+	 * Only projects listed here are shown in the UI.
+	 */
 	projectNames : "",
+	
+	/**
+	 * Attach mail encoded in this format.
+	 */
 	msgFileType : ".msg",
+	
+	/**
+	 * MY_CONFIG_PROPERTY
+	 * Add your property here. 
+	 * Properties can be of type string or boolean. 
+	 * A list of possible values can be assigned to a string property definition. 
+	 * In this case, a combo box is associated to the property.
+	 * The syntax for declaring a property is: property-name = "property-value" comma  
+	 */
+	// my_config_property = "a default value", 
+	
 
 	// Property IDs of configuration data.
 	// IDs are member names to simplify function fromProperties
@@ -62,9 +97,23 @@ var config = {
 	PROPERTY_ID_API_KEY : "apiKey",
 	PROPERTY_ID_PROJECT_NAMES : "projectNames",
 	PROPERTY_ID_MSG_FILE_TYPE : "msgFileType",
+	
+	/**
+	 * MY_CONFIG_PROPERTY
+	 * Define a property ID. Currently, use the property name as ID.
+	 * Syntax: property-id-variable colon "property-name" comma
+	 */
+	// PROPERTY_ID_MY_CONFIG_PROPERTY : "my_config_property", 
 
+	/**
+	 * Collect the properties in an array.
+	 * The configuration view calls this function to receive the property values.
+	 */
 	toProperties : function() {
-		return [ new Property(this.PROPERTY_ID_URL, this.url),
+		return [ 
+		        // Add your property here:
+		        // new Property(this.PROPERTY_ID_MY_CONFIG_PROPERTY, this.my_config_property), 
+		         new Property(this.PROPERTY_ID_URL, this.url),
 				new Property(this.PROPERTY_ID_API_KEY, this.apiKey),
 				new Property(this.PROPERTY_ID_PROJECT_NAMES, this.projectNames),
 				new Property(this.PROPERTY_ID_MSG_FILE_TYPE, this.msgFileType)];
@@ -82,10 +131,37 @@ var config = {
 		}
 	},
 
+	/**
+	 * This property is set as true, if initialization succeeds. All
+	 * IssueService functions have to check this member.
+	 */
+	valid : false,
+
+	/**
+	 * Throw exception if configuration is invalid.
+	 */
+	checkValid : function() {
+		if (!this.valid) {
+			throw new IOException(
+					"Initialization failed. Check configuration properties on backstage view.");
+		}
+	},
+
 };
 
+/**
+ * Execute HTTP requests.
+ * JavaScript wrapper around the Java class JHttpClient.
+ */
 var httpClient = {
 
+	/**
+	 * Send a request.
+	 * @param method Either "POST", "GET", "PUT", "DELETE".
+	 * @param header Array of headers, each header in form "header-name : header-value", e.g. ["Content-Type: application/json"]
+	 * @return response text.
+	 * @throws IOException on error status (HTTP != 2xx)
+	 */
 	send : function(method, headers, params, content, progressCallback) {
 		var destUrl = config.url + params;
 		this._addAuthHeader(headers);
@@ -112,6 +188,13 @@ var httpClient = {
 		return response;
 	},
 
+	/**
+	 * Send POST request to transmit a JSON object.
+	 * @param params URL parameters, e.g. "/issues.json" 
+	 * @param content JSON object to be posted
+	 * @param progressCallback Listener object to watch progress.
+	 * @return Server response as string, usually in JSON format.
+	 */
 	post : function(params, content, progressCallback) {
 		var headers = [ "Content-Type: application/json" ];
 		var jsonStr = JSON.stringify(content);
@@ -119,6 +202,14 @@ var httpClient = {
 		return JSON.parse(ret.content);
 	},
 
+	/**
+	 * Send POST request to upload a file.
+	 * @param URL parameters, e.g. "/uploads.json"
+	 * @param content File content, a java.io.InputStream
+	 * @param contentLength Content length
+	 * @param progressCallback Listener object to watch progress.
+	 * @return Server response as string, usually in JSON format.
+	 */
 	upload : function(params, content, contentLength, progressCallback) {
 		var headers = [ "Content-Type: application/octet-stream"];
 		if (contentLength) {
@@ -128,11 +219,19 @@ var httpClient = {
 		return JSON.parse(ret.content);
 	},
 
+	/**
+	 * Send GET request to receive a JSON object.
+	 * @param params URL parameters, e.g. "/projects.json?offset=..." 
+	 * @return Server response as string, usually in JSON format.
+	 */
 	get : function(params) {
 		var headers = [];
 		return JSON.parse(this.send("GET", headers, params, null).content);
 	},
 
+	/**
+	 * Add the Redmine API key in header X-Redmine-API-Key for authentication.
+	 */
 	_addAuthHeader : function(headers) {
 		if (config.apiKey) {
 			headers.push("X-Redmine-API-Key: " + config.apiKey);
@@ -144,6 +243,10 @@ var httpClient = {
 	}
 };
 
+
+/**
+ * Cache of frequently used data.
+ */
 var data = {
 
 	/**
@@ -326,6 +429,11 @@ function readPriorities(data) {
 
 }
 
+/**
+ * Initialize property classes.
+ * In config.propertyClasses, a type definition is stored for each property.
+ * The UI interprets the type definition and assigns an appropriate UI control. 
+ */
 function initializePropertyClasses() {
 
 	var propertyClasses = PropertyClasses.getDefault();
@@ -343,12 +451,16 @@ function initializePropertyClasses() {
 			config.PROPERTY_ID_MSG_FILE_TYPE,
 			"Attach mail as");
 	
+	// propertyClass.add(PropertyClass.TYPE_STRING,
+	//      config.PROPERTY_ID_MY_CONFIG_PROPERTY,
+	//      "my_config_property label"
+	
+	// Initialize select list for some issue properties
+
 	var propMsgFileType = propertyClasses.get(config.PROPERTY_ID_MSG_FILE_TYPE);
 	propMsgFileType.setSelectList([ new IdName(".msg", "Outlook (.msg)"),
 	                  			new IdName(".mhtml", "MIME HTML (.mhtml)"),
 	                  			new IdName(".rtf", "Rich Text Format (.rtf)") ]);
-
-	// Initialize select list for some issue properties
 
 	var propIssueStatus = propertyClasses.get(Property.STATE);
 	propIssueStatus.setSelectList([ new IdName(1, "New issue"),
@@ -358,6 +470,10 @@ function initializePropertyClasses() {
 //			new IdName(4, "Feedback"), new IdName(5, "Closed"),
 //			new IdName(6, "Rejected") 
 	]);
+	
+	
+	// var prop_my_config_property = propertyClasses.get(config.PROPERTY_ID_MY_CONFIG_PROPERTY);
+	// prop_my_config_property.setSelectList([ new IdName("item ID", "item name"), ...]);
 
 	var propMilestones = propertyClasses.get(Property.MILESTONES);
 	propMilestones.setName("Versions");
@@ -498,11 +614,8 @@ function createIssue(subject, description) {
 	
 	subject = stripIssueIdFromMailSubject(subject);
 	
-	// strip RE:, FW:, AW:, WG: ...
-	var cp = subject.indexOf(":");
-	if (cp == 2) {
-		subject = subject.substring(3).trim();
-	}
+	// strip RE:, Fwd:, AW:, WG: ...
+	subject = stripReFwdFromSubject(subject);
 	
 	var iss = new Issue();
 
@@ -658,6 +771,25 @@ function stripIssueIdFromMailSubject(subject) {
 		ret = stripOneIssueIdFromMailSubject(subject);
 	}
 	return ret;
+}
+
+function stripReFwdFromSubject(subject) {
+	var p = "";
+	while (p != subject) {
+		p = subject;
+		subject = stripFirstReFwdFromSubject(p);
+	}
+	return subject;
+}
+
+function stripFirstReFwdFromSubject(subject) {
+	subject = subject.trim();
+	var s = subject.toLowerCase();
+	var p = s.indexOf(":");
+	if (p < 4) {
+		subject = subject.substring(p+1);
+	}
+	return subject;
 }
 
 function injectIssueIdIntoMailSubject(subject, iss) {
