@@ -44,7 +44,9 @@ public class AttachmentHttpServer {
 	}
 
 	public void done() {
-		httpServer.stop(0);
+		if (httpServer != null) {
+			httpServer.stop(0);
+		}
 	}
 
 	public void createContext(String uri, HttpHandler object) {
