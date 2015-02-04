@@ -30,7 +30,7 @@
          </font>
       </TextField>
        <HTMLEditor fx:id="edDescription" maxHeight="1.7976931348623157E308" styleClass="descriptionEditor" GridPane.columnSpan="3" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS" />
-      <ChoiceBox fx:id="cbTracker" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2" />
+      <ChoiceBox fx:id="cbTracker" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2" />
       <ChoiceBox fx:id="cbPriority" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="3" />
       <HBox fx:id="hboxAssignee" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.rowIndex="3">
          <children>
@@ -39,7 +39,7 @@
             <Button fx:id="bnAssignee" mnemonicParsing="false" text="..." HBox.hgrow="NEVER" />
          </children>
       </HBox>
-      <HBox fx:id="hboxCategory" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2">
+      <HBox fx:id="hboxCategory" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2">
          <children>
             <ChoiceBox fx:id="cbCategory" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
             <TextField fx:id="edCategory" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />

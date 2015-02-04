@@ -312,8 +312,9 @@ function readProjects(data) {
 	var offset = 0;
 	while (projectCount < MAX_PROJECTS) {
 
-		var projectsResponse = httpClient.get("/projects.json?offset=" + offset
-				+ "&limit=1000");
+		var projectsResponse = httpClient.get("/projects.json?" +
+				"include=trackers&" +
+				"offset=" + offset + "&limit=1000");
 		var arrOfProjects = projectsResponse.projects;
 		if (arrOfProjects.length == 0) {
 			break;
@@ -497,7 +498,20 @@ function getPropertyClasses() {
 }
 
 function getIssueTypes(issue) {
-	return data.trackers;
+	var ret = [];
+	var projectId = issue ? issue.getCategory() : -1;
+	var project = data.projects[projectId];
+	log.info("project=" + project);
+	if (project) {
+		for (var i = 0; i < project.trackers.length; i++) {
+			var idn = new IdName(project.trackers[i].id, project.trackers[i].name);
+			ret.push(idn);
+		}
+	}
+	else {
+		ret = data.trackers;
+	}
+	return ret;
 };
 
 function getPriorities(issue) {
