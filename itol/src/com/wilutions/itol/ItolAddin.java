@@ -36,7 +36,7 @@ public class ItolAddin extends OutlookAddinEx {
 
 	public ItolAddin() {
 		Globals.setThisAddin(this);
-		httpServer.start();
+		//httpServer.start();
 	}
 
 	public void onLoadRibbon(IRibbonUI ribbon) {
