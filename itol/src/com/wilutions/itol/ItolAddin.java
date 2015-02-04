@@ -36,7 +36,7 @@ public class ItolAddin extends OutlookAddinEx {
 
 	public ItolAddin() {
 		Globals.setThisAddin(this);
-		//httpServer.start();
+		// httpServer.start();
 	}
 
 	public void onLoadRibbon(IRibbonUI ribbon) {
@@ -106,12 +106,14 @@ public class ItolAddin extends OutlookAddinEx {
 			IDispatch dispContext = control.getContext();
 			Inspector inspector = dispContext.as(Inspector.class);
 			MailInspector mailInspector = (MailInspector) getInspectorWrapper(inspector);
-			String issueId = mailInspector.getIssueId();
-			boolean hasIssueId = issueId != null && issueId.length() != 0;
-			if (controlId.equals("ShowIssue")) {
-				ret = hasIssueId;
-				// } else if (controlId.equals("grpIssue")) {
-				// ret = !hasIssueId;
+			if (mailInspector != null) {
+				String issueId = mailInspector.getIssueId();
+				boolean hasIssueId = issueId != null && issueId.length() != 0;
+				if (controlId.equals("ShowIssue")) {
+					ret = hasIssueId;
+					// } else if (controlId.equals("grpIssue")) {
+					// ret = !hasIssueId;
+				}
 			}
 
 		}
@@ -155,7 +157,7 @@ public class ItolAddin extends OutlookAddinEx {
 		}
 		System.out.println("ComboBox_onChange id=" + control.getId() + ", text=" + text);
 	}
-	
+
 	public String Button_getLabel(IRibbonControl control) {
 		String resId = "";
 		String controlId = control.getId();
