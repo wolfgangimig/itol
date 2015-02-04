@@ -94,6 +94,7 @@ var DocVersion = Java.type("de.elo.ix.client.DocVersion");
 var EditInfo = Java.type("de.elo.ix.client.EditInfo");
 var EditInfoC = Java.type("de.elo.ix.client.EditInfoC");
 var ClientInfo = Java.type("de.elo.ix.client.ClientInfo");
+var UserInfoC = Java.type("de.elo.ix.client.UserInfoC");
 
 var Dispatch = Java.type("com.wilutions.com.Dispatch");
 
@@ -430,9 +431,13 @@ function initialize() {
 		conn = connFact.createSso(computerName);
 	}
 	
-	var userNameObjs = conn.ix().getUserNames(null, CheckoutUsersC.ALL_USERS);
-	for (var i = 0; i < userNameObjs.length; i++) {
-		data.users.push(new IdName(userNameObjs[i].id, userNameObjs[i].name));
+	var userInfos = conn.ix().checkoutUsers(null, CheckoutUsersC.ALL_USERS, LockC.NO);
+	for (var i = 0; i < userInfos.length; i++) {
+		var idn = new IdName(userInfos[i].id, userInfos[i].name);
+		data.users.push(idn);
+		var idn = new IdName(userInfos[i].id, userInfos[i].userProps[UserInfoC.PROP_NAME_OS]);
+		data.users.push(idn);
+		log.info("user id=" + idn.id + ", name=" + idn.name);
 	}
 
 	readProjects(data);
