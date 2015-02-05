@@ -36,13 +36,12 @@ import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.fx.TaskPaneFX;
-import com.wilutions.mslib.outlook.MailItem;
 
 public class IssueHistoryTaskPane_off extends TaskPaneFX implements Initializable {
 
 	private ResourceBundle resb;
 	private final MailInspector mailInspector;
-	private final MailItem mailItem;
+	private final IssueMailItem mailItem;
 	private Issue issue;
 	private IssueToHtml_off issueToHtml;
 
@@ -52,9 +51,9 @@ public class IssueHistoryTaskPane_off extends TaskPaneFX implements Initializabl
 	@FXML
 	WebView wviewIssueUpdates;
 
-	public IssueHistoryTaskPane_off(MailInspector inspector, MailItem mailItem) {
+	public IssueHistoryTaskPane_off(MailInspector inspector, IssueMailItem mailItem2) {
 		this.mailInspector = inspector;
-		this.mailItem = mailItem;
+		this.mailItem = mailItem2;
 		Globals.getThisAddin().getRegistry().readFields(this);
 	}
 

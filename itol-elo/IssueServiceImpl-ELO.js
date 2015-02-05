@@ -536,8 +536,10 @@ function getMilestones(issue) {
 };
 
 function getAssignees(issue) {
+	log.info("getAssignees(");
 	var ret = [ new IdName(-1, "Unassigned") ];
 	var projectId = issue ? issue.getCategory() : 0;
+	log.info("projectId=" + projectId);
 	var project = data.todoProjects[projectId];
 	if (!project) {
 		project = data.ttsProjects[projectId];
@@ -546,6 +548,7 @@ function getAssignees(issue) {
 	if (project) {
 		ret = project.members;
 	}
+	log.info(")getAssignees=" + ret);
 	return ret;
 };
 

@@ -10,6 +10,8 @@
  */
 package com.wilutions.itol;
 
+import java.io.IOException;
+
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
 import com.wilutions.joa.fx.MessageBox;
@@ -22,10 +24,10 @@ public class MailInspector extends InspectorWrapper {
 	private final IssueTaskPane issuePane;
 	private final IssueHistoryTaskPane_off historyPane;
 
-	public MailInspector(Inspector inspector, IDispatch currentItem) throws ComException {
+	public MailInspector(Inspector inspector, IDispatch currentItem) throws ComException, IOException {
 		super(inspector, currentItem);
 
-		MailItem mailItem = currentItem.as(MailItem.class);
+		IssueMailItem mailItem = new IssueMailItemImpl(currentItem.as(MailItem.class));
 
 		issuePane = new IssueTaskPane(this, mailItem);
 		historyPane = new IssueHistoryTaskPane_off(this, mailItem);

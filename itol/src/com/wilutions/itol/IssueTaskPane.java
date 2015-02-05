@@ -61,8 +61,6 @@ import com.wilutions.itol.db.Property;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.mslib.office.CustomTaskPane;
-import com.wilutions.mslib.outlook.Attachments;
-import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.OlSaveAsType;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
@@ -120,15 +118,24 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private DescriptionHtmlEditor descriptionHtmlEditor;
 	private WebView webView;
-	private final MailInspector mailInspector;
-	private final MailItem mailItem;
+	private final MailInspector mailInspectorOrNull;
+	private final IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
 	private File tempDir;
 	private ResourceBundle resb;
 
-	public IssueTaskPane(MailInspector mailInspector, MailItem mailItem) {
-		this.mailInspector = mailInspector;
+	public IssueTaskPane(MailInspector mailInspectorOrNull, IssueMailItem mailItem) {
+		this.mailInspectorOrNull = mailInspectorOrNull;
 		this.mailItem = mailItem;
+
+		final String subject = mailItem.getSubject();
+		final String description = mailItem.getBody();
+		try {
+			issue = Globals.getIssueService().createIssue(subject, description);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 		Globals.getThisAddin().getRegistry().readFields(this);
 		tempDir = new File(Globals.getTempDir(), MsgFileTypes.makeValidFileName(mailItem.getSubject()));
 		tempDir.mkdirs();
@@ -184,9 +191,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@Override
 	public void showAsync(final CustomTaskPane taskPane, AsyncResult<Boolean> asyncResult) throws ComException {
 		try {
-			final String subject = mailItem.getSubject();
-			final String description = mailItem.getBody();
-			issue = Globals.getIssueService().createIssue(subject, description);
 
 			super.showAsync(taskPane, (succ, ex) -> {
 				if (succ) {
@@ -211,7 +215,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private void initDescription() throws IOException {
+	protected void initDescription() throws IOException {
 		
 		descriptionHtmlEditor = Globals.getIssueService().getDescriptionHtmlEditor(issue);
 		if (descriptionHtmlEditor != null) {
@@ -570,16 +574,18 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		String msgFileName = MsgFileTypes.makeMsgFileName(mailItem.getSubject(), saveAsType);
 
 		List<File> items = new ArrayList<File>();
-		File msgFile = new File(tempDir, msgFileName);
-		items.add(msgFile);
 
-		mapFileToSaveHandler.put(msgFile, new MailBodySaveHandler(msgFile));
+		if (mailItem.getBody().length() != 0) {
+			File msgFile = new File(tempDir, msgFileName);
+			items.add(msgFile);
+			mapFileToSaveHandler.put(msgFile, new MailBodySaveHandler(msgFile));
+		}
 
 		if (!MsgFileTypes.isContainerFormat(saveAsType)) {
-			Attachments mailAtts = mailItem.getAttachments();
+			IssueAttachments mailAtts = mailItem.getAttachments();
 			int n = mailAtts.getCount();
 			for (int i = 1; i <= n; i++) {
-				com.wilutions.mslib.outlook.Attachment matt = mailAtts.Item(i);
+				com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
 				File mattFile = new File(tempDir, matt.getFileName());
 				items.add(mattFile);
 				mapFileToSaveHandler.put(mattFile, new MailAttachmentSaveHandler(matt, mattFile));
@@ -645,8 +651,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		// Show progress dialog
 		final DlgProgress dlgProgress = new DlgProgress("Create Issue");
 		dlgProgress.showAsync(this, (succ, ex) -> {
-			if (succ) {
-				Globals.getThisAddin().onIssueCreated(mailInspector);
+			if (succ && mailInspectorOrNull != null) {
+				Globals.getThisAddin().onIssueCreated(mailInspectorOrNull);
 			}
 		});
 
