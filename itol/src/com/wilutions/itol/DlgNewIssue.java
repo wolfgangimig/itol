@@ -9,6 +9,7 @@ import javafx.stage.Stage;
 import com.wilutions.joa.fx.ModalDialogFX;
 import com.wilutions.mslib.outlook.Explorer;
 
+
 public class DlgNewIssue extends ModalDialogFX<Boolean> {
 	
 	private MailInspector mailInspector;
@@ -39,6 +40,7 @@ public class DlgNewIssue extends ModalDialogFX<Boolean> {
 		        stage.setTitle(getTitle());
 		
 		        IssueTaskPane taskPane = new IssueTaskPane(mailInspector, mailItem);
+		        
 		        Scene scene = taskPane.createScene();
 
 				scene.impl_preferredSize();
@@ -68,6 +70,7 @@ public class DlgNewIssue extends ModalDialogFX<Boolean> {
 	@Override
 	public Scene createScene() {
         IssueTaskPane taskPane = new IssueTaskPane(mailInspector, mailItem);
+        taskPane.setWindowOwner(this);
         Scene scene = taskPane.createScene();
         return scene;
 	}

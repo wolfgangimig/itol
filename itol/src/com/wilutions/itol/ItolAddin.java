@@ -26,9 +26,7 @@ import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.outlook.Explorer;
 import com.wilutions.mslib.outlook.Inspector;
-import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.OlObjectClass;
-import com.wilutions.mslib.outlook.Selection;
 
 @CoClass(progId = "ItolAddin.Class", guid = "{013ebe9e-fbb4-4ccf-857b-ab716f7273c1}")
 @DeclAddin(application = OfficeApplication.Outlook, loadBehavior = LoadBehavior.LoadOnStart, friendlyName = "Issue Tracker Addin", description = "Issue Tracker Addin for Microsoft Outlook")
@@ -73,8 +71,31 @@ public class ItolAddin extends OutlookAddinEx {
 			newIssue(control);
 		} else if (controlId.equals("ShowIssue")) {
 			showIssue(control);
+		} else if (controlId.equals("BlankIssue")) {
+			blankIssue(control);
 		}
 
+	}
+
+	private void blankIssue(IRibbonControl control) {
+		IDispatch dispContext = control.getContext();
+		try {
+			if (dispContext.is(Explorer.class)) {
+				Explorer explorer = dispContext.as(Explorer.class);
+//				MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
+//				MailItem mailItem = explorerWrapper.getSelectedMail();
+//				if (mailItem != null) {
+//					DlgNewIssue dlg = new DlgNewIssue(null, new IssueMailItemImpl(mailItem));
+//					dlg.showAsync(explorer, null);
+//				}
+				DlgNewIssue dlg = new DlgNewIssue(null, new IssueMailItemBlank());
+				dlg.showAsync(explorer, null);
+			}
+			
+		}
+		catch (Throwable e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void newIssue(IRibbonControl control) {
@@ -87,15 +108,8 @@ public class ItolAddin extends OutlookAddinEx {
 			}
 			else if (dispContext.is(Explorer.class)) {
 				Explorer explorer = dispContext.as(Explorer.class);
-//				MyExplorerWrapper explorerWrapper = (MyExplorerWrapper)getExplorerWrapper(explorer);
-//				if (explorerWrapper == null) {  // Might be null, if IssueServiceImpl was not available on startup.
-//					onNewExplorer(explorer);
-//					explorerWrapper = (MyExplorerWrapper)getExplorerWrapper(explorer);
-//				}
-//				explorerWrapper.setIssueTaskPaneVisible(true);
-				
-				DlgNewIssue dlg = new DlgNewIssue(null, new IssueMailItemBlank());
-				dlg.show(explorer);
+				MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
+				explorerWrapper.setIssueTaskPaneVisible(true);
 			}
 			
 		}
@@ -117,7 +131,8 @@ public class ItolAddin extends OutlookAddinEx {
 			}
 			else if (dispContext.is(Explorer.class)) {
 				explorer = dispContext.as(Explorer.class);
-				issueId = getIssueIdOfSelectedMail(explorer);
+				MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
+				issueId = explorerWrapper.getIssueIdOfSelectedMail();
 			}
 
 			System.out.println("issueId=" + issueId);
@@ -163,11 +178,11 @@ public class ItolAddin extends OutlookAddinEx {
 				// Is button placed in the ribbon of the explorer window?
 				else if (dispContext.is(Explorer.class)) {
 	
-					Explorer explorer = dispContext.as(Explorer.class);
-	
 					// Enable ShowIssue button, if mail subject contains an issue ID.
 					if (controlId.equals("ShowIssue")) {
-						String issueId = getIssueIdOfSelectedMail(explorer);
+						Explorer explorer = dispContext.as(Explorer.class);
+						MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
+						String issueId = explorerWrapper.getIssueIdOfSelectedMail();
 						ret = issueId != null && issueId.length() != 0;
 					}
 				}
@@ -227,6 +242,9 @@ public class ItolAddin extends OutlookAddinEx {
 			break;
 		case "ShowIssue":
 			resId = "Ribbon.ShowIssue";
+			break;
+		case "BlankIssue":
+			resId = "Ribbon.BlankIssue";
 			break;
 		default:
 		}
@@ -288,46 +306,12 @@ public class ItolAddin extends OutlookAddinEx {
 		// ribbon.InvalidateControl("grpIssue");
 	}
 
-	/**
-	 * Return the issue ID of the selected mail.
-	 * @param explorer Explorer object
-	 * @return issue ID or empty string.
-	 */
-	private String getIssueIdOfSelectedMail(Explorer explorer) {
-		String issueId = "";
-		MailItem mailItem = getSelectedMail(explorer);
-		if (mailItem != null) {
-			String subject = mailItem.getSubject();
-			try {
-				issueId = Globals.getIssueService().extractIssueIdFromMailSubject(subject);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+	public MyExplorerWrapper getMyExplorerWrapper(Explorer explorer) {
+		MyExplorerWrapper explorerWrapper = (MyExplorerWrapper)super.getExplorerWrapper(explorer);
+		if (explorerWrapper == null) {  // Might be null, if IssueServiceImpl was not available on startup.
+			onNewExplorer(explorer);
+			explorerWrapper = (MyExplorerWrapper)super.getExplorerWrapper(explorer);
 		}
-		return issueId;
-	}
-
-	/**
-	 * Return the first selected mail item.
-	 * @param explorer Explorer object
-	 * @return MailItem object or null.
-	 */
-	private MailItem getSelectedMail(Explorer explorer) {
-		MailItem mailItem = null;
-		try {
-			Selection selection = explorer.getSelection();
-			int nbOfSelectedItems = selection.getCount();
-			if (nbOfSelectedItems != 0) {
-				IDispatch selectedItem = selection.Item(1);
-				if (selectedItem.is(MailItem.class)) {
-					mailItem = selectedItem.as(MailItem.class);
-				}
-			}
-		}
-		catch (ComException ignored) {
-			// explorer.getSelection() causes a HRESULT=0x80020009 when 
-			// Outlook starts.
-		}
-		return mailItem;
+		return explorerWrapper;
 	}
 }

@@ -10,6 +10,9 @@
 					<button id="NewIssue" tag="Alert-icon-32.png" size="large"
 						getLabel="Button_getLabel" onAction="Button_onAction" getEnabled="Button_getEnabled"
 						getVisible="Button_getVisible" getImage="getRibbonIcon" />
+					<button id="BlankIssue" tag="Alert-icon-32.png" size="large"
+						getLabel="Button_getLabel" onAction="Button_onAction" getEnabled="Button_getEnabled"
+						getVisible="Button_getVisible" getImage="getRibbonIcon" />
 					<button id="ShowIssue" tag="Note-icon.png" size="large"
 						getLabel="Button_getLabel" onAction="Button_onAction" getEnabled="Button_getEnabled"
 						getVisible="Button_getVisible" getImage="getRibbonIcon" />

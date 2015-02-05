@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -62,6 +63,7 @@ import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.mslib.office.CustomTaskPane;
 import com.wilutions.mslib.outlook.OlSaveAsType;
+
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
@@ -119,10 +121,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private DescriptionHtmlEditor descriptionHtmlEditor;
 	private WebView webView;
 	private final MailInspector mailInspectorOrNull;
-	private final IssueMailItem mailItem;
+	private IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
 	private File tempDir;
 	private ResourceBundle resb;
+	
+	/**
+	 * Owner window for child dialogs (message boxes)
+	 */
+	private Object windowOwner;
 
 	public IssueTaskPane(MailInspector mailInspectorOrNull, IssueMailItem mailItem) {
 		this.mailInspectorOrNull = mailInspectorOrNull;
@@ -132,24 +139,51 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		final String description = mailItem.getBody();
 		try {
 			issue = Globals.getIssueService().createIssue(subject, description);
-		} catch (IOException e) {
+			
+			String issueId = Globals.getIssueService().extractIssueIdFromMailSubject(subject);
+			issue.setId(issueId);
+		} catch (Throwable e) {
 			e.printStackTrace();
 		}
 
 		Globals.getThisAddin().getRegistry().readFields(this);
 		tempDir = new File(Globals.getTempDir(), MsgFileTypes.makeValidFileName(mailItem.getSubject()));
 		tempDir.mkdirs();
+		
+		windowOwner = this;
 	}
+	
+	public void setMailItem(IssueMailItem mailItem) {
+		this.mailItem = mailItem;
+		Platform.runLater(() -> {
+			if (rootGrid != null) {
+				try {
+					final String subject = mailItem.getSubject();
+					final String description = mailItem.getBody();
+					issue = Globals.getIssueService().createIssue(subject, description);
+					
+					String issueId = Globals.getIssueService().extractIssueIdFromMailSubject(subject);
+					issue.setId(issueId);
 
-	public String getIssueId() {
-		String issueId = "";
-		try {
-			String subject = mailItem.getSubject();
-			issueId = Globals.getIssueService().extractIssueIdFromMailSubject(subject);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return issueId;
+					updateData(false);
+					initDescription();
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+	
+	public IssueMailItem getMailItem() {
+		return mailItem;
+	}
+	
+	public Object getWindowOwner() {
+		return windowOwner;
+	}
+	
+	public void setWindowOwner(Object w) {
+		windowOwner = w;
 	}
 
 	@Override
@@ -650,7 +684,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		// Show progress dialog
 		final DlgProgress dlgProgress = new DlgProgress("Create Issue");
-		dlgProgress.showAsync(this, (succ, ex) -> {
+		dlgProgress.showAsync(getWindowOwner(), (succ, ex) -> {
 			if (succ && mailInspectorOrNull != null) {
 				Globals.getThisAddin().onIssueCreated(mailInspectorOrNull);
 			}
@@ -677,6 +711,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			// If we processed updating the issue here.
 			BackgTask.run(() -> {
 				try {
+					boolean isNew = issue.getId().length() == 0;
 
 					// Create issue
 					issue = srv.updateIssue(issue, progressCallback);
@@ -685,12 +720,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					if (dlgProgress.getResult()) {
 
 						// ... save the mail with different subject
-						String mailSubjectPrev = mailItem.getSubject();
-						String mailSubject = srv.injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
-						if (!mailSubjectPrev.equals(mailSubject)) {
-							mailItem.setSubject(mailSubject);
-							progressCallback.setParams("Save mail as \"" + mailSubject + "\n");
-							mailItem.Save();
+						if (isNew) {
+							String mailSubjectPrev = mailItem.getSubject();
+							String mailSubject = srv.injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
+							if (!mailSubjectPrev.equals(mailSubject)) {
+								mailItem.setSubject(mailSubject);
+								progressCallback.setParams("Save mail as \"" + mailSubject + "\n");
+								mailItem.Save();
+							}
 						}
 
 						// // Progress dialog tells that the issue has been
@@ -705,7 +742,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				} catch (Throwable e) {
 					if (!progressCallback.isCancelled()) {
 						e.printStackTrace();
-						MessageBox.show(this, "Error", "Failed to create issue, " + e.toString(), null);
+						MessageBox.show(getWindowOwner(), "Error", "Failed to create issue, " + e.toString(), null);
 						if (dlgProgress != null) {
 							dlgProgress.finish(false);
 						}
@@ -715,7 +752,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		} catch (Throwable e) {
 			e.printStackTrace();
-			MessageBox.show(this, "Error", "Failed to create issue, " + e.toString(), null);
+			MessageBox.show(getWindowOwner(), "Error", "Failed to create issue, " + e.toString(), null);
 			if (dlgProgress != null) {
 				dlgProgress.finish(false);
 			}
@@ -734,7 +771,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			}
 		}
 		DlgDetails dlg = new DlgDetails(url);
-		dlg.showAsync(this, null);
+		dlg.showAsync(getWindowOwner(), null);
 	}
 
 	@FXML

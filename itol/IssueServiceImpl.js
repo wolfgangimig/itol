@@ -203,6 +203,18 @@ var httpClient = {
 	},
 
 	/**
+	 * Send PUT request to transmit a JSON object.
+	 * @param params URL parameters, e.g. "/issues/1234.json" 
+	 * @param content JSON object to be posted
+	 * @param progressCallback Listener object to watch progress.
+	 */
+	put : function(params, content, progressCallback) {
+		var headers = [ "Content-Type: application/json" ];
+		var jsonStr = JSON.stringify(content);
+		this.send("PUT", headers, params, jsonStr, progressCallback);
+	},
+
+	/**
 	 * Send POST request to upload a file.
 	 * @param URL parameters, e.g. "/uploads.json"
 	 * @param content File content, a java.io.InputStream
@@ -371,17 +383,28 @@ function readProjectMembers(project) {
 	log.info(")readProjectMembers");
 }
 
-function writeIssue(issue, progressCallback) {
+function writeIssue(issueParam, progressCallback) {
 	log.info("writeIssue(");
-	dump("send", issue);
-	
+	dump("send", issueParam);
+	var ret = null;
+
 	var pgIssue = null;
 	if (progressCallback) {
 		if (progressCallback.isCancelled()) return;
 		pgIssue = progressCallback.createChild("Write issue");
 	}
 	
-	var ret = httpClient.post("/issues.json", issue, pgIssue);
+	var issueId = issueParam.issue.id;
+	var isUpdate = !!issueId;
+	log.info("issueId=" + issueId + ", isUpdate=" + isUpdate);
+	
+	if (isUpdate) {
+		ret = httpClient.put("/issues/" + issueId + ".json", issueParam, pgIssue);
+	}
+	else {
+		ret = httpClient.post("/issues.json", issueParam, pgIssue);
+	}
+	
 	dump("recv", ret);
 	log.info(")writeIssue=");
 	return ret;
@@ -654,9 +677,14 @@ function updateIssue(trackerIssue, progressCallback) {
 	toRedmineIssue(trackerIssue, redmineIssue, progressCallback);
 
 	var issueParam = {	issue : redmineIssue };
-	redmineIssue = writeIssue(issueParam, progressCallback).issue;
+	var issueReturn = writeIssue(issueParam, progressCallback);
 
-	toTrackerIssue(redmineIssue, trackerIssue);
+	// Convert redmineIssue to trackerIssue,
+	// issueReturn is null when updating an exisiting issue.
+	if (issueReturn) {
+		var redmineIssue = issueReturn.issue;
+		toTrackerIssue(redmineIssue, trackerIssue);
+	}
 
 	log.info(")updateIssue=" + trackerIssue);
 	return trackerIssue;
@@ -664,12 +692,22 @@ function updateIssue(trackerIssue, progressCallback) {
 
 function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 	log.info("toRedmineIssue(trackerIssue=" + trackerIssue + ", redmineIssue=" + redmineIssue + ", progressCallback=" + progressCallback);
+	
+	redmineIssue.id = trackerIssue.getId();
 	redmineIssue.project_id = parseInt(trackerIssue.getCategory());
 	redmineIssue.tracker_id = parseInt(trackerIssue.getType());
 	redmineIssue.status_id = parseInt(trackerIssue.getState());
 	redmineIssue.priority_id = parseInt(trackerIssue.getPriority());
 	redmineIssue.subject = "" + trackerIssue.getSubject();
-	redmineIssue.description = "" + trackerIssue.getDescription();
+	
+	if (redmineIssue.id) {
+		// Update issue: set notes
+		redmineIssue.notes = "" + trackerIssue.getDescription();
+	}
+	else {
+		// New issue: set description
+		redmineIssue.description = "" + trackerIssue.getDescription();
+	}
 
 	if (trackerIssue.getAssignee().length() != 0) {
 		var userId = parseInt(trackerIssue.getAssignee());
