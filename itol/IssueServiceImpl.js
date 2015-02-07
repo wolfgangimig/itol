@@ -13,13 +13,13 @@
  * Maximum number of projects to be read.
  * This value constraints the number of combo box items in the UI.
  */
-var MAX_PROJECTS = 20;
+var MAX_PROJECTS = 50;
 
 /**
  * Maximum number of users per project.
  * This value constraints the number of combo box items in the UI.
  */
-var MAX_USERS = 20;
+var MAX_USERS = 50;
 
 
 /**
@@ -326,7 +326,7 @@ function readProjects(data) {
 
 		var projectsResponse = httpClient.get("/projects.json?" +
 				"include=trackers&" +
-				"offset=" + offset + "&limit=1000");
+				"offset=" + offset + "&limit=" + (MAX_PROJECTS-offset));
 		var arrOfProjects = projectsResponse.projects;
 		if (arrOfProjects.length == 0) {
 			break;
@@ -372,12 +372,27 @@ function readProjectVersions(project) {
 function readProjectMembers(project) {
 	log.info("readProjectMembers(project.id=" + project.id);
 	project.members = [];
-	var arrOfMemberships = httpClient.get("/projects/" + project.id
-			+ "/memberships.json").memberships;
-	for (var j = 0; j < arrOfMemberships.length && j < MAX_USERS; j++) {
-		var membership = arrOfMemberships[j];
-		var user = membership.user;
-		project.members.push(user);
+	var offset = 0;
+	while (project.members.length < MAX_USERS) {
+		
+		var arrOfMemberships = httpClient.get("/projects/" + project.id
+				+ "/memberships.json?" +
+				"offset=" + offset + "&limit=" + (MAX_USERS-offset)).memberships;
+		
+		if (arrOfMemberships.length == 0) {
+			break;
+		}
+		
+		dump("arrOfMemberships", arrOfMemberships);
+		
+		for (var j = 0; j < arrOfMemberships.length && j < MAX_USERS; j++) {
+			var membership = arrOfMemberships[j];
+			var user = membership.user;
+			if (user) { // see issue #9, membership.user might be undefined
+				project.members.push(user);
+			}
+		}
+		offset += arrOfMemberships.length;
 	}
 	dump("project.members", project.members);
 	log.info(")readProjectMembers");
@@ -525,7 +540,7 @@ function getIssueTypes(issue) {
 	var projectId = issue ? issue.getCategory() : -1;
 	var project = data.projects[projectId];
 	log.info("project=" + project);
-	if (project) {
+	if (project && project.trackers) {
 		for (var i = 0; i < project.trackers.length; i++) {
 			var idn = new IdName(project.trackers[i].id, project.trackers[i].name);
 			ret.push(idn);
