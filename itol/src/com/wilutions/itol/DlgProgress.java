@@ -90,15 +90,7 @@ public class DlgProgress extends ModalDialogFX<Boolean> implements Initializable
 	@Override
 	public Scene createScene() {
 		try {
-			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-			URL fxmlURL = classLoader.getResource("com/wilutions/itol/DlgProgress.fxml");
-
-			FXMLLoader loader = new FXMLLoader(fxmlURL, Globals.getResourceBundle(), new JavaFXBuilderFactory(),
-					(clazz) -> {
-						return this;
-					});
-			Parent p = loader.load();
-
+			Parent p = load();
 			Scene scene = new Scene(p);
 			return scene;
 
@@ -106,6 +98,18 @@ public class DlgProgress extends ModalDialogFX<Boolean> implements Initializable
 			e.printStackTrace();
 			throw new IllegalStateException(e);
 		}
+	}
+
+	public Parent load() throws IOException {
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		URL fxmlURL = classLoader.getResource("com/wilutions/itol/DlgProgress.fxml");
+
+		FXMLLoader loader = new FXMLLoader(fxmlURL, Globals.getResourceBundle(), new JavaFXBuilderFactory(),
+				(clazz) -> {
+					return this;
+				});
+		Parent p = loader.load();
+		return p;
 	}
 
 	public void setButtonOK() {

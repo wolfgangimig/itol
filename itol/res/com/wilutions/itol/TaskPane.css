@@ -2,5 +2,21 @@
 	-fx-background-color: WHITE
 }
 
+.vboxRoot {
+	-fx-background-color: WHITE
+}
+
+.dlgProgress {
+	-fx-background-color: WHITE
+}
+
+.dlgIssueCreated {
+	-fx-background-color: WHITE
+}
+
 .descriptionEditor {
+}
+
+.tbbuttons {
+	-fx-background-color: WHITE
 }

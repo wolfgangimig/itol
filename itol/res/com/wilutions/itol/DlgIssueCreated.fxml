@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="20.0" styleClass="dlgIssueCreated" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.DlgIssueCreated">
+   <children>
+      <Label fx:id="lbCreatedMessage" text="Issue has been created">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <Button mnemonicParsing="false" onAction="#onGotoIssue" text="Goto Redmine">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Button>
+      <Button mnemonicParsing="false" onAction="#onContinue" text="Continue">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Button>
+      <Button mnemonicParsing="false" onAction="#onClosePanel" text="Close panel">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Button>
+   </children>
+</VBox>

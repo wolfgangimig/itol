@@ -42,9 +42,11 @@ import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
@@ -68,6 +70,9 @@ import com.wilutions.mslib.outlook.OlSaveAsType;
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private Issue issue;
+	
+	@FXML
+	private VBox vboxRoot;
 
 	@FXML
 	private GridPane rootGrid;
@@ -117,7 +122,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private MenuItem mnRemoveAttachment;
 	@FXML
 	private MenuItem mnOpenAttachment;
-
+	@FXML
+	private ToggleButton bnPin;
+	@FXML
+	private ToggleButton bnSelection;
+	@FXML
+	
 	private DescriptionHtmlEditor descriptionHtmlEditor;
 	private WebView webView;
 	private final MailInspector mailInspectorOrNull;
@@ -251,7 +261,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	protected void initDescription() throws IOException {
 		
-		descriptionHtmlEditor = Globals.getIssueService().getDescriptionHtmlEditor(issue);
+		//descriptionHtmlEditor = Globals.getIssueService().getDescriptionHtmlEditor(issue);
 		if (descriptionHtmlEditor != null) {
 			
 			if (webView == null) {
@@ -277,6 +287,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	// This method is called by the FXMLLoader when initialization is complete
 	public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
 		try {
+//			Image imgPin = new Image(getClass().getResourceAsStream("Lock-icon.png"));
+//			bnPin.setText("");
+//			bnPin.setGraphic(new ImageView(imgPin));
+//			
+//			Image imgFlag = new Image(getClass().getResourceAsStream("Flag-icon.png"));
+//			bnSelection.setText("");
+//			bnSelection.setGraphic(new ImageView(imgFlag));
+			
 			lvAttachments.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
 			lvAttachments.setOnMouseClicked(new EventHandler<MouseEvent>() {
@@ -678,17 +696,69 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 		return totalBytes;
 	}
+	
+	private class IssueCreatedPane extends DlgIssueCreated {
+		protected void onGotoIssue() {
+		}
 
+		protected void onContinue() {
+			Platform.runLater(() -> {
+				vboxRoot.getChildren().clear();
+				vboxRoot.getChildren().add(rootGrid);
+			});
+		}
+
+		protected void onClosePanel() {
+			IssueTaskPane.this.setVisible(false);
+			vboxRoot.getChildren().clear();
+			vboxRoot.getChildren().add(rootGrid);
+		}
+	
+	}
+	
+	private class ProgressPane extends DlgProgress {
+
+		public ProgressPane() {
+			super("");
+		}
+		
+		@Override
+		public void close() {
+			super.close();
+			Platform.runLater(() -> {
+				try {
+					DlgIssueCreated dlg = new IssueCreatedPane();
+					Parent p = dlg.load();
+					vboxRoot.getChildren().clear();
+					vboxRoot.getChildren().add(p);
+				}
+				catch (IOException e) {
+					e.printStackTrace();
+				}
+			});
+		}
+	}
+	
 	@FXML
 	private void onCreateIssue() throws IOException {
+		
+		final DlgProgress dlgProgress = new ProgressPane();
+		{
+			Parent p = dlgProgress.load();
+			vboxRoot.getChildren().clear();
+			vboxRoot.getChildren().add(p);
+		}		
 
 		// Show progress dialog
-		final DlgProgress dlgProgress = new DlgProgress("Create Issue");
-		dlgProgress.showAsync(getWindowOwner(), (succ, ex) -> {
-			if (succ && mailInspectorOrNull != null) {
-				Globals.getThisAddin().onIssueCreated(mailInspectorOrNull);
-			}
-		});
+//		final DlgProgress dlgProgress = new DlgProgress("Create Issue");
+//		dlgProgress.showAsync(getWindowOwner(), (succ, ex) -> {
+//			if (succ && mailInspectorOrNull != null) {
+//				Globals.getThisAddin().onIssueCreated(mailInspectorOrNull);
+//			}
+//			if (succ) {
+//				hideGridShowCreated();
+//			}
+//		});
 
 		IssueService srv = Globals.getIssueService();
 		try {
