@@ -19,6 +19,9 @@ import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
+import javafx.application.Platform;
+import javafx.stage.Stage;
+
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.reg.Registry;
 import com.wilutions.itol.db.IdName;
@@ -30,6 +33,7 @@ import com.wilutions.itol.db.PropertyClass;
 import com.wilutions.itol.db.PropertyClasses;
 import com.wilutions.itol.db.impl.IssueServiceFactory_JS;
 import com.wilutions.joa.OfficeAddinUtil;
+
 
 public class Globals {
 
@@ -88,6 +92,14 @@ public class Globals {
 			try {
 				issueService.setConfig(config.configProps);
 				System.out.println("Issue service initialized.");
+				
+				Platform.runLater(() -> {
+					Stage dlg = new Stage();
+					dlg.setScene(new IssueTaskPane(null, new IssueMailItemBlank()).createScene());
+					dlg.showAndWait();
+					System.exit(0);
+				});
+				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
