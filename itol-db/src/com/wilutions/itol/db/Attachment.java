@@ -21,6 +21,7 @@ public class Attachment {
 	private String fileName;
 	private long contentLength;
 	private InputStream stream;
+	private String url;
 
 	public Attachment() {
 		id = "";
@@ -28,15 +29,17 @@ public class Attachment {
 		contentType = "";
 		fileName = "";
 		stream = new ByteArrayInputStream(new byte[0]);
+		url = "";
 	}
 
-	public Attachment(String id, String subject, String contentType, String fileName, InputStream stream) {
+	public Attachment(String id, String subject, String contentType, String fileName, InputStream stream, String url) {
 		super();
 		this.id = id;
 		this.subject = subject;
 		this.contentType = contentType;
 		this.fileName = fileName;
 		this.stream = stream;
+		this.url = url;
 	}
 
 	public String getId() {
@@ -85,6 +88,14 @@ public class Attachment {
 
 	public void setFileName(String fileName) {
 		this.fileName = fileName;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
 	}
 
 	public String toString() {

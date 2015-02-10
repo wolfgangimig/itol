@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -27,6 +28,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Accordion;
+import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
@@ -35,9 +37,11 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
 
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.ComException;
@@ -92,7 +96,20 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private TableView<Attachment> tabAttachments;
 	@FXML
 	private Accordion accIssue;
-
+	@FXML
+	private ChoiceBox<IdName> cbStatus;
+	@FXML
+	private Button bnUpdate;
+	@FXML
+	private Button bnShowAttachment;
+	@FXML
+	private Button bnAddAttachment;
+	@FXML
+	private Button bnRemoveAttachment;
+	@FXML
+	private HBox hboxAttachments;
+	
+	private boolean tabAttachmentsApplyHandler = true;
 	private DescriptionHtmlEditor descriptionHtmlEditor;
 	private WebView webView;
 	private final MailInspector mailInspectorOrNull;
@@ -264,7 +281,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initChoiceBox(cbAssignee, srv.getAssignees(issue), issue.getLastUpdate().getProperty(Property.ASSIGNEE));
 
-			//initChoiceBox(cbStatus, srv.getIssueStates(issue), issue.getLastUpdate().getProperty(Property.STATE));
+			initChoiceBox(cbStatus, srv.getIssueStates(issue), issue.getLastUpdate().getProperty(Property.STATE));
 			
 			initAccordion();
 
@@ -277,22 +294,19 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initAttachments() {
-		if (tabAttachments.getColumns().size() != 3) {
+		if (tabAttachmentsApplyHandler) {
 			AttachmentTableViewHandler.apply(tabAttachments);
+			
+			tabAttachments.setOnMouseClicked((click) -> {
+				if (click.getClickCount() == 2) {
+					showSelectedIssueAttachment();
+				}
+			});
+			
+			tabAttachmentsApplyHandler = false;
 		}
-		List<Attachment> atts = issue.getAttachments();
-		{
-			Attachment att = new Attachment();
-			att.setFileName("abc.msg");
-			att.setContentLength(12345);
-			atts.add(att);
-		}
-		{
-			Attachment att = new Attachment();
-			att.setFileName("def11111111122222222222222233333333333333444444444444455555555555555767777777777777777777.txt");
-			att.setContentLength(123456789);
-			atts.add(att);
-		}
+		
+		List<Attachment> atts = new ArrayList<Attachment>();
 		ObservableList<Attachment> obs = FXCollections.observableList(atts);
 		tabAttachments.setItems(obs);
 	}
@@ -390,4 +404,75 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		addOrRemoveAccordionPane(tpNotes, !isNew());
 
 	}
+	
+	private void showSelectedIssueAttachment() {
+		Attachment att = tabAttachments.getSelectionModel().getSelectedItem();
+		if (att != null) {
+			String url = att.getUrl(); 
+			if (url.startsWith("mail:///")) {
+//				File selectedFile = new File(selectedAttachment.getFileName());
+//				if (!selectedFile.exists()) {
+//					MailSaveHandler saveHandler = mapFileToSaveHandler.get(selectedFile);
+//					try {
+//						saveHandler.save();
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//					}
+//				}
+			}
+			IssueApplication.showDocument(url);
+		}
+	}
+
+
+	@FXML
+	public void onShowAttachment() {
+		showSelectedIssueAttachment();
+	}
+	
+	@FXML
+	public void onAddAttachment() {
+		try {
+			FileChooser fileChooser = new FileChooser();
+			fileChooser.setTitle("Open Resource File");
+			List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
+			if (selectedFiles != null) {
+				for (File file : selectedFiles) {
+					Attachment att = AttachmentHelper.createFromFile(file);
+					tabAttachments.getItems().add(att);
+				}
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@FXML
+	public void onRemoveAttachment() {
+		List<Attachment> oldItems = tabAttachments.getItems();
+		List<Attachment> newItems = new ArrayList<Attachment>(oldItems.size());
+
+		HashSet<Integer> selectedIndices = new HashSet<Integer>(tabAttachments.getSelectionModel().getSelectedIndices());
+		tabAttachments.getSelectionModel().clearSelection();
+
+		for (int i = 0; i < oldItems.size(); i++) {
+			if (!selectedIndices.contains(i)) {
+				newItems.add(oldItems.get(i));
+			}
+		}
+		
+		// The TableView does not refresh it's items on getItems().remove(...)
+		// Other devs had this problem with JavaFX 2.1 http://stackoverflow.com/questions/11065140/javafx-2-1-tableview-refresh-items
+		// But the suggested workarounds do not help.
+		
+		hboxAttachments.getChildren().remove(tabAttachments);
+
+		tabAttachments = new TableView<Attachment>();
+		tabAttachmentsApplyHandler = true;
+		initAttachments();
+		tabAttachments.getItems().addAll(newItems);
+		hboxAttachments.getChildren().add(0, tabAttachments);
+		HBox.setHgrow(tabAttachments, Priority.ALWAYS);
+	}
+	
 }

@@ -3,12 +3,17 @@ package com.wilutions.itol;
 import java.io.File;
 import java.util.Comparator;
 
+import javafx.event.EventHandler;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.util.Callback;
 
 import com.wilutions.itol.db.Attachment;
@@ -17,7 +22,11 @@ public class AttachmentTableViewHandler {
 
 	public static void apply(TableView<Attachment> table) {
 		
-		TableColumn<Attachment, String> iconColumn = new TableColumn<>("Icon");
+		TableColumn<Attachment, String> iconColumn = new TableColumn<>("");
+		final int iconColumnWidth = 24;
+		iconColumn.setPrefWidth(iconColumnWidth);
+//		iconColumn.setMaxWidth(iconColumnWidth);
+//		iconColumn.setMinWidth(iconColumnWidth);
 		iconColumn.setCellValueFactory(new PropertyValueFactory<Attachment, String>("fileName"));
 		iconColumn.setCellFactory(new Callback<TableColumn<Attachment, String>, TableCell<Attachment, String>>() {
 
@@ -42,7 +51,7 @@ public class AttachmentTableViewHandler {
 		iconColumn.setComparator(new Comparator<String>() {
 			@Override
 			public int compare(String o1, String o2) {
-				return getFileExt(o1).compareTo(getFileExt(o2));
+				return AttachmentHelper.getFileExt(o1).compareToIgnoreCase(AttachmentHelper.getFileExt(o2));
 			}
 		});
 
@@ -56,7 +65,7 @@ public class AttachmentTableViewHandler {
 					@Override
 					protected void updateItem(String fileName, boolean empty) {
 						if (fileName != null) {
-							String str = getFileName(fileName);
+							String str = AttachmentHelper.getFileName(fileName);
 							setText(str);
 						}
 					}
@@ -65,7 +74,17 @@ public class AttachmentTableViewHandler {
 			}
 			
 		});
-		
+		fileNameColumn.setComparator(new Comparator<String>() {
+			@Override
+			public int compare(String o1, String o2) {
+				return AttachmentHelper.getFileName(o1).compareToIgnoreCase(AttachmentHelper.getFileName(o2));
+			}
+		});
+
+//		final int fileNameColumnWidth = 150;
+//		fileNameColumn.setPrefWidth(fileNameColumnWidth);
+//		fileNameColumn.setMinWidth(fileNameColumnWidth);
+
 		TableColumn<Attachment, Long> contentLengthColumn = new TableColumn<>("Size");
 		contentLengthColumn.setCellValueFactory(new PropertyValueFactory<Attachment, Long>("contentLength"));
 		contentLengthColumn.setCellFactory(new Callback<TableColumn<Attachment, Long>, TableCell<Attachment, Long>>() {
@@ -76,7 +95,7 @@ public class AttachmentTableViewHandler {
 					@Override
 					protected void updateItem(Long contentLength, boolean empty) {
 						if (contentLength != null) {
-							String str = makeAttachmentSizeString(contentLength);
+							String str = AttachmentHelper.makeAttachmentSizeString(contentLength);
 							setText(str);
 						}
 					}
@@ -86,51 +105,52 @@ public class AttachmentTableViewHandler {
 			}
 			
 		});
-				
+		final int contentLengthColumnWidth = 100;
+		contentLengthColumn.setPrefWidth(contentLengthColumnWidth);
+//		contentLengthColumn.setMaxWidth(contentLengthColumnWidth);
+//		contentLengthColumn.setMinWidth(contentLengthColumnWidth);
+
+		fileNameColumn.prefWidthProperty().bind(table.widthProperty().subtract(iconColumnWidth+contentLengthColumnWidth));
+		
 		table.getColumns().clear();
 		table.getColumns().add(iconColumn);
 		table.getColumns().add(fileNameColumn);
 		table.getColumns().add(contentLengthColumn);
+
 		
-	}
-	
-	
-	private static String getFileName(String path) {
-		String fname = path;
-		if (path != null && path.length() != 0) {
-			int p = path.lastIndexOf('.');
-			if (p >= 0) {
-				fname = path.substring(0, p).toLowerCase();
+		table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+		table.setOnDragOver(new EventHandler<DragEvent>() {
+			@Override
+			public void handle(DragEvent event) {
+				Dragboard db = event.getDragboard();
+				if (db.hasFiles()) {
+					event.acceptTransferModes(TransferMode.COPY);
+				} else {
+					event.consume();
+				}
 			}
-			p = path.lastIndexOf(File.separatorChar);
-			fname = path.substring(p+1);
-		}
-		return fname;
+		});
+
+		// Dropping over surface
+		table.setOnDragDropped(new EventHandler<DragEvent>() {
+			@Override
+			public void handle(DragEvent event) {
+				Dragboard db = event.getDragboard();
+				boolean success = false;
+				if (db.hasFiles()) {
+					success = true;
+					for (File file : db.getFiles()) {
+						Attachment att = AttachmentHelper.createFromFile(file);
+						table.getItems().add(att);
+					}
+				}
+				event.setDropCompleted(success);
+				event.consume();
+			}
+		});
+
 	}
 	
-	private static String getFileExt(String path) {
-		String ext = "";
-		if (path != null && path.length() != 0) {
-			int p = path.lastIndexOf('.');
-			if (p >= 0) {
-				ext = path.substring(p+1).toLowerCase();
-			}
-		}
-		return ext;
-	}
 	
-	private static String makeAttachmentSizeString(long contentLength) {
-		String[] dims = new String[] {"Bytes", "KB", "MB", "GB", "TB"};
-		int dimIdx = 0;
-		long c = contentLength, nb = 0;
-		for (int i = 0; i < dims.length; i++) {
-			nb = c;
-			c = (long)Math.floor(c / 1000);
-			if (c == 0) {
-				dimIdx = i;
-				break;
-			}
-		}
-		return nb + " " + dims[dimIdx];
-	}
 }
