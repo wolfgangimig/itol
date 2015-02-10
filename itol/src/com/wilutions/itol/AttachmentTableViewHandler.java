@@ -81,6 +81,7 @@ public class AttachmentTableViewHandler {
 						}
 					}
 				};
+				cell.setStyle("-fx-alignment: CENTER-RIGHT;");
 				return cell;
 			}
 			

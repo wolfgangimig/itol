@@ -289,7 +289,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 		{
 			Attachment att = new Attachment();
-			att.setFileName("def.txt");
+			att.setFileName("def11111111122222222222222233333333333333444444444444455555555555555767777777777777777777.txt");
 			att.setContentLength(123456789);
 			atts.add(att);
 		}
