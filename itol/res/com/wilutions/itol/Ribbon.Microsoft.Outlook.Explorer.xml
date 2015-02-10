@@ -7,10 +7,10 @@
 			<tab idMso="TabMail">
 				<group id="grpIssue" label="Tracker" getVisible="Button_getVisible">
 					<!-- Icon from http://www.doublejdesign.co.uk http://www.iconarchive.com/show/childish-icons-by-double-j-design.html -->
-					<button id="NewIssue" tag="Alert-icon-32.png" size="large"
+					<button id="NewIssue" tag="skr_newIssue.png" size="large"
 						getLabel="Button_getLabel" onAction="Button_onAction" getEnabled="Button_getEnabled"
 						getVisible="Button_getVisible" getImage="getRibbonIcon" />
-					<button id="ShowIssue" tag="Note-icon.png" size="large"
+					<button id="ShowIssue" tag="skr_showIssue.png" size="large"
 						getLabel="Button_getLabel" onAction="Button_onAction" getEnabled="Button_getEnabled"
 						getVisible="Button_getVisible" getImage="getRibbonIcon" />
 				</group>

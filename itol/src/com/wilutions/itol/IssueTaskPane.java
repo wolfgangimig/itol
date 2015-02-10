@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -40,6 +41,7 @@ import javafx.scene.web.WebView;
 
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.ComException;
+import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.DescriptionHtmlEditor;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
@@ -87,7 +89,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private GridPane gridProps;
 	@FXML
-	private TableView tabAttachments;
+	private TableView<Attachment> tabAttachments;
 	@FXML
 	private Accordion accIssue;
 
@@ -262,12 +264,37 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initChoiceBox(cbAssignee, srv.getAssignees(issue), issue.getLastUpdate().getProperty(Property.ASSIGNEE));
 
+			//initChoiceBox(cbStatus, srv.getIssueStates(issue), issue.getLastUpdate().getProperty(Property.STATE));
+			
 			initAccordion();
 
 			initDescription();
 
 			initProperties();
+			
+			initAttachments();
 		}
+	}
+
+	private void initAttachments() {
+		if (tabAttachments.getColumns().size() != 3) {
+			AttachmentTableViewHandler.apply(tabAttachments);
+		}
+		List<Attachment> atts = issue.getAttachments();
+		{
+			Attachment att = new Attachment();
+			att.setFileName("abc.msg");
+			att.setContentLength(12345);
+			atts.add(att);
+		}
+		{
+			Attachment att = new Attachment();
+			att.setFileName("def.txt");
+			att.setContentLength(123456789);
+			atts.add(att);
+		}
+		ObservableList<Attachment> obs = FXCollections.observableList(atts);
+		tabAttachments.setItems(obs);
 	}
 
 	private void addGridProperty(PropertyClass propClass, int rowIdx) throws IOException {

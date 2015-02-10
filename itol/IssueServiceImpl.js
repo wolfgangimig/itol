@@ -535,22 +535,26 @@ function getPropertyClasses() {
 	return config.propertyClasses;
 }
 
-function getIssueTypes(issue) {
-	var ret = [];
-	var projectId = issue ? issue.getCategory() : -1;
-	var project = data.projects[projectId];
-	log.info("project=" + project);
-	if (project && project.trackers) {
-		for (var i = 0; i < project.trackers.length; i++) {
-			var idn = new IdName(project.trackers[i].id, project.trackers[i].name);
-			ret.push(idn);
+	function getIssueTypes(issue) {
+		var ret = [];
+		var projectId = issue ? issue.getCategory() : -1;
+		var project = data.projects[projectId];
+		log.info("project=" + project);
+		if (project) {
+			if (!project.trackers) {
+				var projectResponse = httpClient.get("/projects/" + projectId + ".json?include=trackers");
+				project.trackers = projectResponse.project.trackers;
+				dump("Added project.trackers", project.trackers);
+			}
+			if (project.trackers) {
+				for (var i = 0; i < project.trackers.length; i++) {
+					var idn = new IdName(project.trackers[i].id, project.trackers[i].name);
+					ret.push(idn);
+				}
+			}
 		}
-	}
-	else {
-		ret = data.trackers;
-	}
-	return ret;
-};
+		return ret;
+	};
 
 function getPriorities(issue) {
 	return data.priorities;
