@@ -24,16 +24,15 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.fxml.JavaFXBuilderFactory;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -81,21 +80,19 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private ChoiceBox<IdName> cbAssignee;
 	@FXML
-	private TitledPane tpDescription;
+	private Tab tpDescription;
 	@FXML
-	private TitledPane tpHistory;
+	private Tab tpHistory;
 	@FXML
-	private TitledPane tpNotes;
+	private Tab tpNotes;
 	@FXML
 	private HTMLEditor edNotes;
 	@FXML
 	private WebView webHistory;
 	@FXML
-	private GridPane gridProps;
-	@FXML
 	private TableView<Attachment> tabAttachments;
 	@FXML
-	private Accordion accIssue;
+	private TabPane tabpIssue;
 	@FXML
 	private ChoiceBox<IdName> cbStatus;
 	@FXML
@@ -108,8 +105,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private Button bnRemoveAttachment;
 	@FXML
 	private HBox hboxAttachments;
+	@FXML
+	private TableView<Property> tabProperties;
+	@FXML
+	private TableColumn<Property, String> tabPropName;
+	@FXML
+	private TableColumn<Property, String> tabPropValue;
 	
 	private boolean tabAttachmentsApplyHandler = true;
+	
+	private PropertyTableViewHandler propertyTableViewHandler;
+	
 	private DescriptionHtmlEditor descriptionHtmlEditor;
 	private WebView webView;
 	private final MailInspector mailInspectorOrNull;
@@ -123,9 +129,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	 */
 	private Object windowOwner;
 	
-	private PropertyClass pclassPriority;
-	private PropertyClass pclassMilestones;
-
 	public IssueTaskPane(MailInspector mailInspectorOrNull, IssueMailItem mailItem) {
 		this.mailInspectorOrNull = mailInspectorOrNull;
 		this.mailItem = mailItem;
@@ -141,18 +144,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			String issueId = srv.extractIssueIdFromMailSubject(subject);
 			issue.setId(issueId);
 			
-			pclassPriority = new PropertyClass(PropertyClass.TYPE_ARRAY_STRING, 
-					Property.PRIORITY,
-					resb.getString(Property.PRIORITY), 
-					issue.getPriority());
-			pclassPriority.setSelectList(srv.getPriorities(issue));
-			
-			pclassMilestones = new PropertyClass(PropertyClass.TYPE_ARRAY_STRING, 
-					Property.MILESTONES,
-					resb.getString(Property.MILESTONES), 
-					"");
-			pclassMilestones.setSelectList(srv.getMilestones(issue));
-
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
@@ -198,7 +189,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public Scene createScene() {
 		try {
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-			URL fxmlURL = classLoader.getResource("com/wilutions/itol/NewIssue5.fxml");
+			URL fxmlURL = classLoader.getResource("com/wilutions/itol/NewIssue6.fxml");
 
 			resb = Globals.getResourceBundle();
 
@@ -283,7 +274,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initChoiceBox(cbStatus, srv.getIssueStates(issue), issue.getLastUpdate().getProperty(Property.STATE));
 			
-			initAccordion();
+			initTabView();
 
 			initDescription();
 
@@ -311,25 +302,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		tabAttachments.setItems(obs);
 	}
 
-	private void addGridProperty(PropertyClass propClass, int rowIdx) throws IOException {
-		Property prop = issue.getLastUpdate().getProperty(propClass.getId());
-		Label label = new Label(propClass.getName());
-		Node editNode = null;
-		switch (propClass.getType()) {
-		case PropertyClass.TYPE_ARRAY_STRING: {
-			ChoiceBox<IdName> cb = new ChoiceBox<IdName>();
-			initChoiceBox(cb, propClass.getSelectList(), prop);
-			editNode = cb;
-		}
-			break;
-		}
-		gridProps.add(label, 0, rowIdx);
-		gridProps.add(editNode, 1, rowIdx);
-	}
-
 	private void initProperties() throws IOException {
-		addGridProperty(pclassPriority, 0);
-		addGridProperty(pclassMilestones, 1);
+		if (propertyTableViewHandler == null) {
+			propertyTableViewHandler = new PropertyTableViewHandler(tabProperties);
+		}
+		propertyTableViewHandler.initProperties(issue);
 	}
 
 	private void initSubject() {
@@ -382,26 +359,26 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initialUpdate() throws IOException {
-		accIssue.setExpandedPane(tpDescription);
+		tabpIssue.getSelectionModel().select(tpDescription);
 
 		updateData(false);
 	}
 
-	private void addOrRemoveAccordionPane(TitledPane t, boolean add) {
+	private void addOrRemoveTab(Tab t, boolean add) {
 		if (add) {
-			for (TitledPane p : accIssue.getPanes()) {
+			for (Tab p : tabpIssue.getTabs()) {
 				if (p == t)
 					return;
 			}
-			accIssue.getPanes().add(t);
+			tabpIssue.getTabs().add(t);
 		} else {
-			accIssue.getPanes().remove(t);
+			tabpIssue.getTabs().remove(t);
 		}
 	}
 
-	private void initAccordion() {
-		addOrRemoveAccordionPane(tpHistory, !isNew());
-		addOrRemoveAccordionPane(tpNotes, !isNew());
+	private void initTabView() {
+		addOrRemoveTab(tpHistory, !isNew());
+		addOrRemoveTab(tpNotes, !isNew());
 
 	}
 	
@@ -473,6 +450,19 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		tabAttachments.getItems().addAll(newItems);
 		hboxAttachments.getChildren().add(0, tabAttachments);
 		HBox.setHgrow(tabAttachments, Priority.ALWAYS);
+		
 	}
-	
+
+	@FXML
+	public void onEditPropertyStart() {
+		
+	}
+	@FXML
+	public void onEditPropertyCommit() {
+		
+	}
+	@FXML
+	public void onEditPropertyCancel() {
+		
+	}
 }

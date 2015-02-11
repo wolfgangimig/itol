@@ -35,6 +35,7 @@ public class AttachmentTableViewHandler {
 				TableCell<Attachment, String> cell = new TableCell<Attachment, String>() {
 					@Override
 					protected void updateItem(String fileName, boolean empty) {
+						super.updateItem(fileName, empty);
 						if (fileName != null) {
 							Image fxImage = FileIconCache.getFileIcon(new File(fileName));
 							if (fxImage != null) {
@@ -64,6 +65,7 @@ public class AttachmentTableViewHandler {
 				TableCell<Attachment, String> cell = new TableCell<Attachment, String>() {
 					@Override
 					protected void updateItem(String fileName, boolean empty) {
+						super.updateItem(fileName, empty);
 						if (fileName != null) {
 							String str = AttachmentHelper.getFileName(fileName);
 							setText(str);
@@ -94,6 +96,7 @@ public class AttachmentTableViewHandler {
 				TableCell<Attachment, Long> cell = new TableCell<Attachment, Long>() {
 					@Override
 					protected void updateItem(Long contentLength, boolean empty) {
+						super.updateItem(contentLength, empty);
 						if (contentLength != null) {
 							String str = AttachmentHelper.makeAttachmentSizeString(contentLength);
 							setText(str);
@@ -117,7 +120,6 @@ public class AttachmentTableViewHandler {
 		table.getColumns().add(fileNameColumn);
 		table.getColumns().add(contentLengthColumn);
 
-		
 		table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
 		table.setOnDragOver(new EventHandler<DragEvent>() {

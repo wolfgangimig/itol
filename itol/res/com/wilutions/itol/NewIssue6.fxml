@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.effect.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.web.*?>
+<?import javafx.scene.text.*?>
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:id="vboxRoot" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="661.0" prefWidth="641.0" styleClass="vboxRoot" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.IssueTaskPane">
+   <children>
+      <GridPane fx:id="rootGrid" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="0.0" vgap="10.0" VBox.vgrow="ALWAYS">
+        <columnConstraints>
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="247.0" minWidth="10.0" prefWidth="203.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="245.0" minWidth="10.0" prefWidth="204.0" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="194.0" minWidth="10.0" prefWidth="194.0" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints maxHeight="25.0" minHeight="25.0" prefHeight="25.0" vgrow="SOMETIMES" />
+          <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
+            <RowConstraints />
+            <RowConstraints maxHeight="1.7976931348623157E308" minHeight="10.0" prefHeight="273.0" vgrow="ALWAYS" />
+          <RowConstraints maxHeight="40.0" minHeight="10.0" prefHeight="40.0" vgrow="SOMETIMES" />
+        </rowConstraints>
+         <children>
+            <ChoiceBox fx:id="cbTracker" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2" />
+            <TextField fx:id="edSubject" promptText="%edSubject.prompt" GridPane.columnSpan="3" GridPane.rowIndex="1">
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </TextField>
+            <ChoiceBox fx:id="cbCategory" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <ChoiceBox fx:id="cbAssignee" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="2.0" GridPane.columnSpan="3">
+               <children>
+                  <ToggleButton fx:id="bnPin" minHeight="25.0" mnemonicParsing="false" prefHeight="25.0" text="Pin" />
+                  <ToggleButton fx:id="bnSelection" minHeight="25.0" mnemonicParsing="false" prefHeight="25.0" text="Selection" />
+                  <ToggleButton fx:id="bnBlank" minHeight="25.0" mnemonicParsing="false" prefHeight="25.0" text="Blank" />
+               </children>
+            </HBox>
+            <ChoiceBox fx:id="cbStatus" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" GridPane.valignment="TOP" />
+            <Button fx:id="bnUpdate" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="%bnUpdate.text.create" textFill="#007800" GridPane.columnIndex="2" GridPane.rowIndex="4">
+               <font>
+                  <Font name="System Bold" size="18.0" />
+               </font>
+            </Button>
+            <VBox spacing="10.0" GridPane.columnSpan="3" GridPane.rowIndex="3">
+               <children>
+                  <TabPane fx:id="tabpIssue" prefHeight="270.0" prefWidth="621.0" tabClosingPolicy="UNAVAILABLE" GridPane.columnSpan="3" GridPane.rowIndex="3" VBox.vgrow="ALWAYS">
+                    <tabs>
+                      <Tab text="%tpDescription.text">
+                           <content>
+                              <HBox>
+                                 <children>
+                                    <HTMLEditor fx:id="edDescription" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" prefHeight="200.0" prefWidth="506.0" HBox.hgrow="ALWAYS" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                      <Tab text="%tpProperties.text">
+                           <content>
+                              <HBox prefHeight="100.0" prefWidth="200.0">
+                                 <children>
+                                    <TableView fx:id="tabProperties" editable="true" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                                      <columns>
+                                        <TableColumn fx:id="tabcolPropName" editable="false" prefWidth="163.0" text="C1" />
+                                        <TableColumn fx:id="tabcolPropName" minWidth="0.0" onEditCancel="#onEditPropertyCancel" onEditCommit="#onEditPropertyCommit" onEditStart="#onEditPropertyStart" prefWidth="456.0" text="C2" />
+                                      </columns>
+                                       <columnResizePolicy>
+                                          <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                       </columnResizePolicy>
+                                    </TableView>
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                        <Tab text="%tpAttachments.text">
+                           <content>
+                              <HBox fx:id="hboxAttachments" spacing="10.0">
+                                 <children>
+                                    <TableView fx:id="tabAttachments" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                                      <columns>
+                                        <TableColumn maxWidth="30.0" minWidth="30.0" prefWidth="30.0" text="C1" />
+                                        <TableColumn maxWidth="1.7976931348623157E308" prefWidth="344.0" text="C2" />
+                                          <TableColumn maxWidth="150.0" minWidth="150.0" prefWidth="150.0" text="C2" />
+                                      </columns>
+                                    </TableView>
+                                    <VBox prefHeight="200.0" prefWidth="100.0" spacing="10.0">
+                                       <children>
+                                          <Button fx:id="bnShowAttachment" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onShowAttachment" text="%bnShowAttachment.text" />
+                                          <Button fx:id="bnAddAttachment" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onAddAttachment" text="%bnAddAttachment.text" />
+                                          <Button fx:id="bnRemoveAttachment" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onRemoveAttachment" text="%bnRemoveAttachment.text" />
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                        <Tab text="%tpHistory.text">
+                           <content>
+                              <HBox>
+                                 <children>
+                                    <WebView fx:id="webHistory" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                        <Tab text="%tpNotes.text">
+                           <content>
+                              <HBox>
+                                 <children>
+                                    <HTMLEditor fx:id="edNotes" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="251.0" prefWidth="211.0" HBox.hgrow="ALWAYS" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                    </tabs>
+                  </TabPane>
+               </children>
+            </VBox>
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </GridPane>
+   </children>
+</VBox>
