@@ -62,7 +62,7 @@
                            <content>
                               <ScrollPane fitToWidth="true" hbarPolicy="NEVER" prefHeight="200.0" prefWidth="200.0" styleClass="propPane">
                                  <content>
-                                    <GridPane fx:id="propGrid" gridLinesVisible="true">
+                                    <GridPane fx:id="propGrid" vgap="4.0">
                                       <columnConstraints>
                                         <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                                         <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -75,6 +75,12 @@
                                        <padding>
                                           <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
                                        </padding>
+                                       <children>
+                                          <Button mnemonicParsing="false" text="Button" />
+                                       </children>
+                                       <opaqueInsets>
+                                          <Insets />
+                                       </opaqueInsets>
                                     </GridPane>
                                  </content>
                               </ScrollPane>
