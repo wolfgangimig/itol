@@ -19,21 +19,21 @@ public interface IssueService {
 	void setConfig(List<Property> configProps);
 	
 	PropertyClasses getPropertyClasses();
-
-	List<IdName> getIssueTypes(Issue iss) throws IOException;
-
-	List<IdName> getPriorities(Issue iss) throws IOException;
-
-	List<IdName> getCategories(Issue iss) throws IOException;
-
-	List<IdName> getAssignees(Issue iss) throws IOException;
-
-	List<IdName> getIssueStates(Issue iss) throws IOException;
-
-	List<IdName> getMilestones(Issue issue) throws IOException;
-
-	List<Property> getDetails(Issue issue) throws IOException;
 	
+	PropertyClass getPropertyClass(String propertyId, Issue iss) throws IOException;
+
+//	List<IdName> getIssueTypes(Issue iss) throws IOException;
+//
+//	List<IdName> getPriorities(Issue iss) throws IOException;
+//
+//	List<IdName> getCategories(Issue iss) throws IOException;
+//
+//	List<IdName> getAssignees(Issue iss) throws IOException;
+//
+//	List<IdName> getIssueStates(Issue iss) throws IOException;
+//
+//	List<IdName> getMilestones(Issue issue) throws IOException;
+
 	DescriptionHtmlEditor getDescriptionHtmlEditor(Issue issue) throws IOException;
 
 	DescriptionTextEditor getDescriptionTextEditor(Issue issue) throws IOException;

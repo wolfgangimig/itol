@@ -10,8 +10,9 @@
 	-fx-background-color: WHITE;
 }
 
-.dlgIssueCreated {
+.scroll-pane > .viewport  { 
 	-fx-background-color: WHITE;
+	-fx-border-color: LIGHTGREY;
 }
 
 .tab-pane {
@@ -30,7 +31,7 @@
 .tab-pane .tab:selected .tab-label
 {
     -fx-text-fill: BLUE;
- }
+}
 
 .tab-pane .tab-label {
 	/*

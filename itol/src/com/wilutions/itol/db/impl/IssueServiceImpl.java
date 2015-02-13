@@ -35,6 +35,7 @@ import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueUpdate;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
+import com.wilutions.itol.db.PropertyClass;
 import com.wilutions.itol.db.PropertyClasses;
 
 public class IssueServiceImpl implements IssueService {
@@ -52,27 +53,27 @@ public class IssueServiceImpl implements IssueService {
 		tempDir.mkdirs();
 	}
 
-	@Override
-	public List<IdName> getIssueTypes(Issue iss) {
-		return Arrays.asList(new IdName(TYPE_BUG, "Bug"), new IdName(TYPE_FEATURE_REQUEST, "Feature Request"),
-				new IdName(TYPE_SUPPORT, "Support"), new IdName(TYPE_DOCUMENTATION, "Documentation"));
-	}
-
-	@Override
-	public List<IdName> getPriorities(Issue iss) {
-		return Arrays.asList(new IdName(1, "Immediately"), new IdName(2, "High priority"), new IdName(3,
-				"Medium priority"), new IdName(4, "Low priority"));
-	}
-
-	@Override
-	public List<IdName> getCategories(Issue iss) {
-		return Arrays.asList(new IdName(1, "Project A"), new IdName(88, "Project B"), new IdName(4, "Project C"));
-	}
-
-	@Override
-	public List<IdName> getMilestones(Issue iss) {
-		return Arrays.asList(new IdName(1, "9.00.014"), new IdName(2, "8.00.050"), new IdName(3, "10.000.001"));
-	}
+//	@Override
+//	public List<IdName> getIssueTypes(Issue iss) {
+//		return Arrays.asList(new IdName(TYPE_BUG, "Bug"), new IdName(TYPE_FEATURE_REQUEST, "Feature Request"),
+//				new IdName(TYPE_SUPPORT, "Support"), new IdName(TYPE_DOCUMENTATION, "Documentation"));
+//	}
+//
+//	@Override
+//	public List<IdName> getPriorities(Issue iss) {
+//		return Arrays.asList(new IdName(1, "Immediately"), new IdName(2, "High priority"), new IdName(3,
+//				"Medium priority"), new IdName(4, "Low priority"));
+//	}
+//
+//	@Override
+//	public List<IdName> getCategories(Issue iss) {
+//		return Arrays.asList(new IdName(1, "Project A"), new IdName(88, "Project B"), new IdName(4, "Project C"));
+//	}
+//
+//	@Override
+//	public List<IdName> getMilestones(Issue iss) {
+//		return Arrays.asList(new IdName(1, "9.00.014"), new IdName(2, "8.00.050"), new IdName(3, "10.000.001"));
+//	}
 
 	private final static List<IdName> assignees;
 	private final static Set<Integer> ASSIGNEES_FOR_DOCUMENTATION = new HashSet<Integer>(Arrays.asList(2, 3, 4, 5, 6));
@@ -90,37 +91,37 @@ public class IssueServiceImpl implements IssueService {
 				"Yoko Ogren"), new IdName(++i, "Zak Arnold"));
 	}
 
-	@Override
-	public List<IdName> getAssignees(Issue iss) {
-		List<IdName> ret = null;
-		if (iss != null && iss.getType().equals(String.valueOf(TYPE_DOCUMENTATION))) {
-			ret = assignees.stream().filter(idn -> ASSIGNEES_FOR_DOCUMENTATION.contains(Integer.parseInt(idn.getId())))
-					.collect(Collectors.toList());
-		} else {
-			ret = assignees;
-		}
-		return ret;
-	}
+//	@Override
+//	public List<IdName> getAssignees(Issue iss) {
+//		List<IdName> ret = null;
+//		if (iss != null && iss.getType().equals(String.valueOf(TYPE_DOCUMENTATION))) {
+//			ret = assignees.stream().filter(idn -> ASSIGNEES_FOR_DOCUMENTATION.contains(Integer.parseInt(idn.getId())))
+//					.collect(Collectors.toList());
+//		} else {
+//			ret = assignees;
+//		}
+//		return ret;
+//	}
 
 	@Override
 	public IdName getCurrentUser() {
-		return getAssignees(null).get(3);
+		return new IdName(0, ""); //getAssignees(null).get(3);
 	}
 
-	@Override
-	public List<IdName> getIssueStates(Issue iss) {
-		return Arrays.asList(new IdName(1, "New issue"), new IdName(2, "In Progress"), new IdName(3,
-				"Waiting for feedback"), new IdName(4, "Solved"), new IdName(5, "Closed"));
-	}
+//	@Override
+//	public List<IdName> getIssueStates(Issue iss) {
+//		return Arrays.asList(new IdName(1, "New issue"), new IdName(2, "In Progress"), new IdName(3,
+//				"Waiting for feedback"), new IdName(4, "Solved"), new IdName(5, "Closed"));
+//	}
 
 	@Override
 	public Issue createIssue(String subject, String description) {
 		IssueUpdate issi = new IssueUpdate();
-		issi.setProperty(new Property(Property.ISSUE_TYPE, getIssueTypes(Issue.NULL).get(0).getId()));
-		issi.setProperty(new Property(Property.ASSIGNEE, getAssignees(Issue.NULL).get(0).getId()));
-		issi.setProperty(new Property(Property.CATEGORY, getCategories(Issue.NULL).get(0).getId()));
-		issi.setProperty(new Property(Property.PRIORITY, getPriorities(Issue.NULL).get(2).getId()));
-		issi.setProperty(new Property(Property.STATE, getIssueStates(Issue.NULL).get(0).getId()));
+//		issi.setProperty(new Property(Property.ISSUE_TYPE, getIssueTypes(Issue.NULL).get(0).getId()));
+//		issi.setProperty(new Property(Property.ASSIGNEE, getAssignees(Issue.NULL).get(0).getId()));
+//		issi.setProperty(new Property(Property.CATEGORY, getCategories(Issue.NULL).get(0).getId()));
+//		issi.setProperty(new Property(Property.PRIORITY, getPriorities(Issue.NULL).get(2).getId()));
+//		issi.setProperty(new Property(Property.STATE, getIssueStates(Issue.NULL).get(0).getId()));
 		Issue iss = new Issue("0", issi);
 		iss.setSubject(subject);
 		iss.setDescription(description);
@@ -272,12 +273,6 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public List<Property> getDetails(Issue issue) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public DescriptionHtmlEditor getDescriptionHtmlEditor(Issue issue) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
@@ -297,6 +292,12 @@ public class IssueServiceImpl implements IssueService {
 
 	public DescriptionTextEditor getDescriptionTextEditor(Issue issue)
 			throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public PropertyClass getPropertyClass(String propertyId, Issue iss) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

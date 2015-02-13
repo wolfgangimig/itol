@@ -10,5 +10,6 @@
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/itol-db"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/joa"/>
+	<classpathentry kind="lib" path="lib/ScenicView.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -64,13 +64,7 @@ public class Property {
 	 * Issue state.
 	 * Value is of type String and holds the issue's state ID.
 	 */
-	public static final String STATE = "IssueProperty.State";
-
-	/**
-	 * Issue milestones.
-	 * Value is of type String[] and holds the issue's milestone IDs.
-	 */
-	public static final String MILESTONES = "IssueProperty.Milestones";
+	public static final String STATUS = "IssueProperty.State";
 
 	private String id;
 	

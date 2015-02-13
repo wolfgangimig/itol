@@ -42,6 +42,14 @@ public class PropertyClass {
 	public PropertyClass(int type, String id, String name) {
 		this(type, id, name, null, null);
 	}
+	
+	public PropertyClass(PropertyClass rhs) {
+		this.type = rhs.type;
+		this.id = rhs.id;
+		this.name = rhs.name;
+		this.defaultValue = rhs.defaultValue;
+		this.selectList = rhs.selectList;
+	}
 
 	public String getId() {
 		return id;

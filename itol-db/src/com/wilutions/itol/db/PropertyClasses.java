@@ -36,8 +36,16 @@ public class PropertyClasses {
 		return propClass;
 	}
 	
-	public PropertyClass get(String propClassId) {
-		return map.get(propClassId);
+	public PropertyClass get(String propertyId) {
+		return map.get(propertyId);
+	}
+
+	public PropertyClass getCopy(String propertyId) {
+		PropertyClass pclass =  map.get(propertyId);
+		if (pclass != null) {
+			pclass = new PropertyClass(pclass);
+		}
+		return pclass;
 	}
 
 	public Collection<PropertyClass> values() {
@@ -52,8 +60,7 @@ public class PropertyClasses {
 		add(PropertyClass.TYPE_STRING, Property.ASSIGNEE, "Assigned to");
 		add(PropertyClass.TYPE_ARRAY_STRING, Property.ATTACHMENTS, "Attachments");
 		add(PropertyClass.TYPE_STRING, Property.PRIORITY, "Priority");
-		add(PropertyClass.TYPE_STRING, Property.STATE, "Status");
-		add(PropertyClass.TYPE_ARRAY_STRING, Property.MILESTONES, "Milestones");
+		add(PropertyClass.TYPE_STRING, Property.STATUS, "Status");
 		return this;
 	}
 	

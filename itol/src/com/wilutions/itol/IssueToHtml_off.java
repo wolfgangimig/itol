@@ -86,11 +86,11 @@ public class IssueToHtml_off implements Closeable {
 		sbuf.append("\n</tr><tr>\n");
 		formatStringProperty(isu, Property.ISSUE_TYPE, 1, sbuf);
 		formatStringProperty(isu, Property.CATEGORY, 1, sbuf);
-		formatStringProperty(isu, Property.MILESTONES, 1, sbuf);
+//		formatStringProperty(isu, Property.MILESTONES, 1, sbuf);
 		sbuf.append("\n</tr><tr>\n");
 		formatStringProperty(isu, Property.ASSIGNEE, 1, sbuf);
 		formatStringProperty(isu, Property.PRIORITY, 1, sbuf);
-		formatStringProperty(isu, Property.STATE, 1, sbuf);
+		formatStringProperty(isu, Property.STATUS, 1, sbuf);
 		sbuf.append("\n</tr><tr>\n");
 		formatStringProperty(isu, Property.ATTACHMENTS, 3, sbuf);
 
@@ -295,16 +295,16 @@ public class IssueToHtml_off implements Closeable {
 		TrafosIdToName() throws IOException {
 			final IssueService srv = Globals.getIssueService();
 			final Issue issue = Issue.NULL;
-			try {
-				this.assignees = toMap(srv.getAssignees(issue));
-				this.categories = toMap(srv.getCategories(issue));
-				this.milestones = toMap(srv.getMilestones(issue));
-				this.priorities = toMap(srv.getPriorities(issue));
-				this.states = toMap(srv.getIssueStates(issue));
-				this.types = toMap(srv.getIssueTypes(issue));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+//			try {
+//				this.assignees = toMap(srv.getAssignees(issue));
+//				this.categories = toMap(srv.getCategories(issue));
+//				this.milestones = toMap(srv.getMilestones(issue));
+//				this.priorities = toMap(srv.getPriorities(issue));
+//				this.states = toMap(srv.getIssueStates(issue));
+//				this.types = toMap(srv.getIssueTypes(issue));
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
 		}
 
 		private Map<String, String> toMap(List<IdName> list) {
@@ -321,11 +321,11 @@ public class IssueToHtml_off implements Closeable {
 				ret = assignees;
 			} else if (propertyId.equals(Property.CATEGORY)) {
 				ret = categories;
-			} else if (propertyId.equals(Property.MILESTONES)) {
-				ret = milestones;
+//			} else if (propertyId.equals(Property.MILESTONES)) {
+//				ret = milestones;
 			} else if (propertyId.equals(Property.PRIORITY)) {
 				ret = priorities;
-			} else if (propertyId.equals(Property.STATE)) {
+			} else if (propertyId.equals(Property.STATUS)) {
 				ret = states;
 			} else if (propertyId.equals(Property.ISSUE_TYPE)) {
 				ret = types;

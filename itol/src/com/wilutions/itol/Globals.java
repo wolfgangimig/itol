@@ -24,7 +24,6 @@ import javafx.stage.Stage;
 
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.reg.Registry;
-import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
 import com.wilutions.itol.db.PasswordEncryption;
@@ -52,15 +51,6 @@ public class Globals {
 
 	protected static void setThisAddin(ItolAddin addin) {
 		Globals.addin = addin;
-	}
-
-	public static void printAssignees1() {
-		try {
-			List<IdName> assignees = getIssueService().getAssignees(null);
-			System.out.println("assignees=" + assignees);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	public static Registry getRegistry() {

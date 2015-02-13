@@ -60,19 +60,24 @@
                         </Tab>
                       <Tab text="%tpProperties.text">
                            <content>
-                              <HBox prefHeight="100.0" prefWidth="200.0">
-                                 <children>
-                                    <TableView fx:id="tabProperties" editable="true" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
-                                      <columns>
-                                        <TableColumn fx:id="tabcolPropName" editable="false" prefWidth="163.0" text="C1" />
-                                        <TableColumn fx:id="tabcolPropName" minWidth="0.0" onEditCancel="#onEditPropertyCancel" onEditCommit="#onEditPropertyCommit" onEditStart="#onEditPropertyStart" prefWidth="456.0" text="C2" />
-                                      </columns>
-                                       <columnResizePolicy>
-                                          <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                                       </columnResizePolicy>
-                                    </TableView>
-                                 </children>
-                              </HBox>
+                              <ScrollPane fitToWidth="true" hbarPolicy="NEVER" prefHeight="200.0" prefWidth="200.0" styleClass="propPane">
+                                 <content>
+                                    <GridPane fx:id="propGrid" gridLinesVisible="true">
+                                      <columnConstraints>
+                                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                      </columnConstraints>
+                                      <rowConstraints>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                      </rowConstraints>
+                                       <padding>
+                                          <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                       </padding>
+                                    </GridPane>
+                                 </content>
+                              </ScrollPane>
                            </content>
                         </Tab>
                         <Tab text="%tpAttachments.text">

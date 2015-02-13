@@ -21,14 +21,14 @@ import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
 
-public class PropertyTableViewHandler {
+public class PropertyTableViewHandler_off {
 	
 	private final TableView<Property> table;
 	private final HashMap<String, PropertyClass> propertyClasses = new HashMap<String, PropertyClass>();
 	private final ResourceBundle resb = Globals.getResourceBundle();
 	private final IssueService srv = Globals.getIssueService();
 
-	public PropertyTableViewHandler(TableView<Property> table) throws IOException {
+	public PropertyTableViewHandler_off(TableView<Property> table) throws IOException {
 		this.table = table;
 		init();
 	}
@@ -37,7 +37,6 @@ public class PropertyTableViewHandler {
 		table.getItems().clear();
 		
 		addProperty(issue, Property.PRIORITY);
-		addProperty(issue, Property.MILESTONES);
 		
 		// Add custom properties
 	}
@@ -51,12 +50,12 @@ public class PropertyTableViewHandler {
 				resb.getString(prop.getId()), 
 				prop.getValue());
 		
-		if (prop.getId().equals(Property.PRIORITY)) {
-			pclass.setSelectList(srv.getPriorities(issue));
-		}
-		else if (prop.getId().equals(Property.MILESTONES)) {
-			pclass.setSelectList(srv.getMilestones(issue));
-		}
+//		if (prop.getId().equals(Property.PRIORITY)) {
+//			pclass.setSelectList(srv.getPriorities(issue));
+//		}
+//		else if (prop.getId().equals(Property.MILESTONES)) {
+//			pclass.setSelectList(srv.getMilestones(issue));
+//		}
 		
 		propertyClasses.put(prop.getId(), pclass);
 		
@@ -80,7 +79,7 @@ public class PropertyTableViewHandler {
 					protected void updateItem(String propertyId, boolean empty) {
 						super.updateItem(propertyId, empty);
 						if (propertyId != null) {
-							PropertyClass pclass = PropertyTableViewHandler.this.propertyClasses.get(propertyId);
+							PropertyClass pclass = PropertyTableViewHandler_off.this.propertyClasses.get(propertyId);
 							String text = pclass != null ? pclass.getName() : "";
 							setText(text);
 						}

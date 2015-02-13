@@ -30,7 +30,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -106,16 +105,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private HBox hboxAttachments;
 	@FXML
-	private TableView<Property> tabProperties;
-	@FXML
-	private TableColumn<Property, String> tabPropName;
-	@FXML
-	private TableColumn<Property, String> tabPropValue;
+	private GridPane propGrid;
 	
 	private boolean tabAttachmentsApplyHandler = true;
-	
-	private PropertyTableViewHandler propertyTableViewHandler;
-	
+
+	private PropertyGridView propGridView;
+
 	private DescriptionHtmlEditor descriptionHtmlEditor;
 	private WebView webView;
 	private final MailInspector mailInspectorOrNull;
@@ -128,11 +123,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	 * Owner window for child dialogs (message boxes)
 	 */
 	private Object windowOwner;
-	
+
 	public IssueTaskPane(MailInspector mailInspectorOrNull, IssueMailItem mailItem) {
 		this.mailInspectorOrNull = mailInspectorOrNull;
 		this.mailItem = mailItem;
-		
+
 		this.resb = Globals.getResourceBundle();
 
 		final String subject = mailItem.getSubject();
@@ -143,11 +138,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			String issueId = srv.extractIssueIdFromMailSubject(subject);
 			issue.setId(issueId);
-			
+
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
-
 
 		// Globals.getThisAddin().getRegistry().readFields(this);
 	}
@@ -202,6 +196,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			Scene scene = new Scene(p);
 			scene.getStylesheets().add(getClass().getResource("TaskPane.css").toExternalForm());
 
+//			ScenicView.show(scene);
+			
 			return scene;
 		} catch (Throwable e) {
 			throw new IllegalStateException("Cannot create scene.", e);
@@ -259,27 +255,27 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			lockChangeListener = false;
 		}
 	}
-
+	
 	private void internalUpdateData(boolean saveAndValidate) throws IOException {
-		IssueService srv = Globals.getIssueService();
 		if (saveAndValidate) {
 
 		} else {
 			initSubject();
-			initChoiceBox(cbTracker, srv.getIssueTypes(issue), issue.getLastUpdate().getProperty(Property.ISSUE_TYPE));
-
-			initChoiceBox(cbCategory, srv.getCategories(issue), issue.getLastUpdate().getProperty(Property.CATEGORY));
-
-			initChoiceBox(cbAssignee, srv.getAssignees(issue), issue.getLastUpdate().getProperty(Property.ASSIGNEE));
-
-			initChoiceBox(cbStatus, srv.getIssueStates(issue), issue.getLastUpdate().getProperty(Property.STATE));
 			
+			initChoiceBox(cbTracker, Property.ISSUE_TYPE);
+
+			initChoiceBox(cbCategory, Property.CATEGORY);
+
+			initChoiceBox(cbAssignee, Property.ASSIGNEE);
+
+			initChoiceBox(cbStatus, Property.STATUS);
+
 			initTabView();
 
 			initDescription();
 
 			initProperties();
-			
+
 			initAttachments();
 		}
 	}
@@ -287,26 +283,26 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void initAttachments() {
 		if (tabAttachmentsApplyHandler) {
 			AttachmentTableViewHandler.apply(tabAttachments);
-			
+
 			tabAttachments.setOnMouseClicked((click) -> {
 				if (click.getClickCount() == 2) {
 					showSelectedIssueAttachment();
 				}
 			});
-			
+
 			tabAttachmentsApplyHandler = false;
 		}
-		
+
 		List<Attachment> atts = new ArrayList<Attachment>();
 		ObservableList<Attachment> obs = FXCollections.observableList(atts);
 		tabAttachments.setItems(obs);
 	}
 
 	private void initProperties() throws IOException {
-		if (propertyTableViewHandler == null) {
-			propertyTableViewHandler = new PropertyTableViewHandler(tabProperties);
+		if (propGridView == null) {
+			propGridView = new PropertyGridView(propGrid);
 		}
-		propertyTableViewHandler.initProperties(issue);
+		propGridView.initProperties(issue);
 	}
 
 	private void initSubject() {
@@ -338,22 +334,30 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private void initChoiceBox(ChoiceBox<IdName> cb, List<IdName> items, Property prop) {
-		cb.setItems(FXCollections.observableArrayList(items));
-		Object propValue = prop.getValue();
-		String value = "";
-		if (propValue instanceof String) {
-			value = (String) propValue;
-		} else if (propValue instanceof String[]) {
-			String[] values = (String[]) propValue;
-			if (values.length != 0) {
-				value = values[0];
-			}
-		}
-		for (IdName item : items) {
-			if (item.getId().equals(value)) {
-				cb.setValue(item);
-				break;
+	private void initChoiceBox(ChoiceBox<IdName> cb, String propertyId) throws IOException {
+		IssueService srv = Globals.getIssueService();
+		Property prop = issue.getLastUpdate().getProperty(propertyId);
+		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
+		if (pclass != null) {
+			List<IdName> items = pclass.getSelectList(); 
+			cb.setItems(FXCollections.observableArrayList(items));
+			String value = "";
+			if (prop != null) {
+				Object propValue = prop.getValue();
+				if (propValue instanceof String) {
+					value = (String) propValue;
+				} else if (propValue instanceof String[]) {
+					String[] values = (String[]) propValue;
+					if (values.length != 0) {
+						value = values[0];
+					}
+				}
+				for (IdName item : items) {
+					if (item.getId().equals(value)) {
+						cb.setValue(item);
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -381,32 +385,33 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		addOrRemoveTab(tpNotes, !isNew());
 
 	}
-	
+
 	private void showSelectedIssueAttachment() {
 		Attachment att = tabAttachments.getSelectionModel().getSelectedItem();
 		if (att != null) {
-			String url = att.getUrl(); 
+			String url = att.getUrl();
 			if (url.startsWith("mail:///")) {
-//				File selectedFile = new File(selectedAttachment.getFileName());
-//				if (!selectedFile.exists()) {
-//					MailSaveHandler saveHandler = mapFileToSaveHandler.get(selectedFile);
-//					try {
-//						saveHandler.save();
-//					} catch (IOException e) {
-//						e.printStackTrace();
-//					}
-//				}
+				// File selectedFile = new
+				// File(selectedAttachment.getFileName());
+				// if (!selectedFile.exists()) {
+				// MailSaveHandler saveHandler =
+				// mapFileToSaveHandler.get(selectedFile);
+				// try {
+				// saveHandler.save();
+				// } catch (IOException e) {
+				// e.printStackTrace();
+				// }
+				// }
 			}
 			IssueApplication.showDocument(url);
 		}
 	}
 
-
 	@FXML
 	public void onShowAttachment() {
 		showSelectedIssueAttachment();
 	}
-	
+
 	@FXML
 	public void onAddAttachment() {
 		try {
@@ -423,7 +428,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@FXML
 	public void onRemoveAttachment() {
 		List<Attachment> oldItems = tabAttachments.getItems();
@@ -437,11 +442,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				newItems.add(oldItems.get(i));
 			}
 		}
-		
+
 		// The TableView does not refresh it's items on getItems().remove(...)
-		// Other devs had this problem with JavaFX 2.1 http://stackoverflow.com/questions/11065140/javafx-2-1-tableview-refresh-items
+		// Other devs had this problem with JavaFX 2.1
+		// http://stackoverflow.com/questions/11065140/javafx-2-1-tableview-refresh-items
 		// But the suggested workarounds do not help.
-		
+
 		hboxAttachments.getChildren().remove(tabAttachments);
 
 		tabAttachments = new TableView<Attachment>();
@@ -450,19 +456,21 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		tabAttachments.getItems().addAll(newItems);
 		hboxAttachments.getChildren().add(0, tabAttachments);
 		HBox.setHgrow(tabAttachments, Priority.ALWAYS);
-		
+
 	}
 
 	@FXML
 	public void onEditPropertyStart() {
-		
+
 	}
+
 	@FXML
 	public void onEditPropertyCommit() {
-		
+
 	}
+
 	@FXML
 	public void onEditPropertyCancel() {
-		
+
 	}
 }

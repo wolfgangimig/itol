@@ -10,17 +10,16 @@
  */
 
 /**
- * Maximum number of projects to be read.
- * This value constraints the number of combo box items in the UI.
+ * Maximum number of projects to be read. This value constraints the number of
+ * combo box items in the UI.
  */
 var MAX_PROJECTS = 50;
 
 /**
- * Maximum number of users per project.
- * This value constraints the number of combo box items in the UI.
+ * Maximum number of users per project. This value constraints the number of
+ * combo box items in the UI.
  */
 var MAX_USERS = 50;
-
 
 /**
  * Import requried Java classes
@@ -34,28 +33,29 @@ var JHttpClient = Java.type("com.wilutions.itol.db.HttpClient");
 var HttpResponse = Java.type("com.wilutions.itol.db.HttpResponse");
 var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
 var Issue = Java.type("com.wilutions.itol.db.Issue");
-var DescriptionHtmlEditor = Java.type("com.wilutions.itol.db.DescriptionHtmlEditor");
+var DescriptionHtmlEditor = Java
+		.type("com.wilutions.itol.db.DescriptionHtmlEditor");
 var Logger = Java.type("java.util.logging.Logger");
 var log = Logger.getLogger("IssueServiceImpl.js");
 
-
 /**
  * Dump JavaScript objects into the log file.
- * @param name String, used as title.
- * @param obj Object to be dumped.
+ * 
+ * @param name
+ *            String, used as title.
+ * @param obj
+ *            Object to be dumped.
  */
 function dump(name, obj) {
 	var str = JSON.stringify(obj, null, 2);
 	log.info(name + "=" + str);
 }
 
-
 /**
- * Configuration values.
- * This values can be edited in the configuration page "Issue Tracker" 
- * in the backstage view of Outlook's main window.
- * If you want to add a new configuration property, 
- * follow the instructions in the lines marked with MY_CONFIG_PROPERTY.
+ * Configuration values. This values can be edited in the configuration page
+ * "Issue Tracker" in the backstage view of Outlook's main window. If you want
+ * to add a new configuration property, follow the instructions in the lines
+ * marked with MY_CONFIG_PROPERTY.
  */
 var config = {
 
@@ -63,33 +63,31 @@ var config = {
 	 * Redmine URL
 	 */
 	url : "http://192.168.0.11",
-	
+
 	/**
-	 * API key for authentication. 
+	 * API key for authentication.
 	 */
 	apiKey : "... see \"Redmine / My account / API access key\" ... ",
-	
+
 	/**
-	 * Comma separated list of project names.
-	 * Only projects listed here are shown in the UI.
+	 * Comma separated list of project names. Only projects listed here are
+	 * shown in the UI.
 	 */
 	projectNames : "",
-	
+
 	/**
 	 * Attach mail encoded in this format.
 	 */
 	msgFileType : ".msg",
-	
+
 	/**
-	 * MY_CONFIG_PROPERTY
-	 * Add your property here. 
-	 * Properties can be of type string or boolean. 
-	 * A list of possible values can be assigned to a string property definition. 
-	 * In this case, a combo box is associated to the property.
-	 * The syntax for declaring a property is: property-name = "property-value" comma  
+	 * MY_CONFIG_PROPERTY Add your property here. Properties can be of type
+	 * string or boolean. A list of possible values can be assigned to a string
+	 * property definition. In this case, a combo box is associated to the
+	 * property. The syntax for declaring a property is: property-name =
+	 * "property-value" comma
 	 */
-	// my_config_property = "a default value", 
-	
+	// my_config_property = "a default value",
 
 	// Property IDs of configuration data.
 	// IDs are member names to simplify function fromProperties
@@ -97,26 +95,25 @@ var config = {
 	PROPERTY_ID_API_KEY : "apiKey",
 	PROPERTY_ID_PROJECT_NAMES : "projectNames",
 	PROPERTY_ID_MSG_FILE_TYPE : "msgFileType",
-	
-	/**
-	 * MY_CONFIG_PROPERTY
-	 * Define a property ID. Currently, use the property name as ID.
-	 * Syntax: property-id-variable colon "property-name" comma
-	 */
-	// PROPERTY_ID_MY_CONFIG_PROPERTY : "my_config_property", 
 
 	/**
-	 * Collect the properties in an array.
-	 * The configuration view calls this function to receive the property values.
+	 * MY_CONFIG_PROPERTY Define a property ID. Currently, use the property name
+	 * as ID. Syntax: property-id-variable colon "property-name" comma
+	 */
+	// PROPERTY_ID_MY_CONFIG_PROPERTY : "my_config_property",
+	/**
+	 * Collect the properties in an array. The configuration view calls this
+	 * function to receive the property values.
 	 */
 	toProperties : function() {
-		return [ 
-		        // Add your property here:
-		        // new Property(this.PROPERTY_ID_MY_CONFIG_PROPERTY, this.my_config_property), 
-		         new Property(this.PROPERTY_ID_URL, this.url),
+		return [
+				// Add your property here:
+				// new Property(this.PROPERTY_ID_MY_CONFIG_PROPERTY,
+				// this.my_config_property),
+				new Property(this.PROPERTY_ID_URL, this.url),
 				new Property(this.PROPERTY_ID_API_KEY, this.apiKey),
 				new Property(this.PROPERTY_ID_PROJECT_NAMES, this.projectNames),
-				new Property(this.PROPERTY_ID_MSG_FILE_TYPE, this.msgFileType)];
+				new Property(this.PROPERTY_ID_MSG_FILE_TYPE, this.msgFileType) ];
 	},
 
 	fromProperties : function(props) {
@@ -150,22 +147,27 @@ var config = {
 };
 
 /**
- * Execute HTTP requests.
- * JavaScript wrapper around the Java class JHttpClient.
+ * Execute HTTP requests. JavaScript wrapper around the Java class JHttpClient.
  */
 var httpClient = {
 
 	/**
 	 * Send a request.
-	 * @param method Either "POST", "GET", "PUT", "DELETE".
-	 * @param header Array of headers, each header in form "header-name : header-value", e.g. ["Content-Type: application/json"]
+	 * 
+	 * @param method
+	 *            Either "POST", "GET", "PUT", "DELETE".
+	 * @param header
+	 *            Array of headers, each header in form "header-name :
+	 *            header-value", e.g. ["Content-Type: application/json"]
 	 * @return response text.
-	 * @throws IOException on error status (HTTP != 2xx)
+	 * @throws IOException
+	 *             on error status (HTTP != 2xx)
 	 */
 	send : function(method, headers, params, content, progressCallback) {
 		var destUrl = config.url + params;
 		this._addAuthHeader(headers);
-		var response = JHttpClient.send(destUrl, method, headers, content, progressCallback ? progressCallback : null);
+		var response = JHttpClient.send(destUrl, method, headers, content,
+				progressCallback ? progressCallback : null);
 		if (response.status < 200 || response.status >= 300) {
 			var msg = "";
 			if (response.status) {
@@ -190,9 +192,13 @@ var httpClient = {
 
 	/**
 	 * Send POST request to transmit a JSON object.
-	 * @param params URL parameters, e.g. "/issues.json" 
-	 * @param content JSON object to be posted
-	 * @param progressCallback Listener object to watch progress.
+	 * 
+	 * @param params
+	 *            URL parameters, e.g. "/issues.json"
+	 * @param content
+	 *            JSON object to be posted
+	 * @param progressCallback
+	 *            Listener object to watch progress.
 	 * @return Server response as string, usually in JSON format.
 	 */
 	post : function(params, content, progressCallback) {
@@ -204,9 +210,13 @@ var httpClient = {
 
 	/**
 	 * Send PUT request to transmit a JSON object.
-	 * @param params URL parameters, e.g. "/issues/1234.json" 
-	 * @param content JSON object to be posted
-	 * @param progressCallback Listener object to watch progress.
+	 * 
+	 * @param params
+	 *            URL parameters, e.g. "/issues/1234.json"
+	 * @param content
+	 *            JSON object to be posted
+	 * @param progressCallback
+	 *            Listener object to watch progress.
 	 */
 	put : function(params, content, progressCallback) {
 		var headers = [ "Content-Type: application/json" ];
@@ -216,14 +226,19 @@ var httpClient = {
 
 	/**
 	 * Send POST request to upload a file.
-	 * @param URL parameters, e.g. "/uploads.json"
-	 * @param content File content, a java.io.InputStream
-	 * @param contentLength Content length
-	 * @param progressCallback Listener object to watch progress.
+	 * 
+	 * @param URL
+	 *            parameters, e.g. "/uploads.json"
+	 * @param content
+	 *            File content, a java.io.InputStream
+	 * @param contentLength
+	 *            Content length
+	 * @param progressCallback
+	 *            Listener object to watch progress.
 	 * @return Server response as string, usually in JSON format.
 	 */
 	upload : function(params, content, contentLength, progressCallback) {
-		var headers = [ "Content-Type: application/octet-stream"];
+		var headers = [ "Content-Type: application/octet-stream" ];
 		if (contentLength) {
 			headers.push("Content-Length: " + contentLength);
 		}
@@ -233,7 +248,9 @@ var httpClient = {
 
 	/**
 	 * Send GET request to receive a JSON object.
-	 * @param params URL parameters, e.g. "/projects.json?offset=..." 
+	 * 
+	 * @param params
+	 *            URL parameters, e.g. "/projects.json?offset=..."
 	 * @return Server response as string, usually in JSON format.
 	 */
 	get : function(params) {
@@ -255,7 +272,6 @@ var httpClient = {
 	}
 };
 
-
 /**
  * Cache of frequently used data.
  */
@@ -273,21 +289,26 @@ var data = {
 	 * Current user.
 	 */
 	user : {},
-	
+
 	/**
 	 * Array of tracker IdName objects
 	 */
-	trackers: [],
-	
+	trackers : [],
+
 	/**
 	 * Array of priority IdName objects
 	 */
-	priorities: [],
-	
+	priorities : [],
+
 	/**
-	 * Default priority ID. 
+	 * Default priority ID.
 	 */
-	defaultPriority: 0,
+	defaultPriority : 0,
+
+	/**
+	 * Array of status IdName objects
+	 */
+	statuses : [],
 
 	clear : function() {
 		this.projects = {};
@@ -324,9 +345,9 @@ function readProjects(data) {
 	var offset = 0;
 	while (projectCount < MAX_PROJECTS) {
 
-		var projectsResponse = httpClient.get("/projects.json?" +
-				"include=trackers&" +
-				"offset=" + offset + "&limit=" + (MAX_PROJECTS-offset));
+		var projectsResponse = httpClient.get("/projects.json?"
+				+ "include=trackers&" + "offset=" + offset + "&limit="
+				+ (MAX_PROJECTS - offset));
 		var arrOfProjects = projectsResponse.projects;
 		if (arrOfProjects.length == 0) {
 			break;
@@ -374,17 +395,17 @@ function readProjectMembers(project) {
 	project.members = [];
 	var offset = 0;
 	while (project.members.length < MAX_USERS) {
-		
+
 		var arrOfMemberships = httpClient.get("/projects/" + project.id
-				+ "/memberships.json?" +
-				"offset=" + offset + "&limit=" + (MAX_USERS-offset)).memberships;
-		
+				+ "/memberships.json?" + "offset=" + offset + "&limit="
+				+ (MAX_USERS - offset)).memberships;
+
 		if (arrOfMemberships.length == 0) {
 			break;
 		}
-		
+
 		dump("arrOfMemberships", arrOfMemberships);
-		
+
 		for (var j = 0; j < arrOfMemberships.length && j < MAX_USERS; j++) {
 			var membership = arrOfMemberships[j];
 			var user = membership.user;
@@ -405,21 +426,22 @@ function writeIssue(issueParam, progressCallback) {
 
 	var pgIssue = null;
 	if (progressCallback) {
-		if (progressCallback.isCancelled()) return;
+		if (progressCallback.isCancelled())
+			return;
 		pgIssue = progressCallback.createChild("Write issue");
 	}
-	
+
 	var issueId = issueParam.issue.id;
 	var isUpdate = !!issueId;
 	log.info("issueId=" + issueId + ", isUpdate=" + isUpdate);
-	
+
 	if (isUpdate) {
-		ret = httpClient.put("/issues/" + issueId + ".json", issueParam, pgIssue);
-	}
-	else {
+		ret = httpClient.put("/issues/" + issueId + ".json", issueParam,
+				pgIssue);
+	} else {
 		ret = httpClient.post("/issues.json", issueParam, pgIssue);
 	}
-	
+
 	dump("recv", ret);
 	log.info(")writeIssue=");
 	return ret;
@@ -433,10 +455,12 @@ function initialize() {
 	readProjects(data);
 
 	readCurrentUser(data);
-	
+
 	readTrackers(data);
-	
+
 	readPriorities(data);
+	
+	readStatuses(data);
 
 	config.valid = true;
 }
@@ -449,14 +473,16 @@ function readTrackers(data) {
 		var tracker = trackersResponse.trackers[i];
 		data.trackers.push(new IdName(tracker.id, tracker.name));
 	}
-	
+
 	log.info(")readTrackers");
 }
 
 function readPriorities(data) {
 	log.info("readPriorities(");
-	var prioritiesResponse = httpClient.get("/enumerations/issue_priorities.json");
+	var prioritiesResponse = httpClient
+			.get("/enumerations/issue_priorities.json");
 	dump("prioritiesResponse", prioritiesResponse);
+	data.priorities = [];
 	for (var i = 0; i < prioritiesResponse.issue_priorities.length; i++) {
 		var priority = prioritiesResponse.issue_priorities[i];
 		data.priorities.push(new IdName(priority.id, priority.name));
@@ -468,10 +494,25 @@ function readPriorities(data) {
 
 }
 
+function readStatuses(data) {
+	log.info("readStatuses(");
+	var statusesResponse = httpClient.get("/issue_statuses.json");
+	dump("statusesResponse", statusesResponse);
+	data.statuses = [];
+	for (var i = 0; i < statusesResponse.issue_statuses.length; i++) {
+		var status = statusesResponse.issue_statuses[i];
+		data.statuses.push(new IdName(status.id, status.name));
+	}
+	if (!data.statuses) {
+		data.statuses = [ new IdName(1, "New issue") ];
+	}
+	log.info(")readStatuses");
+}
+
 /**
- * Initialize property classes.
- * In config.propertyClasses, a type definition is stored for each property.
- * The UI interprets the type definition and assigns an appropriate UI control. 
+ * Initialize property classes. In config.propertyClasses, a type definition is
+ * stored for each property. The UI interprets the type definition and assigns
+ * an appropriate UI control.
  */
 function initializePropertyClasses() {
 
@@ -487,36 +528,23 @@ function initializePropertyClasses() {
 			config.PROPERTY_ID_PROJECT_NAMES,
 			"Projects (optional, comma separated)");
 	propertyClasses.add(PropertyClass.TYPE_STRING,
-			config.PROPERTY_ID_MSG_FILE_TYPE,
-			"Attach mail as");
-	
+			config.PROPERTY_ID_MSG_FILE_TYPE, "Attach mail as");
+
 	// propertyClass.add(PropertyClass.TYPE_STRING,
-	//      config.PROPERTY_ID_MY_CONFIG_PROPERTY,
-	//      "my_config_property label"
-	
+	// config.PROPERTY_ID_MY_CONFIG_PROPERTY,
+	// "my_config_property label"
+
 	// Initialize select list for some issue properties
 
 	var propMsgFileType = propertyClasses.get(config.PROPERTY_ID_MSG_FILE_TYPE);
 	propMsgFileType.setSelectList([ new IdName(".msg", "Outlook (.msg)"),
-	                  			new IdName(".mhtml", "MIME HTML (.mhtml)"),
-	                  			new IdName(".rtf", "Rich Text Format (.rtf)") ]);
+			new IdName(".mhtml", "MIME HTML (.mhtml)"),
+			new IdName(".rtf", "Rich Text Format (.rtf)") ]);
 
-	var propIssueStatus = propertyClasses.get(Property.STATE);
-	propIssueStatus.setSelectList([ new IdName(1, "New issue"),
-	        // Field status_id seems to be ignored when creating a new issue.  
-	        // Although it works on the web page.
-//			new IdName(2, "In progress"), new IdName(3, "Resolved"),
-//			new IdName(4, "Feedback"), new IdName(5, "Closed"),
-//			new IdName(6, "Rejected") 
-	]);
-	
-	
-	// var prop_my_config_property = propertyClasses.get(config.PROPERTY_ID_MY_CONFIG_PROPERTY);
-	// prop_my_config_property.setSelectList([ new IdName("item ID", "item name"), ...]);
-
+	// Rename "Milestones" to "Version"
 	var propMilestones = propertyClasses.get(Property.MILESTONES);
 	propMilestones.setName("Versions");
-
+	
 	config.propertyClasses = propertyClasses;
 }
 
@@ -529,35 +557,60 @@ function setConfig(configProperties) {
 		config.fromProperties(configProperties);
 		initialize();
 	}
-}
+};
 
 function getPropertyClasses() {
 	return config.propertyClasses;
+};
+
+function getPropertyClass(propertyId, issue) {
+	var ret = getPropertyClasses().getCopy(propertyId);
+	switch(propertyId) {
+	case Property.ISSUE_TYPE:
+		ret.selectList = getIssueTypes(issue);
+		break;
+	case Property.PRIORITY:
+		ret.selectList = data.priorities;
+		break;
+	case Property.CATEGORY:
+		ret.selectList = getCategories(issue);
+		break;
+	case Property.MILESTONES:
+		ret.selectList = getMilestones(issue);
+		break;
+	case Property.ASSIGNEE:
+		ret.selectList = getAssignees(issue);
+		break;
+	case Property.STATUS:
+		ret.selectList = data.statuses;
+		break;
+	default:
+		break;
+	}
+	return ret;
 }
 
-	function getIssueTypes(issue) {
-		var ret = [];
-		var projectId = issue ? issue.getCategory() : -1;
-		var project = data.projects[projectId];
-		log.info("project=" + project);
-		if (project) {
-			if (!project.trackers) {
-				var projectResponse = httpClient.get("/projects/" + projectId + ".json?include=trackers");
-				project.trackers = projectResponse.project.trackers;
-				dump("Added project.trackers", project.trackers);
-			}
-			if (project.trackers) {
-				for (var i = 0; i < project.trackers.length; i++) {
-					var idn = new IdName(project.trackers[i].id, project.trackers[i].name);
-					ret.push(idn);
-				}
+function getIssueTypes(issue) {
+	var ret = [];
+	var projectId = issue ? issue.getCategory() : -1;
+	var project = data.projects[projectId];
+	log.info("project=" + project);
+	if (project) {
+		if (!project.trackers) {
+			var projectResponse = httpClient.get("/projects/" + projectId
+					+ ".json?include=trackers");
+			project.trackers = projectResponse.project.trackers;
+			dump("Added project.trackers", project.trackers);
+		}
+		if (project.trackers) {
+			for (var i = 0; i < project.trackers.length; i++) {
+				var idn = new IdName(project.trackers[i].id,
+						project.trackers[i].name);
+				ret.push(idn);
 			}
 		}
-		return ret;
-	};
-
-function getPriorities(issue) {
-	return data.priorities;
+	}
+	return ret;
 };
 
 function getCategories(issue) {
@@ -592,7 +645,7 @@ function getMilestones(issue) {
 };
 
 function getAssignees(issue) {
-	var ret = [new IdName(-1, "Unassigned")];
+	var ret = [ new IdName(-1, "Unassigned") ];
 	var projectId = issue ? issue.getCategory() : 0;
 	var project = data.projects[projectId];
 	log.info("project=" + project);
@@ -614,14 +667,6 @@ function getCurrentUser() {
 	return data.user ? new IdName(parseInt(data.user.id), data.user.firstname
 			+ " " + data.user.lastname) : new IdName(0, "");
 };
-
-function getIssueStates(iss) {
-	return getPropertyClasses().get(Property.STATE).getSelectList();
-};
-
-function getDetails(issue) {
-
-}
 
 function getDescriptionTextEditor(issue) {
 	return null;
@@ -646,14 +691,14 @@ function getDescriptionHtmlEditor(issue) {
 			+ "var wikiToolbar = new jsToolBar(document.getElementById('issue_notes'));"
 			+ "wikiToolbar.setHelpLink('/help/en/wiki_syntax.html');"
 			+ "wikiToolbar.draw();" + "</script>" + "</body>" + "</html>";
-	
+
 	var html = htmlTemplate.replace(/REDMINE_URL/g, config.url);
 	html = html.replace("ISSUE_DESCRIPTION", issue.getDescription());
-	
+
 	var editor = new DescriptionHtmlEditor();
 	editor.htmlContent = html;
 	editor.elementId = "issue_notes";
-	
+
 	return editor;
 }
 
@@ -667,12 +712,12 @@ function getMsgFileType() {
 
 function createIssue(subject, description) {
 	config.checkValid();
-	
+
 	subject = stripIssueIdFromMailSubject(subject);
-	
+
 	// strip RE:, Fwd:, AW:, WG: ...
 	subject = stripReFwdFromSubject(subject);
-	
+
 	var iss = new Issue();
 
 	iss.setSubject(subject);
@@ -681,21 +726,26 @@ function createIssue(subject, description) {
 	iss.setPriority(data.defaultPriority); // Normal priority
 	iss.setState(1); // New issue
 	iss.setAssignee(-1);
+	
+	
 
 	var projects = getCategories(null);
 	iss.setCategory(projects[0].getId());
-	
+
 	return iss;
 };
 
 function updateIssue(trackerIssue, progressCallback) {
-	log.info("updateIssue(trackerIssue=" + trackerIssue + ", progressCallback=" + progressCallback);
+	log.info("updateIssue(trackerIssue=" + trackerIssue + ", progressCallback="
+			+ progressCallback);
 	config.checkValid();
 
 	var redmineIssue = {};
 	toRedmineIssue(trackerIssue, redmineIssue, progressCallback);
 
-	var issueParam = {	issue : redmineIssue };
+	var issueParam = {
+		issue : redmineIssue
+	};
 	var issueReturn = writeIssue(issueParam, progressCallback);
 
 	// Convert redmineIssue to trackerIssue,
@@ -710,20 +760,20 @@ function updateIssue(trackerIssue, progressCallback) {
 };
 
 function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
-	log.info("toRedmineIssue(trackerIssue=" + trackerIssue + ", redmineIssue=" + redmineIssue + ", progressCallback=" + progressCallback);
-	
+	log.info("toRedmineIssue(trackerIssue=" + trackerIssue + ", redmineIssue="
+			+ redmineIssue + ", progressCallback=" + progressCallback);
+
 	redmineIssue.id = trackerIssue.getId();
 	redmineIssue.project_id = parseInt(trackerIssue.getCategory());
 	redmineIssue.tracker_id = parseInt(trackerIssue.getType());
 	redmineIssue.status_id = parseInt(trackerIssue.getState());
 	redmineIssue.priority_id = parseInt(trackerIssue.getPriority());
 	redmineIssue.subject = "" + trackerIssue.getSubject();
-	
+
 	if (redmineIssue.id) {
 		// Update issue: set notes
 		redmineIssue.notes = "" + trackerIssue.getDescription();
-	}
-	else {
+	} else {
 		// New issue: set description
 		redmineIssue.description = "" + trackerIssue.getDescription();
 	}
@@ -738,30 +788,33 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 	if (trackerIssue.getMilestones().length) {
 		redmineIssue.fixed_version_id = parseInt(trackerIssue.getMilestones()[0]);
 	}
-	
+
 	redmineIssue.uploads = [];
 	try {
 		for (var i = 0; i < trackerIssue.getAttachments().size(); i++) {
 			var trackerAttachment = trackerIssue.getAttachments().get(i);
 			var pgUpload = null;
 			if (progressCallback) {
-				if (progressCallback.isCancelled()) break;
-				var str = "Upload attachment " + trackerAttachment.getFileName();
-				str += ", " + makeAttachmentSizeString(trackerAttachment.getContentLength());
+				if (progressCallback.isCancelled())
+					break;
+				var str = "Upload attachment "
+						+ trackerAttachment.getFileName();
+				str += ", "
+						+ makeAttachmentSizeString(trackerAttachment
+								.getContentLength());
 				pgUpload = progressCallback.createChild(str);
 				pgUpload.setTotal(trackerAttachment.getContentLength());
 			}
 			redmineAttachment = writeAttachment(trackerAttachment, pgUpload);
 			redmineIssue.uploads.push(redmineAttachment);
 		}
-	}
-	catch (ex) {
+	} catch (ex) {
 		for (var i = 0; i < redmineIssue.uploads.length; i++) {
 			var token = redmineIssue.uploads[i];
 			try {
 				deleteAttachment(token);
+			} catch (ex2) {
 			}
-			catch (ex2) {}
 		}
 	}
 
@@ -770,7 +823,7 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 }
 
 function makeAttachmentSizeString(contentLength) {
-	var dims = ["Bytes", "KB", "MB", "GB", "TB"];
+	var dims = [ "Bytes", "KB", "MB", "GB", "TB" ];
 	var dimIdx = 0;
 	var c = contentLength;
 	for (var i = 0; i < dims.length; i++) {
@@ -828,7 +881,7 @@ function stripOneIssueIdFromMailSubject(subject) {
 	if (p >= 0) {
 		var q = subject.indexOf("]", p);
 		if (q >= 0) {
-			ret = subject.substring(q+1).trim();
+			ret = subject.substring(q + 1).trim();
 		}
 	}
 	log.info(")stripOneIssueIdFromMailSubject=" + ret);
@@ -858,7 +911,7 @@ function stripFirstReFwdFromSubject(subject) {
 	var s = subject.toLowerCase();
 	var p = s.indexOf(":");
 	if (p < 4) {
-		subject = subject.substring(p+1);
+		subject = subject.substring(p + 1);
 	}
 	return subject;
 }
@@ -870,23 +923,25 @@ function injectIssueIdIntoMailSubject(subject, iss) {
 };
 
 function writeAttachment(trackerAttachment, progressCallback) {
-	log.info("writeAttachment(" + trackerAttachment + ", progressCallback=" + progressCallback);
+	log.info("writeAttachment(" + trackerAttachment + ", progressCallback="
+			+ progressCallback);
 	var content = trackerAttachment.getStream();
-	
-	var uploadResult =  httpClient.upload("/uploads.json", content, trackerAttachment.getContentLength(), progressCallback);
+
+	var uploadResult = httpClient.upload("/uploads.json", content,
+			trackerAttachment.getContentLength(), progressCallback);
 	dump(uploadResult);
-	
+
 	trackerAttachment.setId(uploadResult.upload.token);
-	
+
 	var redmineAttachment = {};
 	redmineAttachment.token = uploadResult.upload.token;
 	redmineAttachment.filename = trackerAttachment.getFileName();
 	redmineAttachment.content_type = trackerAttachment.getContentType();
-	
+
 	if (progressCallback) {
 		progressCallback.setFinished();
 	}
-	
+
 	log.info(")writeAttachment=" + redmineAttachment);
 	return redmineAttachment;
 };

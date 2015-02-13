@@ -146,11 +146,11 @@ public class Issue implements Serializable {
 	}
 	
 	public String getState() {
-		return (String)getLastUpdatePropertyValue(Property.STATE, "");
+		return (String)getLastUpdatePropertyValue(Property.STATUS, "");
 	}
 	
 	public void setState(String value) {
-		setLastUpdatePropertyValue(Property.STATE, value);
+		setLastUpdatePropertyValue(Property.STATUS, value);
 	}
 	
 	public String getCategory() {
@@ -167,14 +167,6 @@ public class Issue implements Serializable {
 	
 	public void setPriority(String value) {
 		setLastUpdatePropertyValue(Property.PRIORITY, value);
-	}
-
-	public void setMilestones(String[] values) {
-		setLastUpdatePropertyValue(Property.MILESTONES, values);
-	}
-	
-	public String[] getMilestones() {
-		return (String[])getLastUpdatePropertyValue(Property.MILESTONES, new String[0]);
 	}
 
 	public String getSubject() {
