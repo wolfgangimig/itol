@@ -10,7 +10,7 @@
  */
 package com.wilutions.itol.db;
 
-public class DescriptionHtmlEditor {
+public class IssueHtmlEditor {
 
 	private String htmlContent;
 	

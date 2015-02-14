@@ -66,6 +66,13 @@ public class Property {
 	 */
 	public static final String STATUS = "IssueProperty.State";
 
+	/**
+	 * Issue update notes.
+	 * Value is of type String.
+	 * It contains the notes entered for an updated issue.
+	 */
+	public static final String NOTES = "IssueProperty.Notes";
+
 	private String id;
 	
 	private Object value;

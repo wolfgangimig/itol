@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,15 +21,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.wilutions.itol.db.Attachment;
-import com.wilutions.itol.db.DescriptionHtmlEditor;
 import com.wilutions.itol.db.DescriptionTextEditor;
 import com.wilutions.itol.db.FindIssuesInfo;
 import com.wilutions.itol.db.FindIssuesResult;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
+import com.wilutions.itol.db.IssueHtmlEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueUpdate;
 import com.wilutions.itol.db.ProgressCallback;
@@ -273,7 +271,7 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public DescriptionHtmlEditor getDescriptionHtmlEditor(Issue issue) throws IOException {
+	public IssueHtmlEditor getHtmlEditor(Issue issue, String propertyId) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

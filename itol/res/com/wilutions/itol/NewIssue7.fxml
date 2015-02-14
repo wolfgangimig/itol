@@ -116,7 +116,7 @@
                         </Tab>
                         <Tab fx:id="tpNotes" text="%tpNotes.text">
                            <content>
-                              <HBox>
+                              <HBox fx:id="hboxNotes">
                                  <children>
                                     <HTMLEditor fx:id="edNotes" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="251.0" prefWidth="211.0" HBox.hgrow="ALWAYS" />
                                  </children>

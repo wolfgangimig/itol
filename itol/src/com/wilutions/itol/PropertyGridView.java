@@ -2,6 +2,7 @@ package com.wilutions.itol;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,12 @@ public class PropertyGridView {
 	private final GridPane propGrid;
 	private final IssueService srv = Globals.getIssueService();
 	private Node firstControl;
+	
+	private static class PropertyNode {
+		String propertyId;
+		Node node;
+	}
+	private final List<PropertyNode> propNodes = new ArrayList<>();
 
 	public PropertyGridView(GridPane propGrid) throws IOException {
 		this.propGrid = propGrid;
@@ -38,6 +45,7 @@ public class PropertyGridView {
 	public void initProperties(Issue issue) throws IOException {
 		propGrid.getChildren().clear();
 		propGrid.getRowConstraints().clear();
+		propNodes.clear();
 
 		int rowIndex = 0;
 
@@ -51,7 +59,46 @@ public class PropertyGridView {
 				}
 			}
 		}
+	}
 
+	public void saveProperties(Issue issue) {
+		for (PropertyNode propNode : propNodes) {
+			String propertyId = propNode.propertyId;
+			Node node = propNode.node;
+			if (node instanceof TextField) {
+				issue.setPropertyString(propertyId, ((TextField)node).getText());
+			}
+			else if (node instanceof DatePicker) {
+				LocalDate ldate = ((DatePicker)node).getValue();
+				String iso = "";
+				if (ldate != null) {
+					iso = ldate.format(DateTimeFormatter.ISO_LOCAL_DATE);
+				}
+				issue.setPropertyString(propertyId, iso);
+			}
+			else if (node instanceof CheckBox) {
+				boolean value = ((CheckBox)node).isSelected();
+				issue.setPropertyBoolean(propertyId, value);
+			}
+			else if (node instanceof ChoiceBox) {
+				@SuppressWarnings("unchecked")
+				ChoiceBox<IdName> cb = (ChoiceBox<IdName>)node;
+				IdName idn = cb.getSelectionModel().getSelectedItem();
+				if (idn != null) {
+					issue.setPropertyString(propertyId, idn.getId());
+				}
+			}
+			else if (node instanceof ListView){
+				@SuppressWarnings("unchecked")
+				ListView<IdName> lb = (ListView<IdName>)node;
+				List<IdName> items = lb.getSelectionModel().getSelectedItems();
+				List<String> ids = new ArrayList<String>(items.size());
+				for (IdName idn : items) {
+					ids.add(idn.getId());
+				}
+				issue.setPropertyStringList(propertyId, ids);
+			}
+		}
 	}
 
 	private boolean isPropertyForGrid(String propertyId) {
@@ -109,9 +156,16 @@ public class PropertyGridView {
 		}
 
 		propGrid.add(ctrl, 1, rowIndex);
+		
 		if (firstControl == null) {
 			firstControl = ctrl;
 		}
+		
+		// Save propertId with node to simplify access in saveProperties()
+		PropertyNode propNode = new PropertyNode();
+		propNode.propertyId = propertyId;
+		propNode.node = ctrl;
+		propNodes.add(propNode);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -195,4 +249,5 @@ public class PropertyGridView {
 	public Node getFirstControl() {
 		return firstControl;
 	}
+
 }

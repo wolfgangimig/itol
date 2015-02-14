@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -30,7 +32,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
@@ -48,9 +49,9 @@ import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
 import com.wilutions.itol.db.Attachment;
-import com.wilutions.itol.db.DescriptionHtmlEditor;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
+import com.wilutions.itol.db.IssueHtmlEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
@@ -93,6 +94,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private HTMLEditor edNotes;
 	@FXML
+	private HBox hboxNotes;
+	@FXML
 	private WebView webHistory;
 	@FXML
 	private Tab tpProperties;
@@ -121,12 +124,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private PropertyGridView propGridView;
 
-	private DescriptionHtmlEditor descriptionHtmlEditor;
+	private IssueHtmlEditor descriptionHtmlEditor;
+	private IssueHtmlEditor notesHtmlEditor;
+
 	private WebView webDescription;
+	private WebView webNotes;
 	private final MailInspector mailInspectorOrNull;
 	private IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
-	private File tempDir;
 	private ResourceBundle resb;
 
 	/**
@@ -236,8 +241,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			super.showAsync(taskPane, (succ, ex) -> {
 				if (succ) {
 					try {
-
 						initDescription();
+						initNotes();
 					} catch (Throwable e) {
 						e.printStackTrace();
 						ex = e;
@@ -283,8 +288,28 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void internalUpdateData(boolean saveAndValidate) throws IOException {
 		if (saveAndValidate) {
 
+			saveSubject();
+
+			saveDescription();
+
+			saveNotes();
+
+			saveChoiceBox(cbTracker, Property.ISSUE_TYPE);
+
+			saveChoiceBox(cbStatus, Property.STATUS);
+
+			saveChoiceBox(cbAssignee, Property.ASSIGNEE);
+
+			saveChoiceBox(cbCategory, Property.CATEGORY);
+
+			saveProperties();
+
 		} else {
 			initSubject();
+
+			initDescription();
+
+			initNotes();
 
 			initChoiceBox(cbTracker, Property.ISSUE_TYPE);
 
@@ -294,10 +319,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initChoiceBox(cbStatus, Property.STATUS);
 
-			initTabView();
-
-			initDescription();
-
 			initProperties();
 
 			initAttachments();
@@ -305,6 +326,58 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			initHistory();
 
 		}
+	}
+
+	private void saveProperties() {
+		propGridView.saveProperties(issue);
+	}
+
+	private void saveChoiceBox(ChoiceBox<IdName> cb, String propertyId) {
+		IdName idn = cb.getValue();
+		if (idn != null && !idn.equals(IdName.NULL)) {
+			Property prop = new Property(propertyId, idn.getId());
+			System.out.println("save property=" + prop);
+			issue.getLastUpdate().setProperty(prop);
+		} else {
+			System.out.println("remove propertyId=" + propertyId);
+			issue.getLastUpdate().removeProperty(propertyId);
+		}
+	}
+
+	private void saveDescription() {
+		if (descriptionHtmlEditor != null) {
+			String elementId = descriptionHtmlEditor.getElementId();
+			String scriptToGetDescription = "document.getElementById('" + elementId + "').value";
+			try {
+				String text = (String) webDescription.getEngine().executeScript(scriptToGetDescription);
+				issue.setDescription(text);
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+		} else {
+			String text = edDescription.getHtmlText().trim();
+			issue.setDescription(text);
+		}
+	}
+
+	private void saveNotes() {
+		if (notesHtmlEditor != null) {
+			String elementId = notesHtmlEditor.getElementId();
+			String scriptToGetDescription = "document.getElementById('" + elementId + "').value";
+			try {
+				String text = (String) webNotes.getEngine().executeScript(scriptToGetDescription);
+				issue.setPropertyString(Property.NOTES, text);
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+		} else {
+			String text = edNotes.getHtmlText().trim();
+			issue.setPropertyString(Property.NOTES, text);
+		}
+	}
+
+	private void saveSubject() {
+		issue.setSubject(edSubject.getText().trim());
 	}
 
 	private void initHistory() throws IOException {
@@ -345,28 +418,20 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initDescription() throws IOException {
-
-		descriptionHtmlEditor = Globals.getIssueService().getDescriptionHtmlEditor(issue);
-		if (descriptionHtmlEditor != null) {
-
-			if (webDescription == null) {
-				edDescription.setVisible(false);
-
-				webDescription = new WebView();
-
-				// HBox hbox = new HBox();
-				// hbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
-				// hbox.getChildren().add(webView);
-
-				hboxDescription.getChildren().clear();
-				hboxDescription.getChildren().add(webDescription);
-				hboxDescription.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
-			}
-
+		if (webDescription != null) {
+			descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
 			webDescription.getEngine().loadContent(descriptionHtmlEditor.getHtmlContent());
-
-		} else if (edDescription != null) {
+		} else {
 			edDescription.setHtmlText(issue.getDescription());
+		}
+	}
+
+	private void initNotes() throws IOException {
+		if (webNotes != null) {
+			notesHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.NOTES);
+			webNotes.getEngine().loadContent(notesHtmlEditor.getHtmlContent());
+		} else {
+			edNotes.setHtmlText(issue.getPropertyString(Property.NOTES, ""));
 		}
 	}
 
@@ -407,6 +472,29 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
+		cbTracker.valueProperty().addListener(new ComboboxChangeListener(cbTracker, Property.ISSUE_TYPE));
+		cbStatus.valueProperty().addListener(new ComboboxChangeListener(cbStatus, Property.STATUS));
+		cbAssignee.valueProperty().addListener(new ComboboxChangeListener(cbAssignee, Property.ASSIGNEE));
+		cbCategory.valueProperty().addListener(new ComboboxChangeListener(cbCategory, Property.CATEGORY));
+		
+		descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
+		if (descriptionHtmlEditor != null) {
+			edDescription.setVisible(false);
+			webDescription = new WebView();
+			hboxDescription.getChildren().clear();
+			hboxDescription.getChildren().add(webDescription);
+			hboxDescription.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+		}
+
+		notesHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.NOTES);
+		if (notesHtmlEditor != null) {
+			edNotes.setVisible(false);
+			webNotes = new WebView();
+			hboxNotes.getChildren().clear();
+			hboxNotes.getChildren().add(webNotes);
+			hboxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+		}
+
 		updateData(false);
 	}
 
@@ -420,9 +508,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		} else {
 			tabpIssue.getTabs().remove(t);
 		}
-	}
-
-	private void initTabView() {
 	}
 
 	private void showSelectedIssueAttachment() {
@@ -562,36 +647,85 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			node = webHistory;
 			break;
 		case 4: // NOTES
-			node = edNotes;
+			node = webNotes != null ? webNotes : edNotes;
 			break;
 		}
 		if (node != null) {
-			setNodeFocusLater(node);
+			final Node nodeF = node;
+			BackgTask.run(() -> {
+				try {
+					Thread.sleep(200);
+					setNodeFocusLater(nodeF);
+				} catch (Throwable e) {
+				}
+			});
 		}
 	}
 
 	private void setNodeFocusLater(Node node) {
-		BackgTask.run(() -> {
-			try {
-				Thread.sleep(200);
-				Platform.runLater(() -> {
-					if (node instanceof WebView) {
-						WebView webView = (WebView) node;
-						if (descriptionHtmlEditor != null) {
-							String elementId = descriptionHtmlEditor.getElementId();
-							String scriptToFocusControl = "document.getElementById('" + elementId + "').focus()";
-							try {
-								webView.getEngine().executeScript(scriptToFocusControl);
-							} catch (Throwable e) {
-								e.printStackTrace();
-							}
-						}
-					} else {
-						node.requestFocus();
+		Platform.runLater(() -> {
+			if (node == webDescription || node == webNotes) {
+				BackgTask.run(() -> {
+					try {
+						Thread.sleep(200);
+						focuseWebViewHtmlEditor((WebView) node, descriptionHtmlEditor);
+					} catch (Exception e) {
 					}
 				});
-			} catch (Exception e) {
+			}
+			node.requestFocus();
+			System.out.println("focus " + node);
+		});
+	}
+
+	private void focuseWebViewHtmlEditor(WebView webView, IssueHtmlEditor descriptionHtmlEditor) {
+		Platform.runLater(() -> {
+			String elementId = descriptionHtmlEditor.getElementId();
+			String scriptToFocusControl = "document.getElementById('" + elementId + "').focus()";
+			try {
+				webView.getEngine().executeScript(scriptToFocusControl);
+			} catch (Throwable e) {
+				e.printStackTrace();
 			}
 		});
 	}
+
+	private class ComboboxChangeListener implements ChangeListener<IdName> {
+
+		final ChoiceBox<IdName> cb;
+		@SuppressWarnings("unused")
+		final String propertyId;
+
+		ComboboxChangeListener(ChoiceBox<IdName> cb, String propertyId) {
+			this.cb = cb;
+			this.propertyId = propertyId;
+		}
+
+		@Override
+		public void changed(ObservableValue<? extends IdName> observable, IdName oldValue, IdName newValue) {
+			if (lockChangeListener) {
+				return;
+			}
+			if (oldValue == null)
+				oldValue = IdName.NULL;
+			if (newValue == null)
+				newValue = IdName.NULL;
+			if (!oldValue.equals(newValue)) {
+
+				try {
+					updateData(true);
+
+					IssueService srv = Globals.getIssueService();
+					issue = srv.validateIssue(issue);
+
+					updateData(false);
+
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+	}
+
 }

@@ -36,9 +36,7 @@ public interface IssueService {
 //
 //	List<IdName> getMilestones(Issue issue) throws IOException;
 
-	DescriptionHtmlEditor getDescriptionHtmlEditor(Issue issue) throws IOException;
-
-	DescriptionTextEditor getDescriptionTextEditor(Issue issue) throws IOException;
+	IssueHtmlEditor getHtmlEditor(Issue issue, String propertyId) throws IOException;
 
 	Issue createIssue(String subject, String description) throws IOException;
 

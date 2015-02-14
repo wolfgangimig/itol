@@ -34,8 +34,8 @@ var HttpResponse = Java.type("com.wilutions.itol.db.HttpResponse");
 var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
 var Issue = Java.type("com.wilutions.itol.db.Issue");
 var Attachment = Java.type("com.wilutions.itol.db.Attachment");
-var DescriptionHtmlEditor = Java
-		.type("com.wilutions.itol.db.DescriptionHtmlEditor");
+var IssueHtmlEditor = Java
+		.type("com.wilutions.itol.db.IssueHtmlEditor");
 var Logger = Java.type("java.util.logging.Logger");
 var log = Logger.getLogger("IssueServiceImpl.js");
 
@@ -775,7 +775,7 @@ function getDescriptionTextEditor(issue) {
 	return null;
 }
 
-function getDescriptionHtmlEditor(issue) {
+function getHtmlEditor(issue, propertyId) {
 	var htmlTemplate = "<html>"
 			+ "<head>"
 			+ "<script src=\"REDMINE_URL/javascripts/jstoolbar/jstoolbar-textile.min.js?1420968012\" type=\"text/javascript\">"
@@ -796,9 +796,13 @@ function getDescriptionHtmlEditor(issue) {
 			+ "wikiToolbar.draw();" + "</script>" + "</body>" + "</html>";
 
 	var html = htmlTemplate.replace(/REDMINE_URL/g, config.url);
-	html = html.replace("ISSUE_DESCRIPTION", issue.getDescription());
+	var text = "";
+	if (issue) {
+		text = issue.getPropertyString(propertyId, "");
+	}
+	html = html.replace("ISSUE_DESCRIPTION", text);
 
-	var editor = new DescriptionHtmlEditor();
+	var editor = new IssueHtmlEditor();
 	editor.htmlContent = html;
 	editor.elementId = "issue_notes";
 
