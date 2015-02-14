@@ -45,7 +45,7 @@ public class PropertyListView_off {
 		Property prop = issue.getLastUpdate().getProperty(propertyId);
 		if (prop == null) return;
 		
-		PropertyClass pclass = new PropertyClass(PropertyClass.TYPE_ARRAY_STRING, 
+		PropertyClass pclass = new PropertyClass(PropertyClass.TYPE_STRING_LIST, 
 				prop.getId(),
 				resb.getString(prop.getId()), 
 				prop.getValue());

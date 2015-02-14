@@ -57,6 +57,9 @@ public interface IssueService {
 	Issue updateIssue(Issue iss, ProgressCallback cb) throws IOException;
 
 	Issue readIssue(String issueId) throws IOException;
+	
+	String getIssueHistoryUrl(String issueId) throws IOException;
+	
 //
 //	FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) throws IOException;
 //

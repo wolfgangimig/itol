@@ -33,6 +33,7 @@ var JHttpClient = Java.type("com.wilutions.itol.db.HttpClient");
 var HttpResponse = Java.type("com.wilutions.itol.db.HttpResponse");
 var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
 var Issue = Java.type("com.wilutions.itol.db.Issue");
+var Attachment = Java.type("com.wilutions.itol.db.Attachment");
 var DescriptionHtmlEditor = Java
 		.type("com.wilutions.itol.db.DescriptionHtmlEditor");
 var Logger = Java.type("java.util.logging.Logger");
@@ -99,6 +100,7 @@ var config = {
 	PROPERTY_ID_START_DATE : "start_date",
 	PROPERTY_ID_DUE_DATE : "due_date",
 	PROPERTY_ID_ESTIMATED_HOURS : "estimated_hours",
+	PROPERTY_ID_SPENT_HOURS : "spent_hours",
 	PROPERTY_ID_DONE_RATIO : "done_ratio",
 
 	/**
@@ -314,7 +316,7 @@ var data = {
 	 * Array of status IdName objects
 	 */
 	statuses : [],
-	
+
 	/**
 	 * Custom fields definitions.
 	 */
@@ -471,7 +473,7 @@ function initialize() {
 	readPriorities(data);
 
 	readStatuses(data);
-	
+
 	readCustomFields(data);
 
 	config.valid = true;
@@ -527,7 +529,7 @@ function readCustomFields(data) {
 	dump("response", response);
 	data.custom_fields = response.custom_fields;
 	var propertyClasses = getPropertyClasses();
-	
+
 	for (var i = 0; i < response.custom_fields.length; i++) {
 		var cfield = response.custom_fields[i];
 		if (cfield.customized_type == "issue") {
@@ -539,32 +541,49 @@ function readCustomFields(data) {
 	log.info(")readCustomFields");
 }
 
-function makePropertyClassFromCustomField(cfield) {
-	log.info("makePropertyClassFromCustomField(" + cfield.name);
+function makeCustomFieldPropertyId(cfield) {
+	return "custom_field_" + cfield.id;
+}
+
+function makePropertyType(cfield) {
 	var type = PropertyClass.TYPE_STRING;
 	switch (cfield.field_format) {
-	case "bool": type = PropertyClass.TYPE_BOOL; break;
-	case "date": type = PropertyClass.TYPE_ISO_DATE; break;
-	case "list": if (cfield.multiple) type = PropertyClass.TYPE_ARRAY_STRING; break;
+	case "bool":
+		type = PropertyClass.TYPE_BOOL;
+		break;
+	case "date":
+		type = PropertyClass.TYPE_ISO_DATE;
+		break;
+	case "list":
+		if (cfield.multiple) {
+			type = PropertyClass.TYPE_STRING_LIST;
+		}
+		break;
 	}
-	
+	return type;
+}
+
+function makePropertyClassFromCustomField(cfield) {
+	log.info("makePropertyClassFromCustomField(" + cfield.name);
+
+	var type = makePropertyType(cfield);
+
 	// Define Property ID for this custom field.
 	// That ID is also added to the cfield object to be able to use
 	// it in getPropertyDisplayOrder().
-	var id = cfield.propertyId = "custom_field_"+ cfield.id;
-	
-	
+	var id = cfield.propertyId = makeCustomFieldPropertyId(cfield);
+
 	var name = cfield.name;
 	var defaultValue = cfield.default_value ? cfield.default_value : null;
 	var selectList = [];
-	
+
 	if (cfield.possible_values) {
 		for (var i = 0; i < cfield.possible_values.length; i++) {
 			var pvalue = cfield.possible_values[i];
-			selectList.push(new IdName(""+pvalue.value));
+			selectList.push(new IdName("" + pvalue.value));
 		}
 	}
-	
+
 	var ret = new PropertyClass(type, id, name, defaultValue, selectList);
 	log.info(")makePropertyClassFromCustomField=" + ret);
 	return ret;
@@ -610,10 +629,13 @@ function initializePropertyClasses() {
 			config.PROPERTY_ID_ESTIMATED_HOURS, "Estimated hours");
 
 	propertyClasses.add(PropertyClass.TYPE_STRING,
+			config.PROPERTY_ID_SPENT_HOURS, "Spent hours");
+
+	propertyClasses.add(PropertyClass.TYPE_STRING,
 			config.PROPERTY_ID_DONE_RATIO, "% Done", "0", [
-					new IdName("0", "0 %"), new IdName("0.1", "10 %"),
-					new IdName("0.2", "20 %"), new IdName("0.3", "30 %"),
-					new IdName("0.4", "40 %"), new IdName("0.5", "50 %"),
+					new IdName("0", "0 %"), new IdName("10", "10 %"),
+					new IdName("20", "20 %"), new IdName("30", "30 %"),
+					new IdName("0.4", "40 %"), new IdName("50", "50 %"),
 					new IdName("0.6", "60 %"), new IdName("0.7", "70 %"),
 					new IdName("0.8", "80 %"), new IdName("0.9", "90 %"),
 					new IdName("1", "100 %"), ]);
@@ -793,21 +815,23 @@ function getMsgFileType() {
 
 function getPropertyDisplayOrder(issue) {
 	var propertyIds = [ Property.PRIORITY, config.PROPERTY_ID_START_DATE,
-			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_DONE_RATIO,
-			config.PROPERTY_ID_ESTIMATED_HOURS ];
-	
+			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_DONE_RATIO ];
+
+	propertyIds.push(issue.id ? config.PROPERTY_ID_ESTIMATED_HOURS
+			: config.PROPERTY_ID_SPENT_HOURS);
+
 	var issueType = issue.getType();
 	for (var i = 0; i < data.custom_fields.length; i++) {
 		var cfield = data.custom_fields[i];
 		if (cfield.trackers) {
 			for (var t = 0; t < cfield.trackers.length; t++) {
 				if (cfield.trackers[t].id == issueType) {
-					propertyIds.push(cfield.propertyId); 
+					propertyIds.push(cfield.propertyId);
 				}
 			}
 		}
 	}
-	
+
 	return propertyIds;
 }
 
@@ -825,7 +849,7 @@ function createIssue(subject, description) {
 	iss.setDescription(description);
 	iss.setType(1); // Bug
 	iss.setPriority(data.defaultPriority); // Normal priority
-	iss.setState(1); // New issue
+	iss.setStatus(1); // New issue
 	iss.setAssignee(-1);
 
 	iss.setPropertyValue(config.PROPERTY_ID_START_DATE, new Date()
@@ -871,7 +895,7 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 	redmineIssue.id = trackerIssue.getId();
 	redmineIssue.project_id = parseInt(trackerIssue.getCategory());
 	redmineIssue.tracker_id = parseInt(trackerIssue.getType());
-	redmineIssue.status_id = parseInt(trackerIssue.getState());
+	redmineIssue.status_id = parseInt(trackerIssue.getStatus());
 	redmineIssue.priority_id = parseInt(trackerIssue.getPriority());
 	redmineIssue.subject = "" + trackerIssue.getSubject();
 
@@ -940,24 +964,6 @@ function makeAttachmentSizeString(contentLength) {
 		}
 	}
 	return nb + dims[dimIdx];
-}
-
-function toTrackerIssue(redmineIssue, trackerIssue) {
-
-	trackerIssue.setId(redmineIssue.id);
-
-	trackerIssue.setCategory(redmineIssue.project.id);
-	trackerIssue.setType(redmineIssue.tracker.id);
-	trackerIssue.setState(redmineIssue.status.id);
-	trackerIssue.setPriority(redmineIssue.priority.id);
-	trackerIssue.setSubject(redmineIssue.subject);
-	trackerIssue.setDescription(redmineIssue.description);
-
-	// trackerIssue.setAssignee(redmineIssue.assigned_to.id);
-
-	if (redmineIssue.fixed_version_id) {
-		trackerIssue.setMilestones([ redmineIssue.fixed_version_id ]);
-	}
 }
 
 function validateIssue(iss) {
@@ -1053,10 +1059,128 @@ function writeAttachment(trackerAttachment, progressCallback) {
 
 function readIssue(issueId) {
 	log.info("readIssue(" + issueId);
-	var response = httpClient.get("/issues/" + issueId +".json?"
-			+ "include=children,attachments,relations,changesets,journals,watchers");
+	var response = httpClient
+			.get("/issues/"
+					+ issueId
+					+ ".json?"
+					+ "include=children,attachments,relations,changesets,journals,watchers");
 	dump("issue", response);
+
+	var redmineIssue = response.issue;
+	var trackerIssue = new Issue();
+	toTrackerIssue(redmineIssue, trackerIssue);
+
 	log.info(")readIssue");
+	return trackerIssue;
+}
+
+function toTrackerIssue(redmineIssue, issue) {
+	log.info("toTrackerIssue(" + redmineIssue.id);
+
+	// Standard properties
+	issue.id = redmineIssue.id;
+	issue.subject = redmineIssue.subject;
+	issue.description = redmineIssue.description;
+	log.info("issue.subject=" + issue.subject);
+
+	if (redmineIssue.project) {
+		issue.category = redmineIssue.project.id;
+		log.info("issue.category=" + issue.category);
+	}
+	if (redmineIssue.tracker) {
+		issue.type = redmineIssue.tracker.id;
+		log.info("issue.type=" + issue.type);
+	}
+	if (redmineIssue.status) {
+		issue.status = redmineIssue.status.id;
+		log.info("issue.status=" + issue.status);
+	}
+	if (redmineIssue.priority) {
+		issue.priority = redmineIssue.priority.id;
+		log.info("issue.priority=" + issue.priority);
+	}
+	if (redmineIssue.assigned_to) {
+		issue.assignee = redmineIssue.assigned_to.id;
+		log.info("issue.assignee=" + issue.assignee);
+	}
+//	if (redmineIssue.fixed_version_id) {
+//		trackerIssue.setMilestones([ redmineIssue.fixed_version_id ]);
+//	}
+
+	// Redmine specific properties
+	var propertyIds = [ config.PROPERTY_ID_START_DATE,
+			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
+			config.PROPERTY_ID_SPENT_HOURS, config.PROPERTY_ID_DONE_RATIO ];
+	for (var i = 0; i < propertyIds.length; i++) {
+		var propId = propertyIds[i];
+		var propValue = redmineIssue[propId];
+		log.info("propId=" + propId + ", propValue=" + propValue);
+		setIssuePropertyValue(issue, propertyIds[i], propValue);
+	}
+
+	// Custom properties
+	if (redmineIssue.custom_fields) {
+		log.info("#custom_fields=" + redmineIssue.custom_fields.length);
+		for (var i = 0; i < redmineIssue.custom_fields.length; i++) {
+			var propId = makeCustomFieldPropertyId(redmineIssue.custom_fields[i]);
+			var propValue = redmineIssue.custom_fields[i].value;
+			log.info("custom propId=" + propId + ", propValue=" + propValue);
+			setIssuePropertyValue(issue, propId, propValue);
+		}
+	}
+
+	// Attachments
+	if (redmineIssue.attachments) {
+		log.info("#attachments=" + redmineIssue.attachments.length);
+		var trackerAttachments = [];
+		for (var i = 0; i < redmineIssue.attachments.length; i++) {
+			var ra = redmineIssue.attachments[i];
+			var ta = new Attachment();
+			ta.id = ra.id;
+			ta.subject = ra.description;
+			ta.contentType = ra.content_type;
+			ta.fileName = ra.filename;
+			ta.contentLength = ra.filesize;
+			ta.url = ra.content_url;
+			log.info("attachment id=" + ta.id + ", file=" + ta.fileName);
+			trackerAttachments.push(ta);
+		}
+		issue.attachments = trackerAttachments;
+	}
+
+	log.info(")toTrackerIssue");
+}
+
+function setIssuePropertyValue(issue, propId, propValue) {
+	if (!propValue) {
+		return;
+	}
+	log.info("setIssuePropertyValue(");
+	var type = -1;
+	var pclass = config.propertyClasses.get(propId);
+	if (!pclass) {
+		log.error("Missing property class for property ID=" + propId);
+		return;
+	}
+	type = pclass.type;
+	log.info("propertyClass=" + pclass + ", type=" + type);
+	switch (type) {
+	case PropertyClass.TYPE_STRING_LIST:
+		issue.setPropertyStringList(propId, propValue);
+		break;
+	case PropertyClass.TYPE_BOOL:
+		issue.setPropertyBoolean(propId, propValue);
+		break;
+	case PropertyClass.TYPE_STRING:
+	case PropertyClass.TYPE_ISO_DATE:
+		issue.setPropertyString(propId, propValue);
+		break;
+	}
+	log.info(")setIssuePropertyValue");
+}
+
+function getIssueHistoryUrl(issueId) {
+	return config.url + "/issues/" + issueId + "?key=" + config.apiKey;
 }
 
 initializePropertyClasses();

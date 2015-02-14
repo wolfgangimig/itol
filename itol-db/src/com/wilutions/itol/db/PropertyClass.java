@@ -17,9 +17,9 @@ public class PropertyClass {
 	public final static int TYPE_STRING = 1;
 	public final static int TYPE_BOOL = 2;
 	public final static int TYPE_PASSWORD = 3;
-	public final static int TYPE_ARRAY_STRING = 4;
+	public final static int TYPE_STRING_LIST = 4;
 	public final static int TYPE_ISO_DATE = 5;
-
+	
 	private String id;
 	private String name;
 	private Object defaultValue;
@@ -91,4 +91,17 @@ public class PropertyClass {
 		this.selectList = selectList;
 	}
 
+	@Override
+	public String toString() {
+		String stype = "UNKNOWN_TYPE";
+		switch(type) {
+		case TYPE_STRING: stype = "TYPE_STRING"; break;
+		case TYPE_STRING_LIST: stype = "TYPE_STRING_LIST"; break;
+		case TYPE_ISO_DATE: stype = "TYPE_ISO_DATE"; break;
+		case TYPE_BOOL: stype = "TYPE_BOOL"; break;
+		}
+		return "PropertyClass [type=" + stype + ", id=" + id + ", name=" + name + "]";
+	}
+
+	
 }

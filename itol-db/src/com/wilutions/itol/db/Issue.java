@@ -129,6 +129,31 @@ public class Issue implements Serializable {
 		}
 	}
 	
+	public String getPropertyString(String propertyId, String defaultValue) {
+		return (String)getPropertyValue(propertyId, defaultValue);
+	}
+	
+	public void setPropertyString(String propertyId, String value) {
+		setPropertyValue(propertyId, value);
+	}
+	
+	public Boolean getPropertyBoolean(String propertyId, Boolean defaultValue) {
+		return (Boolean)getPropertyValue(propertyId, defaultValue);
+	}
+	
+	public void setPropertyBoolean(String propertyId, Boolean value) {
+		setPropertyValue(propertyId, value);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<String> getPropertyStringList(String propertyId, List<String> defaultValue) {
+		return (List<String>)getPropertyValue(propertyId, defaultValue);
+	}
+	
+	public void setPropertyStringList(String propertyId, List<String> value) {
+		setPropertyValue(propertyId, value);
+	}
+	
 	public String getType() {
 		return (String)getPropertyValue(Property.ISSUE_TYPE, "");
 	}
@@ -145,11 +170,11 @@ public class Issue implements Serializable {
 		setPropertyValue(Property.ASSIGNEE, value);
 	}
 	
-	public String getState() {
+	public String getStatus() {
 		return (String)getPropertyValue(Property.STATUS, "");
 	}
 	
-	public void setState(String value) {
+	public void setStatus(String value) {
 		setPropertyValue(Property.STATUS, value);
 	}
 	

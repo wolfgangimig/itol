@@ -18,16 +18,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.fxml.JavaFXBuilderFactory;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
@@ -42,6 +45,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 
 import com.wilutions.com.AsyncResult;
+import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.DescriptionHtmlEditor;
@@ -67,6 +71,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private HTMLEditor edDescription;
 	@FXML
+	private HBox hboxDescription;
+	@FXML
 	private ToggleButton bnPin;
 	@FXML
 	private ToggleButton bnSelection;
@@ -89,6 +95,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private WebView webHistory;
 	@FXML
+	private Tab tpProperties;
+	@FXML
 	private TableView<Attachment> tabAttachments;
 	@FXML
 	private TabPane tabpIssue;
@@ -106,13 +114,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private HBox hboxAttachments;
 	@FXML
 	private GridPane propGrid;
-	
+	@FXML
+	private TextField edIssueId;
+
 	private boolean tabAttachmentsApplyHandler = true;
 
 	private PropertyGridView propGridView;
 
 	private DescriptionHtmlEditor descriptionHtmlEditor;
-	private WebView webView;
+	private WebView webDescription;
 	private final MailInspector mailInspectorOrNull;
 	private IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
@@ -135,7 +145,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	public void setMailItem(IssueMailItem mailItem) {
 		this.mailItem = mailItem;
-		
+
 		final String subject = mailItem.getSubject();
 		final String description = mailItem.getBody();
 		try {
@@ -143,10 +153,21 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			String issueId = srv.extractIssueIdFromMailSubject(subject);
 			if (issueId != null && issueId.length() != 0) {
 				issue = srv.readIssue(issueId);
-			}
-			if (issue == null) {
+			} else {
 				issue = srv.createIssue(subject, description);
-				issue.setId(issueId);
+			}
+
+			// Refresh controls if not called from constructor.
+			// If called the first time (from constructor) the initial update
+			// is performed in initialize()
+			if (vboxRoot != null) {
+				Platform.runLater(() -> {
+					try {
+						initialUpdate();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				});
 			}
 
 		} catch (Throwable e) {
@@ -187,7 +208,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public Scene createScene() {
 		try {
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-			URL fxmlURL = classLoader.getResource("com/wilutions/itol/NewIssue6.fxml");
+			URL fxmlURL = classLoader.getResource("com/wilutions/itol/NewIssue7.fxml");
 
 			resb = Globals.getResourceBundle();
 
@@ -200,8 +221,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			Scene scene = new Scene(p);
 			scene.getStylesheets().add(getClass().getResource("TaskPane.css").toExternalForm());
 
-//			ScenicView.show(scene);
-			
+			// ScenicView.show(scene);
+
 			return scene;
 		} catch (Throwable e) {
 			throw new IllegalStateException("Cannot create scene.", e);
@@ -241,7 +262,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
 		try {
 			initialUpdate();
-
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
@@ -259,13 +279,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			lockChangeListener = false;
 		}
 	}
-	
+
 	private void internalUpdateData(boolean saveAndValidate) throws IOException {
 		if (saveAndValidate) {
 
 		} else {
 			initSubject();
-			
+
 			initChoiceBox(cbTracker, Property.ISSUE_TYPE);
 
 			initChoiceBox(cbCategory, Property.CATEGORY);
@@ -281,6 +301,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			initProperties();
 
 			initAttachments();
+
+			initHistory();
+
+		}
+	}
+
+	private void initHistory() throws IOException {
+		if (issue.getId() != null && issue.getId().length() != 0) {
+			IssueService srv = Globals.getIssueService();
+			String url = srv.getIssueHistoryUrl(issue.getId());
+			webHistory.getEngine().load(url);
 		}
 	}
 
@@ -297,7 +328,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			tabAttachmentsApplyHandler = false;
 		}
 
-		List<Attachment> atts = new ArrayList<Attachment>();
+		List<Attachment> atts = issue.getAttachments();
 		ObservableList<Attachment> obs = FXCollections.observableList(atts);
 		tabAttachments.setItems(obs);
 	}
@@ -315,23 +346,24 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initDescription() throws IOException {
 
-		// descriptionHtmlEditor =
-		// Globals.getIssueService().getDescriptionHtmlEditor(issue);
+		descriptionHtmlEditor = Globals.getIssueService().getDescriptionHtmlEditor(issue);
 		if (descriptionHtmlEditor != null) {
 
-			if (webView == null) {
+			if (webDescription == null) {
 				edDescription.setVisible(false);
 
-				webView = new WebView();
+				webDescription = new WebView();
 
-				HBox hbox = new HBox();
-				hbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
-				hbox.getChildren().add(webView);
+				// HBox hbox = new HBox();
+				// hbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+				// hbox.getChildren().add(webView);
 
-				rootGrid.add(hbox, 0, 1, 3, 1);
+				hboxDescription.getChildren().clear();
+				hboxDescription.getChildren().add(webDescription);
+				hboxDescription.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 			}
 
-			webView.getEngine().loadContent(descriptionHtmlEditor.getHtmlContent());
+			webDescription.getEngine().loadContent(descriptionHtmlEditor.getHtmlContent());
 
 		} else if (edDescription != null) {
 			edDescription.setHtmlText(issue.getDescription());
@@ -343,7 +375,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		Property prop = issue.getLastUpdate().getProperty(propertyId);
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
 		if (pclass != null) {
-			List<IdName> items = pclass.getSelectList(); 
+			List<IdName> items = pclass.getSelectList();
 			cb.setItems(FXCollections.observableArrayList(items));
 			String value = "";
 			if (prop != null) {
@@ -367,7 +399,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initialUpdate() throws IOException {
+
+		// Show/Hide History and Notes
+		addOrRemoveTab(tpHistory, !isNew());
+		addOrRemoveTab(tpNotes, !isNew());
 		tabpIssue.getSelectionModel().select(tpDescription);
+
+		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
 		updateData(false);
 	}
@@ -385,9 +423,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initTabView() {
-		addOrRemoveTab(tpHistory, !isNew());
-		addOrRemoveTab(tpNotes, !isNew());
-
 	}
 
 	private void showSelectedIssueAttachment() {
@@ -476,5 +511,87 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	public void onEditPropertyCancel() {
 
+	}
+
+	@FXML
+	public void onShowExistingIssue() {
+		final String issueId = edIssueId.getText();
+		IssueMailItem mitem = new IssueMailItemBlank() {
+			public String getSubject() {
+				return "[R-" + issueId + "]";
+			}
+		};
+		setMailItem(mitem);
+	}
+
+	@FXML
+	public void onShowIssueInBrowser() {
+		try {
+			IssueService srv = Globals.getIssueService();
+			String url = srv.getIssueHistoryUrl(issue.getId());
+			IssueApplication.showDocument(url);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@FXML
+	public void onNextPage() {
+		int idx = tabpIssue.getSelectionModel().getSelectedIndex();
+		if (idx >= 0) {
+			if (++idx >= tabpIssue.getTabs().size()) {
+				idx = 0;
+			}
+		} else {
+			idx = 0;
+		}
+		tabpIssue.getSelectionModel().select(idx);
+
+		Node node = null;
+		switch (idx) {
+		case 0: // DESCRIPTION
+			node = webDescription != null ? webDescription : edDescription;
+			break;
+		case 1: // PROPERTIES
+			node = propGridView.getFirstControl();
+			break;
+		case 2: // ATTACHMENTS
+			node = tabAttachments.getItems().size() != 0 ? tabAttachments : bnAddAttachment;
+			break;
+		case 3: // HISTORY
+			node = webHistory;
+			break;
+		case 4: // NOTES
+			node = edNotes;
+			break;
+		}
+		if (node != null) {
+			setNodeFocusLater(node);
+		}
+	}
+
+	private void setNodeFocusLater(Node node) {
+		BackgTask.run(() -> {
+			try {
+				Thread.sleep(200);
+				Platform.runLater(() -> {
+					if (node instanceof WebView) {
+						WebView webView = (WebView) node;
+						if (descriptionHtmlEditor != null) {
+							String elementId = descriptionHtmlEditor.getElementId();
+							String scriptToFocusControl = "document.getElementById('" + elementId + "').focus()";
+							try {
+								webView.getEngine().executeScript(scriptToFocusControl);
+							} catch (Throwable e) {
+								e.printStackTrace();
+							}
+						}
+					} else {
+						node.requestFocus();
+					}
+				});
+			} catch (Exception e) {
+			}
+		});
 	}
 }

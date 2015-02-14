@@ -67,7 +67,7 @@ public class PropertyClasses {
 		add(PropertyClass.TYPE_STRING, Property.SUBJECT, "Subject");
 		add(PropertyClass.TYPE_STRING, Property.DESCRIPTION, "Description");
 		add(PropertyClass.TYPE_STRING, Property.ASSIGNEE, "Assigned to");
-		add(PropertyClass.TYPE_ARRAY_STRING, Property.ATTACHMENTS, "Attachments");
+		add(PropertyClass.TYPE_STRING_LIST, Property.ATTACHMENTS, "Attachments");
 		add(PropertyClass.TYPE_STRING, Property.PRIORITY, "Priority");
 		add(PropertyClass.TYPE_STRING, Property.STATUS, "Status");
 		return this;

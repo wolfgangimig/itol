@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!--
-JavaFX Scene Builder does not show this file anymore.
-Just renamed it to NewIssue7.xml and it is displayed again.   
--->
-
 <?import javafx.scene.effect.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.web.*?>
@@ -29,41 +24,38 @@ Just renamed it to NewIssue7.xml and it is displayed again.
           <RowConstraints maxHeight="40.0" minHeight="10.0" prefHeight="40.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <ChoiceBox fx:id="cbTracker" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2" />
+             <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="2.0" GridPane.columnSpan="3">
+               <children>
+                  <ToggleButton fx:id="bnPin" minHeight="25.0" mnemonicParsing="false" prefHeight="25.0" text="Pin" />
+                  <ToggleButton fx:id="bnSelection" minHeight="25.0" mnemonicParsing="false" prefHeight="25.0" text="Selection" />
+                  <Button mnemonicParsing="false" text="New" />
+                  <TextField fx:id="edIssueId" promptText="Issue ID" />
+                  <Button fx:id="bnShow" mnemonicParsing="false" onAction="#onShowExistingIssue" text="Show" />
+                  <Button fx:id="bnShowIssueInBrowser" mnemonicParsing="false" onAction="#onShowIssueInBrowser" text="Show in Browser..." />
+               </children>
+            </HBox>
             <TextField fx:id="edSubject" promptText="%edSubject.prompt" GridPane.columnSpan="3" GridPane.rowIndex="1">
                <font>
                   <Font name="System Bold" size="12.0" />
                </font>
             </TextField>
+            <ChoiceBox fx:id="cbTracker" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2" />
             <ChoiceBox fx:id="cbCategory" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2" />
             <ChoiceBox fx:id="cbAssignee" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.rowIndex="2" />
-            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="2.0" GridPane.columnSpan="3">
-               <children>
-                  <ToggleButton fx:id="bnPin" minHeight="25.0" mnemonicParsing="false" prefHeight="25.0" text="Pin" />
-                  <ToggleButton fx:id="bnSelection" minHeight="25.0" mnemonicParsing="false" prefHeight="25.0" text="Selection" />
-                  <ToggleButton fx:id="bnBlank" minHeight="25.0" mnemonicParsing="false" prefHeight="25.0" text="Blank" />
-               </children>
-            </HBox>
-            <ChoiceBox fx:id="cbStatus" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" GridPane.valignment="TOP" />
-            <Button fx:id="bnUpdate" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="%bnUpdate.text.create" textFill="#007800" GridPane.columnIndex="2" GridPane.rowIndex="4">
-               <font>
-                  <Font name="System Bold" size="18.0" />
-               </font>
-            </Button>
             <VBox spacing="10.0" GridPane.columnSpan="3" GridPane.rowIndex="3">
                <children>
                   <TabPane fx:id="tabpIssue" prefHeight="270.0" prefWidth="621.0" tabClosingPolicy="UNAVAILABLE" GridPane.columnSpan="3" GridPane.rowIndex="3" VBox.vgrow="ALWAYS">
                     <tabs>
                       <Tab text="%tpDescription.text">
                            <content>
-                              <HBox>
+                              <HBox fx:id="hboxDescription">
                                  <children>
                                     <HTMLEditor fx:id="edDescription" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" prefHeight="200.0" prefWidth="506.0" HBox.hgrow="ALWAYS" />
                                  </children>
                               </HBox>
                            </content>
                         </Tab>
-                      <Tab text="%tpProperties.text">
+                      <Tab fx:id="tpProperties" text="%tpProperties.text">
                            <content>
                               <ScrollPane fitToWidth="true" hbarPolicy="NEVER" prefHeight="200.0" prefWidth="200.0" styleClass="propPane">
                                  <content>
@@ -113,16 +105,16 @@ Just renamed it to NewIssue7.xml and it is displayed again.
                               </HBox>
                            </content>
                         </Tab>
-                        <Tab text="%tpHistory.text">
+                        <Tab fx:id="tpHistory" text="%tpHistory.text">
                            <content>
-                              <HBox>
+                              <HBox spacing="10.0">
                                  <children>
                                     <WebView fx:id="webHistory" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
                                  </children>
                               </HBox>
                            </content>
                         </Tab>
-                        <Tab text="%tpNotes.text">
+                        <Tab fx:id="tpNotes" text="%tpNotes.text">
                            <content>
                               <HBox>
                                  <children>
@@ -135,6 +127,13 @@ Just renamed it to NewIssue7.xml and it is displayed again.
                   </TabPane>
                </children>
             </VBox>
+            <Button fx:id="bnNextPage" maxWidth="1.7976931348623157E308" onAction="#onNextPage" text="%Button.NextTab" GridPane.rowIndex="4" GridPane.valignment="TOP" />
+            <ChoiceBox fx:id="cbStatus" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" GridPane.valignment="TOP" />
+            <Button fx:id="bnUpdate" defaultButton="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="%bnUpdate.text.create" textFill="#007800" GridPane.columnIndex="2" GridPane.rowIndex="4">
+               <font>
+                  <Font name="System Bold" size="18.0" />
+               </font>
+            </Button>
          </children>
          <padding>
             <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />

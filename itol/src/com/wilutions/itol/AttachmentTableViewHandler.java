@@ -2,8 +2,10 @@ package com.wilutions.itol;
 
 import java.io.File;
 import java.util.Comparator;
+import java.util.ResourceBundle;
 
 import javafx.event.EventHandler;
+import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -21,6 +23,8 @@ import com.wilutions.itol.db.Attachment;
 public class AttachmentTableViewHandler {
 
 	public static void apply(TableView<Attachment> table) {
+		
+		ResourceBundle resb = Globals.getResourceBundle();
 		
 		TableColumn<Attachment, String> iconColumn = new TableColumn<>("");
 		final int iconColumnWidth = 24;
@@ -121,6 +125,7 @@ public class AttachmentTableViewHandler {
 		table.getColumns().add(contentLengthColumn);
 
 		table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+		table.setPlaceholder(new Label(resb.getString("tabAttachments.emptyMessage")));
 
 		table.setOnDragOver(new EventHandler<DragEvent>() {
 			@Override

@@ -308,5 +308,11 @@ public class IssueServiceImpl implements IssueService {
 		return null;
 	}
 
+	@Override
+	public String getIssueHistoryUrl(String issueId) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 }
