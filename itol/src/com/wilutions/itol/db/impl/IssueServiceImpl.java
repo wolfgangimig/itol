@@ -302,5 +302,11 @@ public class IssueServiceImpl implements IssueService {
 		return null;
 	}
 
+	@Override
+	public List<String> getPropertyDisplayOrder(Issue iss) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 }

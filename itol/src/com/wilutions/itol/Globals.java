@@ -85,7 +85,12 @@ public class Globals {
 				
 				Platform.runLater(() -> {
 					Stage dlg = new Stage();
-					dlg.setScene(new IssueTaskPane(null, new IssueMailItemBlank()).createScene());
+					IssueMailItem mitem = new IssueMailItemBlank() {
+						public String getSubject() {
+							return "[R-206] test";
+						}
+					};
+					dlg.setScene(new IssueTaskPane(null, mitem).createScene());
 					dlg.showAndWait();
 					System.exit(0);
 				});

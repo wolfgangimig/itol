@@ -21,6 +21,8 @@ public interface IssueService {
 	PropertyClasses getPropertyClasses();
 	
 	PropertyClass getPropertyClass(String propertyId, Issue iss) throws IOException;
+	
+	List<String> getPropertyDisplayOrder(Issue issue);
 
 //	List<IdName> getIssueTypes(Issue iss) throws IOException;
 //
@@ -54,7 +56,7 @@ public interface IssueService {
 
 	Issue updateIssue(Issue iss, ProgressCallback cb) throws IOException;
 
-//	Issue readIssue(String issueId) throws IOException;
+	Issue readIssue(String issueId) throws IOException;
 //
 //	FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) throws IOException;
 //

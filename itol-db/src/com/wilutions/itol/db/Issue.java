@@ -110,16 +110,16 @@ public class Issue implements Serializable {
 		return updates.get(0);
 	}
 	
-	private Object getLastUpdatePropertyValue(String propertyId, Object defaultValue) {
+	public Object getPropertyValue(String propertyId, Object defaultValue) {
 		Object ret = getLastUpdate().getProperty(propertyId).getValue();
 		if (ret == null) {
 			ret = defaultValue;
-			setLastUpdatePropertyValue(propertyId, ret);
+			setPropertyValue(propertyId, ret);
 		}
 		return ret;
 	}
 	
-	private void setLastUpdatePropertyValue(String propertyId, Object value) {
+	public void setPropertyValue(String propertyId, Object value) {
 		if (value != null) {
 			Property prop = new Property(propertyId, value);
 			getLastUpdate().setProperty(prop);
@@ -130,67 +130,67 @@ public class Issue implements Serializable {
 	}
 	
 	public String getType() {
-		return (String)getLastUpdatePropertyValue(Property.ISSUE_TYPE, "");
+		return (String)getPropertyValue(Property.ISSUE_TYPE, "");
 	}
 	
 	public void setType(String value) {
-		setLastUpdatePropertyValue(Property.ISSUE_TYPE, value);
+		setPropertyValue(Property.ISSUE_TYPE, value);
 	}
 	
 	public String getAssignee() {
-		return (String)getLastUpdatePropertyValue(Property.ASSIGNEE, "");
+		return (String)getPropertyValue(Property.ASSIGNEE, "");
 	}
 	
 	public void setAssignee(String value) {
-		setLastUpdatePropertyValue(Property.ASSIGNEE, value);
+		setPropertyValue(Property.ASSIGNEE, value);
 	}
 	
 	public String getState() {
-		return (String)getLastUpdatePropertyValue(Property.STATUS, "");
+		return (String)getPropertyValue(Property.STATUS, "");
 	}
 	
 	public void setState(String value) {
-		setLastUpdatePropertyValue(Property.STATUS, value);
+		setPropertyValue(Property.STATUS, value);
 	}
 	
 	public String getCategory() {
-		return (String)getLastUpdatePropertyValue(Property.CATEGORY, "");
+		return (String)getPropertyValue(Property.CATEGORY, "");
 	}
 	
 	public void setCategory(String value) {
-		setLastUpdatePropertyValue(Property.CATEGORY, value);
+		setPropertyValue(Property.CATEGORY, value);
 	}
 	
 	public String getPriority() {
-		return (String)getLastUpdatePropertyValue(Property.PRIORITY, "");
+		return (String)getPropertyValue(Property.PRIORITY, "");
 	}
 	
 	public void setPriority(String value) {
-		setLastUpdatePropertyValue(Property.PRIORITY, value);
+		setPropertyValue(Property.PRIORITY, value);
 	}
 
 	public String getSubject() {
-		return (String)getLastUpdatePropertyValue(Property.SUBJECT, "");
+		return (String)getPropertyValue(Property.SUBJECT, "");
 	}
 
 	public void setSubject(String value) {
-		setLastUpdatePropertyValue(Property.SUBJECT, value);
+		setPropertyValue(Property.SUBJECT, value);
 	}
 	
 	public String getDescription() {
-		return (String)getLastUpdatePropertyValue(Property.DESCRIPTION, "");
+		return (String)getPropertyValue(Property.DESCRIPTION, "");
 	}
 
 	public void setDescription(String value) {
-		setLastUpdatePropertyValue(Property.DESCRIPTION, value);
+		setPropertyValue(Property.DESCRIPTION, value);
 	}
 	
 	@SuppressWarnings("unchecked")
 	public List<Attachment> getAttachments() {
-		return (List<Attachment>)getLastUpdatePropertyValue(Property.ATTACHMENTS, new ArrayList<Attachment>(0));
+		return (List<Attachment>)getPropertyValue(Property.ATTACHMENTS, new ArrayList<Attachment>(0));
 	}
 	
 	public void setAttachments(List<Attachment> atts) {
-		setLastUpdatePropertyValue(Property.ATTACHMENTS, atts);
+		setPropertyValue(Property.ATTACHMENTS, atts);
 	}
 }

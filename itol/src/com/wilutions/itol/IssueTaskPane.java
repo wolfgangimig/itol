@@ -129,25 +129,29 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		this.mailItem = mailItem;
 
 		this.resb = Globals.getResourceBundle();
-
-		final String subject = mailItem.getSubject();
-		final String description = mailItem.getBody();
-		try {
-			IssueService srv = Globals.getIssueService();
-			issue = srv.createIssue(subject, description);
-
-			String issueId = srv.extractIssueIdFromMailSubject(subject);
-			issue.setId(issueId);
-
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
-
+		setMailItem(mailItem);
 		// Globals.getThisAddin().getRegistry().readFields(this);
 	}
 
 	public void setMailItem(IssueMailItem mailItem) {
 		this.mailItem = mailItem;
+		
+		final String subject = mailItem.getSubject();
+		final String description = mailItem.getBody();
+		try {
+			IssueService srv = Globals.getIssueService();
+			String issueId = srv.extractIssueIdFromMailSubject(subject);
+			if (issueId != null && issueId.length() != 0) {
+				issue = srv.readIssue(issueId);
+			}
+			if (issue == null) {
+				issue = srv.createIssue(subject, description);
+				issue.setId(issueId);
+			}
+
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 	}
 
 	public IssueMailItem getMailItem() {

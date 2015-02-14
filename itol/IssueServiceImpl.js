@@ -88,13 +88,18 @@ var config = {
 	 * "property-value" comma
 	 */
 	// my_config_property = "a default value",
-
 	// Property IDs of configuration data.
 	// IDs are member names to simplify function fromProperties
 	PROPERTY_ID_URL : "url",
 	PROPERTY_ID_API_KEY : "apiKey",
 	PROPERTY_ID_PROJECT_NAMES : "projectNames",
 	PROPERTY_ID_MSG_FILE_TYPE : "msgFileType",
+
+	// Property IDs of issue properties
+	PROPERTY_ID_START_DATE : "start_date",
+	PROPERTY_ID_DUE_DATE : "due_date",
+	PROPERTY_ID_ESTIMATED_HOURS : "estimated_hours",
+	PROPERTY_ID_DONE_RATIO : "done_ratio",
 
 	/**
 	 * MY_CONFIG_PROPERTY Define a property ID. Currently, use the property name
@@ -309,6 +314,11 @@ var data = {
 	 * Array of status IdName objects
 	 */
 	statuses : [],
+	
+	/**
+	 * Custom fields definitions.
+	 */
+	custom_fields : [],
 
 	clear : function() {
 		this.projects = {};
@@ -459,8 +469,10 @@ function initialize() {
 	readTrackers(data);
 
 	readPriorities(data);
-	
+
 	readStatuses(data);
+	
+	readCustomFields(data);
 
 	config.valid = true;
 }
@@ -509,6 +521,55 @@ function readStatuses(data) {
 	log.info(")readStatuses");
 }
 
+function readCustomFields(data) {
+	log.info("readCustomFields(");
+	var response = httpClient.get("/custom_fields.json");
+	dump("response", response);
+	data.custom_fields = response.custom_fields;
+	var propertyClasses = getPropertyClasses();
+	
+	for (var i = 0; i < response.custom_fields.length; i++) {
+		var cfield = response.custom_fields[i];
+		if (cfield.customized_type == "issue") {
+			var pclass = makePropertyClassFromCustomField(cfield);
+			propertyClasses.add(pclass);
+		}
+	}
+
+	log.info(")readCustomFields");
+}
+
+function makePropertyClassFromCustomField(cfield) {
+	log.info("makePropertyClassFromCustomField(" + cfield.name);
+	var type = PropertyClass.TYPE_STRING;
+	switch (cfield.field_format) {
+	case "bool": type = PropertyClass.TYPE_BOOL; break;
+	case "date": type = PropertyClass.TYPE_ISO_DATE; break;
+	case "list": if (cfield.multiple) type = PropertyClass.TYPE_ARRAY_STRING; break;
+	}
+	
+	// Define Property ID for this custom field.
+	// That ID is also added to the cfield object to be able to use
+	// it in getPropertyDisplayOrder().
+	var id = cfield.propertyId = "custom_field_"+ cfield.id;
+	
+	
+	var name = cfield.name;
+	var defaultValue = cfield.default_value ? cfield.default_value : null;
+	var selectList = [];
+	
+	if (cfield.possible_values) {
+		for (var i = 0; i < cfield.possible_values.length; i++) {
+			var pvalue = cfield.possible_values[i];
+			selectList.push(new IdName(""+pvalue.value));
+		}
+	}
+	
+	var ret = new PropertyClass(type, id, name, defaultValue, selectList);
+	log.info(")makePropertyClassFromCustomField=" + ret);
+	return ret;
+}
+
 /**
  * Initialize property classes. In config.propertyClasses, a type definition is
  * stored for each property. The UI interprets the type definition and assigns
@@ -518,6 +579,7 @@ function initializePropertyClasses() {
 
 	var propertyClasses = PropertyClasses.getDefault();
 
+	// ---------------------------
 	// Configuration properties
 
 	propertyClasses.add(PropertyClass.TYPE_STRING, config.PROPERTY_ID_URL,
@@ -534,6 +596,29 @@ function initializePropertyClasses() {
 	// config.PROPERTY_ID_MY_CONFIG_PROPERTY,
 	// "my_config_property label"
 
+	// ---------------------------
+	// Property classes for issues
+
+	propertyClasses.add(PropertyClass.TYPE_ISO_DATE,
+			config.PROPERTY_ID_START_DATE, "Start Date", new Date()
+					.toISOString());
+
+	propertyClasses.add(PropertyClass.TYPE_ISO_DATE,
+			config.PROPERTY_ID_DUE_DATE, "Due Date");
+
+	propertyClasses.add(PropertyClass.TYPE_STRING,
+			config.PROPERTY_ID_ESTIMATED_HOURS, "Estimated hours");
+
+	propertyClasses.add(PropertyClass.TYPE_STRING,
+			config.PROPERTY_ID_DONE_RATIO, "% Done", "0", [
+					new IdName("0", "0 %"), new IdName("0.1", "10 %"),
+					new IdName("0.2", "20 %"), new IdName("0.3", "30 %"),
+					new IdName("0.4", "40 %"), new IdName("0.5", "50 %"),
+					new IdName("0.6", "60 %"), new IdName("0.7", "70 %"),
+					new IdName("0.8", "80 %"), new IdName("0.9", "90 %"),
+					new IdName("1", "100 %"), ]);
+
+	// -----------------------------------------------
 	// Initialize select list for some issue properties
 
 	var propMsgFileType = propertyClasses.get(config.PROPERTY_ID_MSG_FILE_TYPE);
@@ -541,10 +626,6 @@ function initializePropertyClasses() {
 			new IdName(".mhtml", "MIME HTML (.mhtml)"),
 			new IdName(".rtf", "Rich Text Format (.rtf)") ]);
 
-	// Rename "Milestones" to "Version"
-	var propMilestones = propertyClasses.get(Property.MILESTONES);
-	propMilestones.setName("Versions");
-	
 	config.propertyClasses = propertyClasses;
 }
 
@@ -565,7 +646,7 @@ function getPropertyClasses() {
 
 function getPropertyClass(propertyId, issue) {
 	var ret = getPropertyClasses().getCopy(propertyId);
-	switch(propertyId) {
+	switch (propertyId) {
 	case Property.ISSUE_TYPE:
 		ret.selectList = getIssueTypes(issue);
 		break;
@@ -710,6 +791,26 @@ function getMsgFileType() {
 	return config.msgFileType;
 }
 
+function getPropertyDisplayOrder(issue) {
+	var propertyIds = [ Property.PRIORITY, config.PROPERTY_ID_START_DATE,
+			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_DONE_RATIO,
+			config.PROPERTY_ID_ESTIMATED_HOURS ];
+	
+	var issueType = issue.getType();
+	for (var i = 0; i < data.custom_fields.length; i++) {
+		var cfield = data.custom_fields[i];
+		if (cfield.trackers) {
+			for (var t = 0; t < cfield.trackers.length; t++) {
+				if (cfield.trackers[t].id == issueType) {
+					propertyIds.push(cfield.propertyId); 
+				}
+			}
+		}
+	}
+	
+	return propertyIds;
+}
+
 function createIssue(subject, description) {
 	config.checkValid();
 
@@ -726,8 +827,12 @@ function createIssue(subject, description) {
 	iss.setPriority(data.defaultPriority); // Normal priority
 	iss.setState(1); // New issue
 	iss.setAssignee(-1);
-	
-	
+
+	iss.setPropertyValue(config.PROPERTY_ID_START_DATE, new Date()
+			.toISOString());
+	iss.setPropertyValue(config.PROPERTY_ID_DUE_DATE, "");
+	iss.setPropertyValue(config.PROPERTY_ID_DONE_RATIO, "0");
+	iss.setPropertyValue(config.PROPERTY_ID_ESTIMATED_HOURS, "");
 
 	var projects = getCategories(null);
 	iss.setCategory(projects[0].getId());
@@ -945,5 +1050,13 @@ function writeAttachment(trackerAttachment, progressCallback) {
 	log.info(")writeAttachment=" + redmineAttachment);
 	return redmineAttachment;
 };
+
+function readIssue(issueId) {
+	log.info("readIssue(" + issueId);
+	var response = httpClient.get("/issues/" + issueId +".json?"
+			+ "include=children,attachments,relations,changesets,journals,watchers");
+	dump("issue", response);
+	log.info(")readIssue");
+}
 
 initializePropertyClasses();

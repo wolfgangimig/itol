@@ -12,6 +12,7 @@ package com.wilutions.itol.db;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 public class PropertyClasses {
 
@@ -31,7 +32,15 @@ public class PropertyClasses {
 	}
 
 	public PropertyClass add(int type, String id, String name) {
-		PropertyClass propClass = new PropertyClass(type, id, name);
+		return add(type, id, name, null, null);
+	}
+	
+	public PropertyClass add(int type, String id, String name, Object defaultValue) {
+		return add(type, id, name, defaultValue, null);
+	}
+	
+	public PropertyClass add(int type, String id, String name, Object defaultValue, List<IdName> selectList) {
+		PropertyClass propClass = new PropertyClass(type, id, name, defaultValue, selectList);
 		add(propClass);
 		return propClass;
 	}
