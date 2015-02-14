@@ -67,6 +67,28 @@ public class Issue implements Serializable {
 		this.updates.add(initialUpdate);
 	}
 	
+	public Issue deepCopyLastUpdate() {
+		Issue ret = new Issue();
+		ret.id = this.id;
+		ret.updates = new ArrayList<IssueUpdate>(this.updates.size());
+		for (IssueUpdate upd : this.updates) {
+			IssueUpdate updCopy = upd.deepCopy();
+			ret.updates.add(updCopy);
+		}
+		return ret;
+	}
+	
+	public int compareTo(Issue issue) {
+		int ret = this.id.compareTo(issue.id);
+		if (ret == 0) {
+			ret = this.updates.size() - issue.updates.size();
+			for (int i = 0; i < updates.size() && ret == 0; i++) {
+				ret = updates.get(i).compareTo(issue.updates.get(i));
+			}
+		}
+		return ret;
+	}
+	
 	public boolean isNull() {
 		return this.id.isEmpty();
 	}
@@ -218,4 +240,6 @@ public class Issue implements Serializable {
 	public void setAttachments(List<Attachment> atts) {
 		setPropertyValue(Property.ATTACHMENTS, atts);
 	}
+	
+
 }

@@ -102,29 +102,26 @@ public class PropertyGridView {
 	}
 
 	private boolean isPropertyForGrid(String propertyId) {
-		boolean ret = false;
-		switch (propertyId) {
-		case Property.ASSIGNEE:
-		case Property.SUBJECT:
-		case Property.CATEGORY:
-		case Property.ATTACHMENTS:
-		case Property.DESCRIPTION:
-		case Property.ISSUE_TYPE:
-		case Property.STATUS:
-			ret = false;
-			break;
-		default:
-			ret = true;
-			break;
-		}
+		boolean ret = true;
+//		switch (propertyId) {
+//		case Property.PRIORITY:
+//		case Property.SUBJECT:
+//		case Property.CATEGORY:
+//		case Property.ATTACHMENTS:
+//		case Property.DESCRIPTION:
+//		case Property.ISSUE_TYPE:
+//		case Property.STATUS:
+//			ret = false;
+//			break;
+//		default:
+//			ret = true;
+//			break;
+//		}
 		return ret;
 	}
 
 	private void addProperty(Issue issue, String propertyId, int rowIndex) throws IOException {
-		Property prop = issue.getLastUpdate().getProperty(propertyId);
-		if (prop == null)
-			return;
-
+		
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
 		if (pclass == null) {
 			return;
@@ -135,6 +132,8 @@ public class PropertyGridView {
 
 		Node ctrl = null;
 		List<IdName> selectList = pclass.getSelectList();
+
+		Property prop = issue.getLastUpdate().getProperty(propertyId);
 
 		switch (pclass.getType()) {
 		case PropertyClass.TYPE_ISO_DATE: 
@@ -174,14 +173,16 @@ public class PropertyGridView {
 		lb.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 		lb.setItems(FXCollections.observableArrayList(selectList));
 		lb.setPrefHeight(100);
-		Object propValue = prop.getValue();
-		List<String> values = new ArrayList<String>(0);
-		if (propValue instanceof List) {
-			values = (List<String>) propValue;
-		}
-		for (IdName item : selectList) {
-			if (values.indexOf(item.getId()) != -1) {
-				lb.getSelectionModel().select(item);
+		if (prop != null) {
+			Object propValue = prop.getValue();
+			List<String> values = new ArrayList<String>(0);
+			if (propValue instanceof List) {
+				values = (List<String>) propValue;
+			}
+			for (IdName item : selectList) {
+				if (values.indexOf(item.getId()) != -1) {
+					lb.getSelectionModel().select(item);
+				}
 			}
 		}
 		return lb;
@@ -190,7 +191,9 @@ public class PropertyGridView {
 	private Node makeTextFieldForProperty(Property prop) {
 		Node ctrl;
 		TextField ed = new TextField();
-		ed.setText((String) prop.getValue());
+		if (prop != null) {
+			ed.setText((String) prop.getValue());
+		}
 		ctrl = ed;
 		return ctrl;
 	}
@@ -199,15 +202,17 @@ public class PropertyGridView {
 		Node ctrl;
 		ChoiceBox<IdName> cb = new ChoiceBox<IdName>();
 		cb.setItems(FXCollections.observableArrayList(selectList));
-		Object propValue = prop.getValue();
-		String value = "";
-		if (propValue instanceof String) {
-			value = (String) propValue;
-		}
-		for (IdName item : selectList) {
-			if (item.getId().equals(value)) {
-				cb.setValue(item);
-				break;
+		if (prop != null) {
+			Object propValue = prop.getValue();
+			String value = "";
+			if (propValue instanceof String) {
+				value = (String) propValue;
+			}
+			for (IdName item : selectList) {
+				if (item.getId().equals(value)) {
+					cb.setValue(item);
+					break;
+				}
 			}
 		}
 		ctrl = cb;
@@ -216,15 +221,17 @@ public class PropertyGridView {
 
 	private CheckBox makeCheckBoxForProperty(Property prop) {
 		CheckBox cb = new CheckBox();
-		Object propValue = prop.getValue();
 		boolean bValue = false;
-		if (propValue != null) {
-			if (propValue instanceof Boolean) {
-				bValue = (Boolean)propValue;
-			}
-			else {
-				String str = propValue.toString().toLowerCase();
-				bValue = str.equals("1") || str.equals("yes") || str.equals("true");
+		if (prop != null) {
+			Object propValue = prop.getValue();
+			if (propValue != null) {
+				if (propValue instanceof Boolean) {
+					bValue = (Boolean)propValue;
+				}
+				else {
+					String str = propValue.toString().toLowerCase();
+					bValue = str.equals("1") || str.equals("yes") || str.equals("true");
+				}
 			}
 		}
 		cb.setSelected(bValue);
@@ -234,13 +241,15 @@ public class PropertyGridView {
 	private Node makeDatePickerForProperty(Property prop) {
 		Node ctrl;
 		DatePicker dpick = new DatePicker();
-		String iso = (String) prop.getValue();
-		if (iso != null && iso.length() != 0) {
-			if (iso.length() > 10) {
-				iso = iso.substring(0, 10);
+		if (prop != null) {
+			String iso = (String) prop.getValue();
+			if (iso != null && iso.length() != 0) {
+				if (iso.length() > 10) {
+					iso = iso.substring(0, 10);
+				}
+				LocalDate ldate = LocalDate.parse(iso);
+				dpick.setValue(ldate);
 			}
-			LocalDate ldate = LocalDate.parse(iso);
-			dpick.setValue(ldate);
 		}
 		ctrl = dpick;
 		return ctrl;

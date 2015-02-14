@@ -818,7 +818,7 @@ function getMsgFileType() {
 }
 
 function getPropertyDisplayOrder(issue) {
-	var propertyIds = [ Property.PRIORITY, config.PROPERTY_ID_START_DATE,
+	var propertyIds = [ Property.ASSIGNEE, config.PROPERTY_ID_START_DATE,
 			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_DONE_RATIO ];
 
 	propertyIds.push(issue.id ? config.PROPERTY_ID_ESTIMATED_HOURS
@@ -854,7 +854,7 @@ function createIssue(subject, description) {
 	iss.setType(1); // Bug
 	iss.setPriority(data.defaultPriority); // Normal priority
 	iss.setStatus(1); // New issue
-	iss.setAssignee(-1);
+	iss.setAssignee(-1); // Unassigned
 
 	iss.setPropertyValue(config.PROPERTY_ID_START_DATE, new Date()
 			.toISOString());

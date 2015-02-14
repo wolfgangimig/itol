@@ -20,7 +20,7 @@ public class IssueUpdate implements Serializable {
 	private static final long serialVersionUID = -814436458752378253L;
 
 	private Date createDate;
-	
+
 	private String createdBy;
 
 	private Map<String, Property> properties;
@@ -65,4 +65,44 @@ public class IssueUpdate implements Serializable {
 		return createdBy;
 	}
 
+	public IssueUpdate deepCopy() {
+		IssueUpdate ret = new IssueUpdate();
+		ret.createDate = this.createDate;
+		ret.createdBy = this.createdBy;
+
+		for (Map.Entry<String, Property> e : this.properties.entrySet()) {
+			Property prop = e.getValue();
+			ret.properties.put(e.getKey(), prop);
+		}
+
+		return ret;
+	}
+
+	public int compareTo(IssueUpdate isu) {
+		int ret = createDate.compareTo(isu.createDate);
+		if (ret == 0) {
+			ret = createdBy.compareTo(isu.createdBy);
+			if (ret == 0) {
+				ret = properties.size() - isu.properties.size();
+				if (ret == 0) {
+					for (Map.Entry<String, Property> e : properties.entrySet()) {
+						Property prop = e.getValue();
+						Property prop2 = isu.properties.get(prop.getId());
+						if (prop2 == null) {
+							ret = 1;
+						} else {
+							ret = prop.compareTo(prop2);
+						}
+						if (ret != 0) {
+							break;
+						}
+					}
+					if (ret == 0) {
+
+					}
+				}
+			}
+		}
+		return ret;
+	}
 }

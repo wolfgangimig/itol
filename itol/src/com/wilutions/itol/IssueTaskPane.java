@@ -60,7 +60,8 @@ import com.wilutions.mslib.office.CustomTaskPane;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
-	private Issue issue;
+	private volatile Issue issue;
+	private volatile Issue issueCopy;
 
 	@FXML
 	private VBox vboxRoot;
@@ -84,7 +85,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private ChoiceBox<IdName> cbCategory;
 	@FXML
-	private ChoiceBox<IdName> cbAssignee;
+	private ChoiceBox<IdName> cbPriority;
 	@FXML
 	private Tab tpDescription;
 	@FXML
@@ -129,10 +130,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private WebView webDescription;
 	private WebView webNotes;
-	private final MailInspector mailInspectorOrNull;
 	private IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
 	private ResourceBundle resb;
+	private Thread detectIssueModifiedThread;
 
 	/**
 	 * Owner window for child dialogs (message boxes)
@@ -140,12 +141,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private Object windowOwner;
 
 	public IssueTaskPane(MailInspector mailInspectorOrNull, IssueMailItem mailItem) {
-		this.mailInspectorOrNull = mailInspectorOrNull;
 		this.mailItem = mailItem;
 
 		this.resb = Globals.getResourceBundle();
+		//Globals.getThisAddin().getRegistry().readFields(this);
+
 		setMailItem(mailItem);
-		// Globals.getThisAddin().getRegistry().readFields(this);
 	}
 
 	public void setMailItem(IssueMailItem mailItem) {
@@ -154,6 +155,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		final String subject = mailItem.getSubject();
 		final String description = mailItem.getBody();
 		try {
+			
 			IssueService srv = Globals.getIssueService();
 			String issueId = srv.extractIssueIdFromMailSubject(subject);
 			if (issueId != null && issueId.length() != 0) {
@@ -161,6 +163,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			} else {
 				issue = srv.createIssue(subject, description);
 			}
+
+			// Backup issue
+			issueCopy = issue.deepCopyLastUpdate();
 
 			// Refresh controls if not called from constructor.
 			// If called the first time (from constructor) the initial update
@@ -200,11 +205,19 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@Override
 	public void close() {
 		super.close();
-		// Globals.getThisAddin().getRegistry().writeFields(this);
+//		Globals.getThisAddin().getRegistry().writeFields(this);
 		for (Runnable run : resourcesToRelease) {
 			try {
 				run.run();
 			} catch (Throwable ignored) {
+			}
+		}
+		
+		if (detectIssueModifiedThread != null) {
+			try {
+				detectIssueModifiedThread.interrupt();
+				detectIssueModifiedThread.join(2000);
+			} catch (InterruptedException e) {
 			}
 		}
 	}
@@ -213,7 +226,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public Scene createScene() {
 		try {
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-			URL fxmlURL = classLoader.getResource("com/wilutions/itol/NewIssue7.fxml");
+			URL fxmlURL = classLoader.getResource("com/wilutions/itol/NewIssue8.fxml");
 
 			resb = Globals.getResourceBundle();
 
@@ -266,7 +279,33 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	// This method is called by the FXMLLoader when initialization is complete
 	public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
 		try {
+
+			cbTracker.valueProperty().addListener(new ComboboxChangeListener(cbTracker, Property.ISSUE_TYPE));
+			cbStatus.valueProperty().addListener(new ComboboxChangeListener(cbStatus, Property.STATUS));
+			cbPriority.valueProperty().addListener(new ComboboxChangeListener(cbPriority, Property.PRIORITY));
+			cbCategory.valueProperty().addListener(new ComboboxChangeListener(cbCategory, Property.CATEGORY));
+
 			initialUpdate();
+
+			detectIssueModifiedThread = new Thread() {
+				public void run() {
+					while (true) {
+						Issue issue = IssueTaskPane.this.issue;
+						Issue issueCopy = IssueTaskPane.this.issueCopy;
+						try {
+							Thread.sleep(1000);
+							int cmp = issue.compareTo(issueCopy);
+							bnPin.setSelected(cmp != 0);
+						} catch (InterruptedException e) {
+							break;
+						} catch (Throwable e) {
+
+						}
+					}
+				}
+			};
+			//detectIssueModifiedThread.start();
+
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
@@ -298,7 +337,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			saveChoiceBox(cbStatus, Property.STATUS);
 
-			saveChoiceBox(cbAssignee, Property.ASSIGNEE);
+			saveChoiceBox(cbPriority, Property.PRIORITY);
 
 			saveChoiceBox(cbCategory, Property.CATEGORY);
 
@@ -315,7 +354,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initChoiceBox(cbCategory, Property.CATEGORY);
 
-			initChoiceBox(cbAssignee, Property.ASSIGNEE);
+			initChoiceBox(cbPriority, Property.PRIORITY);
 
 			initChoiceBox(cbStatus, Property.STATUS);
 
@@ -351,6 +390,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			try {
 				String text = (String) webDescription.getEngine().executeScript(scriptToGetDescription);
 				issue.setDescription(text);
+
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}
@@ -401,7 +441,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			tabAttachmentsApplyHandler = false;
 		}
 
-		List<Attachment> atts = issue.getAttachments();
+		List<Attachment> atts = new ArrayList<Attachment>(issue.getAttachments());
 		ObservableList<Attachment> obs = FXCollections.observableList(atts);
 		tabAttachments.setItems(obs);
 	}
@@ -472,11 +512,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
-		cbTracker.valueProperty().addListener(new ComboboxChangeListener(cbTracker, Property.ISSUE_TYPE));
-		cbStatus.valueProperty().addListener(new ComboboxChangeListener(cbStatus, Property.STATUS));
-		cbAssignee.valueProperty().addListener(new ComboboxChangeListener(cbAssignee, Property.ASSIGNEE));
-		cbCategory.valueProperty().addListener(new ComboboxChangeListener(cbCategory, Property.CATEGORY));
-		
 		descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
 		if (descriptionHtmlEditor != null) {
 			edDescription.setVisible(false);
