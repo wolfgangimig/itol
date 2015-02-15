@@ -110,7 +110,11 @@ public class Property {
 	}
 
 	public String toString() {
-		return "[" + id + "=" + value + "]";
+		String v = value != null ? value.toString() : "";
+		if (v.length() > 10) {
+			v = v.substring(0, 10) + "...";
+		}
+		return "[" + id + "=" + v + "]";
 	}
 
 	public Property deepCopy() {
@@ -126,37 +130,20 @@ public class Property {
 		return prop;
 	}
 
-	@SuppressWarnings("unchecked")
-	public int compareTo(Property prop2) {
-		int ret = id.compareTo(prop2.id);
-		if (ret == 0) {
-			if (value == null) {
-				ret = prop2.value != null ? -1 : 0;
-			}
-			else if (prop2.value == null) {
-				ret = 1;
-			}
-			else if (value instanceof List) {
-				List<String> list = (List<String>) value;
-				if (prop2.value instanceof List) {
-					List<String> list2 = (List<String>) prop2.value;
-					ret = list.size() - list2.size();
-					for (int i = 0; i < list.size() && ret == 0; i++) {
-						ret = list.get(i).compareTo(list2.get(i));
-					}
+	@Override
+	public boolean equals(Object rhs) {
+		boolean ret = false;
+		if (rhs != null && rhs instanceof Property) {
+			Property prop2 = (Property)rhs;
+			ret = id.equals(prop2.id);
+			if (ret) {
+				if (value == null) {
+					ret = prop2.value == null;
+				} else if (prop2.value == null) {
+					ret = false;
+				} else {
+					ret = value.equals(prop2.value);
 				}
-				else {
-					ret = 1;
-				}
-			} else if (value instanceof String) {
-				ret = ((String)value).compareTo((String)prop2.value);
-			} else if (value instanceof Boolean) {
-				int v = (Boolean)value ? 1 : 0;
-				int v2 = (Boolean)prop2.value ? 1 : 0;
-				ret = v - v2;
-			}
-			else {
-				ret = 1;
 			}
 		}
 		return ret;

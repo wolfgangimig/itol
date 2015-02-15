@@ -84,10 +84,7 @@ public class Globals {
 				System.out.println("Issue service initialized.");
 				
 				Platform.runLater(() -> {
-					Stage dlg = new Stage();
-					IssueMailItem mitem = new IssueMailItemBlank();
-					dlg.setScene(new IssueTaskPane(null, mitem).createScene());
-					dlg.showAndWait();
+					DlgTestIssueTaskPane.showAndWait();
 					System.exit(0);
 				});
 				

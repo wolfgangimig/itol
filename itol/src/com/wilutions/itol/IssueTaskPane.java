@@ -18,11 +18,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -44,6 +48,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
+import javafx.util.Duration;
 
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
@@ -55,13 +60,14 @@ import com.wilutions.itol.db.IssueHtmlEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
+import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.mslib.office.CustomTaskPane;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
-	private volatile Issue issue;
-	private volatile Issue issueCopy;
+	private Issue issue;
+	private Issue issueCopy;
 
 	@FXML
 	private VBox vboxRoot;
@@ -75,11 +81,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private HBox hboxDescription;
 	@FXML
-	private ToggleButton bnPin;
+	private ToggleButton bnAssignSelection;
 	@FXML
-	private ToggleButton bnSelection;
+	private Button bnClear;
 	@FXML
-	private ToggleButton bnBlank;
+	private Button bnShowIssueInBrowser;
+
 	@FXML
 	private ChoiceBox<IdName> cbTracker;
 	@FXML
@@ -133,7 +140,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
 	private ResourceBundle resb;
-	private Thread detectIssueModifiedThread;
+	private Timeline detectIssueModifiedTimer;
+	private boolean modified;
+	private boolean firstModifiedCheck;
 
 	/**
 	 * Owner window for child dialogs (message boxes)
@@ -144,18 +153,36 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		this.mailItem = mailItem;
 
 		this.resb = Globals.getResourceBundle();
-		//Globals.getThisAddin().getRegistry().readFields(this);
+		// Globals.getThisAddin().getRegistry().readFields(this);
 
-		setMailItem(mailItem);
+		try {
+			updateIssueFromMailItem();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void setMailItem(IssueMailItem mailItem) {
 		this.mailItem = mailItem;
 
-		final String subject = mailItem.getSubject();
-		final String description = mailItem.getBody();
+		Platform.runLater(() -> {
+			try {
+				detectIssueModifiedTimer.stop();
+				if (updateIssueFromMailItem()) {
+					initialUpdate();
+				}
+				detectIssueModifiedTimer.play();
+			} catch (Throwable e) {
+				showMessageBoxError(e.toString());
+			}
+		});
+	}
+
+	private boolean updateIssueFromMailItem() throws IOException {
+		boolean succ = false;
 		try {
-			
+			final String subject = mailItem.getSubject();
+			final String description = mailItem.getBody();
 			IssueService srv = Globals.getIssueService();
 			String issueId = srv.extractIssueIdFromMailSubject(subject);
 			if (issueId != null && issueId.length() != 0) {
@@ -163,26 +190,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			} else {
 				issue = srv.createIssue(subject, description);
 			}
-
-			// Backup issue
-			issueCopy = issue.deepCopyLastUpdate();
-
-			// Refresh controls if not called from constructor.
-			// If called the first time (from constructor) the initial update
-			// is performed in initialize()
-			if (vboxRoot != null) {
-				Platform.runLater(() -> {
-					try {
-						initialUpdate();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				});
-			}
-
+			succ = true;
 		} catch (Throwable e) {
-			e.printStackTrace();
+			String text = e.toString();
+			if (text.indexOf("404") >= 0) {
+				text = resb.getString("Error.IssueNotFound");
+			}
+			showMessageBoxError(text);
 		}
+		return succ;
 	}
 
 	public IssueMailItem getMailItem() {
@@ -198,27 +214,23 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	public boolean isNew() {
-		String issueId = issue.getId();
+		String issueId = issue != null ? issue.getId() : "";
 		return issueId == null || issueId.length() == 0;
 	}
 
 	@Override
 	public void close() {
 		super.close();
-//		Globals.getThisAddin().getRegistry().writeFields(this);
+		// Globals.getThisAddin().getRegistry().writeFields(this);
 		for (Runnable run : resourcesToRelease) {
 			try {
 				run.run();
 			} catch (Throwable ignored) {
 			}
 		}
-		
-		if (detectIssueModifiedThread != null) {
-			try {
-				detectIssueModifiedThread.interrupt();
-				detectIssueModifiedThread.join(2000);
-			} catch (InterruptedException e) {
-			}
+
+		if (detectIssueModifiedTimer != null) {
+			detectIssueModifiedTimer.stop();
 		}
 	}
 
@@ -287,28 +299,42 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initialUpdate();
 
-			detectIssueModifiedThread = new Thread() {
-				public void run() {
-					while (true) {
-						Issue issue = IssueTaskPane.this.issue;
-						Issue issueCopy = IssueTaskPane.this.issueCopy;
-						try {
-							Thread.sleep(1000);
-							int cmp = issue.compareTo(issueCopy);
-							bnPin.setSelected(cmp != 0);
-						} catch (InterruptedException e) {
-							break;
-						} catch (Throwable e) {
-
+			detectIssueModifiedTimer = new Timeline(new KeyFrame(Duration.seconds(0.5),
+					new EventHandler<ActionEvent>() {
+						@Override
+						public void handle(ActionEvent event) {
+							try {
+								updateData(true);
+								if (firstModifiedCheck) {
+									firstModifiedCheck = false;
+									// Backup issue
+									issueCopy = issue.deepCopyLastUpdate();
+									// System.out.println("issueCopy=" +
+									// issueCopy.getLastUpdate().getProperties());
+								} else {
+									boolean eq = issue.equals(issueCopy);
+									setModified(!eq);
+									// if (modified) {
+									// System.out.println("modified issue=" +
+									// issue.getLastUpdate().getProperties());
+									// }
+								}
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
 						}
-					}
-				}
-			};
-			//detectIssueModifiedThread.start();
+					}));
+			detectIssueModifiedTimer.setCycleCount(Timeline.INDEFINITE);
+			detectIssueModifiedTimer.play();
 
 		} catch (Throwable e) {
-			e.printStackTrace();
+			showMessageBoxError(e.toString());
 		}
+	}
+
+	private void setModified(boolean modified) {
+		this.modified = modified;
+		initModified();
 	}
 
 	private boolean lockChangeListener;
@@ -344,6 +370,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			saveProperties();
 
 		} else {
+			initIssueId();
+
+			initModified();
+
 			initSubject();
 
 			initDescription();
@@ -367,6 +397,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
+	private void initModified() {
+		if (modified) {
+			bnAssignSelection.setSelected(false);
+		}
+		bnUpdate.setDisable(!modified);
+	}
+
+	private void initIssueId() {
+		edIssueId.setText(issue.getId());
+	}
+
 	private void saveProperties() {
 		propGridView.saveProperties(issue);
 	}
@@ -375,10 +416,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		IdName idn = cb.getValue();
 		if (idn != null && !idn.equals(IdName.NULL)) {
 			Property prop = new Property(propertyId, idn.getId());
-			System.out.println("save property=" + prop);
 			issue.getLastUpdate().setProperty(prop);
 		} else {
-			System.out.println("remove propertyId=" + propertyId);
 			issue.getLastUpdate().removeProperty(propertyId);
 		}
 	}
@@ -510,6 +549,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		addOrRemoveTab(tpNotes, !isNew());
 		tabpIssue.getSelectionModel().select(tpDescription);
 
+		bnShowIssueInBrowser.setDisable(isNew());
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
 		descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
@@ -529,6 +569,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			hboxNotes.getChildren().add(webNotes);
 			hboxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 		}
+
+		modified = false;
+		firstModifiedCheck = true;
 
 		updateData(false);
 	}
@@ -618,30 +661,82 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	}
 
-	@FXML
-	public void onEditPropertyStart() {
+	/**
+	 * Return owner for sub-dialogs. This function is overridden in
+	 * {@link DlgTestIssueTaskPane}.
+	 * 
+	 * @return owner object
+	 */
+	protected Object getDialogOwner() {
+		return this;
+	}
 
+	private void showMessageBoxError(String text) {
+		detectIssueModifiedTimer.stop();
+		String title = resb.getString("MessageBox.title.error");
+		String ok = resb.getString("Button.OK");
+		Object owner = getDialogOwner();
+		MessageBox.create(owner).title(title).text(text).button(1, ok).bdefault().show((btn, ex) -> {
+			detectIssueModifiedTimer.play();
+		});
+	}
+
+	private void queryDiscardChangesAsync(AsyncResult<Boolean> asyncResult) {
+		if (modified) {
+			detectIssueModifiedTimer.stop();
+			String title = resb.getString("MessageBox.title.confirm");
+			String text = resb.getString("MessageBox.queryDiscardChanges.text");
+			String yes = resb.getString("Button.Yes");
+			String no = resb.getString("Button.No");
+			Object owner = getDialogOwner();
+			MessageBox.create(owner).title(title).text(text).button(1, yes).button(0, no).bdefault()
+					.show((btn, ex) -> {
+						Boolean succ = btn != null && btn != 0;
+						asyncResult.setAsyncResult(succ, ex);
+						detectIssueModifiedTimer.play();
+					});
+		} else {
+			asyncResult.setAsyncResult(true, null);
+		}
 	}
 
 	@FXML
-	public void onEditPropertyCommit() {
-
+	public void onClear() {
+		queryDiscardChangesAsync((succ, ex) -> {
+			if (ex == null && succ) {
+				bnAssignSelection.setSelected(false);
+				setMailItem(new IssueMailItemBlank());
+			}
+		});
 	}
 
 	@FXML
-	public void onEditPropertyCancel() {
-
+	public void onAssignSelection() {
+		boolean sel = bnAssignSelection.isSelected();
+		if (sel) {
+			queryDiscardChangesAsync((succ, ex) -> {
+				if (ex == null && succ) {
+					setMailItem(mailItem);
+				} else {
+					bnAssignSelection.setSelected(false);
+				}
+			});
+		}
 	}
 
 	@FXML
 	public void onShowExistingIssue() {
-		final String issueId = edIssueId.getText();
-		IssueMailItem mitem = new IssueMailItemBlank() {
-			public String getSubject() {
-				return "[R-" + issueId + "]";
+		queryDiscardChangesAsync((succ, ex) -> {
+			if (ex == null && succ) {
+				final String issueId = edIssueId.getText();
+				IssueMailItem mitem = new IssueMailItemBlank() {
+					public String getSubject() {
+						return "[R-" + issueId + "]";
+					}
+				};
+				setMailItem(mitem);
 			}
-		};
-		setMailItem(mitem);
+		});
 	}
 
 	@FXML
@@ -727,6 +822,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private class ComboboxChangeListener implements ChangeListener<IdName> {
 
+		@SuppressWarnings("unused")
 		final ChoiceBox<IdName> cb;
 		@SuppressWarnings("unused")
 		final String propertyId;

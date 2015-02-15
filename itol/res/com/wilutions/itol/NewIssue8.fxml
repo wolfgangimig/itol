@@ -26,12 +26,29 @@
          <children>
              <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="2.0" GridPane.columnSpan="3">
                <children>
-                  <ToggleButton fx:id="bnPin" minHeight="25.0" mnemonicParsing="false" prefHeight="25.0" text="Pin" />
-                  <ToggleButton fx:id="bnSelection" minHeight="25.0" mnemonicParsing="false" prefHeight="25.0" text="Selection" />
-                  <Button mnemonicParsing="false" text="New" />
-                  <TextField fx:id="edIssueId" promptText="Issue ID" />
-                  <Button fx:id="bnShow" mnemonicParsing="false" onAction="#onShowExistingIssue" text="Show" />
-                  <Button fx:id="bnShowIssueInBrowser" mnemonicParsing="false" onAction="#onShowIssueInBrowser" text="Show in Browser..." />
+                  <ToggleButton fx:id="bnAssignSelection" minHeight="25.0" mnemonicParsing="false" onAction="#onAssignSelection" prefHeight="25.0" text="%bnAssignSelection.text">
+                     <tooltip>
+                        <Tooltip text="%nbAssignSelection.tooltip" />
+                     </tooltip></ToggleButton>
+                  <Button fx:id="bnClear" mnemonicParsing="false" onAction="#onClear" text="%bnClear.text" />
+                  <TextField fx:id="edIssueId" promptText="%edIssueId.prompt">
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin></TextField>
+                  <Button fx:id="bnShow" mnemonicParsing="false" onAction="#onShowExistingIssue" text="%bnShow.text">
+                     <tooltip>
+                        <Tooltip text="%bnShow.tooltip" />
+                     </tooltip></Button>
+                  <Button fx:id="bnShowIssueInBrowser" mnemonicParsing="false" onAction="#onShowIssueInBrowser" text="%bnShowIssueInBrowser.text">
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin>
+                     <tooltip>
+                        <Tooltip text="%bnShowIssueInBrowser.tooltip" />
+                     </tooltip></Button>
                </children>
             </HBox>
             <TextField fx:id="edSubject" promptText="%edSubject.prompt" GridPane.columnSpan="3" GridPane.rowIndex="1">

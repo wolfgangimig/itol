@@ -821,8 +821,7 @@ function getPropertyDisplayOrder(issue) {
 	var propertyIds = [ Property.ASSIGNEE, config.PROPERTY_ID_START_DATE,
 			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_DONE_RATIO ];
 
-	propertyIds.push(issue.id ? config.PROPERTY_ID_ESTIMATED_HOURS
-			: config.PROPERTY_ID_SPENT_HOURS);
+	propertyIds.push(issue.id ? config.PROPERTY_ID_SPENT_HOURS : config.PROPERTY_ID_ESTIMATED_HOURS);
 
 	var issueType = issue.getType();
 	for (var i = 0; i < data.custom_fields.length; i++) {

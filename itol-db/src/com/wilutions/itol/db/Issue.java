@@ -78,12 +78,14 @@ public class Issue implements Serializable {
 		return ret;
 	}
 	
-	public int compareTo(Issue issue) {
-		int ret = this.id.compareTo(issue.id);
-		if (ret == 0) {
-			ret = this.updates.size() - issue.updates.size();
-			for (int i = 0; i < updates.size() && ret == 0; i++) {
-				ret = updates.get(i).compareTo(issue.updates.get(i));
+	@Override
+	public boolean equals(Object rhs) {
+		boolean ret = false;
+		if (rhs != null && rhs instanceof Issue) {
+			Issue issue = (Issue)rhs;
+			ret = this.id.equals(issue.id);
+			if (ret) {
+				ret = updates.equals(issue.updates);
 			}
 		}
 		return ret;
