@@ -116,16 +116,29 @@ public class Property {
 		}
 		return "[" + id + "=" + v + "]";
 	}
-
-	public Property deepCopy() {
+	
+	@Override
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public Object clone() {
 		Property prop = new Property();
 		prop.id = this.id;
-		if (value instanceof List) {
-			@SuppressWarnings("unchecked")
-			List<String> list = (List<String>) value;
-			prop.value = new ArrayList<String>(list);
-		} else {
-			prop.value = value;
+		if (value != null) {
+			if (value instanceof List) {
+				List list = (List)value;
+				List listCopy = new ArrayList(list.size());
+				for (Object elm : list) {
+					Object elmCopy = elm;
+					if (elm instanceof Attachment) {
+						elmCopy = ((Attachment)elm).clone();
+					}
+					listCopy.add(elmCopy);
+				}
+				prop.value = listCopy;
+			}
+			else {
+				// String or Boolean
+				prop.value = value;
+			}
 		}
 		return prop;
 	}

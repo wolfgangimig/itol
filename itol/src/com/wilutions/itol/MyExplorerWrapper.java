@@ -100,8 +100,12 @@ public class MyExplorerWrapper extends ExplorerWrapper {
 			}
 		});
 	}
+	
+	public boolean isIssueTaskPaneVisible() {
+		return issuePane.hasWindow() && issuePane.isVisible();
+	}
 
-	private void showSelectedMailItem() {
+	public void showSelectedMailItem() {
 		if (issuePane.hasWindow() && issuePane.isVisible()) {
 			MailItem mailItem = getSelectedMail();
 			if (mailItem != null) {

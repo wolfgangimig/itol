@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -49,6 +48,7 @@ import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
+import netscape.javascript.JSObject;
 
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
@@ -63,6 +63,9 @@ import com.wilutions.itol.db.PropertyClass;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.mslib.office.CustomTaskPane;
+import com.wilutions.mslib.office._CustomTaskPane;
+import com.wilutions.mslib.outlook.Explorer;
+
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
@@ -143,6 +146,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private Timeline detectIssueModifiedTimer;
 	private boolean modified;
 	private boolean firstModifiedCheck;
+	private AttachmentHelper attachmentHelper = new AttachmentHelper();
 
 	/**
 	 * Owner window for child dialogs (message boxes)
@@ -161,8 +165,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			e.printStackTrace();
 		}
 	}
-
+	
 	public void setMailItem(IssueMailItem mailItem) {
+		if (bnAssignSelection.isSelected()) {
+			internalSetMailItem(mailItem);
+		}
+	}
+
+	private void internalSetMailItem(IssueMailItem mailItem) {
 		this.mailItem = mailItem;
 
 		Platform.runLater(() -> {
@@ -173,6 +183,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 				detectIssueModifiedTimer.play();
 			} catch (Throwable e) {
+				e.printStackTrace();
 				showMessageBoxError(e.toString());
 			}
 		});
@@ -192,6 +203,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			}
 			succ = true;
 		} catch (Throwable e) {
+			e.printStackTrace();
 			String text = e.toString();
 			if (text.indexOf("404") >= 0) {
 				text = resb.getString("Error.IssueNotFound");
@@ -232,6 +244,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		if (detectIssueModifiedTimer != null) {
 			detectIssueModifiedTimer.stop();
 		}
+		
+		attachmentHelper.releaseResources();
 	}
 
 	@Override
@@ -308,16 +322,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 								if (firstModifiedCheck) {
 									firstModifiedCheck = false;
 									// Backup issue
-									issueCopy = issue.deepCopyLastUpdate();
-									// System.out.println("issueCopy=" +
-									// issueCopy.getLastUpdate().getProperties());
+									issueCopy = (Issue)issue.clone();
+									 System.out.println("issueCopy=" +
+									 issueCopy.getLastUpdate().getProperties());
 								} else {
 									boolean eq = issue.equals(issueCopy);
 									setModified(!eq);
-									// if (modified) {
-									// System.out.println("modified issue=" +
-									// issue.getLastUpdate().getProperties());
-									// }
+									 if (modified) {
+									 System.out.println("modified issue=" +
+									 issue.getLastUpdate().getProperties());
+									 }
 								}
 							} catch (IOException e) {
 								e.printStackTrace();
@@ -328,6 +342,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			detectIssueModifiedTimer.play();
 
 		} catch (Throwable e) {
+			e.printStackTrace();
 			showMessageBoxError(e.toString());
 		}
 	}
@@ -368,8 +383,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			saveChoiceBox(cbCategory, Property.CATEGORY);
 
 			saveProperties();
+			
+			saveAttachments();
 
 		} else {
+			
 			initIssueId();
 
 			initModified();
@@ -397,11 +415,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
+	private void saveAttachments() {
+		ArrayList<Attachment> atts = new ArrayList<Attachment>(tabAttachments.getItems());
+		issue.setAttachments(atts);
+	}
+
 	private void initModified() {
 		if (modified) {
 			bnAssignSelection.setSelected(false);
 		}
-		bnUpdate.setDisable(!modified);
+		boolean enabled = modified || isNew();
+		bnUpdate.setDisable(!enabled);
 	}
 
 	private void initIssueId() {
@@ -424,15 +448,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void saveDescription() {
 		if (descriptionHtmlEditor != null) {
-			String elementId = descriptionHtmlEditor.getElementId();
-			String scriptToGetDescription = "document.getElementById('" + elementId + "').value";
-			try {
-				String text = (String) webDescription.getEngine().executeScript(scriptToGetDescription);
-				issue.setDescription(text);
-
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
+			saveTextFromHtmlEditor(descriptionHtmlEditor, webDescription, Property.DESCRIPTION);
 		} else {
 			String text = edDescription.getHtmlText().trim();
 			issue.setDescription(text);
@@ -441,17 +457,24 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void saveNotes() {
 		if (notesHtmlEditor != null) {
-			String elementId = notesHtmlEditor.getElementId();
-			String scriptToGetDescription = "document.getElementById('" + elementId + "').value";
-			try {
-				String text = (String) webNotes.getEngine().executeScript(scriptToGetDescription);
-				issue.setPropertyString(Property.NOTES, text);
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
+			saveTextFromHtmlEditor(notesHtmlEditor, webNotes, Property.NOTES);
 		} else {
 			String text = edNotes.getHtmlText().trim();
 			issue.setPropertyString(Property.NOTES, text);
+		}
+	}
+	
+	private void saveTextFromHtmlEditor(IssueHtmlEditor ed, WebView web, String propertyId) {
+		String elementId = ed.getElementId();
+		String scriptToGetDescription = "document.getElementById('" + elementId + "')";
+		try {
+			JSObject elm = (JSObject) web.getEngine().executeScript(scriptToGetDescription);
+			if (elm != null) {
+				String text = (String)elm.getMember("value");
+				issue.setPropertyString(propertyId, text);
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -479,8 +502,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			tabAttachmentsApplyHandler = false;
 		}
-
-		List<Attachment> atts = new ArrayList<Attachment>(issue.getAttachments());
+		
+		// Copy only non-deleted attachments to backing list.
+		List<Attachment> atts = new ArrayList<Attachment>(issue.getAttachments().size());
+		for (Attachment att : issue.getAttachments()){
+			if (!att.isDeleted()) {
+				atts.add(att);
+			}
+		}
+		
 		ObservableList<Attachment> obs = FXCollections.observableList(atts);
 		tabAttachments.setItems(obs);
 	}
@@ -543,6 +573,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initialUpdate() throws IOException {
+		
+		attachmentHelper.initialUpdate(mailItem, issue);
+		
+		initalUpdateAttachmentView();
 
 		// Show/Hide History and Notes
 		addOrRemoveTab(tpHistory, !isNew());
@@ -592,19 +626,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		Attachment att = tabAttachments.getSelectionModel().getSelectedItem();
 		if (att != null) {
 			String url = att.getUrl();
-			if (url.startsWith("mail:///")) {
-				// File selectedFile = new
-				// File(selectedAttachment.getFileName());
-				// if (!selectedFile.exists()) {
-				// MailSaveHandler saveHandler =
-				// mapFileToSaveHandler.get(selectedFile);
-				// try {
-				// saveHandler.save();
-				// } catch (IOException e) {
-				// e.printStackTrace();
-				// }
-				// }
-			}
 			IssueApplication.showDocument(url);
 		}
 	}
@@ -633,18 +654,24 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	@FXML
 	public void onRemoveAttachment() {
-		List<Attachment> oldItems = tabAttachments.getItems();
-		List<Attachment> newItems = new ArrayList<Attachment>(oldItems.size());
+		List<Attachment> selectedItems = tabAttachments.getSelectionModel().getSelectedItems();
 
-		HashSet<Integer> selectedIndices = new HashSet<Integer>(tabAttachments.getSelectionModel().getSelectedIndices());
-		tabAttachments.getSelectionModel().clearSelection();
-
-		for (int i = 0; i < oldItems.size(); i++) {
-			if (!selectedIndices.contains(i)) {
-				newItems.add(oldItems.get(i));
+		for (int i = 0; i < selectedItems.size(); i++) {
+			Attachment att = selectedItems.get(i);
+			if (att.getId() != null && att.getId().length() != 0) {
+				// Mark existing attachment deleted.
+				// The attachment is deleted in IssueService.updateIssue().
+				att.setDeleted(true);
+			}
+			else {
+				issue.getAttachments().remove(att);
 			}
 		}
 
+		initalUpdateAttachmentView();
+	}
+
+	private void initalUpdateAttachmentView() {
 		// The TableView does not refresh it's items on getItems().remove(...)
 		// Other devs had this problem with JavaFX 2.1
 		// http://stackoverflow.com/questions/11065140/javafx-2-1-tableview-refresh-items
@@ -655,10 +682,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		tabAttachments = new TableView<Attachment>();
 		tabAttachmentsApplyHandler = true;
 		initAttachments();
-		tabAttachments.getItems().addAll(newItems);
 		hboxAttachments.getChildren().add(0, tabAttachments);
 		HBox.setHgrow(tabAttachments, Priority.ALWAYS);
-
 	}
 
 	/**
@@ -705,7 +730,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		queryDiscardChangesAsync((succ, ex) -> {
 			if (ex == null && succ) {
 				bnAssignSelection.setSelected(false);
-				setMailItem(new IssueMailItemBlank());
+				internalSetMailItem(new IssueMailItemBlank());
 			}
 		});
 	}
@@ -716,7 +741,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		if (sel) {
 			queryDiscardChangesAsync((succ, ex) -> {
 				if (ex == null && succ) {
-					setMailItem(mailItem);
+					try {
+						Explorer explorer = Globals.getThisAddin().getApplication().ActiveExplorer().as(Explorer.class);
+						MyExplorerWrapper myExplorer = Globals.getThisAddin().getMyExplorerWrapper(explorer);
+						myExplorer.showSelectedMailItem();
+					}
+					catch (Throwable e) {
+						
+					}
 				} else {
 					bnAssignSelection.setSelected(false);
 				}
@@ -734,7 +766,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 						return "[R-" + issueId + "]";
 					}
 				};
-				setMailItem(mitem);
+				internalSetMailItem(mitem);
 			}
 		});
 	}
@@ -859,4 +891,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	}
 
+	@Override
+	public void onVisibleStateChange(_CustomTaskPane ctp) throws ComException {
+	    Globals.getThisAddin().getRibbon().InvalidateControl("NewIssue");
+	}
 }

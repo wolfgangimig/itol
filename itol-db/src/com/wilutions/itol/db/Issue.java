@@ -67,12 +67,13 @@ public class Issue implements Serializable {
 		this.updates.add(initialUpdate);
 	}
 	
-	public Issue deepCopyLastUpdate() {
+	@Override
+	public Object clone() {
 		Issue ret = new Issue();
 		ret.id = this.id;
 		ret.updates = new ArrayList<IssueUpdate>(this.updates.size());
 		for (IssueUpdate upd : this.updates) {
-			IssueUpdate updCopy = upd.deepCopy();
+			IssueUpdate updCopy = (IssueUpdate)upd.clone();
 			ret.updates.add(updCopy);
 		}
 		return ret;

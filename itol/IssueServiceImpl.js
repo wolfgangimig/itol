@@ -34,8 +34,7 @@ var HttpResponse = Java.type("com.wilutions.itol.db.HttpResponse");
 var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
 var Issue = Java.type("com.wilutions.itol.db.Issue");
 var Attachment = Java.type("com.wilutions.itol.db.Attachment");
-var IssueHtmlEditor = Java
-		.type("com.wilutions.itol.db.IssueHtmlEditor");
+var IssueHtmlEditor = Java.type("com.wilutions.itol.db.IssueHtmlEditor");
 var Logger = Java.type("java.util.logging.Logger");
 var log = Logger.getLogger("IssueServiceImpl.js");
 
@@ -821,7 +820,8 @@ function getPropertyDisplayOrder(issue) {
 	var propertyIds = [ Property.ASSIGNEE, config.PROPERTY_ID_START_DATE,
 			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_DONE_RATIO ];
 
-	propertyIds.push(issue.id ? config.PROPERTY_ID_SPENT_HOURS : config.PROPERTY_ID_ESTIMATED_HOURS);
+	propertyIds.push(issue.id ? config.PROPERTY_ID_SPENT_HOURS
+			: config.PROPERTY_ID_ESTIMATED_HOURS);
 
 	var issueType = issue.getType();
 	for (var i = 0; i < data.custom_fields.length; i++) {
@@ -1106,14 +1106,14 @@ function toTrackerIssue(redmineIssue, issue) {
 		issue.assignee = redmineIssue.assigned_to.id;
 		log.info("issue.assignee=" + issue.assignee);
 	}
-//	if (redmineIssue.fixed_version_id) {
-//		trackerIssue.setMilestones([ redmineIssue.fixed_version_id ]);
-//	}
+	// if (redmineIssue.fixed_version_id) {
+	// trackerIssue.setMilestones([ redmineIssue.fixed_version_id ]);
+	// }
 
 	// Redmine specific properties
 	var propertyIds = [ config.PROPERTY_ID_START_DATE,
-			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
-			config.PROPERTY_ID_SPENT_HOURS, config.PROPERTY_ID_DONE_RATIO ];
+			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_SPENT_HOURS,
+			config.PROPERTY_ID_DONE_RATIO ];
 	for (var i = 0; i < propertyIds.length; i++) {
 		var propId = propertyIds[i];
 		var propValue = redmineIssue[propId];
@@ -1155,9 +1155,6 @@ function toTrackerIssue(redmineIssue, issue) {
 }
 
 function setIssuePropertyValue(issue, propId, propValue) {
-	if (!propValue) {
-		return;
-	}
 	log.info("setIssuePropertyValue(");
 	var type = -1;
 	var pclass = config.propertyClasses.get(propId);
@@ -1172,11 +1169,11 @@ function setIssuePropertyValue(issue, propId, propValue) {
 		issue.setPropertyStringList(propId, propValue);
 		break;
 	case PropertyClass.TYPE_BOOL:
-		issue.setPropertyBoolean(propId, propValue);
+		issue.setPropertyBoolean(propId, !!propValue);
 		break;
 	case PropertyClass.TYPE_STRING:
 	case PropertyClass.TYPE_ISO_DATE:
-		issue.setPropertyString(propId, propValue);
+		issue.setPropertyString(propId, propValue ? propValue : "");
 		break;
 	}
 	log.info(")setIssuePropertyValue");

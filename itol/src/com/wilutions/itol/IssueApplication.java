@@ -98,7 +98,10 @@ public class IssueApplication extends AddinApplication {
 	}
 
 	public static void main(String[] args) {
+		
 		main(IssueApplication.class, IssueApplication.class, args);
+		
+		Globals.releaseResources();
 	}
 
 	@Override

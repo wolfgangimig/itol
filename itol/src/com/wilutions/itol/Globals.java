@@ -42,6 +42,7 @@ public class Globals {
 	private static IssueService issueService;
 	private static Registry registry;
 	private static File appDir;
+	private static File __tempDir;
 
 	private static Config config = new Config();
 
@@ -83,10 +84,11 @@ public class Globals {
 				issueService.setConfig(config.configProps);
 				System.out.println("Issue service initialized.");
 				
-				Platform.runLater(() -> {
-					DlgTestIssueTaskPane.showAndWait();
-					System.exit(0);
-				});
+//				// TEST DIALOG
+//				Platform.runLater(() -> {
+//					DlgTestIssueTaskPane.showAndWait();
+//					System.exit(0);
+//				});
 				
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -179,15 +181,16 @@ public class Globals {
 	}
 
 	public static File getTempDir() {
-		File dir = new File(".");
-		try {
-			dir = File.createTempFile("itol", ".tmp");
-			dir.delete();
-			dir.mkdirs();
-		} catch (IOException e) {
-			e.printStackTrace();
+		if (__tempDir == null) {
+			try {
+				__tempDir = File.createTempFile("itol", ".tmp");
+				__tempDir.delete();
+				__tempDir.mkdirs();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
-		return dir;
+		return __tempDir;
 	}
 
 	public static String getVersion() {
@@ -202,5 +205,12 @@ public class Globals {
 			e.printStackTrace();
 		}
 		return ret;
+	}
+	
+	public static void releaseResources() {
+		if (__tempDir != null) {
+			__tempDir.delete();
+			__tempDir = null;
+		}
 	}
 }

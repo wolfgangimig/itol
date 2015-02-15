@@ -65,14 +65,16 @@ public class IssueUpdate implements Serializable {
 		return createdBy;
 	}
 
-	public IssueUpdate deepCopy() {
+	@Override
+	public Object clone() {
 		IssueUpdate ret = new IssueUpdate();
 		ret.createDate = this.createDate;
 		ret.createdBy = this.createdBy;
 
 		for (Map.Entry<String, Property> e : this.properties.entrySet()) {
 			Property prop = e.getValue();
-			ret.properties.put(e.getKey(), prop);
+			Property propCopy = (Property)prop.clone();
+			ret.properties.put(e.getKey(), propCopy);
 		}
 
 		return ret;

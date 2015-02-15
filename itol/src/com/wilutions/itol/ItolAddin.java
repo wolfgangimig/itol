@@ -18,7 +18,6 @@ import com.wilutions.com.IDispatch;
 import com.wilutions.joa.DeclAddin;
 import com.wilutions.joa.LoadBehavior;
 import com.wilutions.joa.OfficeApplication;
-import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.ExplorerWrapper;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
@@ -63,90 +62,33 @@ public class ItolAddin extends OutlookAddinEx {
 		}
 	}
 
-	public void Button_onAction(IRibbonControl control) {
+	public void Button_onAction(IRibbonControl control, Boolean pressed) {
 		String controlId = control.getId();
 		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
 			backstageConfig.Button_onAction(control);
 		} else if (controlId.equals("NewIssue")) {
-			newIssue(control);
-		} else if (controlId.equals("ShowIssue")) {
-			showIssue(control);
-		} else if (controlId.equals("BlankIssue")) {
-			blankIssue(control);
+			newIssue(control, pressed);
 		}
 
 	}
 
-	private void blankIssue(IRibbonControl control) {
-		IDispatch dispContext = control.getContext();
-		try {
-			if (dispContext.is(Explorer.class)) {
-				Explorer explorer = dispContext.as(Explorer.class);
-//				MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
-//				MailItem mailItem = explorerWrapper.getSelectedMail();
-//				if (mailItem != null) {
-//					DlgNewIssue dlg = new DlgNewIssue(null, new IssueMailItemImpl(mailItem));
-//					dlg.showAsync(explorer, null);
-//				}
-				DlgNewIssue dlg = new DlgNewIssue(null, new IssueMailItemBlank());
-				dlg.showAsync(explorer, null);
-			}
-			
-		}
-		catch (Throwable e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void newIssue(IRibbonControl control) {
+	private void newIssue(IRibbonControl control, Boolean pressed) {
 		IDispatch dispContext = control.getContext();
 		try {
 			if (dispContext.is(Inspector.class)) {
 				Inspector inspector = dispContext.as(Inspector.class);
 				MailInspector mailInspector = (MailInspector) getInspectorWrapper(inspector);
-				mailInspector.setIssueTaskPaneVisible(true);
+				mailInspector.setIssueTaskPaneVisible(pressed);
 			}
 			else if (dispContext.is(Explorer.class)) {
 				Explorer explorer = dispContext.as(Explorer.class);
 				MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
-				explorerWrapper.setIssueTaskPaneVisible(true);
+				explorerWrapper.setIssueTaskPaneVisible(pressed);
 			}
 			
 		}
 		catch (Throwable e) {
 			e.printStackTrace();
-		}
-	}
-
-	private void showIssue(IRibbonControl control) {
-		IDispatch dispContext = control.getContext();
-		Inspector inspector = null;
-		Explorer explorer = null;
-		String issueId = "";
-		try {
-			if (dispContext.is(Inspector.class)) {
-				inspector = dispContext.as(Inspector.class);
-				MailInspector mailInspector = (MailInspector) getInspectorWrapper(inspector);
-				issueId = mailInspector.getIssueId();
-			}
-			else if (dispContext.is(Explorer.class)) {
-				explorer = dispContext.as(Explorer.class);
-				MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
-				issueId = explorerWrapper.getIssueIdOfSelectedMail();
-			}
-
-			System.out.println("issueId=" + issueId);
-			if (issueId != null && issueId.length() != 0) {
-				String issueUrl = Globals.getIssueService().getShowIssueUrl(issueId);
-				if (issueUrl != null && issueUrl.length() != 0) {
-					IssueApplication.showDocument(issueUrl);
-				} else {
-					throw new IllegalStateException("Implementation provided no URL for issue ID=" + issueId);
-				}
-			}
-			
-		} catch (Throwable e) {
-			MessageBox.show(inspector, "Error", "Cannot show issue " + e, null);
 		}
 	}
 
@@ -155,44 +97,30 @@ public class ItolAddin extends OutlookAddinEx {
 	}
 
 	public boolean Button_getVisible(IRibbonControl control) {
-		String controlId = control.getId();
 		boolean ret = true;
-		try {
-
-			if (controlId.equals("NewIssue") || controlId.equals("ShowIssue") || controlId.equals("grpIssue")) {
-				IDispatch dispContext = control.getContext();
-				
-				// Is button placed in the ribbon of mail inspector? 
-				if (dispContext.is(Inspector.class)) {
-					Inspector inspector = dispContext.as(Inspector.class);
-					MailInspector mailInspector = (MailInspector) getInspectorWrapper(inspector);
-					if (mailInspector != null) {
-						
-						// Enable ShowIssue button, if mail subject contains an issue ID.
-						if (controlId.equals("ShowIssue")) {
-							String issueId = mailInspector.getIssueId();
-							ret = issueId != null && issueId.length() != 0;
-						}
-					}
-				}
-				// Is button placed in the ribbon of the explorer window?
-				else if (dispContext.is(Explorer.class)) {
+		return ret;
+	}
 	
-					// Enable ShowIssue button, if mail subject contains an issue ID.
-					if (controlId.equals("ShowIssue")) {
-						Explorer explorer = dispContext.as(Explorer.class);
-						MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
-						String issueId = explorerWrapper.getIssueIdOfSelectedMail();
-						ret = issueId != null && issueId.length() != 0;
-					}
-				}
+	public boolean Button_getPressed(IRibbonControl control) {
+		boolean ret = false;
+		IDispatch dispContext = control.getContext();
+		try {
+			if (dispContext.is(Inspector.class)) {
+				Inspector inspector = dispContext.as(Inspector.class);
+				MailInspector mailInspector = (MailInspector) getInspectorWrapper(inspector);
+				ret = mailInspector.isIssueTaskPaneVisible();
 			}
-		
-		} catch (Throwable e) {
+			else if (dispContext.is(Explorer.class)) {
+				Explorer explorer = dispContext.as(Explorer.class);
+				MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
+				ret = explorerWrapper.isIssueTaskPaneVisible();
+			}
+		}
+		catch (Throwable e) {
 			e.printStackTrace();
 		}
-		
-		return ret;
+
+        return ret;
 	}
 
 	public String ComboBox_getText(IRibbonControl control) {
@@ -240,12 +168,6 @@ public class ItolAddin extends OutlookAddinEx {
 		case "NewIssue":
 			resId = "Ribbon.NewIssue";
 			break;
-		case "ShowIssue":
-			resId = "Ribbon.ShowIssue";
-			break;
-		case "BlankIssue":
-			resId = "Ribbon.BlankIssue";
-			break;
 		default:
 		}
 		return Globals.getResourceBundle().getString(resId);
@@ -289,6 +211,7 @@ public class ItolAddin extends OutlookAddinEx {
 	public void onQuit() throws ComException {
 		super.onQuit();
 		httpServer.done();
+		Globals.releaseResources();
 	}
 
 	public AttachmentHttpServer getHttpServer() {
@@ -300,10 +223,6 @@ public class ItolAddin extends OutlookAddinEx {
 	}
 
 	public void onIssueCreated(MailInspector mailInspector) {
-		mailInspector.setIssueTaskPaneVisible(false);
-		getRibbon().InvalidateControl("NewIssue");
-		getRibbon().InvalidateControl("ShowIssue");
-		// ribbon.InvalidateControl("grpIssue");
 	}
 
 	public MyExplorerWrapper getMyExplorerWrapper(Explorer explorer) {

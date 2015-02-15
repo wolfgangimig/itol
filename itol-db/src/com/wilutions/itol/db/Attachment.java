@@ -22,6 +22,7 @@ public class Attachment {
 	private long contentLength;
 	private InputStream stream;
 	private String url;
+	private boolean deleted;
 
 	public Attachment() {
 		id = "";
@@ -40,6 +41,44 @@ public class Attachment {
 		this.fileName = fileName;
 		this.stream = stream;
 		this.url = url;
+	}
+	
+	@Override
+	protected Object clone() {
+		Attachment copy = new Attachment();
+		copy.id = id;
+		copy.subject = subject;
+		copy.contentType = contentType;
+		copy.fileName = fileName;
+		copy.stream = null;
+		copy.url = url;
+		copy.deleted = deleted;
+		return copy;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		boolean ret = false;
+		if (obj instanceof Attachment) {
+			Attachment rhs = (Attachment)obj;
+			ret = id.equals(rhs.id);
+			if (ret) {
+				ret = subject.equals(rhs.subject);
+				if (ret) {
+					ret = contentType.equals(rhs.contentType);
+					if (ret) {
+						ret = fileName.equals(rhs.fileName);
+						if (ret) {
+							ret = url.equals(rhs.url);
+							if (ret) {
+								ret = deleted == rhs.deleted;
+							}
+						}
+					}
+				}
+			}
+		}
+		return ret;
 	}
 
 	public String getId() {
@@ -99,6 +138,14 @@ public class Attachment {
 	}
 
 	public String toString() {
-		return "["  + fileName + ", length=" + contentLength + "]"; 
+		return "["  + fileName + ", length=" + contentLength + ", deleted=" + deleted + "]"; 
+	}
+
+	public boolean isDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(boolean deleted) {
+		this.deleted = deleted;
 	}
 }

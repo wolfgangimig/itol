@@ -50,6 +50,10 @@ public class MailInspector extends InspectorWrapper {
 		issuePane.setVisible(visible);
 	}
 
+	public boolean isIssueTaskPaneVisible() {
+		return issuePane.hasWindow() && issuePane.isVisible();
+	}
+
 	public void setHistoryTaskPaneVisible(boolean visible) {
 		if (!historyPane.hasWindow() && visible) {
 			Globals.getThisAddin().createTaskPaneWindowAsync(historyPane, "Issue History", inspector, null);
