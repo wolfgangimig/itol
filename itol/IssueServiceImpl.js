@@ -917,30 +917,45 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 		}
 	}
 
-	if (trackerIssue.getMilestones().length) {
-		redmineIssue.fixed_version_id = parseInt(trackerIssue.getMilestones()[0]);
-	}
+//	if (trackerIssue.getMilestones().length) {
+//		redmineIssue.fixed_version_id = parseInt(trackerIssue.getMilestones()[0]);
+//	}
 
+	// Upload attachments
 	redmineIssue.uploads = [];
 	try {
 		for (var i = 0; i < trackerIssue.getAttachments().size(); i++) {
 			var trackerAttachment = trackerIssue.getAttachments().get(i);
-			var pgUpload = null;
-			if (progressCallback) {
-				if (progressCallback.isCancelled())
-					break;
-				var str = "Upload attachment "
-						+ trackerAttachment.getFileName();
-				str += ", "
-						+ makeAttachmentSizeString(trackerAttachment
-								.getContentLength());
-				pgUpload = progressCallback.createChild(str);
-				pgUpload.setTotal(trackerAttachment.getContentLength());
+			log.info("trackerAttachment=" + trackerAttachment);
+			
+			// Upload only new attachments
+			if (trackerAttachment.getId().isEmpty()) {
+				
+				// Create inner progress callback
+				var pgUpload = null;
+				if (progressCallback) {
+					if (progressCallback.isCancelled())
+						break;
+					var str = "Upload attachment "
+							+ trackerAttachment.getFileName();
+					str += ", "
+							+ makeAttachmentSizeString(trackerAttachment
+									.getContentLength());
+					pgUpload = progressCallback.createChild(str);
+					pgUpload.setTotal(trackerAttachment.getContentLength());
+				}
+				
+				// Upload
+				redmineAttachment = writeAttachment(trackerAttachment, pgUpload);
+				redmineIssue.uploads.push(redmineAttachment);
 			}
-			redmineAttachment = writeAttachment(trackerAttachment, pgUpload);
-			redmineIssue.uploads.push(redmineAttachment);
+			else if (trackerAttachment.isDeleted()) {
+				deleteAttachment(trackerAttachment.getId());
+			}
 		}
 	} catch (ex) {
+		
+		// Remove so far uploaded attachments
 		for (var i = 0; i < redmineIssue.uploads.length; i++) {
 			var token = redmineIssue.uploads[i];
 			try {
@@ -952,6 +967,10 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 
 	log.info(")toRedmineIssue=" + redmineIssue);
 	return redmineIssue;
+}
+
+function deleteAttachment(attId) {
+	log.warn("Removing attachments is not supported.");
 }
 
 function makeAttachmentSizeString(contentLength) {

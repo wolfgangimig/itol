@@ -58,6 +58,7 @@ import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueHtmlEditor;
 import com.wilutions.itol.db.IssueService;
+import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
 import com.wilutions.joa.fx.MessageBox;
@@ -65,7 +66,6 @@ import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.mslib.office.CustomTaskPane;
 import com.wilutions.mslib.office._CustomTaskPane;
 import com.wilutions.mslib.outlook.Explorer;
-
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
@@ -165,7 +165,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void setMailItem(IssueMailItem mailItem) {
 		if (bnAssignSelection.isSelected()) {
 			internalSetMailItem(mailItem);
@@ -244,7 +244,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		if (detectIssueModifiedTimer != null) {
 			detectIssueModifiedTimer.stop();
 		}
-		
+
 		attachmentHelper.releaseResources();
 	}
 
@@ -252,7 +252,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public Scene createScene() {
 		try {
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-			URL fxmlURL = classLoader.getResource("com/wilutions/itol/NewIssue8.fxml");
+			URL fxmlURL = classLoader.getResource("com/wilutions/itol/NewIssue9.fxml");
 
 			resb = Globals.getResourceBundle();
 
@@ -322,16 +322,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 								if (firstModifiedCheck) {
 									firstModifiedCheck = false;
 									// Backup issue
-									issueCopy = (Issue)issue.clone();
-									 System.out.println("issueCopy=" +
-									 issueCopy.getLastUpdate().getProperties());
+									issueCopy = (Issue) issue.clone();
+//									System.out.println("issueCopy=" + issueCopy.getLastUpdate().getProperties());
 								} else {
 									boolean eq = issue.equals(issueCopy);
 									setModified(!eq);
-									 if (modified) {
-									 System.out.println("modified issue=" +
-									 issue.getLastUpdate().getProperties());
-									 }
+//									if (modified) {
+//										System.out.println("modified issue=" + issue.getLastUpdate().getProperties());
+//									}
 								}
 							} catch (IOException e) {
 								e.printStackTrace();
@@ -383,11 +381,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			saveChoiceBox(cbCategory, Property.CATEGORY);
 
 			saveProperties();
-			
+
 			saveAttachments();
 
 		} else {
-			
+
 			initIssueId();
 
 			initModified();
@@ -463,14 +461,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			issue.setPropertyString(Property.NOTES, text);
 		}
 	}
-	
+
 	private void saveTextFromHtmlEditor(IssueHtmlEditor ed, WebView web, String propertyId) {
 		String elementId = ed.getElementId();
 		String scriptToGetDescription = "document.getElementById('" + elementId + "')";
 		try {
 			JSObject elm = (JSObject) web.getEngine().executeScript(scriptToGetDescription);
 			if (elm != null) {
-				String text = (String)elm.getMember("value");
+				String text = (String) elm.getMember("value");
 				issue.setPropertyString(propertyId, text);
 			}
 		} catch (Throwable e) {
@@ -502,15 +500,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			tabAttachmentsApplyHandler = false;
 		}
-		
+
 		// Copy only non-deleted attachments to backing list.
 		List<Attachment> atts = new ArrayList<Attachment>(issue.getAttachments().size());
-		for (Attachment att : issue.getAttachments()){
+		for (Attachment att : issue.getAttachments()) {
 			if (!att.isDeleted()) {
 				atts.add(att);
 			}
 		}
-		
+
 		ObservableList<Attachment> obs = FXCollections.observableList(atts);
 		tabAttachments.setItems(obs);
 	}
@@ -573,9 +571,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initialUpdate() throws IOException {
-		
+
 		attachmentHelper.initialUpdate(mailItem, issue);
-		
+
 		initalUpdateAttachmentView();
 
 		// Show/Hide History and Notes
@@ -661,9 +659,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			if (att.getId() != null && att.getId().length() != 0) {
 				// Mark existing attachment deleted.
 				// The attachment is deleted in IssueService.updateIssue().
+				// --- THIS IS CURRENTLY NOT SUPPORTED OVER REDMINE API ---
 				att.setDeleted(true);
-			}
-			else {
+			} else {
 				issue.getAttachments().remove(att);
 			}
 		}
@@ -745,9 +743,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 						Explorer explorer = Globals.getThisAddin().getApplication().ActiveExplorer().as(Explorer.class);
 						MyExplorerWrapper myExplorer = Globals.getThisAddin().getMyExplorerWrapper(explorer);
 						myExplorer.showSelectedMailItem();
-					}
-					catch (Throwable e) {
-						
+					} catch (Throwable e) {
+
 					}
 				} else {
 					bnAssignSelection.setSelected(false);
@@ -891,8 +888,136 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	}
 
+	private class ProgressPane extends DlgProgress {
+
+		public ProgressPane() {
+			super("");
+		}
+
+		@Override
+		public void close() {
+			super.close();
+			Platform.runLater(() -> {
+				
+				// Replace progress dialog with issue view.
+				vboxRoot.getChildren().clear();
+				vboxRoot.getChildren().add(rootGrid);
+				
+				// Update issue view
+				try {
+					initialUpdate();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			});
+		}
+	}
+
+	@FXML
+	public void onUpdate() {
+
+		final DlgProgress dlgProgress = new ProgressPane();
+		detectIssueModifiedTimer.stop();
+
+		try {
+			IssueService srv = Globals.getIssueService();
+		
+			// Replace issue view with progress dialog
+			{
+				Parent p = dlgProgress.load();
+				vboxRoot.getChildren().clear();
+				vboxRoot.getChildren().add(p);
+			}
+	
+			// Save dialog elements into data members
+			updateData(true);
+
+			// Compute bytes to upload
+			long totalBytes = 0;
+			for (Attachment att : issue.getAttachments()) {
+				// Only new attachments are uploaded
+				if (att.getId().isEmpty()) {
+					// getContentLength() might store the attachment in a temporary directory.
+					totalBytes += att.getContentLength();
+				}
+			}
+
+			// Initialize DlgProgress.
+			// Total bytes to upload: #attachment-bytes + some bytes for the
+			// issue's JSON object
+			final ProgressCallback progressCallback = dlgProgress.startProgress(totalBytes + 20 * 1000);
+
+			// Create issue in background.
+			// Currently, we are in the UI thread. The progress dialog would not
+			// be updated,
+			// If we processed updating the issue here.
+			BackgTask.run(() -> {
+				try {
+					boolean isNew = issue.getId().length() == 0;
+
+					// Create issue
+					issue = srv.updateIssue(issue, progressCallback);
+
+					// If process was not cancelled...
+					if (dlgProgress.getResult()) {
+
+						// ... save the mail with different subject
+						if (isNew) {
+							saveMailWithIssueId(progressCallback);
+						}
+
+						// // Progress dialog tells that the issue has been
+						// // created.
+						// progressCallback.setParams("Issue " + issue.getId() +
+						// " has been created");
+						// progressCallback.setFinished();
+						// dlgProgress.setButtonOK();
+						dlgProgress.finish(true);
+					}
+
+				} catch (Throwable e) {
+					
+					if (!progressCallback.isCancelled()) {
+						e.printStackTrace();
+						
+						String text = resb.getString("Error.FailedToUpdateIssue");
+						text += " " + e.toString();
+						showMessageBoxError(text);
+						
+						if (dlgProgress != null) {
+							dlgProgress.finish(false);
+						}
+					}
+				}
+			});
+
+		} catch (Throwable e) {
+			e.printStackTrace();
+			
+			String text = resb.getString("Error.FailedToUpdateIssue");
+			text += " " + e.toString();
+			showMessageBoxError(text);
+			
+			if (dlgProgress != null) {
+				dlgProgress.finish(false);
+			}
+		} finally {
+		}
+	}
+
+	private void saveMailWithIssueId(final ProgressCallback progressCallback) throws IOException {
+		IssueService srv = Globals.getIssueService();
+		String mailSubjectPrev = mailItem.getSubject();
+		String mailSubject = srv.injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
+		if (!mailSubjectPrev.equals(mailSubject)) {
+			mailItem.setSubject(mailSubject);
+			progressCallback.setParams("Save mail as \"" + mailSubject + "\n");
+			mailItem.Save();
+		}
+	}
+
 	@Override
 	public void onVisibleStateChange(_CustomTaskPane ctp) throws ComException {
-	    Globals.getThisAddin().getRibbon().InvalidateControl("NewIssue");
+		Globals.getThisAddin().getRibbon().InvalidateControl("NewIssue");
 	}
 }

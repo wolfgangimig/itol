@@ -31,7 +31,7 @@
                         <Tooltip text="%nbAssignSelection.tooltip" />
                      </tooltip></ToggleButton>
                   <Button fx:id="bnClear" mnemonicParsing="false" onAction="#onClear" text="%bnClear.text" />
-                  <TextField fx:id="edIssueId" prefWidth="100.0" promptText="%edIssueId.prompt">
+                  <TextField fx:id="edIssueId" prefWidth="70.0" promptText="%edIssueId.prompt">
                      <opaqueInsets>
                         <Insets />
                      </opaqueInsets>
@@ -149,7 +149,7 @@
             </VBox>
             <Button fx:id="bnNextPage" maxWidth="1.7976931348623157E308" onAction="#onNextPage" text="%Button.NextTab" GridPane.rowIndex="4" GridPane.valignment="TOP" />
             <ChoiceBox fx:id="cbStatus" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" GridPane.valignment="TOP" />
-            <Button fx:id="bnUpdate" defaultButton="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="%bnUpdate.text.create" textFill="#007800" GridPane.columnIndex="2" GridPane.rowIndex="4">
+            <Button fx:id="bnUpdate" defaultButton="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onUpdate" text="%bnUpdate.text.create" textFill="#007800" GridPane.columnIndex="2" GridPane.rowIndex="4">
                <font>
                   <Font name="System Bold" size="18.0" />
                </font>
