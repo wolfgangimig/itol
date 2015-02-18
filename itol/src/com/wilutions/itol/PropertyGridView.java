@@ -156,7 +156,7 @@ public class PropertyGridView {
 
 		propGrid.add(ctrl, 1, rowIndex);
 		
-		if (firstControl == null) {
+		if (rowIndex == 1) {
 			firstControl = ctrl;
 		}
 		

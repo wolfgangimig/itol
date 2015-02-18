@@ -209,12 +209,12 @@ public class Issue implements Serializable {
 		setPropertyValue(Property.STATUS, value);
 	}
 	
-	public String getCategory() {
-		return (String)getPropertyValue(Property.CATEGORY, "");
+	public String getProject() {
+		return (String)getPropertyValue(Property.PROJECT, "");
 	}
 	
-	public void setCategory(String value) {
-		setPropertyValue(Property.CATEGORY, value);
+	public void setProject(String value) {
+		setPropertyValue(Property.PROJECT, value);
 	}
 	
 	public String getPriority() {

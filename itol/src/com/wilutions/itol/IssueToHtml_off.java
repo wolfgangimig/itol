@@ -85,7 +85,7 @@ public class IssueToHtml_off implements Closeable {
 		formatStringProperty(isu, Property.DESCRIPTION, 3, sbuf);
 		sbuf.append("\n</tr><tr>\n");
 		formatStringProperty(isu, Property.ISSUE_TYPE, 1, sbuf);
-		formatStringProperty(isu, Property.CATEGORY, 1, sbuf);
+		formatStringProperty(isu, Property.PROJECT, 1, sbuf);
 //		formatStringProperty(isu, Property.MILESTONES, 1, sbuf);
 		sbuf.append("\n</tr><tr>\n");
 		formatStringProperty(isu, Property.ASSIGNEE, 1, sbuf);
@@ -319,7 +319,7 @@ public class IssueToHtml_off implements Closeable {
 			Map<String, String> ret = null;
 			if (propertyId.equals(Property.ASSIGNEE)) {
 				ret = assignees;
-			} else if (propertyId.equals(Property.CATEGORY)) {
+			} else if (propertyId.equals(Property.PROJECT)) {
 				ret = categories;
 //			} else if (propertyId.equals(Property.MILESTONES)) {
 //				ret = milestones;

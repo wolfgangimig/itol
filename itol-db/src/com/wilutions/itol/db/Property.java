@@ -26,10 +26,10 @@ public class Property {
 	public final static String ISSUE_TYPE = "IssueProperty.Type";
 
 	/**
-	 * Issue category. Value is of type String and holds the issue's category
+	 * Issue project. Value is of type String and holds the issue's project
 	 * ID.
 	 */
-	public final static String CATEGORY = "IssueProperty.Category";
+	public final static String PROJECT = "IssueProperty.Project";
 
 	/**
 	 * Issue subject. Value is of type String and holds the issue's subject.

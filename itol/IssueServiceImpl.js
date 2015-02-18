@@ -678,7 +678,7 @@ function getPropertyClass(propertyId, issue) {
 	case Property.PRIORITY:
 		ret.selectList = data.priorities;
 		break;
-	case Property.CATEGORY:
+	case Property.PROJECT:
 		ret.selectList = getCategories(issue);
 		break;
 	case Property.MILESTONES:
@@ -698,7 +698,7 @@ function getPropertyClass(propertyId, issue) {
 
 function getIssueTypes(issue) {
 	var ret = [];
-	var projectId = issue ? issue.getCategory() : -1;
+	var projectId = issue ? issue.getProject() : -1;
 	var project = data.projects[projectId];
 	log.info("project=" + project);
 	if (project) {
@@ -731,7 +731,7 @@ function getCategories(issue) {
 
 function getMilestones(issue) {
 	var ret = [];
-	var projectId = issue ? issue.getCategory() : 0;
+	var projectId = issue ? issue.getProject() : 0;
 	var project = data.projects[projectId];
 	log.info("project=" + project);
 	if (project) {
@@ -752,7 +752,7 @@ function getMilestones(issue) {
 
 function getAssignees(issue) {
 	var ret = [ new IdName(-1, "Unassigned") ];
-	var projectId = issue ? issue.getCategory() : 0;
+	var projectId = issue ? issue.getProject() : 0;
 	var project = data.projects[projectId];
 	log.info("project=" + project);
 	if (project) {
@@ -864,7 +864,7 @@ function createIssue(subject, description) {
 	iss.setPropertyValue(config.PROPERTY_ID_ESTIMATED_HOURS, "");
 
 	var projects = getCategories(null);
-	iss.setCategory(projects[0].getId());
+	iss.setProject(projects[0].getId());
 
 	return iss;
 };
@@ -900,7 +900,7 @@ function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue,
 			+ redmineIssue + ", progressCallback=" + progressCallback);
 
 	redmineIssue.id = trackerIssue.getId();
-	redmineIssue.project_id = parseInt(trackerIssue.getCategory());
+	redmineIssue.project_id = parseInt(trackerIssue.getProject());
 	redmineIssue.tracker_id = parseInt(trackerIssue.getType());
 	redmineIssue.status_id = parseInt(trackerIssue.getStatus());
 	redmineIssue.priority_id = parseInt(trackerIssue.getPriority());
@@ -1167,8 +1167,8 @@ function toTrackerIssue(redmineIssue, issue) {
 	log.info("issue.subject=" + issue.subject);
 
 	if (redmineIssue.project) {
-		issue.category = redmineIssue.project.id;
-		log.info("issue.category=" + issue.category);
+		issue.project = redmineIssue.project.id;
+		log.info("issue.project=" + issue.project);
 	}
 	if (redmineIssue.tracker) {
 		issue.type = redmineIssue.tracker.id;

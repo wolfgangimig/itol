@@ -93,7 +93,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private ChoiceBox<IdName> cbTracker;
 	@FXML
-	private ChoiceBox<IdName> cbCategory;
+	private ChoiceBox<IdName> cbProject;
 	@FXML
 	private ChoiceBox<IdName> cbPriority;
 	@FXML
@@ -309,7 +309,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			cbTracker.valueProperty().addListener(new ComboboxChangeListener(cbTracker, Property.ISSUE_TYPE));
 			cbStatus.valueProperty().addListener(new ComboboxChangeListener(cbStatus, Property.STATUS));
 			cbPriority.valueProperty().addListener(new ComboboxChangeListener(cbPriority, Property.PRIORITY));
-			cbCategory.valueProperty().addListener(new ComboboxChangeListener(cbCategory, Property.CATEGORY));
+			cbProject.valueProperty().addListener(new ComboboxChangeListener(cbProject, Property.PROJECT));
 
 			initialUpdate();
 
@@ -378,7 +378,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			saveChoiceBox(cbPriority, Property.PRIORITY);
 
-			saveChoiceBox(cbCategory, Property.CATEGORY);
+			saveChoiceBox(cbProject, Property.PROJECT);
 
 			saveProperties();
 
@@ -398,7 +398,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initChoiceBox(cbTracker, Property.ISSUE_TYPE);
 
-			initChoiceBox(cbCategory, Property.CATEGORY);
+			initChoiceBox(cbProject, Property.PROJECT);
 
 			initChoiceBox(cbPriority, Property.PRIORITY);
 
@@ -782,6 +782,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	@FXML
 	public void onNextPage() {
+		
+		// Select the next tab
 		int idx = tabpIssue.getSelectionModel().getSelectedIndex();
 		if (idx >= 0) {
 			if (++idx >= tabpIssue.getTabs().size()) {
@@ -792,6 +794,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 		tabpIssue.getSelectionModel().select(idx);
 
+		// Determine which control should receive the focus
 		Node node = null;
 		switch (idx) {
 		case 0: // DESCRIPTION
@@ -801,7 +804,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			node = propGridView.getFirstControl();
 			break;
 		case 2: // ATTACHMENTS
-			node = tabAttachments.getItems().size() != 0 ? tabAttachments : bnAddAttachment;
+			node = bnAddAttachment;
 			break;
 		case 3: // HISTORY
 			node = webHistory;
@@ -810,6 +813,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			node = webNotes != null ? webNotes : edNotes;
 			break;
 		}
+		
+		// Focus control
 		if (node != null) {
 			final Node nodeF = node;
 			BackgTask.run(() -> {

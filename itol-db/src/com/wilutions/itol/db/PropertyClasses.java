@@ -63,7 +63,7 @@ public class PropertyClasses {
 
 	private PropertyClasses init() {
 		add(PropertyClass.TYPE_STRING, Property.ISSUE_TYPE, "Type");
-		add(PropertyClass.TYPE_STRING, Property.CATEGORY, "Category");
+		add(PropertyClass.TYPE_STRING, Property.PROJECT, "Category");
 		add(PropertyClass.TYPE_STRING, Property.SUBJECT, "Subject");
 		add(PropertyClass.TYPE_STRING, Property.DESCRIPTION, "Description");
 		add(PropertyClass.TYPE_STRING, Property.ASSIGNEE, "Assigned to");
