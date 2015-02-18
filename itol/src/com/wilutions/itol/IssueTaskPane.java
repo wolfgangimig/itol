@@ -758,6 +758,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public void onShowExistingIssue() {
 		queryDiscardChangesAsync((succ, ex) -> {
 			if (ex == null && succ) {
+				
+				bnAssignSelection.setSelected(false);
+				
 				final String issueId = edIssueId.getText();
 				IssueMailItem mitem = new IssueMailItemBlank() {
 					public String getSubject() {
