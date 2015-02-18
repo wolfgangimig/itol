@@ -110,6 +110,9 @@
                                         <TableColumn maxWidth="1.7976931348623157E308" prefWidth="344.0" text="C2" />
                                           <TableColumn maxWidth="150.0" minWidth="150.0" prefWidth="150.0" text="C2" />
                                       </columns>
+                                       <padding>
+                                          <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                       </padding>
                                     </TableView>
                                     <VBox prefHeight="200.0" prefWidth="100.0" spacing="10.0">
                                        <children>
@@ -117,6 +120,9 @@
                                           <Button fx:id="bnAddAttachment" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onAddAttachment" text="%bnAddAttachment.text" />
                                           <Button fx:id="bnRemoveAttachment" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onRemoveAttachment" text="%bnRemoveAttachment.text" />
                                        </children>
+                                       <padding>
+                                          <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                       </padding>
                                     </VBox>
                                  </children>
                                  <padding>
@@ -147,9 +153,9 @@
                   </TabPane>
                </children>
             </VBox>
-            <Button fx:id="bnNextPage" maxWidth="1.7976931348623157E308" onAction="#onNextPage" text="%Button.NextTab" GridPane.rowIndex="4" GridPane.valignment="TOP" />
+            <Button fx:id="bnNextPage" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onNextPage" text="%Button.NextTab" GridPane.rowIndex="4" GridPane.valignment="TOP" />
             <ChoiceBox fx:id="cbStatus" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" GridPane.valignment="TOP" />
-            <Button fx:id="bnUpdate" defaultButton="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onUpdate" text="%bnUpdate.text.create" textFill="#007800" GridPane.columnIndex="2" GridPane.rowIndex="4">
+            <Button fx:id="bnUpdate" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onUpdate" text="%bnUpdate.text.create" textFill="#007800" GridPane.columnIndex="2" GridPane.rowIndex="4">
                <font>
                   <Font name="System Bold" size="18.0" />
                </font>

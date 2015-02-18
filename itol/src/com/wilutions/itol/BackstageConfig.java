@@ -110,6 +110,7 @@ public class BackstageConfig {
 			sbuf.append("onAction=\"Button_onAction\" ");
 			break;
 		case PropertyClass.TYPE_STRING:
+//		case PropertyClass.TYPE_INTEGER:
 			if (selectList != null && selectList.size() != 0) {
 				sbuf.append("getItemCount=\"ComboBox_getItemCount\" ");
 				sbuf.append("getItemLabel=\"ComboBox_getItemLabel\" ");

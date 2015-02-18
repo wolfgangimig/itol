@@ -544,6 +544,10 @@ function makeCustomFieldPropertyId(cfield) {
 	return "custom_field_" + cfield.id;
 }
 
+function isCustomFieldPropertyId(propId) {
+	return propId.indexOf("custom_field_") == 0;
+}
+
 function makePropertyType(cfield) {
 	var type = PropertyClass.TYPE_STRING;
 	switch (cfield.field_format) {
@@ -634,10 +638,10 @@ function initializePropertyClasses() {
 			config.PROPERTY_ID_DONE_RATIO, "% Done", "0", [
 					new IdName("0", "0 %"), new IdName("10", "10 %"),
 					new IdName("20", "20 %"), new IdName("30", "30 %"),
-					new IdName("0.4", "40 %"), new IdName("50", "50 %"),
-					new IdName("0.6", "60 %"), new IdName("0.7", "70 %"),
-					new IdName("0.8", "80 %"), new IdName("0.9", "90 %"),
-					new IdName("1", "100 %"), ]);
+					new IdName("40", "40 %"), new IdName("50", "50 %"),
+					new IdName("60", "60 %"), new IdName("70", "70 %"),
+					new IdName("80", "80 %"), new IdName("90", "90 %"),
+					new IdName("100", "100 %"), ]);
 
 	// -----------------------------------------------
 	// Initialize select list for some issue properties
@@ -818,10 +822,8 @@ function getMsgFileType() {
 
 function getPropertyDisplayOrder(issue) {
 	var propertyIds = [ Property.ASSIGNEE, config.PROPERTY_ID_START_DATE,
-			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_DONE_RATIO ];
-
-	propertyIds.push(issue.id ? config.PROPERTY_ID_SPENT_HOURS
-			: config.PROPERTY_ID_ESTIMATED_HOURS);
+			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
+			config.PROPERTY_ID_DONE_RATIO ];
 
 	var issueType = issue.getType();
 	for (var i = 0; i < data.custom_fields.length; i++) {
@@ -867,13 +869,14 @@ function createIssue(subject, description) {
 	return iss;
 };
 
-function updateIssue(trackerIssue, progressCallback) {
+function updateIssue(trackerIssue, modifiedProperties, progressCallback) {
 	log.info("updateIssue(trackerIssue=" + trackerIssue + ", progressCallback="
 			+ progressCallback);
 	config.checkValid();
 
 	var redmineIssue = {};
-	toRedmineIssue(trackerIssue, redmineIssue, progressCallback);
+	toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue,
+			progressCallback);
 
 	var issueParam = {
 		issue : redmineIssue
@@ -891,7 +894,8 @@ function updateIssue(trackerIssue, progressCallback) {
 	return trackerIssue;
 };
 
-function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
+function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue,
+		progressCallback) {
 	log.info("toRedmineIssue(trackerIssue=" + trackerIssue + ", redmineIssue="
 			+ redmineIssue + ", progressCallback=" + progressCallback);
 
@@ -901,15 +905,12 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 	redmineIssue.status_id = parseInt(trackerIssue.getStatus());
 	redmineIssue.priority_id = parseInt(trackerIssue.getPriority());
 	redmineIssue.subject = "" + trackerIssue.getSubject();
+	redmineIssue.description = "" + trackerIssue.getDescription();
+	redmineIssue.notes = ""
+			+ trackerIssue.getPropertyString(Property.NOTES, "");
 
-	if (redmineIssue.id) {
-		// Update issue: set notes
-		redmineIssue.notes = "" + trackerIssue.getDescription();
-	} else {
-		// New issue: set description
-		redmineIssue.description = "" + trackerIssue.getDescription();
-	}
-
+	// Assignee
+	redmineIssue.assigned_to_id = "";
 	if (trackerIssue.getAssignee().length() != 0) {
 		var userId = parseInt(trackerIssue.getAssignee());
 		if (userId >= 0) {
@@ -917,9 +918,32 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 		}
 	}
 
-//	if (trackerIssue.getMilestones().length) {
-//		redmineIssue.fixed_version_id = parseInt(trackerIssue.getMilestones()[0]);
-//	}
+	// Redmine specific properties
+	var propertyIds = [ config.PROPERTY_ID_START_DATE,
+			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
+			config.PROPERTY_ID_DONE_RATIO ];
+	for (var i = 0; i < propertyIds.length; i++) {
+		var propId = propertyIds[i];
+		var propValue = getIssuePropertyValue(trackerIssue, propId);
+		log.info("propId=" + propId + ", propValue=" + propValue);
+		redmineIssue[propId] = propValue;
+	}
+	//
+	// // Custom properties
+	// if (redmineIssue.custom_fields) {
+	// log.info("#custom_fields=" + redmineIssue.custom_fields.length);
+	// for (var i = 0; i < redmineIssue.custom_fields.length; i++) {
+	// var propId = makeCustomFieldPropertyId(redmineIssue.custom_fields[i]);
+	// var propValue = redmineIssue.custom_fields[i].value;
+	// log.info("custom propId=" + propId + ", propValue=" + propValue);
+	// setIssuePropertyValue(issue, propId, propValue);
+	// }
+	// }
+
+	// if (trackerIssue.getMilestones().length) {
+	// redmineIssue.fixed_version_id =
+	// parseInt(trackerIssue.getMilestones()[0]);
+	// }
 
 	// Upload attachments
 	redmineIssue.uploads = [];
@@ -927,10 +951,10 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 		for (var i = 0; i < trackerIssue.getAttachments().size(); i++) {
 			var trackerAttachment = trackerIssue.getAttachments().get(i);
 			log.info("trackerAttachment=" + trackerAttachment);
-			
+
 			// Upload only new attachments
 			if (trackerAttachment.getId().isEmpty()) {
-				
+
 				// Create inner progress callback
 				var pgUpload = null;
 				if (progressCallback) {
@@ -944,17 +968,16 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 					pgUpload = progressCallback.createChild(str);
 					pgUpload.setTotal(trackerAttachment.getContentLength());
 				}
-				
+
 				// Upload
 				redmineAttachment = writeAttachment(trackerAttachment, pgUpload);
 				redmineIssue.uploads.push(redmineAttachment);
-			}
-			else if (trackerAttachment.isDeleted()) {
+			} else if (trackerAttachment.isDeleted()) {
 				deleteAttachment(trackerAttachment.getId());
 			}
 		}
 	} catch (ex) {
-		
+
 		// Remove so far uploaded attachments
 		for (var i = 0; i < redmineIssue.uploads.length; i++) {
 			var token = redmineIssue.uploads[i];
@@ -967,6 +990,44 @@ function toRedmineIssue(trackerIssue, redmineIssue, progressCallback) {
 
 	log.info(")toRedmineIssue=" + redmineIssue);
 	return redmineIssue;
+}
+
+function getIssuePropertyValue(issue, propId) {
+	log.info("getIssuePropertyValue(" + propId);
+	var ret = null;
+	var pclass = config.propertyClasses.get(propId);
+	if (!pclass) {
+		log.error("Missing property class for property ID=" + propId);
+		return ret;
+	}
+	var type = pclass.type;
+	log.info("propertyClass=" + pclass + ", type=" + type);
+	switch (type) {
+	case PropertyClass.TYPE_STRING_LIST: {
+		ret = [];
+		var list = issue.getPropertyStringList(propId, null);
+		log.info("list=" + list);
+		if (list) {
+			for (var i = 0; i < list.size(); i++) {
+				ret.push(list.get(i));
+			}
+		}
+		break;
+	}
+	case PropertyClass.TYPE_BOOL: {
+		ret = !!issue.getPropertyBoolean(propId, false);
+		break;
+	}
+	case PropertyClass.TYPE_STRING:
+	case PropertyClass.TYPE_ISO_DATE:
+		ret = issue.getPropertyString(propId, "");
+		break;
+	default:
+		log.error("Unknown property type=" + type);
+	}
+
+	log.info(")getIssuePropertyValue=" + ret);
+	return ret;
 }
 
 function deleteAttachment(attId) {
@@ -1123,15 +1184,19 @@ function toTrackerIssue(redmineIssue, issue) {
 	}
 	if (redmineIssue.assigned_to) {
 		issue.assignee = redmineIssue.assigned_to.id;
-		log.info("issue.assignee=" + issue.assignee);
 	}
+	else {
+		issue.assignee = -1;
+	}
+	log.info("issue.assignee=" + issue.assignee);
+	
 	// if (redmineIssue.fixed_version_id) {
 	// trackerIssue.setMilestones([ redmineIssue.fixed_version_id ]);
 	// }
 
 	// Redmine specific properties
 	var propertyIds = [ config.PROPERTY_ID_START_DATE,
-			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_SPENT_HOURS,
+			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
 			config.PROPERTY_ID_DONE_RATIO ];
 	for (var i = 0; i < propertyIds.length; i++) {
 		var propId = propertyIds[i];
@@ -1175,25 +1240,27 @@ function toTrackerIssue(redmineIssue, issue) {
 
 function setIssuePropertyValue(issue, propId, propValue) {
 	log.info("setIssuePropertyValue(");
-	var type = -1;
-	var pclass = config.propertyClasses.get(propId);
-	if (!pclass) {
-		log.error("Missing property class for property ID=" + propId);
-		return;
-	}
-	type = pclass.type;
-	log.info("propertyClass=" + pclass + ", type=" + type);
-	switch (type) {
-	case PropertyClass.TYPE_STRING_LIST:
-		issue.setPropertyStringList(propId, propValue);
-		break;
-	case PropertyClass.TYPE_BOOL:
-		issue.setPropertyBoolean(propId, !!propValue);
-		break;
-	case PropertyClass.TYPE_STRING:
-	case PropertyClass.TYPE_ISO_DATE:
-		issue.setPropertyString(propId, propValue ? propValue : "");
-		break;
+	if (typeof propValue != "undefined") {
+		var type = -1;
+		var pclass = config.propertyClasses.get(propId);
+		if (!pclass) {
+			log.error("Missing property class for property ID=" + propId);
+			return;
+		}
+		type = pclass.type;
+		log.info("propertyClass=" + pclass + ", type=" + type);
+		switch (type) {
+		case PropertyClass.TYPE_STRING_LIST:
+			issue.setPropertyStringList(propId, propValue);
+			break;
+		case PropertyClass.TYPE_BOOL:
+			issue.setPropertyBoolean(propId, !!propValue);
+			break;
+		case PropertyClass.TYPE_STRING:
+		case PropertyClass.TYPE_ISO_DATE:
+			issue.setPropertyString(propId, propValue);
+			break;
+		}
 	}
 	log.info(")setIssuePropertyValue");
 }

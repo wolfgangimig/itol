@@ -92,6 +92,12 @@ public class Issue implements Serializable {
 		return ret;
 	}
 	
+	public void findChangedMembers(Issue rhs, List<String> propIds) {
+		if (rhs != null) {
+			updates.get(0).findChangedMembers(rhs.updates.get(0), propIds);
+		}
+	}
+	
 	public boolean isNull() {
 		return this.id.isEmpty();
 	}

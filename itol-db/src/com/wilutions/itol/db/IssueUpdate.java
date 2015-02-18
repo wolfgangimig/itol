@@ -13,6 +13,7 @@ package com.wilutions.itol.db;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class IssueUpdate implements Serializable {
@@ -73,7 +74,7 @@ public class IssueUpdate implements Serializable {
 
 		for (Map.Entry<String, Property> e : this.properties.entrySet()) {
 			Property prop = e.getValue();
-			Property propCopy = (Property)prop.clone();
+			Property propCopy = (Property) prop.clone();
 			ret.properties.put(e.getKey(), propCopy);
 		}
 
@@ -83,8 +84,8 @@ public class IssueUpdate implements Serializable {
 	@Override
 	public boolean equals(Object rhs) {
 		boolean ret = false;
-		if (rhs != null && rhs instanceof IssueUpdate) { 
-			IssueUpdate isu = (IssueUpdate)rhs;
+		if (rhs != null && rhs instanceof IssueUpdate) {
+			IssueUpdate isu = (IssueUpdate) rhs;
 			ret = createDate.equals(isu.createDate);
 			if (ret) {
 				ret = createdBy.equals(isu.createdBy);
@@ -94,5 +95,21 @@ public class IssueUpdate implements Serializable {
 			}
 		}
 		return ret;
+	}
+
+	public void findChangedMembers(IssueUpdate rhs, List<String> propIds) {
+		for (Map.Entry<String, Property> e : properties.entrySet()) {
+			String propId = e.getKey();
+			Property propL = e.getValue();
+			Property propR = rhs.properties.get(propId);
+			if (propR == null || !propL.equals(propR)) {
+				propIds.add(propId);
+			}
+		}
+		for (String propId : rhs.properties.keySet()) {
+			if (!properties.containsKey(propId)) {
+				propIds.add(propId);
+			}
+		}
 	}
 }

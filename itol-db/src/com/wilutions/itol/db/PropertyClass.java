@@ -19,6 +19,7 @@ public class PropertyClass {
 	public final static int TYPE_PASSWORD = 3;
 	public final static int TYPE_STRING_LIST = 4;
 	public final static int TYPE_ISO_DATE = 5;
+//	public final static int TYPE_INTEGER = 6;
 	
 	private String id;
 	private String name;
@@ -99,6 +100,7 @@ public class PropertyClass {
 		case TYPE_STRING_LIST: stype = "TYPE_STRING_LIST"; break;
 		case TYPE_ISO_DATE: stype = "TYPE_ISO_DATE"; break;
 		case TYPE_BOOL: stype = "TYPE_BOOL"; break;
+//		case TYPE_INTEGER: stype = "TYPE_INTEGER"; break;
 		}
 		return "PropertyClass [type=" + stype + ", id=" + id + ", name=" + name + "]";
 	}

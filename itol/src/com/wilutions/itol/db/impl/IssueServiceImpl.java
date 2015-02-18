@@ -126,13 +126,6 @@ public class IssueServiceImpl implements IssueService {
 		return iss;
 	}
 
-	public Issue updateIssue(Issue iss, ProgressCallback cb) {
-		String id = String.valueOf(issues.size() + 1);
-		Issue copy = new Issue(id, iss);
-		issues.put(id, copy);
-		return copy;
-	}
-
 	@Override
 	public Issue validateIssue(Issue iss) {
 		Issue ret = iss;
@@ -310,6 +303,14 @@ public class IssueServiceImpl implements IssueService {
 	public String getIssueHistoryUrl(String issueId) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public Issue updateIssue(Issue iss, List<String> modifiedProperties, ProgressCallback cb) throws IOException {
+		String id = String.valueOf(issues.size() + 1);
+		Issue copy = new Issue(id, iss);
+		issues.put(id, copy);
+		return copy;
 	}
 
 

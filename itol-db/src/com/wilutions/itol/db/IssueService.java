@@ -52,7 +52,7 @@ public interface IssueService {
 
 	String getMsgFileType() throws IOException;
 
-	Issue updateIssue(Issue iss, ProgressCallback cb) throws IOException;
+	Issue updateIssue(Issue iss, List<String> modifiedProperties, ProgressCallback cb) throws IOException;
 
 	Issue readIssue(String issueId) throws IOException;
 	

@@ -410,6 +410,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initHistory();
 
+			bnUpdate.setDisable(issue.getSubject().isEmpty());
 		}
 	}
 
@@ -423,7 +424,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			bnAssignSelection.setSelected(false);
 		}
 		boolean enabled = modified || isNew();
-		bnUpdate.setDisable(!enabled);
+		bnUpdate.setDisable(!enabled || issue.getSubject().isEmpty());
 	}
 
 	private void initIssueId() {
@@ -909,6 +910,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+				finally {
+					detectIssueModifiedTimer.play();
+				}
 			});
 		}
 	}
@@ -953,10 +957,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			// If we processed updating the issue here.
 			BackgTask.run(() -> {
 				try {
-					boolean isNew = issue.getId().length() == 0;
-
-					// Create issue
-					issue = srv.updateIssue(issue, progressCallback);
+					boolean isNew = updateIssueChangedMembers(srv, progressCallback);
 
 					// If process was not cancelled...
 					if (dlgProgress.getResult()) {
@@ -1003,6 +1004,18 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			}
 		} finally {
 		}
+	}
+
+	private boolean updateIssueChangedMembers(IssueService srv, final ProgressCallback progressCallback)
+			throws IOException {
+		boolean isNew = issue.getId().length() == 0;
+		
+		List<String> modifiedProperties = new ArrayList<String>();
+		issueCopy.findChangedMembers(issue, modifiedProperties);
+
+		// Create issue
+		issue = srv.updateIssue(issue, modifiedProperties, progressCallback);
+		return isNew;
 	}
 
 	private void saveMailWithIssueId(final ProgressCallback progressCallback) throws IOException {

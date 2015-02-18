@@ -19,9 +19,6 @@ import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
-import javafx.application.Platform;
-import javafx.stage.Stage;
-
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.reg.Registry;
 import com.wilutions.itol.db.IssueService;
