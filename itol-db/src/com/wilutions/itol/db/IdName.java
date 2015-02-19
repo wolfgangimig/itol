@@ -42,6 +42,11 @@ public class IdName implements Serializable {
 		this.name = "";
 	}
 
+	public IdName(IdName rhs) {
+		this.id = rhs.id;
+		this.name = rhs.name;
+	}
+
 	public String toString() {
 		return this.name;
 	}

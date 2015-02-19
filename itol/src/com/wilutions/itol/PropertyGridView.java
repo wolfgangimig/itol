@@ -6,17 +6,23 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.util.Callback;
 
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
@@ -29,11 +35,12 @@ public class PropertyGridView {
 	private final GridPane propGrid;
 	private final IssueService srv = Globals.getIssueService();
 	private Node firstControl;
-	
+
 	private static class PropertyNode {
 		String propertyId;
 		Node node;
 	}
+
 	private final List<PropertyNode> propNodes = new ArrayList<>();
 
 	public PropertyGridView(GridPane propGrid) throws IOException {
@@ -41,7 +48,7 @@ public class PropertyGridView {
 		ColumnConstraints constr0 = propGrid.getColumnConstraints().get(0);
 		constr0.setPercentWidth(38);
 	}
-	
+
 	public void initProperties(Issue issue) throws IOException {
 		propGrid.getChildren().clear();
 		propGrid.getRowConstraints().clear();
@@ -66,35 +73,32 @@ public class PropertyGridView {
 			String propertyId = propNode.propertyId;
 			Node node = propNode.node;
 			if (node instanceof TextField) {
-				issue.setPropertyString(propertyId, ((TextField)node).getText());
-			}
-			else if (node instanceof DatePicker) {
-				LocalDate ldate = ((DatePicker)node).getValue();
+				issue.setPropertyString(propertyId, ((TextField) node).getText());
+			} else if (node instanceof DatePicker) {
+				LocalDate ldate = ((DatePicker) node).getValue();
 				String iso = "";
 				if (ldate != null) {
 					iso = ldate.format(DateTimeFormatter.ISO_LOCAL_DATE);
 				}
 				issue.setPropertyString(propertyId, iso);
-			}
-			else if (node instanceof CheckBox) {
-				boolean value = ((CheckBox)node).isSelected();
+			} else if (node instanceof CheckBox) {
+				boolean value = ((CheckBox) node).isSelected();
 				issue.setPropertyBoolean(propertyId, value);
-			}
-			else if (node instanceof ChoiceBox) {
+			} else if (node instanceof ChoiceBox) {
 				@SuppressWarnings("unchecked")
-				ChoiceBox<IdName> cb = (ChoiceBox<IdName>)node;
+				ChoiceBox<IdName> cb = (ChoiceBox<IdName>) node;
 				IdName idn = cb.getSelectionModel().getSelectedItem();
 				if (idn != null) {
 					issue.setPropertyString(propertyId, idn.getId());
 				}
-			}
-			else if (node instanceof ListView){
+			} else if (node instanceof ListView) {
+				List<String> ids = new ArrayList<String>();
 				@SuppressWarnings("unchecked")
-				ListView<IdName> lb = (ListView<IdName>)node;
-				List<IdName> items = lb.getSelectionModel().getSelectedItems();
-				List<String> ids = new ArrayList<String>(items.size());
-				for (IdName idn : items) {
-					ids.add(idn.getId());
+				ListView<CheckedIdName> lb = (ListView<CheckedIdName>) node;
+				for (CheckedIdName idn : lb.getItems()) {
+					if (idn.checked.get()) { 
+						ids.add(idn.getId());
+					}
 				}
 				issue.setPropertyStringList(propertyId, ids);
 			}
@@ -103,25 +107,25 @@ public class PropertyGridView {
 
 	private boolean isPropertyForGrid(String propertyId) {
 		boolean ret = true;
-//		switch (propertyId) {
-//		case Property.PRIORITY:
-//		case Property.SUBJECT:
-//		case Property.CATEGORY:
-//		case Property.ATTACHMENTS:
-//		case Property.DESCRIPTION:
-//		case Property.ISSUE_TYPE:
-//		case Property.STATUS:
-//			ret = false;
-//			break;
-//		default:
-//			ret = true;
-//			break;
-//		}
+		// switch (propertyId) {
+		// case Property.PRIORITY:
+		// case Property.SUBJECT:
+		// case Property.CATEGORY:
+		// case Property.ATTACHMENTS:
+		// case Property.DESCRIPTION:
+		// case Property.ISSUE_TYPE:
+		// case Property.STATUS:
+		// ret = false;
+		// break;
+		// default:
+		// ret = true;
+		// break;
+		// }
 		return ret;
 	}
 
 	private void addProperty(Issue issue, String propertyId, int rowIndex) throws IOException {
-		
+
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
 		if (pclass == null) {
 			return;
@@ -136,13 +140,13 @@ public class PropertyGridView {
 		Property prop = issue.getLastUpdate().getProperty(propertyId);
 
 		switch (pclass.getType()) {
-		case PropertyClass.TYPE_ISO_DATE: 
+		case PropertyClass.TYPE_ISO_DATE:
 			ctrl = makeDatePickerForProperty(prop);
 			break;
-		case PropertyClass.TYPE_BOOL: 
+		case PropertyClass.TYPE_BOOL:
 			ctrl = makeCheckBoxForProperty(prop);
 			break;
-		case PropertyClass.TYPE_STRING_LIST: 
+		case PropertyClass.TYPE_STRING_LIST:
 			ctrl = makeMultiListBoxForProperty(prop, selectList);
 			break;
 		default: {
@@ -155,11 +159,11 @@ public class PropertyGridView {
 		}
 
 		propGrid.add(ctrl, 1, rowIndex);
-		
+
 		if (rowIndex == 1) {
 			firstControl = ctrl;
 		}
-		
+
 		// Save propertId with node to simplify access in saveProperties()
 		PropertyNode propNode = new PropertyNode();
 		propNode.propertyId = propertyId;
@@ -167,24 +171,53 @@ public class PropertyGridView {
 		propNodes.add(propNode);
 	}
 
+	private static class CheckedIdName extends IdName {
+		private static final long serialVersionUID = -5331330727211218988L;
+		private final SimpleBooleanProperty checked = new SimpleBooleanProperty(false);
+
+		public CheckedIdName(IdName rhs, boolean checked) {
+			super(rhs);
+			this.checked.set(checked);
+		}
+
+		public SimpleBooleanProperty checkedProperty() {
+			return checked;
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	private Node makeMultiListBoxForProperty(Property prop, List<IdName> selectList) {
-		ListView<IdName> lb = new ListView<IdName>();
-		lb.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-		lb.setItems(FXCollections.observableArrayList(selectList));
-		lb.setPrefHeight(100);
-		if (prop != null) {
-			Object propValue = prop.getValue();
-			List<String> values = new ArrayList<String>(0);
-			if (propValue instanceof List) {
-				values = (List<String>) propValue;
-			}
-			for (IdName item : selectList) {
-				if (values.indexOf(item.getId()) != -1) {
-					lb.getSelectionModel().select(item);
+		Object propValue = prop.getValue();
+
+		List<CheckedIdName> items = new ArrayList<CheckedIdName>(selectList.size());
+		for (IdName idn : selectList) {
+			boolean checked = false;
+			if (propValue != null) {
+				if (propValue instanceof List) {
+					checked = ((List<String>) propValue).contains(idn.getId());
+				} else if (propValue instanceof String) {
+					checked = ((String) propValue).equals(idn.getId());
 				}
 			}
+			items.add(new CheckedIdName(idn, checked));
 		}
+
+		ListView<CheckedIdName> lb = new ListView<CheckedIdName>();
+		Callback<CheckedIdName, ObservableValue<Boolean>> getProperty = new Callback<CheckedIdName, ObservableValue<Boolean>>() {
+			@Override
+			public BooleanProperty call(CheckedIdName idn) {
+				return idn.checkedProperty();
+			}
+		};
+		Callback<ListView<CheckedIdName>, ListCell<CheckedIdName>> forListView = CheckBoxListCell
+				.forListView(getProperty);
+		lb.setCellFactory(forListView);
+		
+		lb.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+		lb.setItems(FXCollections.observableArrayList(items));
+		lb.setMinHeight(25);
+		lb.setPrefHeight(25 * items.size());
+		lb.setMaxHeight(100);
 		return lb;
 	}
 
@@ -226,9 +259,8 @@ public class PropertyGridView {
 			Object propValue = prop.getValue();
 			if (propValue != null) {
 				if (propValue instanceof Boolean) {
-					bValue = (Boolean)propValue;
-				}
-				else {
+					bValue = (Boolean) propValue;
+				} else {
 					String str = propValue.toString().toLowerCase();
 					bValue = str.equals("1") || str.equals("yes") || str.equals("true");
 				}

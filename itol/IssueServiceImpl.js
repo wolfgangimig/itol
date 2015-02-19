@@ -101,6 +101,8 @@ var config = {
 	PROPERTY_ID_ESTIMATED_HOURS : "estimated_hours",
 	PROPERTY_ID_SPENT_HOURS : "spent_hours",
 	PROPERTY_ID_DONE_RATIO : "done_ratio",
+	PROPERTY_ID_ISSUE_CATEGORY : "category_id",
+	PROPERTY_ID_FIXED_VERSION : "fixed_version_id",
 
 	/**
 	 * MY_CONFIG_PROPERTY Define a property ID. Currently, use the property name
@@ -285,7 +287,7 @@ var data = {
 
 	/**
 	 * Map of projects. Key: project ID, value: project.
-	 * this.projects[.].members contains an array of project members
+	 * this.projects[.].memberships contains an array of project memberships
 	 * (assignees). this.projects[.].versions contains an array of versions
 	 * (milestones).
 	 */
@@ -357,8 +359,8 @@ function readProjects(data) {
 	while (projectCount < MAX_PROJECTS) {
 
 		var projectsResponse = httpClient.get("/projects.json?"
-				+ "include=trackers&" + "offset=" + offset + "&limit="
-				+ (MAX_PROJECTS - offset));
+				+ "include=trackers,issue_categories,enabled_modules&"
+				+ "offset=" + offset + "&limit=" + (MAX_PROJECTS - offset));
 		var arrOfProjects = projectsResponse.projects;
 		if (arrOfProjects.length == 0) {
 			break;
@@ -383,7 +385,7 @@ function readProjects(data) {
 
 function readCurrentUser(data) {
 	log.info("readCurrentUser(");
-	data.user = httpClient.get("/users/current.json").user;
+	data.user = httpClient.get("/users/current.json?include=memberships,groups").user;
 	dump("user ", data.user);
 	log.info(")readCurrentUser");
 };
@@ -399,13 +401,28 @@ function readProjectVersions(project) {
 	}
 	dump("project.versions", project.versions);
 	log.info(")readProjectVersions");
+	return project.versions;
+}
+
+function readProjectCategories(project) {
+	log.info("readProjectCategories(project.id=" + project.id);
+	project.issue_categories = [];
+	var arr = httpClient.get("/projects/" + project.id
+			+ "/issue_categories.json").issue_categories;
+	for (var j = 0; j < arr.length; j++) {
+		var category = arr[j];
+		project.issue_categories.push(arr[j]);
+	}
+	dump("project.issue_categories", project.issue_categories);
+	log.info(")readProjectCategories");
+	return project.issue_categories;
 }
 
 function readProjectMembers(project) {
 	log.info("readProjectMembers(project.id=" + project.id);
-	project.members = [];
+	project.memberships = [];
 	var offset = 0;
-	while (project.members.length < MAX_USERS) {
+	while (project.memberships.length < MAX_USERS) {
 
 		var arrOfMemberships = httpClient.get("/projects/" + project.id
 				+ "/memberships.json?" + "offset=" + offset + "&limit="
@@ -417,16 +434,17 @@ function readProjectMembers(project) {
 
 		dump("arrOfMemberships", arrOfMemberships);
 
-		for (var j = 0; j < arrOfMemberships.length && j < MAX_USERS; j++) {
-			var membership = arrOfMemberships[j];
-			var user = membership.user;
-			if (user) { // see issue #9, membership.user might be undefined
-				project.members.push(user);
+		for (var i = 0; i < arrOfMemberships.length; i++) {
+			var membership = arrOfMemberships[i];
+			// see issue #9, user might be missing
+			if (membership.user) {
+				project.memberships.push(membership);
 			}
 		}
+
 		offset += arrOfMemberships.length;
 	}
-	dump("project.members", project.members);
+	dump("project.memberships", project.memberships);
 	log.info(")readProjectMembers");
 }
 
@@ -526,14 +544,17 @@ function readCustomFields(data) {
 	log.info("readCustomFields(");
 	var response = httpClient.get("/custom_fields.json");
 	dump("response", response);
-	data.custom_fields = response.custom_fields;
+	data.custom_fields = [];
 	var propertyClasses = getPropertyClasses();
 
 	for (var i = 0; i < response.custom_fields.length; i++) {
 		var cfield = response.custom_fields[i];
 		if (cfield.customized_type == "issue") {
 			var pclass = makePropertyClassFromCustomField(cfield);
-			propertyClasses.add(pclass);
+			if (pclass) {
+				propertyClasses.add(pclass);
+				data.custom_fields.push(cfield);
+			}
 		}
 	}
 
@@ -549,7 +570,7 @@ function isCustomFieldPropertyId(propId) {
 }
 
 function makePropertyType(cfield) {
-	var type = PropertyClass.TYPE_STRING;
+	var type = null;
 	switch (cfield.field_format) {
 	case "bool":
 		type = PropertyClass.TYPE_BOOL;
@@ -558,9 +579,24 @@ function makePropertyType(cfield) {
 		type = PropertyClass.TYPE_ISO_DATE;
 		break;
 	case "list":
-		if (cfield.multiple) {
-			type = PropertyClass.TYPE_STRING_LIST;
-		}
+		type = cfield.multiple ? PropertyClass.TYPE_STRING_LIST
+				: PropertyClass.TYPE_STRING;
+		break;
+	case "string":
+		type = PropertyClass.TYPE_STRING;
+		break;
+
+	case "float":
+	case "int":
+	case "text":
+	case "link":
+		type = PropertyClass.TYPE_STRING;
+		break;
+
+	// unsupported:
+	case "version":
+	case "user":
+		type = null;
 		break;
 	}
 	return type;
@@ -568,26 +604,32 @@ function makePropertyType(cfield) {
 
 function makePropertyClassFromCustomField(cfield) {
 	log.info("makePropertyClassFromCustomField(" + cfield.name);
+	var ret = null;
 
 	var type = makePropertyType(cfield);
+	if (type) {
 
-	// Define Property ID for this custom field.
-	// That ID is also added to the cfield object to be able to use
-	// it in getPropertyDisplayOrder().
-	var id = cfield.propertyId = makeCustomFieldPropertyId(cfield);
+		// Define Property ID for this custom field.
+		// That ID is also added to the cfield object to be able to use
+		// it in getPropertyDisplayOrder().
+		var id = cfield.propertyId = makeCustomFieldPropertyId(cfield);
 
-	var name = cfield.name;
-	var defaultValue = cfield.default_value ? cfield.default_value : null;
-	var selectList = [];
+		var name = cfield.name;
+		var defaultValue = cfield.default_value ? cfield.default_value : null;
+		var selectList = [];
 
-	if (cfield.possible_values) {
-		for (var i = 0; i < cfield.possible_values.length; i++) {
-			var pvalue = cfield.possible_values[i];
-			selectList.push(new IdName("" + pvalue.value));
+		if (cfield.possible_values) {
+			for (var i = 0; i < cfield.possible_values.length; i++) {
+				var pvalue = cfield.possible_values[i];
+				selectList.push(new IdName("" + pvalue.value));
+			}
 		}
+
+		ret = new PropertyClass(type, id, name, defaultValue, selectList);
+	} else {
+		log.info("unsupported field=" + JSON.stringify(cfield));
 	}
 
-	var ret = new PropertyClass(type, id, name, defaultValue, selectList);
 	log.info(")makePropertyClassFromCustomField=" + ret);
 	return ret;
 }
@@ -643,6 +685,12 @@ function initializePropertyClasses() {
 					new IdName("80", "80 %"), new IdName("90", "90 %"),
 					new IdName("100", "100 %"), ]);
 
+	propertyClasses.add(PropertyClass.TYPE_STRING,
+			config.PROPERTY_ID_ISSUE_CATEGORY, "Category", "");
+
+	propertyClasses.add(PropertyClass.TYPE_STRING,
+			config.PROPERTY_ID_FIXED_VERSION, "Version", "");
+
 	// -----------------------------------------------
 	// Initialize select list for some issue properties
 
@@ -679,16 +727,19 @@ function getPropertyClass(propertyId, issue) {
 		ret.selectList = data.priorities;
 		break;
 	case Property.PROJECT:
-		ret.selectList = getCategories(issue);
-		break;
-	case Property.MILESTONES:
-		ret.selectList = getMilestones(issue);
+		ret.selectList = getProjects(issue);
 		break;
 	case Property.ASSIGNEE:
 		ret.selectList = getAssignees(issue);
 		break;
 	case Property.STATUS:
 		ret.selectList = data.statuses;
+		break;
+	case config.PROPERTY_ID_ISSUE_CATEGORY:
+		ret.selectList = getCategories(issue);
+		break;
+	case config.PROPERTY_ID_FIXED_VERSION:
+		ret.selectList = getVersions(issue);
 		break;
 	default:
 		break;
@@ -719,7 +770,7 @@ function getIssueTypes(issue) {
 	return ret;
 };
 
-function getCategories(issue) {
+function getProjects(issue) {
 	var ret = [];
 	for ( var projectId in data.projects) {
 		var project = data.projects[projectId];
@@ -729,10 +780,17 @@ function getCategories(issue) {
 	return ret;
 };
 
-function getMilestones(issue) {
-	var ret = [];
+function getIssueProject(issue) {
+	log.info("getIssueProject(");
 	var projectId = issue ? issue.getProject() : 0;
 	var project = data.projects[projectId];
+	log.info(")getIssueProject=" + project);
+	return project;
+}
+
+function getVersions(issue) {
+	var ret = [];
+	var project = getIssueProject(issue);
 	log.info("project=" + project);
 	if (project) {
 
@@ -750,21 +808,47 @@ function getMilestones(issue) {
 	return ret;
 };
 
-function getAssignees(issue) {
-	var ret = [ new IdName(-1, "Unassigned") ];
-	var projectId = issue ? issue.getProject() : 0;
-	var project = data.projects[projectId];
+function getCategories(issue) {
+	var ret = [];
+	var project = getIssueProject(issue);
 	log.info("project=" + project);
 	if (project) {
 
-		if (typeof project.members === "undefined") {
+		if (typeof project.issue_categories === "undefined") {
+			readProjectCategories(project);
+		}
+
+		for (var i = 0; i < project.issue_categories.length; i++) {
+			var cat = project.issue_categories[i];
+			ret.push(new IdName(cat.id, cat.name));
+		}
+	}
+	return ret;
+};
+
+function getIssueProjectMemberships(issue) {
+	log.info("getIssueProjectMemberships(");
+	var ret = [];
+	var project = getIssueProject(issue);
+	log.info("project=" + project);
+	if (project) {
+
+		if (typeof project.memberships === "undefined") {
 			readProjectMembers(project);
 		}
 
-		for (var i = 0; i < project.members.length; i++) {
-			var member = project.members[i];
-			ret.push(new IdName(member.id, member.name));
-		}
+		ret = project.memberships;
+	}
+	log.info(")getIssueProjectMemberships=#" + ret.length);
+	return ret;
+}
+
+function getAssignees(issue) {
+	var ret = [ new IdName(-1, "Unassigned") ];
+	var memberships = getIssueProjectMemberships(issue);
+	for (var i = 0; i < memberships.length; i++) {
+		var member = memberships[i].user;
+		ret.push(new IdName(member.id, member.name));
 	}
 	return ret;
 };
@@ -821,23 +905,95 @@ function getMsgFileType() {
 }
 
 function getPropertyDisplayOrder(issue) {
-	var propertyIds = [ Property.ASSIGNEE, config.PROPERTY_ID_START_DATE,
-			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
-			config.PROPERTY_ID_DONE_RATIO ];
+	log.info("getPropertyDisplayOrder(");
+	var propertyIds = [ Property.ASSIGNEE ];
 
-	var issueType = issue.getType();
+	var categories = getCategories(issue);
+	if (categories && categories.length) {
+		log.info("has categories");
+		propertyIds.push(config.PROPERTY_ID_ISSUE_CATEGORY);
+	}
+
+	var versions = getVersions(issue);
+	if (versions && versions.length) {
+		log.info("has versions");
+		propertyIds.push(config.PROPERTY_ID_FIXED_VERSION);
+	}
+
+	propertyIds.push(config.PROPERTY_ID_START_DATE,
+			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
+			config.PROPERTY_ID_DONE_RATIO);
+
+	// Add custom fields appropriate for the issue
 	for (var i = 0; i < data.custom_fields.length; i++) {
 		var cfield = data.custom_fields[i];
-		if (cfield.trackers) {
-			for (var t = 0; t < cfield.trackers.length; t++) {
-				if (cfield.trackers[t].id == issueType) {
-					propertyIds.push(cfield.propertyId);
+		if (isCustomFieldForIssueType(cfield, issue)) {
+			if (isCustomFieldForCurrentUser(cfield, issue)) {
+				propertyIds.push(cfield.propertyId);
+			}
+		}
+		log.info("add custom field=" + cfield);
+	}
+
+	log.info(")getPropertyDisplayOrder=");
+	return propertyIds;
+}
+
+function isCustomFieldForIssueType(cfield, issue) {
+	log.info("isCustomFieldForIssueType(" + cfield.name + ", issueType=" + issue.getType());
+	var ret = false;
+	if (cfield.trackers) {
+		for (var t = 0; !ret && t < cfield.trackers.length; t++) {
+			ret = cfield.trackers[t].id == issue.getType();
+		}
+	}
+	log.info(")isCustomFieldForIssueType=" + ret);
+	return ret;
+}
+
+function isCustomFieldForCurrentUser(cfield, issue) {
+	log.info("isCustomFieldForCurrentUser(" + cfield.name );
+	var ret = false;
+	
+	// How to find out, whether the current user is an admin?
+	
+	if (false && cfield.roles && cfield.roles.length && data.user) {
+		
+		var fieldRoleIds = [];
+		for (var i = 0; i < cfield.roles.length; i++) {
+			fieldRoleIds.push(cfield.roles[i].id);
+		}
+		log.info("fieldRoleIds=" + JSON.stringify(fieldRoleIds));
+		
+		var memberships = getIssueProjectMemberships(issue);
+		for (var i = 0; i < memberships.length; i++) {
+			
+			var user = memberships[i].user;
+			log.info("am I " + user.name + " ?");
+			if (user.id == data.user.id) {
+				
+				var roles = memberships[i].roles;
+				log.info("current user's roles=" + JSON.stringify(roles));
+				if (roles) {
+					
+					for (var j = 0; !ret && j < roles.length; j++) {
+						ret = fieldRoleIds.indexOf(roles[j].id);
+						if (ret) {
+							log.info("found role " + roles[j].id);
+						}
+					}
 				}
+				
+				break;
 			}
 		}
 	}
-
-	return propertyIds;
+	else {
+		ret = true;
+	}
+	
+	log.info(")isCustomFieldForCurrentUser=" + ret);
+	return ret;
 }
 
 function createIssue(subject, description) {
@@ -863,7 +1019,7 @@ function createIssue(subject, description) {
 	iss.setPropertyValue(config.PROPERTY_ID_DONE_RATIO, "0");
 	iss.setPropertyValue(config.PROPERTY_ID_ESTIMATED_HOURS, "");
 
-	var projects = getCategories(null);
+	var projects = getProjects(null);
 	iss.setProject(projects[0].getId());
 
 	return iss;
@@ -919,7 +1075,8 @@ function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue,
 	}
 
 	// Redmine specific properties
-	var propertyIds = [ config.PROPERTY_ID_START_DATE,
+	var propertyIds = [ config.PROPERTY_ID_ISSUE_CATEGORY,
+			config.PROPERTY_ID_FIXED_VERSION, config.PROPERTY_ID_START_DATE,
 			config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
 			config.PROPERTY_ID_DONE_RATIO ];
 	for (var i = 0; i < propertyIds.length; i++) {
@@ -928,24 +1085,20 @@ function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue,
 		log.info("propId=" + propId + ", propValue=" + propValue);
 		redmineIssue[propId] = propValue;
 	}
-	//
-	// // Custom properties
-	// if (redmineIssue.custom_fields) {
-	// log.info("#custom_fields=" + redmineIssue.custom_fields.length);
-	// for (var i = 0; i < redmineIssue.custom_fields.length; i++) {
-	// var propId = makeCustomFieldPropertyId(redmineIssue.custom_fields[i]);
-	// var propValue = redmineIssue.custom_fields[i].value;
-	// log.info("custom propId=" + propId + ", propValue=" + propValue);
-	// setIssuePropertyValue(issue, propId, propValue);
-	// }
-	// }
 
-	// if (trackerIssue.getMilestones().length) {
-	// redmineIssue.fixed_version_id =
-	// parseInt(trackerIssue.getMilestones()[0]);
-	// }
+	// Custom properties
+	redmineIssue.custom_fields = [];
+	if (data.custom_fields) {
+		for (var i = 0; i < data.custom_fields.length; i++) {
+			var cfield = data.custom_fields[i];
+			var propId = makeCustomFieldPropertyId(cfield);
+			var propValue = getIssuePropertyValue(trackerIssue, propId);
+			log.info("custom propId=" + propId + ", propValue=" + propValue);
+			setRedmineIssueCustomField(redmineIssue, cfield.id, propId,
+					propValue);
+		}
+	}
 
-	// Upload attachments
 	redmineIssue.uploads = [];
 	try {
 		for (var i = 0; i < trackerIssue.getAttachments().size(); i++) {
@@ -992,12 +1145,44 @@ function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue,
 	return redmineIssue;
 }
 
+function setRedmineIssueCustomField(redmineIssue, fieldId, propId, propValue) {
+	log.info("setRedmineIssueCustomField(");
+	if (typeof propValue != "undefined") {
+		var type = -1;
+		var pclass = config.propertyClasses.get(propId);
+		if (!pclass) {
+			log.severe("Missing property class for property ID=" + propId);
+			return;
+		}
+		type = pclass.type;
+		log.info("propertyClass=" + pclass + ", type=" + type);
+		switch (type) {
+		case PropertyClass.TYPE_BOOL:
+			fieldValue = (!!propValue) ? 1 : 0;
+			break;
+		case PropertyClass.TYPE_STRING_LIST:
+		case PropertyClass.TYPE_STRING:
+		case PropertyClass.TYPE_ISO_DATE:
+			fieldValue = propValue;
+			break;
+		}
+
+		var obj = {
+			"id" : fieldId,
+			"value" : fieldValue
+		};
+		redmineIssue.custom_fields.push(obj);
+		log.info("set field=" + JSON.stringify(obj));
+	}
+	log.info(")setRedmineIssueCustomField");
+}
+
 function getIssuePropertyValue(issue, propId) {
 	log.info("getIssuePropertyValue(" + propId);
 	var ret = null;
 	var pclass = config.propertyClasses.get(propId);
 	if (!pclass) {
-		log.error("Missing property class for property ID=" + propId);
+		log.severe("Missing property class for property ID=" + propId);
 		return ret;
 	}
 	var type = pclass.type;
@@ -1023,7 +1208,7 @@ function getIssuePropertyValue(issue, propId) {
 		ret = issue.getPropertyString(propId, "");
 		break;
 	default:
-		log.error("Unknown property type=" + type);
+		log.severe("Unknown property type=" + type);
 	}
 
 	log.info(")getIssuePropertyValue=" + ret);
@@ -1184,15 +1369,19 @@ function toTrackerIssue(redmineIssue, issue) {
 	}
 	if (redmineIssue.assigned_to) {
 		issue.assignee = redmineIssue.assigned_to.id;
-	}
-	else {
+	} else {
 		issue.assignee = -1;
 	}
 	log.info("issue.assignee=" + issue.assignee);
-	
-	// if (redmineIssue.fixed_version_id) {
-	// trackerIssue.setMilestones([ redmineIssue.fixed_version_id ]);
-	// }
+
+	if (redmineIssue.category) {
+		setIssuePropertyValue(issue, config.PROPERTY_ID_ISSUE_CATEGORY,
+				redmineIssue.category.id);
+	}
+	if (redmineIssue.fixed_version) {
+		setIssuePropertyValue(issue, config.PROPERTY_ID_FIXED_VERSION,
+				redmineIssue.fixed_version.id);
+	}
 
 	// Redmine specific properties
 	var propertyIds = [ config.PROPERTY_ID_START_DATE,
@@ -1244,14 +1433,14 @@ function setIssuePropertyValue(issue, propId, propValue) {
 		var type = -1;
 		var pclass = config.propertyClasses.get(propId);
 		if (!pclass) {
-			log.error("Missing property class for property ID=" + propId);
+			log.severe("Missing property class for property ID=" + propId);
 			return;
 		}
 		type = pclass.type;
 		log.info("propertyClass=" + pclass + ", type=" + type);
 		switch (type) {
 		case PropertyClass.TYPE_STRING_LIST:
-			issue.setPropertyStringList(propId, propValue);
+			issue.setPropertyStringList(propId, propValue ? propValue : []);
 			break;
 		case PropertyClass.TYPE_BOOL:
 			issue.setPropertyBoolean(propId, !!propValue);
