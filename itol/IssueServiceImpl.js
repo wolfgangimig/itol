@@ -897,7 +897,7 @@ function getHtmlEditor(issue, propertyId) {
 }
 
 function getShowIssueUrl(issueId) {
-	return config.url + "/issues/" + issueId;
+	return getIssueHistoryUrl(issueId);
 }
 
 function getMsgFileType() {

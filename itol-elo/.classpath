@@ -9,6 +9,6 @@
 	<classpathentry kind="lib" path="lib/EloixClient.jar"/>
 	<classpathentry kind="lib" path="lib/javautils-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.17.jar"/>
-	<classpathentry kind="lib" path="/itol/lib/joa.jar" sourcepath="/itol/lib/joa-src.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/joa"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

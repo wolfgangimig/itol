@@ -167,8 +167,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	public void setMailItem(IssueMailItem mailItem) {
-		if (bnAssignSelection.isSelected()) {
-			internalSetMailItem(mailItem);
+		// Task pane initialized?
+		if (bnAssignSelection != null) {
+			if (bnAssignSelection.isSelected()) {
+				internalSetMailItem(mailItem);
+			}
 		}
 	}
 
@@ -177,11 +180,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		Platform.runLater(() -> {
 			try {
-				detectIssueModifiedTimer.stop();
-				if (updateIssueFromMailItem()) {
-					initialUpdate();
+				// Task pane initialized?
+				if (detectIssueModifiedTimer != null) {
+					detectIssueModifiedTimer.stop();
+					if (updateIssueFromMailItem()) {
+						initialUpdate();
+					}
+					detectIssueModifiedTimer.play();
 				}
-				detectIssueModifiedTimer.play();
 			} catch (Throwable e) {
 				e.printStackTrace();
 				showMessageBoxError(e.toString());
@@ -776,7 +782,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public void onShowIssueInBrowser() {
 		try {
 			IssueService srv = Globals.getIssueService();
-			String url = srv.getIssueHistoryUrl(issue.getId());
+			String url = srv.getShowIssueUrl(issue.getId());
 			IssueApplication.showDocument(url);
 		} catch (IOException e) {
 			e.printStackTrace();

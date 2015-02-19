@@ -73,10 +73,10 @@ var HttpResponse = Java.type("com.wilutions.itol.db.HttpResponse");
 var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
 var Attachment = Java.type("com.wilutions.itol.db.Attachment");
 var Issue = Java.type("com.wilutions.itol.db.Issue");
-var DescriptionHtmlEditor = Java
-		.type("com.wilutions.itol.db.DescriptionHtmlEditor");
-var DescriptionTextEditor = Java
-		.type("com.wilutions.itol.db.DescriptionTextEditor");
+var IssueHtmlEditor = Java
+		.type("com.wilutions.itol.db.IssueHtmlEditor");
+var IssueHtmlEditor = Java
+		.type("com.wilutions.itol.db.IssueHtmlEditor");
 
 var InetAddress = Java.type("java.net.InetAddress");
 var IXConnFactory = Java.type("de.elo.ix.client.IXConnFactory");
@@ -477,7 +477,7 @@ function initializePropertyClasses() {
 			new IdName(PRIORITY_B, "Priorität B"),
 			new IdName(PRIORITY_C, "Prioriät C") ]);
 
-	var propIssueStatus = propertyClasses.get(Property.STATE);
+	var propIssueStatus = propertyClasses.get(Property.STATUS);
 	propIssueStatus.setSelectList([ new IdName(1, "Neuer Eintrag"),
 	// Field status_id seems to be ignored when creating a new issue.
 	// Although it works on the web page.
@@ -486,8 +486,8 @@ function initializePropertyClasses() {
 	// new IdName(6, "Rejected")
 	]);
 
-	var propMilestones = propertyClasses.get(Property.MILESTONES);
-	propMilestones.setName("Versionen");
+//	var propMilestones = propertyClasses.get(Property.MILESTONES);
+//	propMilestones.setName("Versionen");
 
 	config.propertyClasses = propertyClasses;
 }
@@ -505,6 +505,42 @@ function setConfig(configProperties) {
 
 function getPropertyClasses() {
 	return config.propertyClasses;
+}
+
+function getPropertyClasses() {
+	return config.propertyClasses;
+};
+
+function getPropertyClass(propertyId, issue) {
+	var ret = getPropertyClasses().getCopy(propertyId);
+	switch (propertyId) {
+	case Property.ISSUE_TYPE:
+		ret.selectList = getIssueTypes(issue);
+		break;
+	case Property.PRIORITY:
+		ret.selectList = getPriorities(issue);
+		break;
+	case Property.CATEGORY:
+		ret.selectList = getCategories(issue);
+		break;
+	case Property.MILESTONES:
+		ret.selectList = getMilestones(issue);
+		break;
+	case Property.ASSIGNEE:
+		ret.selectList = getAssignees(issue);
+		break;
+	case Property.STATUS:
+		ret.selectList = getIssueStatuses(issue);
+		break;
+	default:
+		break;
+	}
+	return ret;
+}
+
+function getPropertyDisplayOrder() {
+	var propertyIds = [ Property.ASSIGNEE ];
+	return propertyIds;
 }
 
 function getIssueTypes(issue) {
@@ -557,15 +593,11 @@ function getCurrentUser() {
 			: new IdName(0, "");
 };
 
-function getIssueStates(iss) {
-	return getPropertyClasses().get(Property.STATE).getSelectList();
+function getIssueStatuses(iss) {
+	return getPropertyClasses().get(Property.STATUS).getSelectList();
 };
 
-function getDetails(issue) {
-
-}
-
-function getDescriptionHtmlEditor(issue) {
+function getHtmlEditor(issue, propertyId) {
 	return null;
 }
 
@@ -575,11 +607,17 @@ function getDescriptionTextEditor(issue) {
 	return null;
 }
 
-function getShowIssueUrl(issueId) {
+function getObjIdExprForIssueId(issueId) {
 	var isBug = issueId.indexOf("TTS") == 0;
 	var objId = "OKEY:";
 	objId += isBug ? "EFS_NR" : "TODOID";
-	var folder = conn.ix().checkoutSord(objId + "=" + issueId, SordC.mbLean,
+	objId += "=" + issueId
+	return objId;
+}
+
+function getShowIssueUrl(issueId) {
+	var objId = getObjIdExprForIssueId(issueId);
+	var folder = conn.ix().checkoutSord(objId, SordC.mbLean,
 			LockC.NO);
 
 	var arc = conn.ix().checkoutSord("1", SordC.mbMin, LockC.NO);
@@ -665,7 +703,7 @@ function createIssue(subject, mailDescription) {
 	iss.setDescription(issueDescription);
 	iss.setType(ISSUE_TYPE_BUG); // Bug
 	iss.setPriority(PRIORITY_B); // Normal priority
-	iss.setState(1); // New issue
+	iss.setStatus(1); // New issue
 
 	var projects = getCategories(iss);
 	if (projects) {
@@ -802,6 +840,45 @@ function setObjKeysForTodo(folder, issue) {
 	log.info(")setObjKeysForTodo");
 }
 
+function getIssuePropsFromObjKeys(folder, issue) {
+	log.info("getIssuePropsFromObjKeys(" + folder.name);
+	if (folder && folder.objKeys) {
+		for (var i = 0; i < folder.objKeys.length; i++) {
+			var okey = folder.objKeys[i];
+			var value = (okey.data && okey.data.lenth) ? okey.data[0] : null;
+			if (value) {
+				switch (okey.name) {
+				case "TODOPROJ":
+					for (var projectId in data.todoProjects) {
+						var project = data.todoProjects[projectId];
+						if (project && project.name && project.name == value) {
+							issue.setCategory(projectId);
+							break;
+						}
+					}
+					break;
+				case "TODOSTATUS":
+					issue.setPriority(getPriorityIdFromName(value));
+					break;
+				case "TODOID":
+					issue.setId(value);
+					break;
+				case "TODOW1":
+					for (var u = 0; u < data.users.length; u++) {
+						var idn = data.users[u];
+						if (value.equals(idn.name)) {
+							issue.setAssignee(idn.id);
+							break;
+						}
+					}
+					break;
+				}
+			}
+		}
+	}
+	log.info(")getIssuePropsFromObjKeys");
+}
+
 function getPrioAsString(issue) {
 	log.info("getPrioAsString(type=" + issue.getType() + ", prio="
 			+ issue.getPriority());
@@ -834,6 +911,20 @@ function getPrioAsString(issue) {
 	}
 	log.info(")getPrioAsString=" + value);
 	return value;
+}
+
+function getPriorityIdFromName(prioName) {
+	var ret = PRIORITY_B;
+	if (prioName.indexOf("Prio A") >= 0) {
+		ret = PRIORITY_A;
+	}
+	else if (prioName.indexOf("Prio B") >= 0) {
+		ret = PRIORITY_B;
+	}
+	else if (prioName.indexOf("Prio C") >= 0) {
+		ret = PRIORITY_C;
+	}
+	return ret;
 }
 
 function setObjKeysForBug(folder, issue) {
@@ -1176,8 +1267,65 @@ function injectIssueIdIntoMailSubject(mailSubject, iss) {
 	return subject;
 };
 
+//maskBug=[61,(AB1EABAD-016E-4E83-EC68-CD3AE01DCE61),TrackItem,#lines=15]
+//line.key=EFS_PROD, line.name=Produkt
+//line.key=EFS_KAT, line.name=Kategorie
+//line.key=EFS_OPEN, line.name=Geöffnet
+//line.key=EFS_DONE, line.name=Erledigt
+//line.key=EFS_CLOSED, line.name=Geschlossen
+//line.key=EFS_VEROPEN, line.name=Version aufgefallen
+//line.key=EFS_VERCLOSED, line.name=Version erledigt
+//line.key=EFS_NR, line.name=Tracking Nr.
+//line.key=EFS_TYPE, line.name=Aufgabentyp
+//line.key=EFS_QSUSER, line.name=QS Verantwortlicher
+//line.key=EFS_USER, line.name=Ausführender
+//line.key=EFS_COMMENT, line.name=Letzter Kommentar
+//line.key=EFS_MOVETO, line.name=Übertragen an
+//line.key=EFS_CHECKBY, line.name=Prüfung starten
+//line.key=EFS_STATECHG, line.name=Zeitstempel
+//maskTodo=[60,(5B0E5986-5B28-71A4-6C66-3F4DF61C9526),ToDoItem,#lines=22]
+//line.key=TODOOWNER, line.name=Einreicher
+//line.key=TODOSTATUS, line.name=Status
+//line.key=TODOW1, line.name=Bearbeiter 1
+//line.key=TODOW2, line.name=Aktiviert durch
+//line.key=TODOW3, line.name=Beended durch
+//line.key=TODODONE, line.name=Abgeschlossen
+//line.key=TODOVOTE, line.name=Vote
+//line.key=TODOSTART, line.name=Start in Arbeit
+//line.key=TODOEXTERN, line.name=Extern
+//line.key=TODOPRIO, line.name=Priorität
+//line.key=TODOPMANF, line.name=Status Anf
+//line.key=TODOPMUMS, line.name=Status Ums
+//line.key=TODOPMRBEZ, line.name=Release Bez
+//line.key=TODOPMAUFW, line.name=Aufwand
+//line.key=TODOPMPRIO, line.name=Priorität
+//line.key=TODOPMTHEMA, line.name=Thema
+//line.key=TODOPMMOD, line.name=Module
+//line.key=TODOPMREAL, line.name=Realisierung
+//line.key=TODOPMVOTE, line.name=Voting
+//line.key=TODOID, line.name=Item ID
+//line.key=TODOPROJ, line.name=Projekt
+//line.key=TODOPMTYPE, line.name=PM Typ
+
 function readIssue(issueId) {
-	return issues.get(issueId);
+	log.info("readIssue(" + issueId);
+	var issue = new Issue();
+	
+	var objId = getObjIdExprForIssueId(issueId);
+	var folder = conn.ix().checkoutSord(objId, SordC.mbAll, LockC.NO);
+
+	var isBug = issueId.indexOf("TTS") == 0;
+	
+	
+	
+	
+	
+	log.info(")readIssue=" + issue);
+	return issue;
 };
+
+function getIssueHistoryUrl(issueId) {
+	return config.url;
+}
 
 initializePropertyClasses();
