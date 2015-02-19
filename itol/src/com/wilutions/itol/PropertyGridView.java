@@ -160,7 +160,7 @@ public class PropertyGridView {
 
 		propGrid.add(ctrl, 1, rowIndex);
 
-		if (rowIndex == 1) {
+		if (rowIndex == 0) {
 			firstControl = ctrl;
 		}
 
@@ -217,7 +217,7 @@ public class PropertyGridView {
 		lb.setItems(FXCollections.observableArrayList(items));
 		lb.setMinHeight(25);
 		lb.setPrefHeight(25 * items.size());
-		lb.setMaxHeight(100);
+		lb.setMaxHeight(25 * 6);
 		return lb;
 	}
 

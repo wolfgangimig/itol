@@ -810,7 +810,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			node = bnAddAttachment;
 			break;
 		case 3: // HISTORY
-			node = webHistory;
+			// Focus should stay on the next button
 			break;
 		case 4: // NOTES
 			node = webNotes != null ? webNotes : edNotes;
