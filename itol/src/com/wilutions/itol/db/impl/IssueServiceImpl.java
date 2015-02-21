@@ -113,7 +113,7 @@ public class IssueServiceImpl implements IssueService {
 //	}
 
 	@Override
-	public Issue createIssue(String subject, String description) {
+	public Issue createIssue(String subject, String description, String defaultIssueAsString) {
 		IssueUpdate issi = new IssueUpdate();
 //		issi.setProperty(new Property(Property.ISSUE_TYPE, getIssueTypes(Issue.NULL).get(0).getId()));
 //		issi.setProperty(new Property(Property.ASSIGNEE, getAssignees(Issue.NULL).get(0).getId()));
@@ -311,6 +311,11 @@ public class IssueServiceImpl implements IssueService {
 		Issue copy = new Issue(id, iss);
 		issues.put(id, copy);
 		return copy;
+	}
+
+	@Override
+	public String getDefaultIssueAsString(Issue iss) throws IOException {
+		return "";
 	}
 
 

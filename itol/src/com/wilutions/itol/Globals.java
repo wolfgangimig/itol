@@ -32,6 +32,10 @@ import com.wilutions.joa.OfficeAddinUtil;
 
 
 public class Globals {
+	
+	public final static String REG_CONFIG = "Config";
+	public final static String REG_defaultIssueAsString = "defaultIssueAsString";
+	public final static String REG_injectIssueIdIntoMailSubject = "injectIssueIdIntoMailSubject";
 
 	private static ItolAddin addin;
 	private static MailExport mailExport = new MailExport();
@@ -95,7 +99,7 @@ public class Globals {
 	}
 
 	private static void readData() {
-		Config newConfig = (Config) getRegistry().read("Config");
+		Config newConfig = (Config) getRegistry().read(REG_CONFIG);
 
 		if (newConfig != null) {
 			if (newConfig.serviceFactoryClass != null) {
@@ -134,7 +138,7 @@ public class Globals {
 				}
 			}
 		}
-		getRegistry().write("Config", config);
+		getRegistry().write(REG_CONFIG, config);
 	}
 
 	public static void setConfig(List<Property> configProps) throws IOException {

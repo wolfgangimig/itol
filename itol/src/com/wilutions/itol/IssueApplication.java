@@ -26,16 +26,20 @@ import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.impl.IssueServiceFactory_JS;
 import com.wilutions.joa.AddinApplication;
 
+import de.wim.outldd.OutlookDD;
+
 public class IssueApplication extends AddinApplication {
 
 	static
 	{
 		Config config = Globals.getConfig();
-		config.appName = "JOA Issue Tracker";
+		config.appName = "Issue Tracker for Microsoft Outlook and Redmine";
 		config.manufacturerName = "WILUTIONS";
 		config.serviceFactoryClass = IssueServiceFactory_JS.class.getName();
 		config.serviceFactoryParams = Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT);
 		config.configProps = new ArrayList<Property>(0);
+		
+		OutlookDD.init(OutlookDD.MODE_TEMP_FILES);
 	}
 
 	public static File getAppDir() {

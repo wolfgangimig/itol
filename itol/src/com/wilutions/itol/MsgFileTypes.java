@@ -10,7 +10,10 @@
  */
 package com.wilutions.itol;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import com.wilutions.mslib.outlook.OlSaveAsType;
@@ -36,6 +39,10 @@ public class MsgFileTypes {
 		ret = ret.replace(" \\.", ".");
 		if (ret.length() > 200) {
 			ret = ret.substring(0, 200);
+		}
+		if (ret.isEmpty()) {
+		    DateFormat df = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
+		    ret = df.format(new Date());
 		}
 		return ret;
 	}

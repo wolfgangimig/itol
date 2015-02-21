@@ -13,13 +13,23 @@
  * Maximum number of projects to be read. This value constraints the number of
  * combo box items in the UI.
  */
-var MAX_PROJECTS = 50;
+var MAX_PROJECTS = 1000;
 
 /**
  * Maximum number of users per project. This value constraints the number of
  * combo box items in the UI.
  */
-var MAX_USERS = 50;
+var MAX_USERS = 1000;
+
+/**
+ * Name and description of the ITOL configuration project.
+ */
+var ITOL_CONFIG_NAME = "Issue Tracker for Microsoft Outlook and Redmine Configuration";
+var ITOL_CONFIG_DESC = "This project stores the configuration data for the "
+		+ "Issue Tracker Addin for Microsoft Outlook and Redmine. "
+		+ "Last update was at:";
+var ITOL_CONFIG_DESC_TAG_BEGIN = "<pre>ENCRYPTED_DATA_BEGIN\n";
+var ITOL_CONFIG_DESC_TAG_END = "\nENCRYPTED_DATA_END</pre>";
 
 /**
  * Import requried Java classes
@@ -35,6 +45,7 @@ var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
 var Issue = Java.type("com.wilutions.itol.db.Issue");
 var Attachment = Java.type("com.wilutions.itol.db.Attachment");
 var IssueHtmlEditor = Java.type("com.wilutions.itol.db.IssueHtmlEditor");
+var PasswordEncryption = Java.type("com.wilutions.itol.db.PasswordEncryption");
 var Logger = Java.type("java.util.logging.Logger");
 var log = Logger.getLogger("IssueServiceImpl.js");
 
@@ -70,15 +81,17 @@ var config = {
 	apiKey : "... see \"Redmine / My account / API access key\" ... ",
 
 	/**
-	 * Comma separated list of project names. Only projects listed here are
-	 * shown in the UI.
-	 */
-	projectNames : "",
-
-	/**
 	 * Attach mail encoded in this format.
 	 */
 	msgFileType : ".msg",
+
+	/**
+	 * ITOL configuration project. This project is used to store global
+	 * configuration options for ITOL. When an administrative connection is
+	 * established, the configuration options are updated. Non-administrative
+	 * connections read the configuration.
+	 */
+	configProjectIdentifier : "itol-configuration",
 
 	/**
 	 * MY_CONFIG_PROPERTY Add your property here. Properties can be of type
@@ -92,7 +105,6 @@ var config = {
 	// IDs are member names to simplify function fromProperties
 	PROPERTY_ID_URL : "url",
 	PROPERTY_ID_API_KEY : "apiKey",
-	PROPERTY_ID_PROJECT_NAMES : "projectNames",
 	PROPERTY_ID_MSG_FILE_TYPE : "msgFileType",
 
 	// Property IDs of issue properties
@@ -115,12 +127,11 @@ var config = {
 	 */
 	toProperties : function() {
 		return [
-				// Add your property here:
-				// new Property(this.PROPERTY_ID_MY_CONFIG_PROPERTY,
-				// this.my_config_property),
-				new Property(this.PROPERTY_ID_URL, this.url),
+		// Add your property here:
+		// new Property(this.PROPERTY_ID_MY_CONFIG_PROPERTY,
+		// this.my_config_property),
+		new Property(this.PROPERTY_ID_URL, this.url),
 				new Property(this.PROPERTY_ID_API_KEY, this.apiKey),
-				new Property(this.PROPERTY_ID_PROJECT_NAMES, this.projectNames),
 				new Property(this.PROPERTY_ID_MSG_FILE_TYPE, this.msgFileType) ];
 	},
 
@@ -289,7 +300,8 @@ var data = {
 	 * Map of projects. Key: project ID, value: project.
 	 * this.projects[.].memberships contains an array of project memberships
 	 * (assignees). this.projects[.].versions contains an array of versions
-	 * (milestones).
+	 * (milestones). this.projects[.].custom_fields contains an array of custom
+	 * fields.
 	 */
 	projects : {},
 
@@ -297,6 +309,12 @@ var data = {
 	 * Current user.
 	 */
 	user : {},
+
+	/**
+	 * Is current user an administrator. This is detected in
+	 * readOrUpdateConfigurationProject()
+	 */
+	isAdmin : false,
 
 	/**
 	 * Array of tracker IdName objects
@@ -345,22 +363,13 @@ function arrayIndexOf(arr, elm) {
 function readProjects(data) {
 	log.info("readProjects(");
 
-	var projectNames = [];
-	log.info("config.projectNames=" + config.projectNames);
-	if (config.projectNames) {
-		projectNames = config.projectNames.split(",");
-		if (projectNames.length != 0) {
-			log.info("Look for this projects=" + projectNames);
-		}
-	}
-
 	var projectCount = 0;
 	var offset = 0;
 	while (projectCount < MAX_PROJECTS) {
 
 		var projectsResponse = httpClient.get("/projects.json?"
 				+ "include=trackers,issue_categories,enabled_modules&"
-				+ "offset=" + offset + "&limit=" + (MAX_PROJECTS - offset));
+				+ "offset=" + offset + "&limit=100");
 		var arrOfProjects = projectsResponse.projects;
 		if (arrOfProjects.length == 0) {
 			break;
@@ -368,24 +377,34 @@ function readProjects(data) {
 
 		for (var i = 0; i < arrOfProjects.length && projectCount < MAX_PROJECTS; i++) {
 			var project = arrOfProjects[i];
-			log.info("Found project, id=" + project.id + ", name="
-					+ project.name);
-			if (projectNames.length == 0
-					|| arrayIndexOf(projectNames, project.name) != -1) {
-				data.projects[project.id] = project;
-				dump("Add project to select list", project);
-				projectCount++;
-			}
+			data.projects[project.id] = project;
+			dump("project", project);
+			projectCount++;
 		}
 
 		offset += arrOfProjects.length;
 	}
+
+	// Add parent project names to project names.
+	for ( var projectId in data.projects) {
+		var project = data.projects[projectId];
+		var name = project.name;
+		var p = project;
+		while (p && p.parent) {
+			name = p.parent.name + " » " + name;
+			p = data.projects[p.parent.id];
+		}
+		project.name = name;
+		log.info("project.id=" + project.id + ", name=" + project.name);
+	}
+	
 	log.info(")readProjects");
 };
 
 function readCurrentUser(data) {
 	log.info("readCurrentUser(");
-	data.user = httpClient.get("/users/current.json?include=memberships,groups").user;
+	data.user = httpClient
+			.get("/users/current.json?include=memberships,groups").user;
 	dump("user ", data.user);
 	log.info(")readCurrentUser");
 };
@@ -425,8 +444,7 @@ function readProjectMembers(project) {
 	while (project.memberships.length < MAX_USERS) {
 
 		var arrOfMemberships = httpClient.get("/projects/" + project.id
-				+ "/memberships.json?" + "offset=" + offset + "&limit="
-				+ (MAX_USERS - offset)).memberships;
+				+ "/memberships.json?" + "offset=" + offset + "&limit=100").memberships;
 
 		if (arrOfMemberships.length == 0) {
 			break;
@@ -476,13 +494,129 @@ function writeIssue(issueParam, progressCallback) {
 	return ret;
 }
 
+/**
+ * Read or update ITOL configuration. The configuration data is stored as an
+ * encrypted blob in the description of the ITOL confguration project.
+ */
+function readOrUpdateConfigurationProject() {
+	log.info("readOrUpdateConfigurationProject(");
+
+	// Read configuration project.
+	var configProject = null;
+	try {
+		var response = httpClient.get("/projects/"
+				+ config.configProjectIdentifier + ".json");
+		configProject = response.project;
+		dump("configProject", configProject);
+
+		// Encrypt configuration data
+		var configDesc = configProject.description;
+		var p = configDesc.indexOf(ITOL_CONFIG_DESC_TAG_BEGIN);
+		if (p >= 0) {
+			configDesc = configDesc.substring(p
+					+ ITOL_CONFIG_DESC_TAG_BEGIN.length);
+		}
+		p = configDesc.indexOf(ITOL_CONFIG_DESC_TAG_END);
+		if (p >= 0) {
+			configDesc = configDesc.substring(0, p);
+		}
+		configDesc = PasswordEncryption.decrypt(configDesc);
+		var configData = JSON.parse(configDesc);
+		data.custom_fields = configData.custom_fields;
+		dump("data.custom_fields", data.custom_fields);
+
+		// Create property classes for custom fields
+		var propertyClasses = getPropertyClasses();
+		for (var i = 0; i < data.custom_fields.length; i++) {
+			var cfield = data.custom_fields[i];
+			var pclass = makePropertyClassForCustomField(cfield);
+			if (pclass) {
+				propertyClasses.add(pclass);
+			}
+		}
+
+	} catch (ex) {
+		log.info("Configuration project not found, try to crate it. "
+				+ ex.toString());
+	}
+
+	// Try to update or create config project
+	var isNew = !configProject;
+	var customFields = null;
+	try {
+
+		// Read custom fields.
+		// Only admins are allowed to. Ordinary users will jump to catch(ex)
+		customFields = readCustomFields(data);
+
+		// Put custom fields into a configuration object.
+		// Convert it to JSON.
+		var configData = {
+			"custom_fields" : customFields
+		};
+		var configDesc = JSON.stringify(configData);
+
+		// Encrypt the configuration object and wrap it into
+		// BEGIN and END.
+		configDesc = PasswordEncryption.encrypt(configDesc);
+		configDesc = ITOL_CONFIG_DESC + " " + (new Date()).toISOString() + ". "
+				+ ITOL_CONFIG_DESC_TAG_BEGIN + configDesc
+				+ ITOL_CONFIG_DESC_TAG_END;
+
+		// Create a project object and assign the encrypted configuraion
+		// as project description.
+		configProject = configProject || {
+			"name" : ITOL_CONFIG_NAME,
+			"identifier" : config.configProjectIdentifier,
+			"is_public" : true,
+			"enabled_module_names" : []
+		};
+		configProject.description = configDesc;
+		dump("update configProject", configProject);
+
+		// Create or update the project
+		var projectRequest = {
+			"project" : configProject
+		};
+		if (isNew) {
+			ret = httpClient.post("/projects.json", projectRequest);
+		} else {
+			ret = httpClient.put("/projects/" + config.configProjectIdentifier
+					+ ".json", projectRequest);
+		}
+
+		// Memorize that current user is an administrator
+		data.isAdmin = true;
+
+	} catch (ex) {
+		log.info("Failed to read custom fields, I am not an administrator.");
+
+		// Memorize that current user is not an administrator
+		data.isAdmin = false;
+
+		if (isNew) {
+			throw new IOException(
+					"Cannot read ITOL configuration project. "
+							+ "The first login has to be made with an administrator account. "
+							+ "Thereby, the configuration project is created. Details: "
+							+ ex.toString());
+		}
+	}
+
+	log.info("data.isAdmin=" + data.isAdmin);
+
+	log.info(")readOrUpdateConfigurationProject");
+}
+
 function initialize() {
 	config.valid = false;
 
 	data.clear();
 
-	readProjects(data);
+	readOrUpdateConfigurationProject();
 
+	readProjects(data);
+	
 	readCurrentUser(data);
 
 	readTrackers(data);
@@ -490,8 +624,6 @@ function initialize() {
 	readPriorities(data);
 
 	readStatuses(data);
-
-	readCustomFields(data);
 
 	config.valid = true;
 }
@@ -550,7 +682,7 @@ function readCustomFields(data) {
 	for (var i = 0; i < response.custom_fields.length; i++) {
 		var cfield = response.custom_fields[i];
 		if (cfield.customized_type == "issue") {
-			var pclass = makePropertyClassFromCustomField(cfield);
+			var pclass = makePropertyClassForCustomField(cfield);
 			if (pclass) {
 				propertyClasses.add(pclass);
 				data.custom_fields.push(cfield);
@@ -559,6 +691,7 @@ function readCustomFields(data) {
 	}
 
 	log.info(")readCustomFields");
+	return data.custom_fields;
 }
 
 function makeCustomFieldPropertyId(cfield) {
@@ -602,8 +735,8 @@ function makePropertyType(cfield) {
 	return type;
 }
 
-function makePropertyClassFromCustomField(cfield) {
-	log.info("makePropertyClassFromCustomField(" + cfield.name);
+function makePropertyClassForCustomField(cfield) {
+	log.info("makePropertyClassForCustomField(" + cfield.name);
 	var ret = null;
 
 	var type = makePropertyType(cfield);
@@ -630,7 +763,7 @@ function makePropertyClassFromCustomField(cfield) {
 		log.info("unsupported field=" + JSON.stringify(cfield));
 	}
 
-	log.info(")makePropertyClassFromCustomField=" + ret);
+	log.info(")makePropertyClassForCustomField=" + ret);
 	return ret;
 }
 
@@ -727,7 +860,7 @@ function getPropertyClass(propertyId, issue) {
 		ret.selectList = data.priorities;
 		break;
 	case Property.PROJECT:
-		ret.selectList = getProjects(issue);
+		ret.selectList = getProjectsIdNames(issue);
 		break;
 	case Property.ASSIGNEE:
 		ret.selectList = getAssignees(issue);
@@ -770,15 +903,57 @@ function getIssueTypes(issue) {
 	return ret;
 };
 
-function getProjects(issue) {
+function getProjectsIdNames(issue) {
+
+	// Project association of an existing issue cannot be changed.
+	// This is my experience, although the Redmine documentation
+	// says that it is possible.
+	if (issue && issue.id && issue.id.length) {
+		var project = getIssueProject(issue);
+		return [ new IdName(project.id, project.name) ];
+	} else {
+		return getAllProjectsIdNamesWithIssueTracking();
+	}
+}
+
+function getAllProjectsIdNamesWithIssueTracking() {
+	log.info("getAllProjectsIdNamesWithIssueTracking(");
+
 	var ret = [];
+
+	// Collect project IDs an names into IdName array.
 	for ( var projectId in data.projects) {
 		var project = data.projects[projectId];
-		var idn = new IdName(projectId, project.name);
+		
+		// Skip projects without issue tracking
+		var isIssueProject = false;
+		if (project.enabled_modules) {
+			for (var m = 0; !isIssueProject
+					&& m < project.enabled_modules.length; m++) {
+				var module = project.enabled_modules[m];
+				isIssueProject = module.name == "issue_tracking";
+			}
+		}
+		if (!isIssueProject) {
+			log.info("Without issue tracking.");
+			continue;
+		}
+		
+		var idn = new IdName(project.id, project.name);
+		log.info("add project.id=" + idn.id + ", name=" + idn.name);
 		ret.push(idn);
 	}
+
+	// Sort by name
+	ret.sort(compareIdNameByName);
+
+	log.info(")getAllProjectsIdNamesWithIssueTracking");
 	return ret;
 };
+
+function compareIdNameByName(lhs, rhs) {
+	return lhs.name.compareTo(rhs.name);
+}
 
 function getIssueProject(issue) {
 	log.info("getIssueProject(");
@@ -925,22 +1100,25 @@ function getPropertyDisplayOrder(issue) {
 			config.PROPERTY_ID_DONE_RATIO);
 
 	// Add custom fields appropriate for the issue
-	for (var i = 0; i < data.custom_fields.length; i++) {
-		var cfield = data.custom_fields[i];
-		if (isCustomFieldForIssueType(cfield, issue)) {
-			if (isCustomFieldForCurrentUser(cfield, issue)) {
-				propertyIds.push(cfield.propertyId);
+	if (data.custom_fields) {
+		for (var i = 0; i < data.custom_fields.length; i++) {
+			var cfield = data.custom_fields[i];
+			if (isCustomFieldForIssueType(cfield, issue)) {
+				if (isCustomFieldForCurrentUser(cfield, issue)) {
+					propertyIds.push(cfield.propertyId);
+					log.info("add custom field=" + cfield.name);
+				}
 			}
 		}
-		log.info("add custom field=" + cfield);
 	}
 
-	log.info(")getPropertyDisplayOrder=");
+	log.info(")getPropertyDisplayOrder=" + propertyIds);
 	return propertyIds;
 }
 
 function isCustomFieldForIssueType(cfield, issue) {
-	log.info("isCustomFieldForIssueType(" + cfield.name + ", issueType=" + issue.getType());
+	log.info("isCustomFieldForIssueType(" + cfield.name + ", issueType="
+			+ issue.getType());
 	var ret = false;
 	if (cfield.trackers) {
 		for (var t = 0; !ret && t < cfield.trackers.length; t++) {
@@ -952,51 +1130,82 @@ function isCustomFieldForIssueType(cfield, issue) {
 }
 
 function isCustomFieldForCurrentUser(cfield, issue) {
-	log.info("isCustomFieldForCurrentUser(" + cfield.name );
+	log.info("isCustomFieldForCurrentUser(" + cfield.name);
 	var ret = false;
-	
-	// How to find out, whether the current user is an admin?
-	
-	if (false && cfield.roles && cfield.roles.length && data.user) {
-		
+
+	if (!data.isAdmin && cfield.roles && cfield.roles.length && data.user) {
+
+		// Field is available for users with this roles:
 		var fieldRoleIds = [];
 		for (var i = 0; i < cfield.roles.length; i++) {
 			fieldRoleIds.push(cfield.roles[i].id);
 		}
 		log.info("fieldRoleIds=" + JSON.stringify(fieldRoleIds));
-		
-		var memberships = getIssueProjectMemberships(issue);
-		for (var i = 0; i < memberships.length; i++) {
-			
-			var user = memberships[i].user;
-			log.info("am I " + user.name + " ?");
-			if (user.id == data.user.id) {
-				
-				var roles = memberships[i].roles;
-				log.info("current user's roles=" + JSON.stringify(roles));
-				if (roles) {
-					
-					for (var j = 0; !ret && j < roles.length; j++) {
-						ret = fieldRoleIds.indexOf(roles[j].id);
-						if (ret) {
-							log.info("found role " + roles[j].id);
-						}
-					}
-				}
-				
-				break;
+
+		// The roles the current user plays in the issue's project
+		var roles = getCurrentUsersRolesForIssueProject(issue);
+
+		// Intersect field and user roles.
+		for (var j = 0; !ret && j < roles.length; j++) {
+			ret = fieldRoleIds.indexOf(roles[j].id);
+			if (ret) {
+				log.info("found role " + roles[j].id);
 			}
 		}
-	}
-	else {
+
+	} else {
 		ret = true;
 	}
-	
+
 	log.info(")isCustomFieldForCurrentUser=" + ret);
 	return ret;
 }
 
-function createIssue(subject, description) {
+function getCurrentUsersRolesForIssueProject(issue) {
+	log.info("getCurrentUsersRolesInProject(");
+	var roles = [];
+	var memberships = getIssueProjectMemberships(issue);
+	for (var i = 0; i < memberships.length; i++) {
+		var user = memberships[i].user;
+		if (user.id == data.user.id) {
+			roles = memberships[i].roles;
+		}
+	}
+	log.info(")getCurrentUsersRolesInProject=" + JSON.stringify(roles));
+	return roles;
+}
+
+function getDefaultIssueAsString(issue) {
+	var defaultProps = {};
+	if (issue) {
+		defaultProps.project = issue.project;
+		defaultProps.type = issue.type;
+		defaultProps.assignee = issue.assignee;
+	}
+	else {
+		makeDefaultProperties("");
+	}
+
+	return JSON.stringify(defaultProps);
+}
+
+function makeDefaultProperties(defaultIssueAsString) {
+	var defaultProps = {};
+	if (defaultIssueAsString && defaultIssueAsString.length()) {
+		defaultProps = JSON.parse(defaultIssueAsString);	
+	}
+	else {
+		var projects = getProjectsIdNames(null);
+		if (projects && projects.length) {
+			defaultProps.project = projects[0].getId();
+		}
+		defaultProps.type = 1;
+		defaultProps.assignee = -1; // unassigned
+	}
+	return defaultProps;
+}
+
+function createIssue(subject, description, defaultIssueAsString) {
 	config.checkValid();
 
 	subject = stripIssueIdFromMailSubject(subject);
@@ -1004,25 +1213,31 @@ function createIssue(subject, description) {
 	// strip RE:, Fwd:, AW:, WG: ...
 	subject = stripReFwdFromSubject(subject);
 
-	var iss = new Issue();
+	var issue = new Issue();
+	var defaultProps = makeDefaultProperties(defaultIssueAsString);
 
-	iss.setSubject(subject);
-	iss.setDescription(description);
-	iss.setType(1); // Bug
-	iss.setPriority(data.defaultPriority); // Normal priority
-	iss.setStatus(1); // New issue
-	iss.setAssignee(-1); // Unassigned
+	issue.setPriority(data.defaultPriority); // Normal priority
+	issue.setStatus(1); // New issue
 
-	iss.setPropertyValue(config.PROPERTY_ID_START_DATE, new Date()
-			.toISOString());
-	iss.setPropertyValue(config.PROPERTY_ID_DUE_DATE, "");
-	iss.setPropertyValue(config.PROPERTY_ID_DONE_RATIO, "0");
-	iss.setPropertyValue(config.PROPERTY_ID_ESTIMATED_HOURS, "");
+	issue.setProject(defaultProps.project);
+	issue.setType(defaultProps.type); 
+	issue.setAssignee(defaultProps.assignee);
 
-	var projects = getProjects(null);
-	iss.setProject(projects[0].getId());
+	issue.setSubject(subject);
+	issue.setDescription(description);
 
-	return iss;
+	var propIds = getPropertyDisplayOrder(issue);
+	for (var i = 0; i < propIds.length; i++) {
+		var pclass = getPropertyClass(propIds[i], issue);
+		if (pclass) {
+			var value = pclass.getDefaultValue();
+			if (value) {
+				issue.setPropertyValue(propIds[i], value);
+			}
+		}
+	}
+
+	return issue;
 };
 
 function updateIssue(trackerIssue, modifiedProperties, progressCallback) {
@@ -1296,8 +1511,21 @@ function stripFirstReFwdFromSubject(subject) {
 }
 
 function injectIssueIdIntoMailSubject(subject, iss) {
-	var ret = "[R-" + iss.getId() + "] ";
-	ret += subject;
+	var ret = subject;
+	if (iss) {
+		ret = "[R-" + iss.getId() + "] ";
+		ret += subject;
+	}
+	else {
+		var p = subject.indexOf("[R-");
+		if (p >= 0) {
+			var q = subject.indexOf("]", p+3);
+			if (q >= 0) {
+				ret = subject.substring(0, p);
+				ret += subject.substring(q+1);
+			}
+		}
+	}
 	return ret;
 };
 
@@ -1437,13 +1665,14 @@ function setIssuePropertyValue(issue, propId, propValue) {
 			return;
 		}
 		type = pclass.type;
-		log.info("propertyClass=" + pclass + ", type=" + type);
+		log.info("propertyClass=" + pclass + ", type=" + type + ", value="
+				+ propValue);
 		switch (type) {
 		case PropertyClass.TYPE_STRING_LIST:
 			issue.setPropertyStringList(propId, propValue ? propValue : []);
 			break;
 		case PropertyClass.TYPE_BOOL:
-			issue.setPropertyBoolean(propId, !!propValue);
+			issue.setPropertyBoolean(propId, propValue != 0);
 			break;
 		case PropertyClass.TYPE_STRING:
 		case PropertyClass.TYPE_ISO_DATE:

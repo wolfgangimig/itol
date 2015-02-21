@@ -38,7 +38,7 @@ public interface IssueService {
 
 	IssueHtmlEditor getHtmlEditor(Issue issue, String propertyId) throws IOException;
 
-	Issue createIssue(String subject, String description) throws IOException;
+	Issue createIssue(String subject, String description, String defaultIssueAsString) throws IOException;
 
 	Issue validateIssue(Issue iss) throws IOException;
 
@@ -55,6 +55,8 @@ public interface IssueService {
 	Issue updateIssue(Issue iss, List<String> modifiedProperties, ProgressCallback cb) throws IOException;
 
 	Issue readIssue(String issueId) throws IOException;
+	
+	String getDefaultIssueAsString(Issue iss) throws IOException;
 	
 	String getIssueHistoryUrl(String issueId) throws IOException;
 	

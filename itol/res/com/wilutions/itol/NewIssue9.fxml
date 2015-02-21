@@ -49,6 +49,20 @@
                      <tooltip>
                         <Tooltip text="%bnShowIssueInBrowser.tooltip" />
                      </tooltip></Button>
+                  <MenuButton mnemonicParsing="false" onAction="#onSaveAsDefault" text="%bnExtra.text">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#onSaveAsDefault" text="%mnSaveAsDefaults.text" />
+                        <Menu mnemonicParsing="false" text="%mnMailSubject">
+                          <items>
+                              <MenuItem mnemonicParsing="false" onAction="#onRemoveIssueIdFromSubject" text="%mnRemoveIssueIdFromSubject" />
+                              <CheckMenuItem fx:id="mnInjectIssueIdIntoSubject" mnemonicParsing="false" onAction="#onInjectIssueIdIntoSubject" text="%mnInjectIssueIdIntoSubject" />
+                          </items>
+                        </Menu>
+                    </items>
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin>
+                  </MenuButton>
                </children>
             </HBox>
             <TextField fx:id="edSubject" promptText="%edSubject.prompt" GridPane.columnSpan="3" GridPane.rowIndex="1">
@@ -56,8 +70,8 @@
                   <Font name="System Bold" size="12.0" />
                </font>
             </TextField>
-            <ChoiceBox fx:id="cbTracker" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2" />
-            <ChoiceBox fx:id="cbProject" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <ChoiceBox fx:id="cbProject" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2" />
+            <ChoiceBox fx:id="cbTracker" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2" />
             <ChoiceBox fx:id="cbPriority" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.rowIndex="2" />
             <VBox spacing="10.0" GridPane.columnSpan="3" GridPane.rowIndex="3">
                <children>

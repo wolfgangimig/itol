@@ -11,5 +11,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/itol-db"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/joa"/>
 	<classpathentry kind="lib" path="lib/ScenicView.jar"/>
+	<classpathentry kind="lib" path="D:/git/itol/itol/lib/outldd.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
