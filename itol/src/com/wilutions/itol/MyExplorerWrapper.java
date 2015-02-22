@@ -85,7 +85,8 @@ public class MyExplorerWrapper extends ExplorerWrapper {
 	public void setIssueTaskPaneVisible(boolean visible) {
 		if (issuePane != null) {
 			if (!issuePane.hasWindow() && visible) {
-				Globals.getThisAddin().createTaskPaneWindowAsync(issuePane, "Issue", explorer, (succ, ex) -> {
+				String title = Globals.getResourceBundle().getString("IssueTaskpane.title");
+				Globals.getThisAddin().createTaskPaneWindowAsync(issuePane, title, explorer, (succ, ex) -> {
 					if (ex != null) {
 						MessageBox.show(explorer, "Error", ex.getMessage(), null);
 					} else {

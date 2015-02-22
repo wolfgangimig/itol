@@ -174,6 +174,7 @@ public class AttachmentHelper {
 				resourcesToRelease.add(() -> mattFile.delete());
 				System.out.println("save attachment to " + mattFile);
 				matt.SaveAsFile(mattFile.getAbsolutePath());
+				super.setContentLength(mattFile.length());
 				super.setUrl(getFileUrl(mattFile));
 			}
 			return mattFile;

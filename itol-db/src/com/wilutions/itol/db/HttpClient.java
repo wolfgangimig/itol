@@ -34,10 +34,8 @@ public class HttpClient {
 	private final static Logger log = Logger.getLogger(HttpClient.class.getName());
 	
 	public static HttpResponse send(String url, String method, String[] headers, Object content, ProgressCallback cb) {
-		log.info("send(url=" + url);
-
 		if (log.isLoggable(Level.FINE)) {
-			log.fine("method=" + method);
+			log.fine("send(" + method + ", url=" + url);
 			log.fine("headers=" + Arrays.toString(headers));
 			log.fine("content=" + content);
 		}
@@ -76,6 +74,7 @@ public class HttpClient {
 				}
 			}
 
+			log.info(method + " " + url + " #" + contentLength);
 
 			if (content != null) {
 				
@@ -104,7 +103,7 @@ public class HttpClient {
 				log.fine("getResponseCode...");
 			ret.setStatus(conn.getResponseCode());
 			if (log.isLoggable(Level.FINE))
-				log.fine("getResponseCode=" + ret.getStatus());
+				log.fine("status=" + ret.getStatus());
 			
 			contentLength = -1;
 			contentDisposition = "";
@@ -150,6 +149,9 @@ public class HttpClient {
 				if (log.isLoggable(Level.FINE))
 					log.fine("read from input...");
 				ret.setContent(readStringFromStream(conn.getInputStream(), contentLength, subcbDownload));
+				
+				log.info(ret.getStatus() + " #" + contentLength);
+
 			} catch (IOException e) {
 				log.info("send failed, exception=" + e);
 				ret.setErrorMessage(e.getMessage());
@@ -162,21 +164,23 @@ public class HttpClient {
 			}
 
 		} catch (IOException e) {
-			String msg = "HTTP request to URL=" + url + " failed: " + e.getMessage();
-			ret.setErrorMessage(msg);
+			String msg = "HTTP request to URL=" + url + " failed. ";
+			log.log(Level.WARNING, msg, e);
+			ret.setErrorMessage(msg + e.toString());
 		} finally {
 			if (conn != null) {
 				conn.disconnect();
 			}
 		}
 
-		if (log.isLoggable(Level.FINE))
-			log.fine("ret=" + ret);
-		log.info(")send=" + ret.getStatus());
+		if (log.isLoggable(Level.FINE)) {
+			log.fine(")send=" + ret.getStatus() + ", ret=" + ret);
+		}
 		return ret;
 	}
 
 	private static void writeStringIntoStream(OutputStream os, String s, ProgressCallback cb) throws IOException {
+		if (log.isLoggable(Level.FINE))log.fine("writeStringIntoStream(length=" + s.length()); 
 		cb.setProgress(0);
 		cb.setTotal(s.length());
 		OutputStreamWriter wr = new OutputStreamWriter(os, "UTF-8");
@@ -186,6 +190,7 @@ public class HttpClient {
 			wr.close();
 		}
 		cb.setProgress(s.length());
+		if (log.isLoggable(Level.FINE))log.fine(")writeStringIntoStream");
 	}
 
 	private static void writeFileIntoStream(OutputStream os, File file, ProgressCallback cb) throws IOException {
@@ -193,6 +198,7 @@ public class HttpClient {
 	}
 
 	private static void writeFileIntoStream(OutputStream os, InputStream stream, long contentLength, ProgressCallback cb) throws IOException {
+		if (log.isLoggable(Level.FINE))log.fine("writeFileIntoStream(contentLength=" + contentLength); 
 		cb.setTotal(contentLength);
 		cb.setProgress(0);
 		try {
@@ -209,11 +215,13 @@ public class HttpClient {
 				sum += (double)len;
 				cb.setProgress(sum);
 			}
+			if (log.isLoggable(Level.FINE))log.fine("#written=" + sum);
 		} finally {
 			if (stream != null) {
 				stream.close();
 			}
 		}
+		if (log.isLoggable(Level.FINE))log.fine(")writeFileIntoStream");
 	}
 
 	private static String readStringFromStream(InputStream is, long contentLength, ProgressCallback cb) {
