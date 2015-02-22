@@ -26,11 +26,15 @@
          <children>
              <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="2.0" GridPane.columnSpan="3">
                <children>
-                  <ToggleButton fx:id="bnAssignSelection" minHeight="25.0" mnemonicParsing="false" onAction="#onAssignSelection" prefHeight="25.0" text="%bnAssignSelection.text">
+                  <ToggleButton fx:id="bnAssignSelection" mnemonicParsing="false" onAction="#onAssignSelection" text="%bnAssignSelection.text">
                      <tooltip>
                         <Tooltip text="%nbAssignSelection.tooltip" />
-                     </tooltip></ToggleButton>
-                  <Button fx:id="bnClear" mnemonicParsing="false" onAction="#onClear" text="%bnClear.text" />
+                     </tooltip>
+                  </ToggleButton>
+                  <Button fx:id="bnClear" mnemonicParsing="false" onAction="#onClear" text="%bnClear.text">
+                     <tooltip>
+                        <Tooltip text="%bnClear.tooltip" />
+                     </tooltip></Button>
                   <TextField fx:id="edIssueId" prefWidth="70.0" promptText="%edIssueId.prompt">
                      <opaqueInsets>
                         <Insets />
@@ -52,17 +56,17 @@
                   <MenuButton mnemonicParsing="false" onAction="#onSaveAsDefault" text="%bnExtra.text">
                     <items>
                       <MenuItem mnemonicParsing="false" onAction="#onSaveAsDefault" text="%mnSaveAsDefaults.text" />
-                        <Menu mnemonicParsing="false" text="%mnMailSubject">
-                          <items>
-                              <MenuItem mnemonicParsing="false" onAction="#onRemoveIssueIdFromSubject" text="%mnRemoveIssueIdFromSubject" />
-                              <CheckMenuItem fx:id="mnInjectIssueIdIntoSubject" mnemonicParsing="false" onAction="#onInjectIssueIdIntoSubject" text="%mnInjectIssueIdIntoSubject" />
-                          </items>
-                        </Menu>
+                        <CheckMenuItem fx:id="mnInjectIssueIdIntoSubject" mnemonicParsing="false" onAction="#onInjectIssueIdIntoSubject" text="%mnInjectIssueIdIntoSubject" />
                     </items>
                      <HBox.margin>
                         <Insets left="10.0" />
                      </HBox.margin>
                   </MenuButton>
+                  <ProgressBar fx:id="pgProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" HBox.hgrow="ALWAYS">
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin>
+                  </ProgressBar>
                </children>
             </HBox>
             <TextField fx:id="edSubject" promptText="%edSubject.prompt" GridPane.columnSpan="3" GridPane.rowIndex="1">

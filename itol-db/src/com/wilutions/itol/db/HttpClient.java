@@ -150,7 +150,7 @@ public class HttpClient {
 					log.fine("read from input...");
 				ret.setContent(readStringFromStream(conn.getInputStream(), contentLength, subcbDownload));
 				
-				log.info(ret.getStatus() + " #" + contentLength);
+				log.info(ret.getStatus() + " #" + ret.getContent().length());
 
 			} catch (IOException e) {
 				log.info("send failed, exception=" + e);

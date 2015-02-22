@@ -16,6 +16,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -37,6 +39,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
@@ -61,6 +64,7 @@ import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueHtmlEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.ProgressCallback;
+import com.wilutions.itol.db.ProgressCallbackImpl;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
 import com.wilutions.joa.fx.MessageBox;
@@ -71,8 +75,9 @@ import com.wilutions.mslib.outlook.Explorer;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
-	private Issue issue;
+	private volatile Issue issue;
 	private Issue issueCopy;
+	private Logger log = Logger.getLogger("IssueTaskPane");
 
 	@FXML
 	private VBox vboxRoot;
@@ -133,6 +138,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private TextField edIssueId;
 	@FXML
 	private CheckMenuItem mnInjectIssueIdIntoSubject;
+	@FXML
+	private ProgressBar pgProgress;
 
 	private boolean tabAttachmentsApplyHandler = true;
 
@@ -148,7 +155,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private ResourceBundle resb;
 	private Timeline detectIssueModifiedTimer;
 	private boolean modified;
-	private boolean firstModifiedCheck;
+	private volatile boolean firstModifiedCheck;
 	private AttachmentHelper attachmentHelper = new AttachmentHelper();
 
 	/**
@@ -162,11 +169,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		this.resb = Globals.getResourceBundle();
 		Globals.getThisAddin().getRegistry().readFields(this);
 
-		try {
-			updateIssueFromMailItem();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		updateIssueFromMailItem(null);
 	}
 
 	public void setMailItem(IssueMailItem mailItem) {
@@ -182,48 +185,126 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		this.mailItem = mailItem;
 
 		Platform.runLater(() -> {
-			try {
-				// Task pane initialized?
-				if (detectIssueModifiedTimer != null) {
-					detectIssueModifiedTimer.stop();
-					if (updateIssueFromMailItem()) {
-						initialUpdate();
+
+			// Task pane initialized?
+			if (detectIssueModifiedTimer != null) {
+
+				detectIssueModifiedStop();
+
+				updateIssueFromMailItem((succ, ex) -> {
+					if (succ) {
+						Platform.runLater(() -> {
+							try {
+								initialUpdate();
+							} catch (Exception e) {
+								log.log(Level.SEVERE, "initialUpdate failed", e);
+							}
+						});
 					}
-					detectIssueModifiedTimer.play();
-				}
-			} catch (Throwable e) {
-				e.printStackTrace();
-				showMessageBoxError(e.toString());
+				});
+
 			}
 		});
 	}
 
-	private boolean updateIssueFromMailItem() throws IOException {
-		boolean succ = false;
-		try {
-			final String subject = mailItem.getSubject();
-			final String description = mailItem.getBody();
-			IssueService srv = Globals.getIssueService();
-			String issueId = srv.extractIssueIdFromMailSubject(subject);
-			if (issueId != null && issueId.length() != 0) {
-				issue = srv.readIssue(issueId);
-			} else {
-				String defaultIssueAsString = (String) Globals.getRegistry().read(Globals.REG_defaultIssueAsString);
-				if (defaultIssueAsString == null) {
-					defaultIssueAsString = "";
+	private class MyFakeProgressCallback extends MyProgressCallback {
+
+		final Timeline fakeProgressTimer;
+		private boolean finished;
+
+		MyFakeProgressCallback() {
+			super.setTotal(1);
+
+			fakeProgressTimer = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
+				double x = 0;
+
+				@Override
+				public void handle(ActionEvent event) {
+					x += 1;
+					syncSetProgress(1 * (-1 / x + 1));
 				}
-				issue = srv.createIssue(subject, description, defaultIssueAsString);
-			}
-			succ = true;
-		} catch (Throwable e) {
-			e.printStackTrace();
-			String text = e.toString();
-			if (text.indexOf("404") >= 0) {
-				text = resb.getString("Error.IssueNotFound");
-			}
-			showMessageBoxError(text);
+			}));
+			fakeProgressTimer.setCycleCount(Timeline.INDEFINITE);
+			fakeProgressTimer.play();
 		}
-		return succ;
+		
+		private synchronized void syncSetProgress(double q) {
+			if (!finished) {
+				internalSetProgress(q);
+			}
+		}
+
+		@Override
+		public synchronized void setFinished() {
+			finished = true;
+			fakeProgressTimer.stop();
+			super.setFinished();
+		}
+
+		@Override
+		public void setTotal(double total) {
+		}
+
+		@Override
+		public void setProgress(double current) {
+		}
+	}
+
+	private void updateIssueFromMailItem(AsyncResult<Boolean> asyncResult) {
+
+		final ProgressCallback progressCallback = new MyFakeProgressCallback();
+
+		BackgTask.run(() -> {
+
+			boolean succ = false;
+			try {
+
+				// Get issue ID from mailItem
+				final String subject = mailItem.getSubject();
+				final String description = mailItem.getBody();
+				IssueService srv = Globals.getIssueService();
+				String issueId = srv.extractIssueIdFromMailSubject(subject);
+
+				// If issue ID found...
+				if (issueId != null && issueId.length() != 0) {
+
+					// read issue
+					issue = srv.readIssue(issueId);
+				} else {
+
+					// ... no issue ID: create blank issue
+					String defaultIssueAsString = (String) Globals.getRegistry().read(Globals.REG_defaultIssueAsString);
+					if (defaultIssueAsString == null) {
+						defaultIssueAsString = "";
+					}
+					issue = srv.createIssue(subject, description, defaultIssueAsString);
+
+					Thread.sleep(300);
+				}
+
+				succ = true;
+
+			} catch (Throwable e) {
+
+				String text = e.toString();
+				if (text.indexOf("404") >= 0) {
+					text = resb.getString("Error.IssueNotFound");
+					log.log(Level.INFO, text, e);
+				} else {
+					log.log(Level.SEVERE, text, e);
+				}
+
+				showMessageBoxError(text);
+
+			} finally {
+
+				progressCallback.setFinished();
+
+				if (asyncResult != null) {
+					asyncResult.setAsyncResult(succ, null);
+				}
+			}
+		});
 	}
 
 	public IssueMailItem getMailItem() {
@@ -254,9 +335,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			}
 		}
 
-		if (detectIssueModifiedTimer != null) {
-			detectIssueModifiedTimer.stop();
-		}
+		detectIssueModifiedStop();
 
 		attachmentHelper.releaseResources();
 	}
@@ -326,7 +405,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initialUpdate();
 
-			detectIssueModifiedTimer = new Timeline(new KeyFrame(Duration.seconds(0.5),
+			detectIssueModifiedTimer = new Timeline(new KeyFrame(Duration.seconds(0.3),
 					new EventHandler<ActionEvent>() {
 						@Override
 						public void handle(ActionEvent event) {
@@ -352,11 +431,24 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 						}
 					}));
 			detectIssueModifiedTimer.setCycleCount(Timeline.INDEFINITE);
-			detectIssueModifiedTimer.play();
+			detectIssueModifiedStart();
 
 		} catch (Throwable e) {
 			e.printStackTrace();
 			showMessageBoxError(e.toString());
+		}
+	}
+
+	private void detectIssueModifiedStop() {
+		if (detectIssueModifiedTimer != null) {
+			detectIssueModifiedTimer.stop();
+		}
+	}
+
+	private void detectIssueModifiedStart() {
+		if (detectIssueModifiedTimer != null) {
+			firstModifiedCheck = true;
+			detectIssueModifiedTimer.play();
 		}
 	}
 
@@ -514,7 +606,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 			});
 
-			// This selection listener disables the "Remove" button, if 
+			// This selection listener disables the "Remove" button, if
 			// an already uploaded attachment is selected. Attachments
 			// cannot be deleted via Redmine API.
 			tabAttachments.getSelectionModel().getSelectedItems().addListener(new ListChangeListener<Attachment>() {
@@ -538,7 +630,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		// Copy attachments to backing list.
 		List<Attachment> atts = new ArrayList<Attachment>(issue.getAttachments().size());
 		for (Attachment att : issue.getAttachments()) {
-			if (!att.isDeleted()) { // obsolete: cannot delete attachments via Redmine API
+			if (!att.isDeleted()) { // obsolete: cannot delete attachments via
+									// Redmine API
 				atts.add(att);
 			}
 		}
@@ -636,13 +729,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			hboxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 		}
 
-		modified = false;
-		firstModifiedCheck = true;
-		
 		Boolean injectId = (Boolean) Globals.getRegistry().read(Globals.REG_injectIssueIdIntoMailSubject);
 		mnInjectIssueIdIntoSubject.setSelected(injectId == null || injectId);
 
+		modified = false;
+
 		updateData(false);
+
+		detectIssueModifiedStart();
 	}
 
 	private void addOrRemoveTab(Tab t, boolean add) {
@@ -732,22 +826,18 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void showMessageBoxError(String text) {
-		if (detectIssueModifiedTimer != null) {
-			detectIssueModifiedTimer.stop();
-		}
+		detectIssueModifiedStop();
 		String title = resb.getString("MessageBox.title.error");
 		String ok = resb.getString("Button.OK");
 		Object owner = getDialogOwner();
 		MessageBox.create(owner).title(title).text(text).button(1, ok).bdefault().show((btn, ex) -> {
-			if (detectIssueModifiedTimer != null) {
-				detectIssueModifiedTimer.play();
-			}
+			detectIssueModifiedStart();
 		});
 	}
 
 	private void queryDiscardChangesAsync(AsyncResult<Boolean> asyncResult) {
 		if (modified) {
-			detectIssueModifiedTimer.stop();
+			detectIssueModifiedStop();
 			String title = resb.getString("MessageBox.title.confirm");
 			String text = resb.getString("MessageBox.queryDiscardChanges.text");
 			String yes = resb.getString("Button.Yes");
@@ -757,7 +847,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					.show((btn, ex) -> {
 						Boolean succ = btn != null && btn != 0;
 						asyncResult.setAsyncResult(succ, ex);
-						detectIssueModifiedTimer.play();
+						detectIssueModifiedStart();
 					});
 		} else {
 			asyncResult.setAsyncResult(true, null);
@@ -783,7 +873,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					try {
 						Explorer explorer = Globals.getThisAddin().getApplication().ActiveExplorer().as(Explorer.class);
 						MyExplorerWrapper myExplorer = Globals.getThisAddin().getMyExplorerWrapper(explorer);
-						myExplorer.showSelectedMailItem();
+						myExplorer.showSelectedMailItem(true);
 					} catch (Throwable e) {
 
 					}
@@ -937,48 +1027,64 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	}
 
-	private class ProgressPane extends DlgProgress {
+	private class MyProgressCallback extends ProgressCallbackImpl {
 
-		public ProgressPane() {
+		private int lastPercent = 0;
+
+		public MyProgressCallback() {
 			super("");
 		}
 
-		@Override
-		public void close() {
-			super.close();
+		public void setProgress(final double current) {
+			internalSetProgress(current);
+		}
+
+		protected void internalSetProgress(final double current) {
+			super.setProgress(current);
+			double currentSum = childSum + current;
+			final double quote = currentSum / total;
+			int percent = (int) Math.ceil(100.0 * quote);
+			if (percent > lastPercent) {
+				lastPercent = percent;
+			}
 			Platform.runLater(() -> {
-
-				// Replace progress dialog with issue view.
-				vboxRoot.getChildren().clear();
-				vboxRoot.getChildren().add(rootGrid);
-
-				// Update issue view
-				try {
-					initialUpdate();
-				} catch (Exception e) {
-					e.printStackTrace();
-				} finally {
-					detectIssueModifiedTimer.play();
+				if (pgProgress != null) {
+					pgProgress.setProgress(quote);
+//					System.out.println("progress " + quote);
 				}
 			});
 		}
+
+		@Override
+		public void setParams(String... params) {
+			super.setParams(params);
+		}
+
+		@Override
+		public boolean isCancelled() {
+			return false;
+		}
+
+		@Override
+		public void setFinished() {
+			Platform.runLater(() -> {
+				if (pgProgress != null) {
+					pgProgress.setProgress(0);
+//					System.out.println("progress 0");
+				}
+			});
+		}
+
 	}
 
 	@FXML
 	public void onUpdate() {
 
-		final DlgProgress dlgProgress = new ProgressPane();
-		detectIssueModifiedTimer.stop();
+		final ProgressCallback progressCallback = isNew() ? new MyProgressCallback() : new MyFakeProgressCallback();
+		detectIssueModifiedStop();
 
 		try {
 			IssueService srv = Globals.getIssueService();
-
-			// Replace issue view with progress dialog
-			{
-				Parent p = dlgProgress.load();
-				vboxRoot.getChildren().clear();
-				vboxRoot.getChildren().add(p);
-			}
 
 			// Save dialog elements into data members
 			updateData(true);
@@ -994,10 +1100,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 			}
 
-			// Initialize DlgProgress.
 			// Total bytes to upload: #attachment-bytes + some bytes for the
 			// issue's JSON object
-			final ProgressCallback progressCallback = dlgProgress.startProgress(totalBytes + 20 * 1000);
+			progressCallback.setTotal(totalBytes + 20 * 1000);
 
 			// Create issue in background.
 			// Currently, we are in the UI thread. The progress dialog would not
@@ -1005,52 +1110,51 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			// If we processed updating the issue here.
 			BackgTask.run(() -> {
 				try {
+
+					progressCallback.setProgress(4 * 1000);
+
 					boolean isNew = updateIssueChangedMembers(srv, progressCallback);
 
-					// If process was not cancelled...
-					if (dlgProgress.getResult()) {
-
-						// ... save the mail with different subject
-						if (isNew) {
-							saveMailWithIssueId(progressCallback);
-						}
-
-						// // Progress dialog tells that the issue has been
-						// // created.
-						// progressCallback.setParams("Issue " + issue.getId() +
-						// " has been created");
-						// progressCallback.setFinished();
-						// dlgProgress.setButtonOK();
-						dlgProgress.finish(true);
+					// ... save the mail with different subject
+					if (isNew) {
+						saveMailWithIssueId(progressCallback);
 					}
+
+					Platform.runLater(() -> {
+						try {
+							initialUpdate();
+
+							progressCallback.setFinished();
+
+						} catch (Exception e) {
+							log.log(Level.SEVERE, "Failed to read issue data into UI controls.", e);
+						}
+					});
 
 				} catch (Throwable e) {
 
 					if (!progressCallback.isCancelled()) {
-						e.printStackTrace();
+						log.log(Level.SEVERE, "Failed to update issue", e);
 
 						String text = resb.getString("Error.FailedToUpdateIssue");
 						text += " " + e.toString();
 						showMessageBoxError(text);
 
-						if (dlgProgress != null) {
-							dlgProgress.finish(false);
-						}
+						progressCallback.setFinished();
+						detectIssueModifiedStart();
 					}
 				}
 			});
 
 		} catch (Throwable e) {
-			e.printStackTrace();
+			log.log(Level.SEVERE, "Failed to update issue", e);
 
 			String text = resb.getString("Error.FailedToUpdateIssue");
 			text += " " + e.toString();
 			showMessageBoxError(text);
 
-			if (dlgProgress != null) {
-				dlgProgress.finish(false);
-			}
-		} finally {
+			progressCallback.setFinished();
+			detectIssueModifiedStart();
 		}
 	}
 
@@ -1096,11 +1200,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	@FXML
-	public void onRemoveIssueIdFromSubject() {
+	public void onInjectIssueIdIntoSubject() {
 		try {
+			Boolean succ = mnInjectIssueIdIntoSubject.isSelected();
+			Globals.getRegistry().write(Globals.REG_injectIssueIdIntoMailSubject, succ);
 			IssueService srv = Globals.getIssueService();
 			String oldSubject = mailItem.getSubject();
-			String newSubject = srv.injectIssueIdIntoMailSubject(oldSubject, null);
+			String newSubject = srv.injectIssueIdIntoMailSubject(oldSubject, succ ? issue : null);
 			if (!oldSubject.equals(newSubject)) {
 				mailItem.setSubject(newSubject);
 				mailItem.Save();
@@ -1108,11 +1214,5 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		} catch (Exception e) {
 			showMessageBoxError(e.toString());
 		}
-	}
-	
-	@FXML
-	public void onInjectIssueIdIntoSubject() {
-		Boolean succ = mnInjectIssueIdIntoSubject.isSelected();
-		Globals.getRegistry().write(Globals.REG_injectIssueIdIntoMailSubject, succ);
 	}
 }

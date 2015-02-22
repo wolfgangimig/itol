@@ -69,6 +69,10 @@ public class Property {
 	 * entered for an updated issue.
 	 */
 	public static final String NOTES = "IssueProperty.Notes";
+	
+	public static final String LOG_FILE = "Log.file";
+	
+	public static final String LOG_LEVEL = "Log.level";
 
 	private String id;
 

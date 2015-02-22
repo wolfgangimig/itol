@@ -60,11 +60,13 @@ var log = Logger.getLogger("IssueServiceImpl.js");
  */
 function ddump(name, obj) {
 	var str = JSON.stringify(obj, null, 2);
-	if (ldebug) ldebug(name + "=" + str);
+	if (ldebug)
+		ldebug(name + "=" + str);
 }
 function idump(name, obj) {
 	var str = JSON.stringify(obj, null, 2);
-	if (linfo) linfo(name + "=" + str);
+	if (linfo)
+		linfo(name + "=" + str);
 }
 
 var ldebug = log.isLoggable(Level.FINE) ? (function(msg, ex) {
@@ -382,7 +384,8 @@ function arrayIndexOf(arr, elm) {
 }
 
 function readProjects(data) {
-	if (ldebug) ldebug("readProjects(");
+	if (ldebug)
+		ldebug("readProjects(");
 
 	var projectCount = 0;
 	var offset = 0;
@@ -400,7 +403,8 @@ function readProjects(data) {
 			var project = arrOfProjects[i];
 			data.projects[project.id] = project;
 			ddump("project", project);
-			if (linfo) linfo("project.id=" + project.id + ", .name=" + project.name);
+			if (linfo)
+				linfo("project.id=" + project.id + ", .name=" + project.name);
 			projectCount++;
 		}
 
@@ -417,53 +421,67 @@ function readProjects(data) {
 			p = data.projects[p.parent.id];
 		}
 		project.name = name;
-		if (ldebug) ldebug("project.id=" + project.id + ", name=" + project.name);
+		if (ldebug)
+			ldebug("project.id=" + project.id + ", name=" + project.name);
 	}
 
-	if (ldebug) ldebug(")readProjects");
+	if (ldebug)
+		ldebug(")readProjects");
 };
 
 function readCurrentUser(data) {
-	if (ldebug) ldebug("readCurrentUser(");
+	if (ldebug)
+		ldebug("readCurrentUser(");
 	data.user = httpClient
 			.get("/users/current.json?include=memberships,groups").user;
-	if (linfo) linfo("me.id=" + data.user.id + ", .name=" + data.user.name);
+	if (linfo)
+		linfo("me.id=" + data.user.id + ", .name=" + data.user.name);
 	ddump("user ", data.user);
-	if (ldebug) ldebug(")readCurrentUser");
+	if (ldebug)
+		ldebug(")readCurrentUser");
 };
 
 function readProjectVersions(project) {
-	if (ldebug) ldebug("readProjectVersions(project.id=" + project.id);
+	if (ldebug)
+		ldebug("readProjectVersions(project.id=" + project.id);
 	project.versions = [];
 	var arrOfVersions = httpClient.get("/projects/" + project.id
 			+ "/versions.json").versions;
 	for (var j = 0; j < arrOfVersions.length; j++) {
 		var version = arrOfVersions[j];
 		project.versions.push(version);
-		if (linfo) linfo("version: project.id=" + project.id + ", version.id=" + version.id + ", .name=" + version.name);
+		if (linfo)
+			linfo("version: project.id=" + project.id + ", version.id="
+					+ version.id + ", .name=" + version.name);
 	}
 	ddump("project.versions", project.versions);
-	if (ldebug) ldebug(")readProjectVersions");
+	if (ldebug)
+		ldebug(")readProjectVersions");
 	return project.versions;
 }
 
 function readProjectIssueCategories(project) {
-	if (ldebug) ldebug("readProjectIssueCategories(project.id=" + project.id);
+	if (ldebug)
+		ldebug("readProjectIssueCategories(project.id=" + project.id);
 	project.issue_categories = [];
 	var arr = httpClient.get("/projects/" + project.id
 			+ "/issue_categories.json").issue_categories;
 	for (var j = 0; j < arr.length; j++) {
 		var category = arr[j];
 		project.issue_categories.push(category);
-		if (linfo) linfo("categorie: project.id=" + project.id + ", category.id=" + category.id + ", .name=" + category.name);
+		if (linfo)
+			linfo("categorie: project.id=" + project.id + ", category.id="
+					+ category.id + ", .name=" + category.name);
 	}
 	ddump("project.issue_categories", project.issue_categories);
-	if (ldebug) ldebug(")readProjectIssueCategories");
+	if (ldebug)
+		ldebug(")readProjectIssueCategories");
 	return project.issue_categories;
 }
 
 function readProjectMembers(project) {
-	if (ldebug) ldebug("readProjectMembers(project.id=" + project.id);
+	if (ldebug)
+		ldebug("readProjectMembers(project.id=" + project.id);
 	project.memberships = [];
 	var offset = 0;
 	while (project.memberships.length < MAX_USERS) {
@@ -482,18 +500,23 @@ function readProjectMembers(project) {
 			// see issue #9, user might be missing
 			if (membership.user) {
 				project.memberships.push(membership);
-				if (linfo) linfo("member: project.id=" + project.id + ", user.id=" + membership.user.id + ", .name=" + membership.user.name);
+				if (linfo)
+					linfo("member: project.id=" + project.id + ", user.id="
+							+ membership.user.id + ", .name="
+							+ membership.user.name);
 			}
 		}
 
 		offset += arrOfMemberships.length;
 	}
 	ddump("project.memberships", project.memberships);
-	if (ldebug) ldebug(")readProjectMembers");
+	if (ldebug)
+		ldebug(")readProjectMembers");
 }
 
 function writeIssue(issueParam, progressCallback) {
-	if (ldebug) ldebug("writeIssue(");
+	if (ldebug)
+		ldebug("writeIssue(");
 	ddump("send", issueParam);
 	var ret = null;
 
@@ -506,7 +529,8 @@ function writeIssue(issueParam, progressCallback) {
 
 	var issueId = issueParam.issue.id;
 	var isUpdate = !!issueId;
-	if (ldebug) ldebug("issueId=" + issueId + ", isUpdate=" + isUpdate);
+	if (ldebug)
+		ldebug("issueId=" + issueId + ", isUpdate=" + isUpdate);
 
 	if (isUpdate) {
 		ret = httpClient.put("/issues/" + issueId + ".json", issueParam,
@@ -516,7 +540,8 @@ function writeIssue(issueParam, progressCallback) {
 	}
 
 	ddump("recv", ret);
-	if (ldebug) ldebug(")writeIssue=");
+	if (ldebug)
+		ldebug(")writeIssue=");
 	return ret;
 }
 
@@ -525,7 +550,8 @@ function writeIssue(issueParam, progressCallback) {
  * encrypted blob in the description of the ITOL confguration project.
  */
 function readOrUpdateConfigurationProject() {
-	if (ldebug) ldebug("readOrUpdateConfigurationProject(");
+	if (ldebug)
+		ldebug("readOrUpdateConfigurationProject(");
 
 	// Read configuration project.
 	var configProject = null;
@@ -562,7 +588,8 @@ function readOrUpdateConfigurationProject() {
 		}
 
 	} catch (ex) {
-		if (ldebug) ldebug("Configuration project not found, try to crate it. ", ex);
+		if (ldebug)
+			ldebug("Configuration project not found, try to crate it. ", ex);
 	}
 
 	// Try to update or create config project
@@ -614,7 +641,8 @@ function readOrUpdateConfigurationProject() {
 		data.isAdmin = true;
 
 	} catch (ex) {
-		if (ldebug) ldebug("Failed to read custom fields, I am not an administrator.");
+		if (ldebug)
+			ldebug("Failed to read custom fields, I am not an administrator.");
 
 		// Memorize that current user is not an administrator
 		data.isAdmin = false;
@@ -628,13 +656,21 @@ function readOrUpdateConfigurationProject() {
 		}
 	}
 
-	if (ldebug) ldebug("data.isAdmin=" + data.isAdmin);
+	if (ldebug)
+		ldebug("data.isAdmin=" + data.isAdmin);
 
-	if (ldebug) ldebug(")readOrUpdateConfigurationProject");
+	if (ldebug)
+		ldebug(")readOrUpdateConfigurationProject");
 }
 
 function initialize() {
 	config.valid = false;
+
+	if (linfo) {
+		linfo("config.url=" + config.url);
+		linfo("config.apiKey set=" + (config.apiKey && config.apiKey.length));
+		linfo("config.msgFileType=" + config.msgFileType);
+	}
 
 	data.clear();
 
@@ -654,7 +690,8 @@ function initialize() {
 }
 
 function readTrackers(data) {
-	if (ldebug) ldebug("readTrackers(");
+	if (ldebug)
+		ldebug("readTrackers(");
 	var trackersResponse = httpClient.get("/trackers.json");
 	ddump("trackersResponse", trackersResponse);
 	for (var i = 0; i < trackersResponse.trackers.length; i++) {
@@ -662,11 +699,13 @@ function readTrackers(data) {
 		data.trackers.push(new IdName(tracker.id, tracker.name));
 	}
 
-	if (ldebug) ldebug(")readTrackers");
+	if (ldebug)
+		ldebug(")readTrackers");
 }
 
 function readPriorities(data) {
-	if (ldebug) ldebug("readPriorities(");
+	if (ldebug)
+		ldebug("readPriorities(");
 	var prioritiesResponse = httpClient
 			.get("/enumerations/issue_priorities.json");
 	ddump("prioritiesResponse", prioritiesResponse);
@@ -678,12 +717,14 @@ function readPriorities(data) {
 			data.defaultPriority = priority.id;
 		}
 	}
-	if (ldebug) ldebug(")readPriorities");
+	if (ldebug)
+		ldebug(")readPriorities");
 
 }
 
 function readStatuses(data) {
-	if (ldebug) ldebug("readStatuses(");
+	if (ldebug)
+		ldebug("readStatuses(");
 	var statusesResponse = httpClient.get("/issue_statuses.json");
 	ddump("statusesResponse", statusesResponse);
 	data.statuses = [];
@@ -694,11 +735,13 @@ function readStatuses(data) {
 	if (!data.statuses) {
 		data.statuses = [ new IdName(1, "New issue") ];
 	}
-	if (ldebug) ldebug(")readStatuses");
+	if (ldebug)
+		ldebug(")readStatuses");
 }
 
 function readCustomFields(data) {
-	if (ldebug) ldebug("readCustomFields(");
+	if (ldebug)
+		ldebug("readCustomFields(");
 	var response = httpClient.get("/custom_fields.json");
 	ddump("response", response);
 	data.custom_fields = [];
@@ -715,7 +758,8 @@ function readCustomFields(data) {
 		}
 	}
 
-	if (ldebug) ldebug(")readCustomFields");
+	if (ldebug)
+		ldebug(")readCustomFields");
 	return data.custom_fields;
 }
 
@@ -761,7 +805,8 @@ function makePropertyType(cfield) {
 }
 
 function makePropertyClassForCustomField(cfield) {
-	if (ldebug) ldebug("makePropertyClassForCustomField(" + cfield.name);
+	if (ldebug)
+		ldebug("makePropertyClassForCustomField(" + cfield.name);
 	var ret = null;
 
 	var type = makePropertyType(cfield);
@@ -785,10 +830,13 @@ function makePropertyClassForCustomField(cfield) {
 
 		ret = new PropertyClass(type, id, name, defaultValue, selectList);
 	} else {
-		if (lwarn) lwarn("Unsupported: field.name=" + cfield.name + ", field_format=" + cfield.field_format);
+		if (lwarn)
+			lwarn("Unsupported: field.name=" + cfield.name + ", field_format="
+					+ cfield.field_format);
 	}
 
-	if (ldebug) ldebug(")makePropertyClassForCustomField=" + ret);
+	if (ldebug)
+		ldebug(")makePropertyClassForCustomField=" + ret);
 	return ret;
 }
 
@@ -813,6 +861,9 @@ function initializePropertyClasses() {
 			"Projects (optional, comma separated)");
 	propertyClasses.add(PropertyClass.TYPE_STRING,
 			config.PROPERTY_ID_MSG_FILE_TYPE, "Attach mail as");
+	propertyClasses.add(PropertyClass.TYPE_STRING,
+			config.PROPERTY_ID_USE_CUSTOM_FIELDS, "Use custom fields", "0", [
+					new IdName("0", "No"), new IdName("1", "Yes") ]);
 
 	// propertyClass.add(PropertyClass.TYPE_STRING,
 	// config.PROPERTY_ID_MY_CONFIG_PROPERTY,
@@ -909,7 +960,8 @@ function getIssueTypes(issue) {
 	var ret = [];
 	var projectId = issue ? issue.getProject() : -1;
 	var project = data.projects[projectId];
-	if (ldebug) ldebug("project=" + project);
+	if (ldebug)
+		ldebug("project=" + project);
 	if (project) {
 		if (!project.trackers) {
 			var projectResponse = httpClient.get("/projects/" + projectId
@@ -942,7 +994,8 @@ function getProjectsIdNames(issue) {
 }
 
 function getAllProjectsIdNamesWithIssueTracking() {
-	if (ldebug) ldebug("getAllProjectsIdNamesWithIssueTracking(");
+	if (ldebug)
+		ldebug("getAllProjectsIdNamesWithIssueTracking(");
 
 	var ret = [];
 
@@ -960,19 +1013,22 @@ function getAllProjectsIdNamesWithIssueTracking() {
 			}
 		}
 		if (!isIssueProject) {
-			if (ldebug) ldebug("Without issue tracking.");
+			if (ldebug)
+				ldebug("Without issue tracking.");
 			continue;
 		}
 
 		var idn = new IdName(project.id, project.name);
-		if (ldebug) ldebug("add project.id=" + idn.id + ", name=" + idn.name);
+		if (ldebug)
+			ldebug("add project.id=" + idn.id + ", name=" + idn.name);
 		ret.push(idn);
 	}
 
 	// Sort by name
 	ret.sort(compareIdNameByName);
 
-	if (ldebug) ldebug(")getAllProjectsIdNamesWithIssueTracking");
+	if (ldebug)
+		ldebug(")getAllProjectsIdNamesWithIssueTracking");
 	return ret;
 };
 
@@ -981,17 +1037,20 @@ function compareIdNameByName(lhs, rhs) {
 }
 
 function getIssueProject(issue) {
-	if (ldebug) ldebug("getIssueProject(");
+	if (ldebug)
+		ldebug("getIssueProject(");
 	var projectId = issue ? issue.getProject() : 0;
 	var project = data.projects[projectId];
-	if (ldebug) ldebug(")getIssueProject=" + project);
+	if (ldebug)
+		ldebug(")getIssueProject=" + project);
 	return project;
 }
 
 function getVersions(issue) {
 	var ret = [];
 	var project = getIssueProject(issue);
-	if (ldebug) ldebug("project=" + project);
+	if (ldebug)
+		ldebug("project=" + project);
 	if (project) {
 
 		if (typeof project.versions === "undefined") {
@@ -1011,7 +1070,8 @@ function getVersions(issue) {
 function getCategories(issue) {
 	var ret = [];
 	var project = getIssueProject(issue);
-	if (ldebug) ldebug("project=" + project);
+	if (ldebug)
+		ldebug("project=" + project);
 	if (project) {
 
 		if (typeof project.issue_categories === "undefined") {
@@ -1027,10 +1087,12 @@ function getCategories(issue) {
 };
 
 function getIssueProjectMemberships(issue) {
-	if (ldebug) ldebug("getIssueProjectMemberships(");
+	if (ldebug)
+		ldebug("getIssueProjectMemberships(");
 	var ret = [];
 	var project = getIssueProject(issue);
-	if (ldebug) ldebug("project=" + project);
+	if (ldebug)
+		ldebug("project=" + project);
 	if (project) {
 
 		if (typeof project.memberships === "undefined") {
@@ -1039,7 +1101,8 @@ function getIssueProjectMemberships(issue) {
 
 		ret = project.memberships;
 	}
-	if (ldebug) ldebug(")getIssueProjectMemberships=#" + ret.length);
+	if (ldebug)
+		ldebug(")getIssueProjectMemberships=#" + ret.length);
 	return ret;
 }
 
@@ -1105,18 +1168,21 @@ function getMsgFileType() {
 }
 
 function getPropertyDisplayOrder(issue) {
-	if (ldebug) ldebug("getPropertyDisplayOrder(");
+	if (ldebug)
+		ldebug("getPropertyDisplayOrder(");
 	var propertyIds = [ Property.ASSIGNEE ];
 
 	var categories = getCategories(issue);
 	if (categories && categories.length) {
-		if (ldebug) ldebug("has categories");
+		if (ldebug)
+			ldebug("has categories");
 		propertyIds.push(config.PROPERTY_ID_ISSUE_CATEGORY);
 	}
 
 	var versions = getVersions(issue);
 	if (versions && versions.length) {
-		if (ldebug) ldebug("has versions");
+		if (ldebug)
+			ldebug("has versions");
 		propertyIds.push(config.PROPERTY_ID_FIXED_VERSION);
 	}
 
@@ -1131,31 +1197,36 @@ function getPropertyDisplayOrder(issue) {
 			if (isCustomFieldForIssueType(cfield, issue)) {
 				if (isCustomFieldForCurrentUser(cfield, issue)) {
 					propertyIds.push(cfield.propertyId);
-					if (ldebug) ldebug("add custom field=" + cfield.name);
+					if (ldebug)
+						ldebug("add custom field=" + cfield.name);
 				}
 			}
 		}
 	}
 
-	if (ldebug) ldebug(")getPropertyDisplayOrder=" + propertyIds);
+	if (ldebug)
+		ldebug(")getPropertyDisplayOrder=" + propertyIds);
 	return propertyIds;
 }
 
 function isCustomFieldForIssueType(cfield, issue) {
-	if (ldebug) ldebug("isCustomFieldForIssueType(" + cfield.name + ", issueType="
-			+ issue.getType());
+	if (ldebug)
+		ldebug("isCustomFieldForIssueType(" + cfield.name + ", issueType="
+				+ issue.getType());
 	var ret = false;
 	if (cfield.trackers) {
 		for (var t = 0; !ret && t < cfield.trackers.length; t++) {
 			ret = cfield.trackers[t].id == issue.getType();
 		}
 	}
-	if (ldebug) ldebug(")isCustomFieldForIssueType=" + ret);
+	if (ldebug)
+		ldebug(")isCustomFieldForIssueType=" + ret);
 	return ret;
 }
 
 function isCustomFieldForCurrentUser(cfield, issue) {
-	if (ldebug) ldebug("isCustomFieldForCurrentUser(" + cfield.name);
+	if (ldebug)
+		ldebug("isCustomFieldForCurrentUser(" + cfield.name);
 	var ret = false;
 
 	if (!data.isAdmin && cfield.roles && cfield.roles.length && data.user) {
@@ -1165,7 +1236,8 @@ function isCustomFieldForCurrentUser(cfield, issue) {
 		for (var i = 0; i < cfield.roles.length; i++) {
 			fieldRoleIds.push(cfield.roles[i].id);
 		}
-		if (ldebug) ldebug("fieldRoleIds=" + JSON.stringify(fieldRoleIds));
+		if (ldebug)
+			ldebug("fieldRoleIds=" + JSON.stringify(fieldRoleIds));
 
 		// The roles the current user plays in the issue's project
 		var roles = getCurrentUsersRolesForIssueProject(issue);
@@ -1174,7 +1246,8 @@ function isCustomFieldForCurrentUser(cfield, issue) {
 		for (var j = 0; !ret && j < roles.length; j++) {
 			ret = fieldRoleIds.indexOf(roles[j].id);
 			if (ret) {
-				if (ldebug) ldebug("found role " + roles[j].id);
+				if (ldebug)
+					ldebug("found role " + roles[j].id);
 			}
 		}
 
@@ -1182,12 +1255,14 @@ function isCustomFieldForCurrentUser(cfield, issue) {
 		ret = true;
 	}
 
-	if (ldebug) ldebug(")isCustomFieldForCurrentUser=" + ret);
+	if (ldebug)
+		ldebug(")isCustomFieldForCurrentUser=" + ret);
 	return ret;
 }
 
 function getCurrentUsersRolesForIssueProject(issue) {
-	if (ldebug) ldebug("getCurrentUsersRolesInProject(");
+	if (ldebug)
+		ldebug("getCurrentUsersRolesInProject(");
 	var roles = [];
 	var memberships = getIssueProjectMemberships(issue);
 	for (var i = 0; i < memberships.length; i++) {
@@ -1196,7 +1271,8 @@ function getCurrentUsersRolesForIssueProject(issue) {
 			roles = memberships[i].roles;
 		}
 	}
-	if (ldebug) ldebug(")getCurrentUsersRolesInProject=" + JSON.stringify(roles));
+	if (ldebug)
+		ldebug(")getCurrentUsersRolesInProject=" + JSON.stringify(roles));
 	return roles;
 }
 
@@ -1264,8 +1340,9 @@ function createIssue(subject, description, defaultIssueAsString) {
 };
 
 function updateIssue(trackerIssue, modifiedProperties, progressCallback) {
-	if (ldebug) ldebug("updateIssue(trackerIssue=" + trackerIssue + ", progressCallback="
-			+ progressCallback);
+	if (ldebug)
+		ldebug("updateIssue(trackerIssue=" + trackerIssue
+				+ ", progressCallback=" + progressCallback);
 	config.checkValid();
 
 	var redmineIssue = {};
@@ -1284,14 +1361,17 @@ function updateIssue(trackerIssue, modifiedProperties, progressCallback) {
 		toTrackerIssue(redmineIssue, trackerIssue);
 	}
 
-	if (ldebug) ldebug(")updateIssue=" + trackerIssue);
+	if (ldebug)
+		ldebug(")updateIssue=" + trackerIssue);
 	return trackerIssue;
 };
 
 function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue,
 		progressCallback) {
-	if (ldebug) ldebug("toRedmineIssue(trackerIssue=" + trackerIssue + ", redmineIssue="
-			+ redmineIssue + ", progressCallback=" + progressCallback);
+	if (ldebug)
+		ldebug("toRedmineIssue(trackerIssue=" + trackerIssue
+				+ ", redmineIssue=" + redmineIssue + ", progressCallback="
+				+ progressCallback);
 
 	redmineIssue.id = trackerIssue.getId();
 	redmineIssue.project_id = parseInt(trackerIssue.getProject());
@@ -1320,18 +1400,20 @@ function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue,
 	for (var i = 0; i < propertyIds.length; i++) {
 		var propId = propertyIds[i];
 		var propValue = getIssuePropertyValue(trackerIssue, propId);
-		if (ldebug) ldebug("propId=" + propId + ", propValue=" + propValue);
+		if (ldebug)
+			ldebug("propId=" + propId + ", propValue=" + propValue);
 		redmineIssue[propId] = propValue;
 	}
 
 	// Custom properties
-	redmineIssue.custom_fields = [];
 	if (data.custom_fields) {
+		redmineIssue.custom_fields = [];
 		for (var i = 0; i < data.custom_fields.length; i++) {
 			var cfield = data.custom_fields[i];
 			var propId = makeCustomFieldPropertyId(cfield);
 			var propValue = getIssuePropertyValue(trackerIssue, propId);
-			if (ldebug) ldebug("custom propId=" + propId + ", propValue=" + propValue);
+			if (ldebug)
+				ldebug("custom propId=" + propId + ", propValue=" + propValue);
 			setRedmineIssueCustomField(redmineIssue, cfield.id, propId,
 					propValue);
 		}
@@ -1341,7 +1423,8 @@ function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue,
 	try {
 		for (var i = 0; i < trackerIssue.getAttachments().size(); i++) {
 			var trackerAttachment = trackerIssue.getAttachments().get(i);
-			if (ldebug) ldebug("trackerAttachment=" + trackerAttachment);
+			if (ldebug)
+				ldebug("trackerAttachment=" + trackerAttachment);
 
 			// Upload only new attachments
 			if (trackerAttachment.getId().isEmpty()) {
@@ -1379,21 +1462,25 @@ function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue,
 		}
 	}
 
-	if (ldebug) ldebug(")toRedmineIssue=" + redmineIssue);
+	if (ldebug)
+		ldebug(")toRedmineIssue=" + redmineIssue);
 	return redmineIssue;
 }
 
 function setRedmineIssueCustomField(redmineIssue, fieldId, propId, propValue) {
-	if (ldebug) ldebug("setRedmineIssueCustomField(");
+	if (ldebug)
+		ldebug("setRedmineIssueCustomField(");
 	if (typeof propValue != "undefined") {
 		var type = -1;
 		var pclass = config.propertyClasses.get(propId);
 		if (!pclass) {
-			if (lerror) lerror("Missing property class for property ID=" + propId);
+			if (lerror)
+				lerror("Missing property class for property ID=" + propId);
 			return;
 		}
 		type = pclass.type;
-		if (ldebug) ldebug("propertyClass=" + pclass + ", type=" + type);
+		if (ldebug)
+			ldebug("propertyClass=" + pclass + ", type=" + type);
 		switch (type) {
 		case PropertyClass.TYPE_BOOL:
 			fieldValue = (!!propValue) ? 1 : 0;
@@ -1410,26 +1497,32 @@ function setRedmineIssueCustomField(redmineIssue, fieldId, propId, propValue) {
 			"value" : fieldValue
 		};
 		redmineIssue.custom_fields.push(obj);
-		if (ldebug) ldebug("set field=" + JSON.stringify(obj));
+		if (ldebug)
+			ldebug("set field=" + JSON.stringify(obj));
 	}
-	if (ldebug) ldebug(")setRedmineIssueCustomField");
+	if (ldebug)
+		ldebug(")setRedmineIssueCustomField");
 }
 
 function getIssuePropertyValue(issue, propId) {
-	if (ldebug) ldebug("getIssuePropertyValue(" + propId);
+	if (ldebug)
+		ldebug("getIssuePropertyValue(" + propId);
 	var ret = null;
 	var pclass = config.propertyClasses.get(propId);
 	if (!pclass) {
-		if (lerror) lerror("Missing property class for property ID=" + propId);
+		if (lerror)
+			lerror("Missing property class for property ID=" + propId);
 		return ret;
 	}
 	var type = pclass.type;
-	if (ldebug) ldebug("propertyClass=" + pclass + ", type=" + type);
+	if (ldebug)
+		ldebug("propertyClass=" + pclass + ", type=" + type);
 	switch (type) {
 	case PropertyClass.TYPE_STRING_LIST: {
 		ret = [];
 		var list = issue.getPropertyStringList(propId, null);
-		if (ldebug) ldebug("list=" + list);
+		if (ldebug)
+			ldebug("list=" + list);
 		if (list) {
 			for (var i = 0; i < list.size(); i++) {
 				ret.push(list.get(i));
@@ -1446,10 +1539,12 @@ function getIssuePropertyValue(issue, propId) {
 		ret = issue.getPropertyString(propId, "");
 		break;
 	default:
-		if (lerror) lerror("Unknown property type=" + type);
+		if (lerror)
+			lerror("Unknown property type=" + type);
 	}
 
-	if (ldebug) ldebug(")getIssuePropertyValue=" + ret);
+	if (ldebug)
+		ldebug(")getIssuePropertyValue=" + ret);
 	return ret;
 }
 
@@ -1491,17 +1586,25 @@ function extractIssueIdFromMailSubject(subject) {
 };
 
 function stripOneIssueIdFromMailSubject(subject) {
-	if (ldebug) ldebug("stripOneIssueIdFromMailSubject(" + subject);
+	if (ldebug)
+		ldebug("stripOneIssueIdFromMailSubject(" + subject);
 	var ret = subject;
+
 	var startTag = "[R-";
 	var p = subject.indexOf(startTag);
 	if (p >= 0) {
+		if (ldebug)
+			ldebug("found issue ID at " + p);
 		var q = subject.indexOf("]", p);
 		if (q >= 0) {
 			ret = subject.substring(q + 1).trim();
+			if (ldebug)
+				ldebug("removed issue ID at " + p);
 		}
 	}
-	if (ldebug) ldebug(")stripOneIssueIdFromMailSubject=" + ret);
+	ret = ret.trim();
+	if (ldebug)
+		ldebug(")stripOneIssueIdFromMailSubject=" + ret);
 	return ret;
 };
 
@@ -1511,6 +1614,7 @@ function stripIssueIdFromMailSubject(subject) {
 		subject = ret;
 		ret = stripOneIssueIdFromMailSubject(subject);
 	}
+	ret = ret.trim();
 	return ret;
 }
 
@@ -1534,8 +1638,9 @@ function stripFirstReFwdFromSubject(subject) {
 }
 
 function injectIssueIdIntoMailSubject(subject, iss) {
-	var ret = subject;
-	if (iss) {
+	var ret = stripIssueIdFromMailSubject("" + subject);
+
+	if (iss && iss.id && iss.id.length) {
 		ret = "[R-" + iss.getId() + "] ";
 		ret += subject;
 	} else {
@@ -1548,12 +1653,15 @@ function injectIssueIdIntoMailSubject(subject, iss) {
 			}
 		}
 	}
+
+	ret = ret.trim();
 	return ret;
 };
 
 function writeAttachment(trackerAttachment, progressCallback) {
-	if (ldebug) ldebug("writeAttachment(" + trackerAttachment + ", progressCallback="
-			+ progressCallback);
+	if (ldebug)
+		ldebug("writeAttachment(" + trackerAttachment + ", progressCallback="
+				+ progressCallback);
 	var content = trackerAttachment.getStream();
 
 	var uploadResult = httpClient.upload("/uploads.json", content,
@@ -1571,12 +1679,14 @@ function writeAttachment(trackerAttachment, progressCallback) {
 		progressCallback.setFinished();
 	}
 
-	if (ldebug) ldebug(")writeAttachment=" + redmineAttachment);
+	if (ldebug)
+		ldebug(")writeAttachment=" + redmineAttachment);
 	return redmineAttachment;
 };
 
 function readIssue(issueId) {
-	if (ldebug) ldebug("readIssue(" + issueId);
+	if (ldebug)
+		ldebug("readIssue(" + issueId);
 	var response = httpClient
 			.get("/issues/"
 					+ issueId
@@ -1588,41 +1698,49 @@ function readIssue(issueId) {
 	var trackerIssue = new Issue();
 	toTrackerIssue(redmineIssue, trackerIssue);
 
-	if (ldebug) ldebug(")readIssue");
+	if (ldebug)
+		ldebug(")readIssue");
 	return trackerIssue;
 }
 
 function toTrackerIssue(redmineIssue, issue) {
-	if (ldebug) ldebug("toTrackerIssue(" + redmineIssue.id);
+	if (ldebug)
+		ldebug("toTrackerIssue(" + redmineIssue.id);
 
 	// Standard properties
 	issue.id = redmineIssue.id;
 	issue.subject = redmineIssue.subject;
 	issue.description = redmineIssue.description;
-	if (ldebug) ldebug("issue.subject=" + issue.subject);
+	if (ldebug)
+		ldebug("issue.subject=" + issue.subject);
 
 	if (redmineIssue.project) {
 		issue.project = redmineIssue.project.id;
-		if (ldebug) ldebug("issue.project=" + issue.project);
+		if (ldebug)
+			ldebug("issue.project=" + issue.project);
 	}
 	if (redmineIssue.tracker) {
 		issue.type = redmineIssue.tracker.id;
-		if (ldebug) ldebug("issue.type=" + issue.type);
+		if (ldebug)
+			ldebug("issue.type=" + issue.type);
 	}
 	if (redmineIssue.status) {
 		issue.status = redmineIssue.status.id;
-		if (ldebug) ldebug("issue.status=" + issue.status);
+		if (ldebug)
+			ldebug("issue.status=" + issue.status);
 	}
 	if (redmineIssue.priority) {
 		issue.priority = redmineIssue.priority.id;
-		if (ldebug) ldebug("issue.priority=" + issue.priority);
+		if (ldebug)
+			ldebug("issue.priority=" + issue.priority);
 	}
 	if (redmineIssue.assigned_to) {
 		issue.assignee = redmineIssue.assigned_to.id;
 	} else {
 		issue.assignee = -1;
 	}
-	if (ldebug) ldebug("issue.assignee=" + issue.assignee);
+	if (ldebug)
+		ldebug("issue.assignee=" + issue.assignee);
 
 	if (redmineIssue.category) {
 		setIssuePropertyValue(issue, config.PROPERTY_ID_ISSUE_CATEGORY,
@@ -1640,24 +1758,28 @@ function toTrackerIssue(redmineIssue, issue) {
 	for (var i = 0; i < propertyIds.length; i++) {
 		var propId = propertyIds[i];
 		var propValue = redmineIssue[propId];
-		if (ldebug) ldebug("propId=" + propId + ", propValue=" + propValue);
+		if (ldebug)
+			ldebug("propId=" + propId + ", propValue=" + propValue);
 		setIssuePropertyValue(issue, propertyIds[i], propValue);
 	}
 
 	// Custom properties
 	if (redmineIssue.custom_fields) {
-		if (ldebug) ldebug("#custom_fields=" + redmineIssue.custom_fields.length);
+		if (ldebug)
+			ldebug("#custom_fields=" + redmineIssue.custom_fields.length);
 		for (var i = 0; i < redmineIssue.custom_fields.length; i++) {
 			var propId = makeCustomFieldPropertyId(redmineIssue.custom_fields[i]);
 			var propValue = redmineIssue.custom_fields[i].value;
-			if (ldebug) ldebug("custom propId=" + propId + ", propValue=" + propValue);
+			if (ldebug)
+				ldebug("custom propId=" + propId + ", propValue=" + propValue);
 			setIssuePropertyValue(issue, propId, propValue);
 		}
 	}
 
 	// Attachments
 	if (redmineIssue.attachments) {
-		if (ldebug) ldebug("#attachments=" + redmineIssue.attachments.length);
+		if (ldebug)
+			ldebug("#attachments=" + redmineIssue.attachments.length);
 		var trackerAttachments = [];
 		for (var i = 0; i < redmineIssue.attachments.length; i++) {
 			var ra = redmineIssue.attachments[i];
@@ -1668,27 +1790,32 @@ function toTrackerIssue(redmineIssue, issue) {
 			ta.fileName = ra.filename;
 			ta.contentLength = ra.filesize;
 			ta.url = ra.content_url;
-			if (ldebug) ldebug("attachment id=" + ta.id + ", file=" + ta.fileName);
+			if (ldebug)
+				ldebug("attachment id=" + ta.id + ", file=" + ta.fileName);
 			trackerAttachments.push(ta);
 		}
 		issue.attachments = trackerAttachments;
 	}
 
-	if (ldebug) ldebug(")toTrackerIssue");
+	if (ldebug)
+		ldebug(")toTrackerIssue");
 }
 
 function setIssuePropertyValue(issue, propId, propValue) {
-	if (ldebug) ldebug("setIssuePropertyValue(");
+	if (ldebug)
+		ldebug("setIssuePropertyValue(");
 	if (typeof propValue != "undefined") {
 		var type = -1;
 		var pclass = config.propertyClasses.get(propId);
 		if (!pclass) {
-			if (lerror) lerror("Missing property class for property ID=" + propId);
+			if (lerror)
+				lerror("Missing property class for property ID=" + propId);
 			return;
 		}
 		type = pclass.type;
-		if (ldebug) ldebug("propertyClass=" + pclass + ", type=" + type + ", value="
-				+ propValue);
+		if (ldebug)
+			ldebug("propertyClass=" + pclass + ", type=" + type + ", value="
+					+ propValue);
 		switch (type) {
 		case PropertyClass.TYPE_STRING_LIST:
 			issue.setPropertyStringList(propId, propValue ? propValue : []);
@@ -1702,7 +1829,8 @@ function setIssuePropertyValue(issue, propId, propValue) {
 			break;
 		}
 	}
-	if (ldebug) ldebug(")setIssuePropertyValue");
+	if (ldebug)
+		ldebug(")setIssuePropertyValue");
 }
 
 function getIssueHistoryUrl(issueId) {

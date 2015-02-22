@@ -87,12 +87,21 @@ public class AttachmentHelper {
 	public static String getFileName(String path) {
 		String fname = path;
 		if (path != null && path.length() != 0) {
-			int p = path.lastIndexOf('.');
-			if (p >= 0) {
-				fname = path.substring(0, p).toLowerCase();
-			}
-			p = path.lastIndexOf(File.separatorChar);
+			int p = path.lastIndexOf(File.separatorChar);
 			fname = path.substring(p + 1);
+		}
+		return fname;
+	}
+
+	public static String getFileNameWithoutExt(String path) {
+		String fname = path;
+		if (path != null && path.length() != 0) {
+			int p = path.lastIndexOf(File.separatorChar);
+			fname = path.substring(p + 1);
+			p = fname.lastIndexOf('.');
+			if (p >= 0) {
+				fname = fname.substring(0, p);
+			}
 		}
 		return fname;
 	}

@@ -72,26 +72,6 @@ public class IssueApplication extends AddinApplication {
 	private void initIssueService() {
 
 		File appDir = getAppDir();
-
-		InputStream istream = null;
-		try {
-			File logFile = new File("logging.properties");
-			if (!logFile.exists()) {
-				logFile = new File(appDir, "logging.properties");
-			}
-			istream = new FileInputStream(logFile);
-			LogManager.getLogManager().readConfiguration(istream);
-		} catch (Throwable e) {
-			System.out.println("Logger configuration not found or inaccessible. " + e);
-		} finally {
-			if (istream != null) {
-				try {
-					istream.close();
-				} catch (IOException ignored) {
-				}
-			}
-		}
-
 		try {
 			Globals.initIssueService(appDir);
 		} catch (IOException e) {

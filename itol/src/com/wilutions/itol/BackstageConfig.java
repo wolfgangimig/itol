@@ -73,6 +73,12 @@ public class BackstageConfig {
 		for (Property prop : props) {
 			this.configProps.add(new Property(prop));
 		}
+		
+		// Set default logging options if nessesary
+		Property propLogFile = Globals.getConfigProperty(Property.LOG_FILE);
+		this.configProps.add(propLogFile);
+		Property propLogLevel = Globals.getConfigProperty(Property.LOG_LEVEL);
+		this.configProps.add(propLogLevel);
 	}
 
 	private void appendField(StringBuilder sbuf, Property configProp) throws IOException {

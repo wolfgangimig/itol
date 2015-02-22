@@ -2,6 +2,12 @@ package com.wilutions.itol;
 
 import java.io.IOException;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.util.Duration;
+
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
 import com.wilutions.joa.fx.MessageBox;
@@ -14,10 +20,38 @@ import com.wilutions.mslib.outlook.Selection;
 public class MyExplorerWrapper extends ExplorerWrapper {
 
 	final IssueTaskPane issuePane;
+	String lastEntryID = "";
+	private long showAtMillis = Long.MAX_VALUE;
+	private final static long SHOW_DELAY_MILLIS = 500;
+	private final Timeline deferShowSelectedItem;
 
 	public MyExplorerWrapper(Explorer explorer) {
 		super(explorer);
 		issuePane = new IssueTaskPane(null, new IssueMailItemBlank());
+
+		deferShowSelectedItem = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				if (isSelectionDelayOver()) {
+					showSelectedMailItem(false);
+				}
+			}
+		}));
+
+		deferShowSelectedItem.setCycleCount(Timeline.INDEFINITE);
+		deferShowSelectedItem.play();
+	}
+
+	private synchronized boolean isSelectionDelayOver() {
+		boolean ret = showAtMillis <= System.currentTimeMillis();
+		if (ret) {
+			showAtMillis = Long.MAX_VALUE;
+		}
+		return ret;
+	}
+
+	private synchronized void startSelectionDelay() {
+		showAtMillis = System.currentTimeMillis() + SHOW_DELAY_MILLIS;
 	}
 
 	@Override
@@ -27,11 +61,16 @@ public class MyExplorerWrapper extends ExplorerWrapper {
 		IRibbonUI ribbon = Globals.getThisAddin().getRibbon();
 		ribbon.InvalidateControl("ShowIssue");
 
-		showSelectedMailItem();
+		internalShowSelectedMailItem();
 	}
 
 	@Override
 	public void onClose() throws ComException {
+
+		if (deferShowSelectedItem != null) {
+			deferShowSelectedItem.stop();
+		}
+
 		if (issuePane != null) {
 			issuePane.close();
 		}
@@ -90,14 +129,14 @@ public class MyExplorerWrapper extends ExplorerWrapper {
 					if (ex != null) {
 						MessageBox.show(explorer, "Error", ex.getMessage(), null);
 					} else {
-						showSelectedMailItem();
+						internalShowSelectedMailItem();
 					}
 				});
 			}
 
 			issuePane.setVisible(visible, (succ, ex) -> {
 				if (succ && visible) {
-					showSelectedMailItem();
+					internalShowSelectedMailItem();
 				}
 			});
 		}
@@ -107,12 +146,20 @@ public class MyExplorerWrapper extends ExplorerWrapper {
 		return issuePane != null && issuePane.hasWindow() && issuePane.isVisible();
 	}
 
-	public void showSelectedMailItem() {
+	private void internalShowSelectedMailItem() {
+		startSelectionDelay();
+	}
+
+	public void showSelectedMailItem(boolean ignoreLastItem) {
 		if (issuePane != null) {
 			if (issuePane.hasWindow() && issuePane.isVisible()) {
 				MailItem mailItem = getSelectedMail();
 				if (mailItem != null) {
-					issuePane.setMailItem(new IssueMailItemImpl(mailItem));
+					String mailId = mailItem.getEntryID();
+					if (ignoreLastItem || !mailId.equals(lastEntryID)) {
+						issuePane.setMailItem(new IssueMailItemImpl(mailItem));
+						lastEntryID = mailId;
+					}
 				}
 			}
 		}

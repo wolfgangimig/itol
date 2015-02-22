@@ -10,6 +10,7 @@
  */
 package com.wilutions.itol.db;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -70,6 +71,10 @@ public class PropertyClasses {
 		add(PropertyClass.TYPE_STRING_LIST, Property.ATTACHMENTS, "Attachments");
 		add(PropertyClass.TYPE_STRING, Property.PRIORITY, "Priority");
 		add(PropertyClass.TYPE_STRING, Property.STATUS, "Status");
+		add(PropertyClass.TYPE_STRING, Property.LOG_FILE, "Log file");
+		add(PropertyClass.TYPE_STRING, Property.LOG_LEVEL, "Log level", "INFO", Arrays.asList(
+				new IdName("FINE", "DEBUG"), new IdName("INFO"), new IdName("WARNING"), new IdName("SEVERE", "ERROR")));
+		
 		return this;
 	}
 	

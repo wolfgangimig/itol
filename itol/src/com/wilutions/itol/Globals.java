@@ -14,10 +14,14 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.reg.Registry;
@@ -70,6 +74,8 @@ public class Globals {
 		com.sun.org.apache.xml.internal.security.Init.init();
 
 		readData();
+		
+		initLogging();
 
 		try {
 			Class<?> clazz = Class.forName(config.serviceFactoryClass);
@@ -115,6 +121,7 @@ public class Globals {
 			}
 		}
 
+		// Decrypt passwords
 		for (Property configProp : config.configProps) {
 			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
 			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
@@ -125,6 +132,21 @@ public class Globals {
 				}
 			}
 		}
+		
+		// Set default logging options if nessesary
+		String logLevel = getConfigPropertyString(Property.LOG_LEVEL);
+		String logFile = getConfigPropertyString(Property.LOG_FILE);
+		if (logLevel.isEmpty()) {
+			Property propLogLevel = new Property(Property.LOG_LEVEL, "SEVERE");
+			config.configProps.add(propLogLevel);
+		}
+		if (logFile.isEmpty()) {
+			File flog = new File(System.getProperty("java.io.tmpdir"), "itol.log");
+			Property propLogFile = new Property(Property.LOG_FILE, flog.getAbsolutePath());
+			config.configProps.add(propLogFile);
+		}
+		
+
 	}
 
 	private static void writeData() {
@@ -143,6 +165,7 @@ public class Globals {
 
 	public static void setConfig(List<Property> configProps) throws IOException {
 		config.configProps = configProps;
+		initLogging();
 		writeData();
 		readData();
 		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams);
@@ -213,5 +236,47 @@ public class Globals {
 			__tempDir.delete();
 			__tempDir = null;
 		}
+	}
+	
+	public static Property getConfigProperty(String propId) {
+		Property ret = null;
+		for (Property prop : config.configProps) {
+			if (prop.getId().equals(propId)){
+				ret = prop;
+				break;
+			}
+		}
+		return ret;
+	}
+	
+	private static String getConfigPropertyString(String propId) {
+		Property prop = getConfigProperty(propId);
+		return prop != null ? (String)prop.getValue() : "";
+	}
+	
+	public static void initLogging() {
+		try {
+			ClassLoader classLoader = Globals.class.getClassLoader();
+			String logprops = OfficeAddinUtil.getResourceAsString(classLoader, "com/wilutions/itol/logging.properties");
+			
+			String logLevel = getConfigPropertyString(Property.LOG_LEVEL);
+			String logFile = getConfigPropertyString(Property.LOG_FILE);
+			if (logLevel != null && !logLevel.isEmpty() && logFile != null && !logFile.isEmpty()) {
+				logFile = logFile.replace('\\', '/');
+				logprops = MessageFormat.format(logprops, logLevel, logFile);
+				ByteArrayInputStream istream = new ByteArrayInputStream(logprops.getBytes());
+				LogManager.getLogManager().readConfiguration(istream);
+				Logger log = Logger.getLogger(Globals.class.getName());
+				log.info("Logger initialized");
+			}
+			else {
+				Logger.getLogger("").setLevel(Level.SEVERE);
+			}
+			
+		} catch (Throwable e) {
+			System.out.println("Logger configuration not found or inaccessible. " + e);
+		} finally {
+		}
+
 	}
 }
