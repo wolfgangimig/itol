@@ -75,7 +75,7 @@ import com.wilutions.mslib.outlook.Explorer;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
-	private volatile Issue issue;
+	private volatile Issue issue = new Issue();
 	private Issue issueCopy;
 	private Logger log = Logger.getLogger("IssueTaskPane");
 

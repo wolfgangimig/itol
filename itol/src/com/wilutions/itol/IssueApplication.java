@@ -11,12 +11,9 @@
 package com.wilutions.itol;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javafx.stage.Stage;
@@ -39,7 +36,11 @@ public class IssueApplication extends AddinApplication {
 		config.serviceFactoryParams = Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT);
 		config.configProps = new ArrayList<Property>(0);
 		
-		OutlookDD.init(OutlookDD.MODE_TEMP_FILES);
+		try {
+			OutlookDD.init(OutlookDD.MODE_TEMP_FILES);
+		}
+		catch (Throwable ignored) {
+		}
 	}
 
 	public static File getAppDir() {
