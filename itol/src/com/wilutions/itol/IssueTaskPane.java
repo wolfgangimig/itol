@@ -186,9 +186,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		Platform.runLater(() -> {
 
-			// Task pane initialized?
-			if (detectIssueModifiedTimer != null) {
-
 				detectIssueModifiedStop();
 
 				updateIssueFromMailItem((succ, ex) -> {
@@ -203,7 +200,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					}
 				});
 
-			}
 		});
 	}
 
@@ -652,20 +648,24 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initDescription() throws IOException {
-		if (webDescription != null) {
-			descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
-			webDescription.getEngine().loadContent(descriptionHtmlEditor.getHtmlContent());
-		} else {
-			edDescription.setHtmlText(issue.getDescription());
+		if (issue != null) {
+			if (webDescription != null) {
+				descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
+				webDescription.getEngine().loadContent(descriptionHtmlEditor.getHtmlContent());
+			} else {
+				edDescription.setHtmlText(issue.getDescription());
+			}
 		}
 	}
 
 	private void initNotes() throws IOException {
-		if (webNotes != null) {
-			notesHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.NOTES);
-			webNotes.getEngine().loadContent(notesHtmlEditor.getHtmlContent());
-		} else {
-			edNotes.setHtmlText(issue.getPropertyString(Property.NOTES, ""));
+		if (issue != null) {
+			if (webNotes != null) {
+				notesHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.NOTES);
+				webNotes.getEngine().loadContent(notesHtmlEditor.getHtmlContent());
+			} else {
+				edNotes.setHtmlText(issue.getPropertyString(Property.NOTES, ""));
+			}
 		}
 	}
 

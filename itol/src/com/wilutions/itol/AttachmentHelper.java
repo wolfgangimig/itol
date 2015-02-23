@@ -26,7 +26,7 @@ public class AttachmentHelper {
 
 		this.mailItem = mailItem;
 
-		if (issue.getId() == null || issue.getId().length() == 0) {
+		if (issue != null && issue.getId() == null || issue.getId().length() == 0) {
 			initialUpdateNewIssue(issue);
 		}
 	}

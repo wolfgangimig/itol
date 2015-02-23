@@ -50,25 +50,6 @@ var Logger = Java.type("java.util.logging.Logger");
 var Level = Java.type("java.util.logging.Level");
 var log = Logger.getLogger("IssueServiceImpl.js");
 
-/**
- * ddump JavaScript objects into the log file.
- * 
- * @param name
- *            String, used as title.
- * @param obj
- *            Object to be dumped.
- */
-function ddump(name, obj) {
-	var str = JSON.stringify(obj, null, 2);
-	if (ldebug)
-		ldebug(name + "=" + str);
-}
-function idump(name, obj) {
-	var str = JSON.stringify(obj, null, 2);
-	if (linfo)
-		linfo(name + "=" + str);
-}
-
 var ldebug = log.isLoggable(Level.FINE) ? (function(msg, ex) {
 	log.log(Level.FINE, msg, ex ? ex : null);
 }) : null;
@@ -84,6 +65,29 @@ var lwarn = log.isLoggable(Level.WARNING) ? (function(msg, ex) {
 var lerror = log.isLoggable(Level.SEVERE) ? (function(msg, ex) {
 	log.log(Level.SEVERE, msg, ex ? ex : null);
 }) : null;
+
+/**
+ * ddump JavaScript objects into the log file.
+ * 
+ * @param name
+ *            String, used as title.
+ * @param obj
+ *            Object to be dumped.
+ */
+function ddump(name, obj) {
+	if (log.isLoggable(Level.FINE)) 
+	{
+		var str = JSON.stringify(obj, null, 2);
+		log.log(Level.FINE, name + "=" + str);
+	}
+}
+function idump(name, obj) {
+	if (log.isLoggable(Level.INFO)) {
+		var str = JSON.stringify(obj, null, 2);
+		log.log(Level.INFO, name + "=" + str);
+	}
+
+}
 
 /**
  * Configuration values. This values can be edited in the configuration page
@@ -648,11 +652,12 @@ function readOrUpdateConfigurationProject() {
 		data.isAdmin = false;
 
 		if (isNew) {
-			throw new IOException(
-					"Cannot read ITOL configuration project. "
-							+ "The first login has to be made with an administrator account. "
-							+ "Thereby, the configuration project is created. Details: "
-							+ ex.toString());
+			var msg = 					"Cannot read ITOL configuration project. "
+				+ "The first login has to be made with an administrator account. "
+				+ "Thereby, the configuration project is created. Details: "
+				+ ex.toString();
+			lwarn(msg);
+			//throw new IOException(msg);
 		}
 	}
 
@@ -664,6 +669,7 @@ function readOrUpdateConfigurationProject() {
 }
 
 function initialize() {
+	if (ldebug) ldebug("initialize(");
 	config.valid = false;
 
 	if (linfo) {
@@ -674,19 +680,28 @@ function initialize() {
 
 	data.clear();
 
+	if (linfo) linfo("readOrUpdateConfigurationProject");
 	readOrUpdateConfigurationProject();
 
+	if (linfo) linfo("readProjects");
 	readProjects(data);
 
+	if (linfo) linfo("readCurrentUser");
 	readCurrentUser(data);
 
+	if (linfo) linfo("readTrackers");
 	readTrackers(data);
 
+	if (linfo) linfo("readPriorities");
 	readPriorities(data);
 
+	if (linfo) linfo("readStatuses");
 	readStatuses(data);
 
 	config.valid = true;
+	if (linfo) linfo("initialized");
+	
+	if (ldebug) ldebug(")initialize");
 }
 
 function readTrackers(data) {
@@ -696,6 +711,7 @@ function readTrackers(data) {
 	ddump("trackersResponse", trackersResponse);
 	for (var i = 0; i < trackersResponse.trackers.length; i++) {
 		var tracker = trackersResponse.trackers[i];
+		if (linfo) linfo("tracker.id=" + tracker.id + ", .name=" + tracker.name);
 		data.trackers.push(new IdName(tracker.id, tracker.name));
 	}
 
@@ -712,6 +728,7 @@ function readPriorities(data) {
 	data.priorities = [];
 	for (var i = 0; i < prioritiesResponse.issue_priorities.length; i++) {
 		var priority = prioritiesResponse.issue_priorities[i];
+		if (linfo) linfo("priority.id=" + priority.id + ", .name=" + priority.name);
 		data.priorities.push(new IdName(priority.id, priority.name));
 		if (priority.is_default) {
 			data.defaultPriority = priority.id;
@@ -730,6 +747,7 @@ function readStatuses(data) {
 	data.statuses = [];
 	for (var i = 0; i < statusesResponse.issue_statuses.length; i++) {
 		var status = statusesResponse.issue_statuses[i];
+		if (linfo) linfo("status.id=" + status.id + ", .name=" + status.name);
 		data.statuses.push(new IdName(status.id, status.name));
 	}
 	if (!data.statuses) {
@@ -754,6 +772,7 @@ function readCustomFields(data) {
 			if (pclass) {
 				propertyClasses.add(pclass);
 				data.custom_fields.push(cfield);
+				if (linfo) linfo("custom_field.id=" + cfield.id + ", .name=" + cfield.name);
 			}
 		}
 	}
@@ -981,16 +1000,20 @@ function getIssueTypes(issue) {
 };
 
 function getProjectsIdNames(issue) {
-
+	if (ldebug) ldebug("getProjectIdNames(" + issue);
+	var ret = [];
 	// Project association of an existing issue cannot be changed.
 	// This is my experience, although the Redmine documentation
 	// says that it is possible.
 	if (issue && issue.id && issue.id.length) {
 		var project = getIssueProject(issue);
-		return [ new IdName(project.id, project.name) ];
+		ret = [ new IdName(project.id, project.name) ];
 	} else {
-		return getAllProjectsIdNamesWithIssueTracking();
+		ret = getAllProjectsIdNamesWithIssueTracking();
 	}
+	
+	if (ldebug) ldebug(")getProjectIdNames=#" + ret.length);
+	return ret;
 }
 
 function getAllProjectsIdNamesWithIssueTracking() {
@@ -1002,9 +1025,11 @@ function getAllProjectsIdNamesWithIssueTracking() {
 	// Collect project IDs an names into IdName array.
 	for ( var projectId in data.projects) {
 		var project = data.projects[projectId];
+		if (ldebug)
+			ldebug("project.id=" + projectId + " .enabled_modules=" + JSON.stringify(project.enabled_modules));
 
 		// Skip projects without issue tracking
-		var isIssueProject = false;
+		var isIssueProject = !project.enabled_modules;
 		if (project.enabled_modules) {
 			for (var m = 0; !isIssueProject
 					&& m < project.enabled_modules.length; m++) {
@@ -1013,8 +1038,8 @@ function getAllProjectsIdNamesWithIssueTracking() {
 			}
 		}
 		if (!isIssueProject) {
-			if (ldebug)
-				ldebug("Without issue tracking.");
+			if (linfo)
+				linfo("project.id=" + projectId + ", .name=" + project.name +" without issue tracking.");
 			continue;
 		}
 
@@ -1283,7 +1308,7 @@ function getDefaultIssueAsString(issue) {
 		defaultProps.type = issue.type;
 		defaultProps.assignee = issue.assignee;
 	} else {
-		makeDefaultProperties("");
+		defaultProps = makeDefaultProperties("");
 	}
 
 	return JSON.stringify(defaultProps);
@@ -1305,15 +1330,20 @@ function makeDefaultProperties(defaultIssueAsString) {
 }
 
 function createIssue(subject, description, defaultIssueAsString) {
+	if (ldebug) ldebug("createIssue(");
+	
 	config.checkValid();
 
 	subject = stripIssueIdFromMailSubject(subject);
+	if (ldebug) ldebug("subject without issue ID=" + subject);
 
 	// strip RE:, Fwd:, AW:, WG: ...
 	subject = stripReFwdFromSubject(subject);
+	if (ldebug) ldebug("subject without RE, FWD, ... =" + subject);
 
 	var issue = new Issue();
 	var defaultProps = makeDefaultProperties(defaultIssueAsString);
+	ddump("defaultProps", defaultProps);
 
 	issue.setPriority(data.defaultPriority); // Normal priority
 	issue.setStatus(1); // New issue
@@ -1326,6 +1356,8 @@ function createIssue(subject, description, defaultIssueAsString) {
 	issue.setDescription(description);
 
 	var propIds = getPropertyDisplayOrder(issue);
+	ddump("propIds", propIds);
+	
 	for (var i = 0; i < propIds.length; i++) {
 		var pclass = getPropertyClass(propIds[i], issue);
 		if (pclass) {
@@ -1336,6 +1368,7 @@ function createIssue(subject, description, defaultIssueAsString) {
 		}
 	}
 
+	if (ldebug) ldebug(")createIssue");
 	return issue;
 };
 
