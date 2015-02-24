@@ -3,16 +3,6 @@ Version History
 
 Version 1.2 2015-02-23
 
-- This version creates a project with identifier "itol-configuration".
-  Its description is used to store the definition of the 
-  custom properties for any user. Since Redmine allows only administrators
-  to read custom property definitions - maybe because select lists could
-  contain secrets - they are stored in an encrypted format.
-  Since every user can modify the JavaScript interface, everyone can 
-  access the decrypted information if she or he is really interested in.
-  Thus, ITOL should not be used in environments, where custom properties
-  contain secrets.
-  
 - #7 New issues can be created without an existing mail.
 
 - #8 Tracker list is updated when project is changed.
@@ -23,12 +13,10 @@ Version 1.2 2015-02-23
 
 - #14 Only the last issue ID remains in the mail subject.
 
-- The first user that starts ITOL should be an administrator. This 
-  allows to create the "itol-configuration" project. The display name of the project
-  is "Issue Tracker for Microsoft Outlook and Redmine Configuration". It can be 
-  changed as well as the project's parent. ITOL only tries to find the project
-  by its identifier "itol-configuration" (which must not be changed). 
-  
+- This program creates a project with identifier "itol-configuration".
+  Its description is used to store the definition of the 
+  custom properties for any user, see readme.txt.
+
 - The issue dialog layout was completely new designed.
   
 - A history tab shows the web view of the entire issue by calling Redmine's 

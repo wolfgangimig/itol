@@ -44,7 +44,8 @@ public class Globals {
 	private static ItolAddin addin;
 	private static MailExport mailExport = new MailExport();
 	private static ResourceBundle resb;
-	private static IssueService issueService;
+	private static volatile IssueService issueService;
+	private static volatile boolean issueServiceRunning;
 	private static Registry registry;
 	private static File appDir;
 	private static File __tempDir;
@@ -69,6 +70,7 @@ public class Globals {
 	public static void initIssueService(File appDir) throws IOException {
 
 		Globals.appDir = appDir;
+		Globals.issueServiceRunning = false;
 
 		// Required for PasswordEncryption.decrypt
 		com.sun.org.apache.xml.internal.security.Init.init();
@@ -76,20 +78,17 @@ public class Globals {
 		readData();
 		
 		initLogging();
-
-		try {
-			Class<?> clazz = Class.forName(config.serviceFactoryClass);
-			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
-			issueService = fact.getService(appDir, config.serviceFactoryParams);
-		} catch (Throwable e) {
-			e.printStackTrace();
-			throw new IOException(e);
-		}
-
+		
 		BackgTask.run(() -> {
 			try {
+				Class<?> clazz = Class.forName(config.serviceFactoryClass);
+				IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
+				issueService = fact.getService(appDir, config.serviceFactoryParams);
+
 				issueService.setConfig(config.configProps);
 				System.out.println("Issue service initialized.");
+				
+				issueServiceRunning = true;
 				
 //				// TEST DIALOG
 //				Platform.runLater(() -> {
@@ -102,6 +101,10 @@ public class Globals {
 			}
 		});
 
+	}
+
+	public static boolean isIssueServiceRunning() {
+		return issueServiceRunning;
 	}
 
 	private static void readData() {
@@ -170,6 +173,7 @@ public class Globals {
 		readData();
 		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams);
 		issueService.setConfig(configProps);
+		issueServiceRunning = true;
 	}
 
 	public static ItolAddin getThisAddin() {

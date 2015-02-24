@@ -70,6 +70,7 @@ import com.wilutions.itol.db.PropertyClass;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.mslib.office.CustomTaskPane;
+import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.office._CustomTaskPane;
 import com.wilutions.mslib.outlook.Explorer;
 
@@ -1186,7 +1187,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	@Override
 	public void onVisibleStateChange(_CustomTaskPane ctp) throws ComException {
-		Globals.getThisAddin().getRibbon().InvalidateControl("NewIssue");
+		IRibbonUI ribbon = Globals.getThisAddin().getRibbon();
+		if (ribbon != null) {
+			ribbon.InvalidateControl("NewIssue");
+		}
 	}
 
 	@FXML

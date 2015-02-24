@@ -11,6 +11,7 @@
 package com.wilutions.itol;
 
 import java.io.IOException;
+import java.util.ResourceBundle;
 
 import javafx.util.Callback;
 
@@ -20,6 +21,7 @@ import com.wilutions.com.IDispatch;
 import com.wilutions.joa.DeclAddin;
 import com.wilutions.joa.LoadBehavior;
 import com.wilutions.joa.OfficeApplication;
+import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.ExplorerWrapper;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
@@ -76,10 +78,18 @@ public class ItolAddin extends OutlookAddinEx {
 	}
 
 	private void newIssue(IRibbonControl control, Boolean pressed) {
-		forContextWrapper(control, (context) -> {
-			context.setIssueTaskPaneVisible(pressed);
-			return true;
-		});
+		if (Globals.isIssueServiceRunning()) {
+			forContextWrapper(control, (context) -> {
+				context.setIssueTaskPaneVisible(pressed);
+				return true;
+			});
+		}
+		else {
+			ResourceBundle resb = Globals.getResourceBundle();
+			Object owner = Globals.getThisAddin().getApplication().ActiveExplorer();
+			MessageBox.show(owner, resb.getString("MessageBox.title.error"), resb.getString("Error.NotConnected"), null);
+		}
+
 	}
 
 	public boolean Button_getEnabled(IRibbonControl control) {
@@ -176,7 +186,8 @@ public class ItolAddin extends OutlookAddinEx {
 		switch (olclass.value) {
 		case OlObjectClass._olMail:
 			try {
-				getRibbon().Invalidate();
+				IRibbonUI ribbon = getRibbon();
+				if (ribbon != null) ribbon.Invalidate();
 				return new MailInspector(inspector, inspector.getCurrentItem());
 			}
 			catch (Throwable e) {
@@ -223,24 +234,24 @@ public class ItolAddin extends OutlookAddinEx {
 	private <T> T forContextWrapper(IRibbonControl control, Callback<MyWrapper, T> call) {
 		T ret = null;
 		MyWrapper wrapper = null;
-		
+
 		IDispatch dispContext = control.getContext();
 		if (dispContext.is(Inspector.class)) {
 			Inspector inspector = dispContext.as(Inspector.class);
-			wrapper = (MyWrapper)getInspectorWrapper(inspector);
+			wrapper = (MyWrapper) getInspectorWrapper(inspector);
 		}
 		else if (dispContext.is(Explorer.class)) {
 			Explorer explorer = dispContext.as(Explorer.class);
-			wrapper = (MyWrapper)getMyExplorerWrapper(explorer);
+			wrapper = (MyWrapper) getMyExplorerWrapper(explorer);
 		}
-		
+
 		if (wrapper != null) {
 			wrapper.addRibbonControl(control);
 			if (call != null) {
 				ret = call.call(wrapper);
 			}
 		}
-		
+
 		return ret;
 	}
 

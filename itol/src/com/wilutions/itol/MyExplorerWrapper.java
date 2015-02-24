@@ -64,9 +64,9 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		// Update visibility of ShowIssue button
 		// Globals.getThisAddin().getRibbon().InvalidateControl("ShowIssue");
 		IRibbonUI ribbon = Globals.getThisAddin().getRibbon();
-		ribbon.InvalidateControl("ShowIssue");
-
-		internalShowSelectedMailItem();
+		if (ribbon != null) {
+			internalShowSelectedMailItem();
+		}
 	}
 
 	@Override

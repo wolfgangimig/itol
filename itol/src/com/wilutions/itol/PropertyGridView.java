@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -35,6 +37,7 @@ public class PropertyGridView {
 	private final GridPane propGrid;
 	private final IssueService srv = Globals.getIssueService();
 	private Node firstControl;
+	private Logger log = Logger.getLogger("PropertyGridView");
 
 	private static class PropertyNode {
 		String propertyId;
@@ -50,6 +53,7 @@ public class PropertyGridView {
 	}
 
 	public void initProperties(Issue issue) throws IOException {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "PropertyGridView(");
 		propGrid.getChildren().clear();
 		propGrid.getRowConstraints().clear();
 		propNodes.clear();
@@ -57,15 +61,18 @@ public class PropertyGridView {
 		int rowIndex = 0;
 
 		List<String> propOrder = srv.getPropertyDisplayOrder(issue);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "propOrder=" + propOrder);
 
 		for (String propertyId : propOrder) {
 			if (isPropertyForGrid(propertyId)) {
 				PropertyClass propClass = srv.getPropertyClass(propertyId, issue);
+				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "propClass=" + propClass);
 				if (propClass != null) {
 					addProperty(issue, propertyId, rowIndex++);
 				}
 			}
 		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")PropertyGridView");
 	}
 
 	public void saveProperties(Issue issue) {
@@ -121,10 +128,12 @@ public class PropertyGridView {
 		// ret = true;
 		// break;
 		// }
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "isPropertyForGrid=" + ret);
 		return ret;
 	}
 
 	private void addProperty(Issue issue, String propertyId, int rowIndex) throws IOException {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addProperty(" + propertyId);
 
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
 		if (pclass == null) {
@@ -136,10 +145,12 @@ public class PropertyGridView {
 
 		Node ctrl = null;
 		List<IdName> selectList = pclass.getSelectList();
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList);
 
 		Property prop = issue.getLastUpdate().getProperty(propertyId);
-		if (prop.getValue() == null) {
+		if (prop != null && prop.getValue() == null) {
 			Object defaultValue = pclass.getDefaultValue();
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "defaultValue=" + defaultValue);
 			prop.setValue(defaultValue);
 		}
 
@@ -179,6 +190,8 @@ public class PropertyGridView {
 		propNode.propertyId = propertyId;
 		propNode.node = ctrl;
 		propNodes.add(propNode);
+		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")addProperty");
 	}
 
 	private static class CheckedIdName extends IdName {
@@ -197,7 +210,9 @@ public class PropertyGridView {
 
 	@SuppressWarnings("unchecked")
 	private Node makeMultiListBoxForProperty(Property prop, List<IdName> selectList) {
-		Object propValue = prop.getValue();
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
+		Object propValue = prop != null ? prop.getValue() : null;
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + propValue);
 
 		List<CheckedIdName> items = new ArrayList<CheckedIdName>(selectList.size());
 		for (IdName idn : selectList) {
@@ -228,22 +243,29 @@ public class PropertyGridView {
 		lb.setMinHeight(25);
 		lb.setPrefHeight(25 * items.size());
 		lb.setMaxHeight(25 * 6);
+		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeChoiceBoxForProperty");
 		return lb;
 	}
 
 	private Node makeTextFieldForProperty(Property prop) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
 		TextField ed = new TextField();
 		if (prop != null) {
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + prop.getValue());
 			ed.setText((String) prop.getValue());
 		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeChoiceBoxForProperty");
 		return ed;
 	}
 
 	private Node makeChoiceBoxForProperty(Property prop, List<IdName> selectList) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
 		ChoiceBox<IdName> cb = new ChoiceBox<IdName>();
 		cb.setItems(FXCollections.observableArrayList(selectList));
 		if (prop != null) {
 			Object propValue = prop.getValue();
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + propValue);
 			String value = "";
 			if (propValue instanceof String) {
 				value = (String) propValue;
@@ -255,14 +277,17 @@ public class PropertyGridView {
 				}
 			}
 		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeChoiceBoxForProperty");
 		return cb;
 	}
 
 	private CheckBox makeCheckBoxForProperty(Property prop) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeCheckBoxForProperty(");
 		CheckBox cb = new CheckBox();
 		boolean bValue = false;
 		if (prop != null) {
 			Object propValue = prop.getValue();
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + propValue);
 			if (propValue != null) {
 				if (propValue instanceof Boolean) {
 					bValue = (Boolean) propValue;
@@ -273,14 +298,17 @@ public class PropertyGridView {
 			}
 		}
 		cb.setSelected(bValue);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeCheckBoxForProperty");
 		return cb;
 	}
 
 	private Node makeDatePickerForProperty(Property prop) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeDatePickerForProperty(");
 		Node ctrl;
 		DatePicker dpick = new DatePicker();
 		if (prop != null) {
 			String iso = (String) prop.getValue();
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + iso);
 			if (iso != null && iso.length() != 0) {
 				if (iso.length() > 10) {
 					iso = iso.substring(0, 10);
@@ -290,6 +318,7 @@ public class PropertyGridView {
 			}
 		}
 		ctrl = dpick;
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeDatePickerForProperty");
 		return ctrl;
 	}
 

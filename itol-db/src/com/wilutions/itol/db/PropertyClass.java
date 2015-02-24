@@ -20,6 +20,7 @@ public class PropertyClass {
 	public final static int TYPE_STRING_LIST = 4;
 	public final static int TYPE_ISO_DATE = 5;
 //	public final static int TYPE_INTEGER = 6;
+//	public final static int TYPE_FLOAT = 7;
 	
 	private String id;
 	private String name;
