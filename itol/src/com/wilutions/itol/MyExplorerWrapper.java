@@ -12,12 +12,13 @@ import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.ExplorerWrapper;
+import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.outlook.Explorer;
 import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.Selection;
 
-public class MyExplorerWrapper extends ExplorerWrapper {
+public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 
 	final IssueTaskPane issuePane;
 	String lastEntryID = "";
@@ -40,6 +41,10 @@ public class MyExplorerWrapper extends ExplorerWrapper {
 
 		deferShowSelectedItem.setCycleCount(Timeline.INDEFINITE);
 		deferShowSelectedItem.play();
+	}
+
+	public void addRibbonControl(IRibbonControl control) {
+		ribbonControls.put(control.getId(), control);
 	}
 
 	private synchronized boolean isSelectionDelayOver() {
@@ -74,6 +79,8 @@ public class MyExplorerWrapper extends ExplorerWrapper {
 		if (issuePane != null) {
 			issuePane.close();
 		}
+		
+		ribbonControls.clear();
 		super.onClose();
 	}
 

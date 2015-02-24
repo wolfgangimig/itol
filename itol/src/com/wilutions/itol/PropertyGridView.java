@@ -138,6 +138,10 @@ public class PropertyGridView {
 		List<IdName> selectList = pclass.getSelectList();
 
 		Property prop = issue.getLastUpdate().getProperty(propertyId);
+		if (prop.getValue() == null) {
+			Object defaultValue = pclass.getDefaultValue();
+			prop.setValue(defaultValue);
+		}
 
 		switch (pclass.getType()) {
 		case PropertyClass.TYPE_ISO_DATE:
@@ -149,6 +153,12 @@ public class PropertyGridView {
 		case PropertyClass.TYPE_STRING_LIST:
 			ctrl = makeMultiListBoxForProperty(prop, selectList);
 			break;
+//		case PropertyClass.TYPE_INTEGER:
+//			ctrl = makeIntFieldForProperty(prop);
+//			break;
+//		case PropertyClass.TYPE_FLOAT:
+//			ctrl = makeFloatFieldForProperty(prop);
+//			break;
 		default: {
 			if (selectList != null && selectList.size() != 0) {
 				ctrl = makeChoiceBoxForProperty(prop, selectList);
@@ -222,17 +232,14 @@ public class PropertyGridView {
 	}
 
 	private Node makeTextFieldForProperty(Property prop) {
-		Node ctrl;
 		TextField ed = new TextField();
 		if (prop != null) {
 			ed.setText((String) prop.getValue());
 		}
-		ctrl = ed;
-		return ctrl;
+		return ed;
 	}
 
 	private Node makeChoiceBoxForProperty(Property prop, List<IdName> selectList) {
-		Node ctrl;
 		ChoiceBox<IdName> cb = new ChoiceBox<IdName>();
 		cb.setItems(FXCollections.observableArrayList(selectList));
 		if (prop != null) {
@@ -248,8 +255,7 @@ public class PropertyGridView {
 				}
 			}
 		}
-		ctrl = cb;
-		return ctrl;
+		return cb;
 	}
 
 	private CheckBox makeCheckBoxForProperty(Property prop) {

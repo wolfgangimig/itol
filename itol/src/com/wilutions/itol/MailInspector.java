@@ -11,18 +11,22 @@
 package com.wilutions.itol;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
+import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.outlook.Inspector;
 import com.wilutions.mslib.outlook.MailItem;
 
-public class MailInspector extends InspectorWrapper {
+public class MailInspector extends InspectorWrapper implements MyWrapper {
 
 	private final IssueTaskPane issuePane;
 	private final IssueHistoryTaskPane_off historyPane;
+	private Map<String, IRibbonControl> ribbonControls = new HashMap<String, IRibbonControl>();
 
 	public MailInspector(Inspector inspector, IDispatch currentItem) throws ComException, IOException {
 		super(inspector, currentItem);
@@ -32,6 +36,10 @@ public class MailInspector extends InspectorWrapper {
 		issuePane = new IssueTaskPane(this, mailItem);
 		historyPane = new IssueHistoryTaskPane_off(this, mailItem);
 
+	}
+	
+	public void addRibbonControl(IRibbonControl control) {
+		ribbonControls.put(control.getId(), control);
 	}
 	
 	public String getIssueId() throws ComException, IOException {
@@ -70,6 +78,7 @@ public class MailInspector extends InspectorWrapper {
 		if (historyPane != null) {
 			historyPane.close();
 		}
+		ribbonControls.clear();
 		super.onClose();
 	}
 

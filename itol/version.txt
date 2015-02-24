@@ -1,6 +1,48 @@
 Issue Tracker Addin for Microsoft Outlook
 Version History
 
+Version 1.2 2015-02-23
+
+- This version creates a project with identifier "itol-configuration".
+  Its description is used to store the definition of the 
+  custom properties for any user. Since Redmine allows only administrators
+  to read custom property definitions - maybe because select lists could
+  contain secrets - they are stored in an encrypted format.
+  Since every user can modify the JavaScript interface, everyone can 
+  access the decrypted information if she or he is really interested in.
+  Thus, ITOL should not be used in environments, where custom properties
+  contain secrets.
+  
+- #7 New issues can be created without an existing mail.
+
+- #8 Tracker list is updated when project is changed.
+
+- #9 User list is updated when project is changed.
+
+- #10 Due date can be set.
+
+- #14 Only the last issue ID remains in the mail subject.
+
+- The first user that starts ITOL should be an administrator. This 
+  allows to create the "itol-configuration" project. The display name of the project
+  is "Issue Tracker for Microsoft Outlook and Redmine Configuration". It can be 
+  changed as well as the project's parent. ITOL only tries to find the project
+  by its identifier "itol-configuration" (which must not be changed). 
+  
+- The issue dialog layout was completely new designed.
+  
+- A history tab shows the web view of the entire issue by calling Redmine's 
+  web interface.
+  
+- The issue dialog is integrated with the Outlook explorer (main window), too.
+
+- The issue dialog allows to display any issue by entering the issue ID.
+
+- Simple support of custom fields. Fields of type "user" and "version"
+  are unsupported. Fields of type "Integer", "Float", "Link", and "Long text" 
+  are entered as Text. Default values are supported. Other options regarding
+  the field type are unsupported. Field visibility for projects, trackers 
+  and users should be interpreted correctly.
 
 Version 1.1 2015-02-01 
 

@@ -12,6 +12,8 @@ package com.wilutions.itol;
 
 import java.io.IOException;
 
+import javafx.util.Callback;
+
 import com.wilutions.com.CoClass;
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
@@ -66,61 +68,54 @@ public class ItolAddin extends OutlookAddinEx {
 		String controlId = control.getId();
 		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
 			backstageConfig.Button_onAction(control);
-		} else if (controlId.equals("NewIssue")) {
+		}
+		else if (controlId.equals("NewIssue")) {
 			newIssue(control, pressed);
 		}
 
 	}
 
 	private void newIssue(IRibbonControl control, Boolean pressed) {
-		IDispatch dispContext = control.getContext();
-		try {
-			if (dispContext.is(Inspector.class)) {
-				Inspector inspector = dispContext.as(Inspector.class);
-				MailInspector mailInspector = (MailInspector) getInspectorWrapper(inspector);
-				mailInspector.setIssueTaskPaneVisible(pressed);
-			}
-			else if (dispContext.is(Explorer.class)) {
-				Explorer explorer = dispContext.as(Explorer.class);
-				MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
-				explorerWrapper.setIssueTaskPaneVisible(pressed);
-			}
-			
-		}
-		catch (Throwable e) {
-			e.printStackTrace();
-		}
+		forContextWrapper(control, (context) -> {
+			context.setIssueTaskPaneVisible(pressed);
+			return true;
+		});
 	}
 
 	public boolean Button_getEnabled(IRibbonControl control) {
+		forContextWrapper(control, null);
 		return true;
 	}
 
 	public boolean Button_getVisible(IRibbonControl control) {
-		boolean ret = true;
-		return ret;
+		forContextWrapper(control, null);
+		return true;
 	}
-	
-	public boolean Button_getPressed(IRibbonControl control) {
-		boolean ret = false;
-		IDispatch dispContext = control.getContext();
-		try {
-			if (dispContext.is(Inspector.class)) {
-				Inspector inspector = dispContext.as(Inspector.class);
-				MailInspector mailInspector = (MailInspector) getInspectorWrapper(inspector);
-				ret = mailInspector.isIssueTaskPaneVisible();
-			}
-			else if (dispContext.is(Explorer.class)) {
-				Explorer explorer = dispContext.as(Explorer.class);
-				MyExplorerWrapper explorerWrapper = getMyExplorerWrapper(explorer);
-				ret = explorerWrapper.isIssueTaskPaneVisible();
-			}
-		}
-		catch (Throwable e) {
-			e.printStackTrace();
-		}
 
-        return ret;
+	public boolean Button_getPressed(IRibbonControl control) {
+		Boolean ret = forContextWrapper(control, (wrapper) -> {
+			return wrapper.isIssueTaskPaneVisible();
+		});
+		return ret != null ? ret : false;
+	}
+
+	public String Button_getLabel(IRibbonControl control) {
+		String text = forContextWrapper(control, (context) -> {
+			String localResId = "";
+			String controlId = control.getId();
+			switch (controlId) {
+			case "NewIssue":
+				localResId = "Ribbon.NewIssue";
+				break;
+			default:
+			}
+			String str = "";
+			if (!localResId.isEmpty()) {
+				str = Globals.getResourceBundle().getString(localResId);
+			}
+			return str;
+		});
+		return text;
 	}
 
 	public String ComboBox_getText(IRibbonControl control) {
@@ -161,18 +156,6 @@ public class ItolAddin extends OutlookAddinEx {
 		System.out.println("ComboBox_onChange id=" + control.getId() + ", text=" + text);
 	}
 
-	public String Button_getLabel(IRibbonControl control) {
-		String resId = "";
-		String controlId = control.getId();
-		switch (controlId) {
-		case "NewIssue":
-			resId = "Ribbon.NewIssue";
-			break;
-		default:
-		}
-		return Globals.getResourceBundle().getString(resId);
-	}
-
 	@Override
 	public String GetCustomUI(String ribbonId) {
 		String ui = super.GetCustomUI(ribbonId);
@@ -181,7 +164,8 @@ public class ItolAddin extends OutlookAddinEx {
 		}
 		try {
 			ui = backstageConfig.getCustomUI(ui);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 		return ui;
@@ -194,7 +178,8 @@ public class ItolAddin extends OutlookAddinEx {
 			try {
 				getRibbon().Invalidate();
 				return new MailInspector(inspector, inspector.getCurrentItem());
-			} catch (Throwable e) {
+			}
+			catch (Throwable e) {
 				e.printStackTrace();
 			}
 		default:
@@ -226,11 +211,37 @@ public class ItolAddin extends OutlookAddinEx {
 	}
 
 	public MyExplorerWrapper getMyExplorerWrapper(Explorer explorer) {
-		MyExplorerWrapper explorerWrapper = (MyExplorerWrapper)super.getExplorerWrapper(explorer);
-		if (explorerWrapper == null) {  // Might be null, if IssueServiceImpl was not available on startup.
+		MyExplorerWrapper explorerWrapper = (MyExplorerWrapper) super.getExplorerWrapper(explorer);
+		if (explorerWrapper == null) { // Might be null, if IssueServiceImpl was
+										// not available on startup.
 			onNewExplorer(explorer);
-			explorerWrapper = (MyExplorerWrapper)super.getExplorerWrapper(explorer);
+			explorerWrapper = (MyExplorerWrapper) super.getExplorerWrapper(explorer);
 		}
 		return explorerWrapper;
 	}
+
+	private <T> T forContextWrapper(IRibbonControl control, Callback<MyWrapper, T> call) {
+		T ret = null;
+		MyWrapper wrapper = null;
+		
+		IDispatch dispContext = control.getContext();
+		if (dispContext.is(Inspector.class)) {
+			Inspector inspector = dispContext.as(Inspector.class);
+			wrapper = (MyWrapper)getInspectorWrapper(inspector);
+		}
+		else if (dispContext.is(Explorer.class)) {
+			Explorer explorer = dispContext.as(Explorer.class);
+			wrapper = (MyWrapper)getMyExplorerWrapper(explorer);
+		}
+		
+		if (wrapper != null) {
+			wrapper.addRibbonControl(control);
+			if (call != null) {
+				ret = call.call(wrapper);
+			}
+		}
+		
+		return ret;
+	}
+
 }
