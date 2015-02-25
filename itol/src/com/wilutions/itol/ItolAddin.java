@@ -78,18 +78,17 @@ public class ItolAddin extends OutlookAddinEx {
 	}
 
 	private void newIssue(IRibbonControl control, Boolean pressed) {
-		if (Globals.isIssueServiceRunning()) {
-			forContextWrapper(control, (context) -> {
+		forContextWrapper(control, (context) -> {
+			if (Globals.isIssueServiceRunning()) {
 				context.setIssueTaskPaneVisible(pressed);
-				return true;
-			});
-		}
-		else {
-			ResourceBundle resb = Globals.getResourceBundle();
-			Object owner = Globals.getThisAddin().getApplication().ActiveExplorer();
-			MessageBox.show(owner, resb.getString("MessageBox.title.error"), resb.getString("Error.NotConnected"), null);
-		}
-
+			}
+			else if (pressed) {
+				ResourceBundle resb = Globals.getResourceBundle();
+				Object owner = context.getWrappedObject();
+				MessageBox.show(owner, resb.getString("MessageBox.title.error"), resb.getString("Error.NotConnected"), null);
+			}
+			return true;
+		});
 	}
 
 	public boolean Button_getEnabled(IRibbonControl control) {
