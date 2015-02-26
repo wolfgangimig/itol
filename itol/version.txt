@@ -35,10 +35,8 @@ Version 1.2 2015-02-26
   the field type are unsupported. Field visibility for projects, trackers 
   and users should be interpreted correctly.
   
- - Includes a demo license of "Java Drag&Drop for Microsoft Outlook", see
-   readme.txt for more information.
-
-Version 1.1 2015-02-01 
+ 
+ Version 1.1 2015-02-01 
 
 - #3: Now, priority names are read from Redmine. 
 
