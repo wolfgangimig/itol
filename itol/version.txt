@@ -1,4 +1,7 @@
-Issue Tracker Addin for Microsoft Outlook
+Issue Tracker Addin for Microsoft Outlook and Redmine
+Copyright 2015 Wolfgang Imig
+http://www.wilutions.com/joa/itol.html
+
 Version History
 
 Version 1.2 2015-02-23
@@ -31,6 +34,9 @@ Version 1.2 2015-02-23
   are entered as Text. Default values are supported. Other options regarding
   the field type are unsupported. Field visibility for projects, trackers 
   and users should be interpreted correctly.
+  
+ - Includes a demo license of "Java Drag&Drop for Microsoft Outlook", see
+   readme.txt for more information.
 
 Version 1.1 2015-02-01 
 

@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.IssueService;
@@ -29,36 +32,46 @@ public class BackstageConfig {
 	public final static String CONTROL_ID_PREFIX = "BackstageConfig_";
 	private List<Property> configProps;
 	private IRibbonUI ribbon;
-
+	private Logger log = Logger.getLogger("BackstageConfig");
+	
 	public BackstageConfig() {
 	}
 
 	public String getCustomUI(String customUITemplate) throws IOException {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "getCustomUI(" + customUITemplate);
+		String version = Globals.getVersion();
+		StringBuilder propsUI = new StringBuilder();
+		ResourceBundle resb = Globals.getResourceBundle();
+		
+		if (init()) {
 
-		init();
 
-		StringBuilder sbuf = new StringBuilder();
+			propsUI.append("<layoutContainer id=\"").append(CONTROL_ID_PREFIX)
+					.append("vert1\" layoutChildren=\"vertical\" >");
 
-		sbuf.append("<layoutContainer id=\"").append(CONTROL_ID_PREFIX).append("vert1\" layoutChildren=\"vertical\" >");
+			for (Property configProp : configProps) {
+				appendField(propsUI, configProp);
+			}
 
-		for (Property configProp : configProps) {
-			appendField(sbuf, configProp);
+			propsUI.append("</layoutContainer>");
+			
+			final String saveText = resb.getString("bnSave.text");
+			final String cancelText = resb.getString("bnCancel.text");
+
+			// Save and Cancel buttons
+			propsUI.append("<layoutContainer id=\"").append(CONTROL_ID_PREFIX)
+					.append("horz1\" layoutChildren=\"horizontal\" >");
+			propsUI.append("<button id=\"").append(CONTROL_ID_PREFIX)
+					.append("bnSave\" label=\"").append(saveText).append("\" onAction=\"Button_onAction\" />");
+			propsUI.append("<button id=\"").append(CONTROL_ID_PREFIX)
+					.append("bnCancel\" label=\"").append(cancelText).append("\" onAction=\"Button_onAction\" />");
+			propsUI.append("</layoutContainer>");
+
 		}
 
-		sbuf.append("</layoutContainer>");
+		String ui = MessageFormat.format(customUITemplate, propsUI.toString(), version);
 
-		// Save and Cancel buttons
-		sbuf.append("<layoutContainer id=\"").append(CONTROL_ID_PREFIX)
-				.append("horz1\" layoutChildren=\"horizontal\" >");
-		sbuf.append("<button id=\"").append(CONTROL_ID_PREFIX)
-				.append("bnSave\" label=\"Save\" onAction=\"Button_onAction\" />");
-		sbuf.append("<button id=\"").append(CONTROL_ID_PREFIX)
-				.append("bnCancel\" label=\"Cancel\" onAction=\"Button_onAction\" />");
-		sbuf.append("</layoutContainer>");
-		
-		String version = Globals.getVersion();
-		String ui = MessageFormat.format(customUITemplate, sbuf.toString(), version);
-
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")getCustomUI");
 		return ui;
 	}
 
@@ -67,18 +80,34 @@ public class BackstageConfig {
 	 * 
 	 * @throws IOException
 	 */
-	private void init() throws IOException {
-		List<Property> props = Globals.getIssueService().getConfig();
+	private boolean init() {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "init(");
+		boolean ret = false;
 		this.configProps = new ArrayList<Property>();
-		for (Property prop : props) {
-			this.configProps.add(new Property(prop));
+
+		try {
+			List<Property> props = Globals.getIssueService().getConfig();
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "props=" + props);
+
+			for (Property prop : props) {
+				this.configProps.add(new Property(prop));
+			}
+
+			// Add properties for logging options
+			Property propLogFile = Globals.getConfigProperty(Property.LOG_FILE);
+			this.configProps.add(propLogFile);
+			Property propLogLevel = Globals.getConfigProperty(Property.LOG_LEVEL);
+			this.configProps.add(propLogLevel);
+
+			ret = true;
 		}
-		
-		// Set default logging options if nessesary
-		Property propLogFile = Globals.getConfigProperty(Property.LOG_FILE);
-		this.configProps.add(propLogFile);
-		Property propLogLevel = Globals.getConfigProperty(Property.LOG_LEVEL);
-		this.configProps.add(propLogLevel);
+		catch (IOException e) {
+			// IssueService might not be ready at the moment.
+			log.log(Level.INFO, "Cannot get configuration from issue service.", e);
+		}
+
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")init=" + ret);
+		return ret;
 	}
 
 	private void appendField(StringBuilder sbuf, Property configProp) throws IOException {
@@ -86,8 +115,7 @@ public class BackstageConfig {
 		IssueService srv = Globals.getIssueService();
 		PropertyClasses propertyClasses = srv.getPropertyClasses();
 		PropertyClass propClass = propertyClasses.get(configProp.getId());
-		if (propClass == null)
-			throw new IllegalStateException("Undefined property class=" + configProp.getId());
+		if (propClass == null) throw new IllegalStateException("Undefined property class=" + configProp.getId());
 		List<IdName> selectList = propClass.getSelectList();
 
 		String elm = "editBox";
@@ -116,13 +144,14 @@ public class BackstageConfig {
 			sbuf.append("onAction=\"Button_onAction\" ");
 			break;
 		case PropertyClass.TYPE_STRING:
-//		case PropertyClass.TYPE_INTEGER:
+			// case PropertyClass.TYPE_INTEGER:
 			if (selectList != null && selectList.size() != 0) {
 				sbuf.append("getItemCount=\"ComboBox_getItemCount\" ");
 				sbuf.append("getItemLabel=\"ComboBox_getItemLabel\" ");
 				sbuf.append("onChange=\"ComboBox_onChange\" ");
 				sbuf.append("getText=\"ComboBox_getText\" ");
-			} else {
+			}
+			else {
 				sbuf.append("sizeString=\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\" ");
 				sbuf.append("onChange=\"EditBox_onChange\" ");
 				sbuf.append("getText=\"EditBox_getText\" ");
@@ -188,7 +217,8 @@ public class BackstageConfig {
 				PropertyClass propClass = propertyClasses.get(configProp.getId());
 				selectList = propClass.getSelectList();
 			}
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 		return selectList;
@@ -221,11 +251,15 @@ public class BackstageConfig {
 			case "bnCancel":
 				onCancel();
 				break;
+			case "bnReload":
+				onReload();
+				break;
 			default:
 				onPropertyControlAction(control);
 				break;
 			}
-		} catch (Throwable e) {
+		}
+		catch (Throwable e) {
 			e.printStackTrace();
 			String msg = e.getMessage();
 			if (msg == null || msg.length() == 0) {
@@ -233,6 +267,11 @@ public class BackstageConfig {
 			}
 			MessageBox.show(getOwnerWindow(), "Error", msg, null);
 		}
+	}
+
+	private void onReload() {
+		init();
+		this.ribbon.Invalidate();
 	}
 
 	private void onCancel() throws IOException {
@@ -256,7 +295,8 @@ public class BackstageConfig {
 			dlg.showAsync(getOwnerWindow(), (succ, ex) -> {
 				if (ex != null) {
 					ex.printStackTrace();
-				} else {
+				}
+				else {
 					configProp.setValue(succ);
 				}
 			});

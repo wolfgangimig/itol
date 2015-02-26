@@ -49,6 +49,7 @@ public class Globals {
 	private static Registry registry;
 	private static File appDir;
 	private static File __tempDir;
+	private static Logger log = Logger.getLogger("Globals");
 
 	private static Config config = new Config();
 
@@ -68,7 +69,6 @@ public class Globals {
 	}
 
 	public static void initIssueService(File appDir) throws IOException {
-
 		Globals.appDir = appDir;
 		Globals.issueServiceRunning = false;
 
@@ -79,13 +79,24 @@ public class Globals {
 		
 		initLogging();
 		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" + appDir);
+
+		try {
+			Class<?> clazz = Class.forName(config.serviceFactoryClass);
+			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
+			issueService = fact.getService(appDir, config.serviceFactoryParams);
+		}
+		catch (Throwable e1) {
+			log.log(Level.SEVERE, "Cannot load issue service class=" + config.serviceFactoryClass, e1);
+			return;
+		}
+		
 		BackgTask.run(() -> {
 			try {
-				Class<?> clazz = Class.forName(config.serviceFactoryClass);
-				IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
-				issueService = fact.getService(appDir, config.serviceFactoryParams);
-
+				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
 				issueService.setConfig(config.configProps);
+				
+				if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initialized.");
 				System.out.println("Issue service initialized.");
 				
 				issueServiceRunning = true;
@@ -97,10 +108,11 @@ public class Globals {
 //				});
 				
 			} catch (Exception e) {
-				e.printStackTrace();
+				log.log(Level.SEVERE, "Cannot initialize issue service", e);
 			}
 		});
 
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")initIssueService");
 	}
 
 	public static boolean isIssueServiceRunning() {

@@ -23,24 +23,16 @@ import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.impl.IssueServiceFactory_JS;
 import com.wilutions.joa.AddinApplication;
 
-import de.wim.outldd.OutlookDD;
 
 public class IssueApplication extends AddinApplication {
 
-	static
-	{
+	static {
 		Config config = Globals.getConfig();
 		config.appName = "Issue Tracker for Microsoft Outlook and Redmine";
 		config.manufacturerName = "WILUTIONS";
 		config.serviceFactoryClass = IssueServiceFactory_JS.class.getName();
 		config.serviceFactoryParams = Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT);
 		config.configProps = new ArrayList<Property>(0);
-		
-		try {
-			OutlookDD.init(OutlookDD.MODE_TEMP_FILES);
-		}
-		catch (Throwable ignored) {
-		}
 	}
 
 	public static File getAppDir() {
@@ -75,7 +67,8 @@ public class IssueApplication extends AddinApplication {
 		File appDir = getAppDir();
 		try {
 			Globals.initIssueService(appDir);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 			Logger log = Logger.getLogger(IssueApplication.class.getName());
 			log.severe(e.toString());
@@ -83,9 +76,11 @@ public class IssueApplication extends AddinApplication {
 	}
 
 	public static void main(String[] args) {
+
+		initOutlDD();
 		
 		main(IssueApplication.class, IssueApplication.class, args);
-		
+
 		Globals.releaseResources();
 	}
 
@@ -93,6 +88,19 @@ public class IssueApplication extends AddinApplication {
 	public void start(Stage primaryStage) throws Exception {
 		instance = this;
 		super.start(primaryStage);
+	}
+
+	private static void initOutlDD() {
+//		try {
+//
+//			System.out.println("Init OutlDD");
+//			OutlookDD.setLogFile(new File("D:/temp/log/outldd.log"), false);
+//			OutlookDD.init(OutlookDD.MODE_TEMP_FILES);
+//			System.out.println("Init OutlDD succeeded");
+//		}
+//		catch (Throwable e) {
+//			System.out.println("Init OutlDD failed: " + e);
+//		}
 	}
 
 	private static volatile IssueApplication instance;

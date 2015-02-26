@@ -12,6 +12,8 @@ package com.wilutions.itol;
 
 import java.io.IOException;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javafx.util.Callback;
 
@@ -37,36 +39,44 @@ public class ItolAddin extends OutlookAddinEx {
 
 	private AttachmentHttpServer httpServer = new AttachmentHttpServer();
 	private BackstageConfig backstageConfig = new BackstageConfig();
+	private Logger log = Logger.getLogger("ItolAddin");
 
 	public ItolAddin() {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "ItolAddin(");
 		Globals.setThisAddin(this);
 		// httpServer.start();
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")ItolAddin");
 	}
 
 	public void onLoadRibbon(IRibbonUI ribbon) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "onLoadRibbon(");
 		super.onLoadRibbon(ribbon);
 		this.backstageConfig.onLoadRibbon(ribbon);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")onLoadRibbon");
 	}
 
 	public String EditBox_getText(IRibbonControl control) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "EditBox_getText(");
 		String ret = "";
 		String controlId = control.getId();
 		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
 			ret = backstageConfig.EditBox_getText(control);
 		}
-		System.out.println("EditBox_getText id=" + control.getId() + ", text=" + ret);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")EditBox_getText=" + ret);
 		return ret;
 	}
 
 	public void EditBox_onChange(IRibbonControl control, String text) {
-		System.out.println("EditBox_onChange id=" + control.getId() + ", text=" + text);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "EditBox_onChange(" + text);
 		String controlId = control.getId();
 		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
 			backstageConfig.EditBox_onChange(control, text);
 		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")ditBox_onChange");
 	}
 
 	public void Button_onAction(IRibbonControl control, Boolean pressed) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "Button_onAction(" + pressed);
 		String controlId = control.getId();
 		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
 			backstageConfig.Button_onAction(control);
@@ -74,7 +84,7 @@ public class ItolAddin extends OutlookAddinEx {
 		else if (controlId.equals("NewIssue")) {
 			newIssue(control, pressed);
 		}
-
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")Button_onAction");
 	}
 
 	private void newIssue(IRibbonControl control, Boolean pressed) {
@@ -167,6 +177,7 @@ public class ItolAddin extends OutlookAddinEx {
 
 	@Override
 	public String GetCustomUI(String ribbonId) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "GetCustomUI(" + ribbonId);
 		String ui = super.GetCustomUI(ribbonId);
 		if (!ribbonId.equals("Microsoft.Outlook.Explorer")) {
 			return ui;
@@ -177,6 +188,7 @@ public class ItolAddin extends OutlookAddinEx {
 		catch (IOException e) {
 			e.printStackTrace();
 		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")GetCustomUI=" + ui);
 		return ui;
 	}
 
