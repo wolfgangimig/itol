@@ -158,6 +158,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private boolean modified;
 	private volatile boolean firstModifiedCheck;
 	private AttachmentHelper attachmentHelper = new AttachmentHelper();
+	private MailInspector mailInspectorOrNull;
 
 	/**
 	 * Owner window for child dialogs (message boxes)
@@ -166,6 +167,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	public IssueTaskPane(MailInspector mailInspectorOrNull, IssueMailItem mailItem) {
 		this.mailItem = mailItem;
+		this.mailInspectorOrNull = mailInspectorOrNull;
 
 		this.resb = Globals.getResourceBundle();
 		Globals.getThisAddin().getRegistry().readFields(this);
@@ -429,7 +431,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					}));
 			detectIssueModifiedTimer.setCycleCount(Timeline.INDEFINITE);
 			detectIssueModifiedStart();
-
+			
+			// Press Assign button when called from inspector.
+			if (mailInspectorOrNull != null) {
+				bnAssignSelection.setSelected(true);
+			}
+			// Show defaults when called from explorer.
+			else {
+				internalSetMailItem(new IssueMailItemBlank());
+			}
+			
+			
 		} catch (Throwable e) {
 			e.printStackTrace();
 			showMessageBoxError(e.toString());
@@ -1219,4 +1231,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			showMessageBoxError(e.toString());
 		}
 	}
+
+	@Override
+	public void setVisible(final boolean v) throws ComException {
+		super.setVisible(v);
+		if (v) {
+			if (bnAssignSelection != null && !bnAssignSelection.isSelected() && !modified) {
+				internalSetMailItem(new IssueMailItemBlank());
+			}
+		}
+	}
+
 }
