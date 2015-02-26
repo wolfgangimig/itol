@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-    <Product Id="3d848e31-8056-43a5-b360-eb323501527c" Name="Issue Tracker for Microsoft Outlook 64bit" 
+    <Product Id="12a60bef-3f46-44a1-8a4a-d09d7f113ceb" Name="Issue Tracker for Microsoft Outlook 64bit" 
              Language="1033" Version="1.1"
              Manufacturer="WILUTIONS" 
-             UpgradeCode="0b182456-0bf3-4da8-9ad1-93505957f898">
+             UpgradeCode="db5365f6-ba46-42cd-8c9a-b502cabc1d33">
         <Package Description="Issue Tracker for Microsoft Outlook 64bit" Comments="None"
                  InstallerVersion="200" Compressed="yes"
                  InstallScope="perUser" Platform="x64"/>
@@ -42,6 +42,7 @@
         <UI/>
         <Icon Id="DesktopIcon.exe" SourceFile="Issue Tracker for Microsoft Outlook 64bit.ico" />
         <Icon Id="StartMenuIcon.exe" SourceFile="Issue Tracker for Microsoft Outlook 64bit.ico" />
+        
     <CustomAction Id='RegisterServer' FileKey='LauncherId' ExeCommand='/RegisterServer user' Return='ignore' />
     <CustomAction Id='UnregisterServer' FileKey='LauncherId' ExeCommand='/UnregisterServer user' Return='ignore' />
 
@@ -50,5 +51,5 @@
       <Custom Action='UnregisterServer' After='InstallInitialize'>(NOT UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")</Custom>
     </InstallExecuteSequence>
 
-   </Product>
+    </Product>
 </Wix>
