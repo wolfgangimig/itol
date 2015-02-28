@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 import javafx.stage.Stage;
 
 import com.wilutions.com.ComException;
+import com.wilutions.com.JoaDll;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.impl.IssueServiceFactory_JS;
 import com.wilutions.joa.AddinApplication;
@@ -77,8 +78,6 @@ public class IssueApplication extends AddinApplication {
 
 	public static void main(String[] args) {
 
-		initOutlDD();
-		
 		main(IssueApplication.class, IssueApplication.class, args);
 
 		Globals.releaseResources();
@@ -88,19 +87,6 @@ public class IssueApplication extends AddinApplication {
 	public void start(Stage primaryStage) throws Exception {
 		instance = this;
 		super.start(primaryStage);
-	}
-
-	private static void initOutlDD() {
-//		try {
-//
-//			System.out.println("Init OutlDD");
-//			OutlookDD.setLogFile(new File("D:/temp/log/outldd.log"), false);
-//			OutlookDD.init(OutlookDD.MODE_TEMP_FILES);
-//			System.out.println("Init OutlDD succeeded");
-//		}
-//		catch (Throwable e) {
-//			System.out.println("Init OutlDD failed: " + e);
-//		}
 	}
 
 	private static volatile IssueApplication instance;

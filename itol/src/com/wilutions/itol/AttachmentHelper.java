@@ -60,6 +60,11 @@ public class AttachmentHelper {
 			}
 		}
 	}
+	
+	public Attachment makeMailAttachment(IssueMailItem mailItem) throws IOException {
+		MailAtt mailAtt = new MailAtt(mailItem);
+		return mailAtt;
+	}
 
 	public void releaseResources() {
 		for (Runnable run : resourcesToRelease) {
@@ -192,6 +197,7 @@ public class AttachmentHelper {
 
 	/**
 	 * Issue attachment for mail.
+	 * Must be public, otherwise it cannot be viewed in the table.
 	 */
 	public class MailAtt extends Attachment {
 

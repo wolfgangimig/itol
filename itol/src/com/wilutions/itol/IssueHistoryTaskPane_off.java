@@ -54,7 +54,7 @@ public class IssueHistoryTaskPane_off extends TaskPaneFX implements Initializabl
 	public IssueHistoryTaskPane_off(MailInspector inspector, IssueMailItem mailItem2) {
 		this.mailInspector = inspector;
 		this.mailItem = mailItem2;
-		Globals.getThisAddin().getRegistry().readFields(this);
+		Globals.getRegistry().readFields(this);
 	}
 
 	private final Issue readIssue() {
@@ -79,7 +79,7 @@ public class IssueHistoryTaskPane_off extends TaskPaneFX implements Initializabl
 			}
 		} catch (IOException e) {
 		}
-		Globals.getThisAddin().getRegistry().writeFields(this);
+		Globals.getRegistry().writeFields(this);
 	}
 
 	@Override

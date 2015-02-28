@@ -23,6 +23,8 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import javafx.application.Platform;
+
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.reg.Registry;
 import com.wilutions.itol.db.IssueService;

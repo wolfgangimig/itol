@@ -170,7 +170,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		this.mailInspectorOrNull = mailInspectorOrNull;
 
 		this.resb = Globals.getResourceBundle();
-		Globals.getThisAddin().getRegistry().readFields(this);
+		Globals.getRegistry().readFields(this);
 
 		updateIssueFromMailItem(null);
 	}
@@ -326,7 +326,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@Override
 	public void close() {
 		super.close();
-		Globals.getThisAddin().getRegistry().writeFields(this);
+		Globals.getRegistry().writeFields(this);
 		for (Runnable run : resourcesToRelease) {
 			try {
 				run.run();
@@ -607,7 +607,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initAttachments() {
 		if (tabAttachmentsApplyHandler) {
-			AttachmentTableViewHandler.apply(tabAttachments);
+			AttachmentTableViewHandler.apply(attachmentHelper, tabAttachments);
 
 			tabAttachments.setOnMouseClicked((click) -> {
 				if (click.getClickCount() == 2) {
