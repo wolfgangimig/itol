@@ -8,6 +8,10 @@
       MIT License, http://opensource.org/licenses/MIT
 
  */
+ 
+/**
+ * This file can be used with Redmine 2.6.0
+ */
 
 /**
  * Maximum number of projects to be read. This value constraints the number of
