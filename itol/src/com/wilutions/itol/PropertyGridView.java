@@ -280,6 +280,12 @@ public class PropertyGridView {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeChoiceBoxForProperty");
 		return cb;
 	}
+	
+	private Node makeTextFieldWithSuggestions(Property prop, Callback<String, List<String>> findSuggestions) {
+		Node node = null;
+		
+		return node;
+	}
 
 	private CheckBox makeCheckBoxForProperty(Property prop) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeCheckBoxForProperty(");

@@ -14,9 +14,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.PropertyResourceBundle;
+import java.util.ResourceBundle;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.fxml.JavaFXBuilderFactory;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -25,10 +27,15 @@ import javafx.scene.control.TextField;
 
 import com.wilutions.joa.fx.ModalDialogFX;
 
-public class DlgPassword extends ModalDialogFX<String> {
+public class DlgPassword extends ModalDialogFX<String> implements Initializable{
 	
-	public DlgPassword() {
-		setTitle("Enter Password");
+	ResourceBundle resb;
+	String pwd;
+	
+	public DlgPassword(String pwd) {
+		resb = Globals.getResourceBundle();
+		this.pwd = pwd;
+		setTitle(resb.getString("DlgPassword.title"));
 	}
 
 	@Override
@@ -69,4 +76,11 @@ public class DlgPassword extends ModalDialogFX<String> {
 	private Button bnCancel;
 	@FXML
 	private TextField edPassword;
+
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		if (pwd != null) {
+			edPassword.setText(pwd);
+		}
+	}
 }

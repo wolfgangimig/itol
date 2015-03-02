@@ -93,6 +93,8 @@ public class Globals {
 			return;
 		}
 		
+		decryptData();
+		
 		BackgTask.run(() -> {
 			try {
 				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
@@ -103,11 +105,11 @@ public class Globals {
 				
 				issueServiceRunning = true;
 				
-//				// TEST DIALOG
-//				Platform.runLater(() -> {
-//					DlgTestIssueTaskPane.showAndWait();
-//					System.exit(0);
-//				});
+				// TEST DIALOG
+				Platform.runLater(() -> {
+					DlgTestIssueTaskPane.showAndWait();
+					System.exit(0);
+				});
 				
 			} catch (Exception e) {
 				log.log(Level.SEVERE, "Cannot initialize issue service", e);
@@ -115,6 +117,34 @@ public class Globals {
 		});
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")initIssueService");
+	}
+
+	private static void decryptData() {
+		// Decrypt passwords
+		for (Property configProp : config.configProps) {
+			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
+			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
+				try {
+					configProp.setValue(PasswordEncryption.decrypt((String) configProp.getValue()));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	private static void encryptData() {
+		// Decrypt passwords
+		for (Property configProp : config.configProps) {
+			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
+			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
+				try {
+					configProp.setValue(PasswordEncryption.encrypt((String) configProp.getValue()));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	public static boolean isIssueServiceRunning() {
@@ -138,18 +168,6 @@ public class Globals {
 			}
 		}
 
-		// Decrypt passwords
-		for (Property configProp : config.configProps) {
-			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
-			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
-				try {
-					configProp.setValue(PasswordEncryption.decrypt((String) configProp.getValue()));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		
 		// Set default logging options if nessesary
 		String logLevel = getConfigPropertyString(Property.LOG_LEVEL);
 		String logFile = getConfigPropertyString(Property.LOG_FILE);
@@ -183,8 +201,10 @@ public class Globals {
 	public static void setConfig(List<Property> configProps) throws IOException {
 		config.configProps = configProps;
 		initLogging();
+		encryptData();
 		writeData();
 		readData();
+		decryptData();
 		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams);
 		issueService.setConfig(configProps);
 		issueServiceRunning = true;

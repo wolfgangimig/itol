@@ -291,7 +291,7 @@ public class BackstageConfig {
 		PropertyClass propClass = Globals.getIssueService().getPropertyClasses().get(configProp.getId());
 
 		if (propClass.getType() == PropertyClass.TYPE_PASSWORD) {
-			DlgPassword dlg = new DlgPassword();
+			DlgPassword dlg = new DlgPassword((String)configProp.getValue());
 			dlg.showAsync(getOwnerWindow(), (succ, ex) -> {
 				if (ex != null) {
 					ex.printStackTrace();
