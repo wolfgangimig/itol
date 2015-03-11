@@ -318,5 +318,11 @@ public class IssueServiceImpl implements IssueService {
 		return "";
 	}
 
+	@Override
+	public List<IdName> getPropertyAutoCompletion(String propertyId, Issue iss, String filter) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 }

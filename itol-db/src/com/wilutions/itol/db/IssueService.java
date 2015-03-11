@@ -23,7 +23,9 @@ public interface IssueService {
 	PropertyClass getPropertyClass(String propertyId, Issue iss) throws IOException;
 	
 	List<String> getPropertyDisplayOrder(Issue issue);
-
+	
+	List<IdName> getPropertyAutoCompletion(String propertyId, Issue iss, String filter) throws IOException;
+	
 //	List<IdName> getIssueTypes(Issue iss) throws IOException;
 //
 //	List<IdName> getPriorities(Issue iss) throws IOException;

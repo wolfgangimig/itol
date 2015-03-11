@@ -45,3 +45,14 @@
 .tbbuttons {
 	-fx-background-color: WHITE;
 }
+
+.tooltip {
+    -fx-background: WHITE;
+    -fx-text-fill: BLACK;
+    -fx-background-color: WHITE;
+    -fx-background-radius: 0px;
+    -fx-background-insets: 0;
+    -fx-padding: 0.667em 0.75em 0.667em 0.75em; /* 10px */
+    -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.5) , 10, 0.0 , 0 , 3 );
+    -fx-font-size: 1.0em;
+}
