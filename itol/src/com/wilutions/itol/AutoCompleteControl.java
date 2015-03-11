@@ -1,6 +1,7 @@
 package com.wilutions.itol;
 
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javafx.animation.KeyFrame;
@@ -12,6 +13,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyEvent;
 import javafx.util.Callback;
 import javafx.util.Duration;
@@ -24,10 +26,16 @@ public class AutoCompleteControl {
 
 	public static void autoCompleteComboBox(final ComboBox<IdName> comboBox,
 			final Callback<String, List<IdName>> findSuggestions) {
+		
 		comboBox.setEditable(true);
-
+		
+		ResourceBundle resb = Globals.getResourceBundle();
+		Tooltip ttip = new Tooltip();
+		ttip.setText(resb.getString("IssueTaskPane.AutoComplete.tooltip"));
+		comboBox.setTooltip(ttip);
+		
 		final TextField ed = comboBox.getEditor();
-
+		
 		// comboBox.setOnAction((event) -> {
 		// IdName idn = comboBox.getSelectionModel().getSelectedItem();
 		// System.out.println("selected " + idn);

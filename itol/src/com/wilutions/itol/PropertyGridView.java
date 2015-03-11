@@ -164,13 +164,11 @@ public class PropertyGridView {
 //			ctrl = makeFloatFieldForProperty(prop);
 //			break;
 		default: {
-			if (selectList != null && selectList.size() != 0) {
-				if (srv.getPropertyAutoCompletion(prop.getId(), null, null) != null) {
-					ctrl = makeAutoCompleteTextField(prop, issue);
-				}
-				else {
-					ctrl = makeChoiceBoxForProperty(prop, selectList);
-				}
+			if (srv.getPropertyAutoCompletion(prop.getId(), null, null) != null) {
+				ctrl = makeAutoCompleteTextField(prop, issue);
+			}
+			else if (selectList != null && selectList.size() != 0) {
+				ctrl = makeChoiceBoxForProperty(prop, selectList);
 			} else {
 				ctrl = makeTextFieldForProperty(prop);
 			}

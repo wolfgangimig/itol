@@ -854,7 +854,7 @@ function getIssueProjectMemberships(issue) {
 }
 
 function getAssignees(issue) {
-	var ret = [ new IdName(-1, "Unassigned") ];
+	var ret = [];
 	var issueId = issue ? issue.id : 0;
 	return ret;
 };
