@@ -928,6 +928,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	@FXML
 	public void onNextPage() {
+		
+		//TEST
+		propGridView.saveProperties(issue);
 
 		// Select the next tab
 		int idx = tabpIssue.getSelectionModel().getSelectedIndex();

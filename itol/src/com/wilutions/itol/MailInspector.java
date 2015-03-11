@@ -49,7 +49,7 @@ public class MailInspector extends InspectorWrapper implements MyWrapper {
 
 	public void setIssueTaskPaneVisible(boolean visible) {
 		if (!issuePane.hasWindow() && visible) {
-			String title = Globals.getResourceBundle().getString("IssueTaskpane.title");
+			String title = Globals.getResourceBundle().getString("IssueTaskPane.title");
 			Globals.getThisAddin().createTaskPaneWindowAsync(issuePane, title, inspector, (succ, ex) -> {
 				if (ex != null) {
 					MessageBox.show(inspector, "Error", ex.getMessage(), null);

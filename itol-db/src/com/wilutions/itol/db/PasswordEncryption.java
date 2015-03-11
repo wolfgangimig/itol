@@ -24,6 +24,10 @@ public class PasswordEncryption {
 	
 	private final static String IV = "happynewyearh201";
 	private final static String encryptionKey = "18afc39c755144a9";
+	
+	public enum EAction {
+		ENCRYPT, DECRYPT;
+	}
 
 	public static String encrypt(String plainText) throws IOException {
 		try {
@@ -40,6 +44,19 @@ public class PasswordEncryption {
 		} catch (Throwable e) {
 			throw new IOException(e);
 		}
+	}
+	
+	public static String encrypt(String plainText, EAction action) throws IOException {
+		String ret = plainText;
+		switch (action) {
+		case ENCRYPT: 
+			ret = encrypt(plainText);
+			break;
+		case DECRYPT: 
+			ret = decrypt(plainText);
+			break;
+		}
+		return ret;
 	}
 
 	public static String decrypt(String cipherText) throws IOException {

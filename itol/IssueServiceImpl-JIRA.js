@@ -34,6 +34,7 @@ var ITOL_CONFIG_DESC_TAG_END = "\nENCRYPTED_DATA_END</pre>";
  * Import requried Java classes
  */
 var IOException = Java.type("java.io.IOException");
+var URLEncoder = Java.type("java.net.URLEncoder");
 var Property = Java.type("com.wilutions.itol.db.Property");
 var PropertyClass = Java.type("com.wilutions.itol.db.PropertyClass");
 var PropertyClasses = Java.type("com.wilutions.itol.db.PropertyClasses");
@@ -465,127 +466,18 @@ function writeIssue(issueParam, progressCallback) {
 	if (islfine) log.log(Level.FINE, "issueId=" + issueId + ", isUpdate=" + isUpdate);
 
 	if (isUpdate) {
-		ret = httpClient.put("/issues/" + issueId + ".json", issueParam, pgIssue);
+		httpClient.put("/issue/" + issueId, issueParam, pgIssue);
 	}
 	else {
-		ret = httpClient.post("/issues.json", issueParam, pgIssue);
+		var iss = httpClient.post("/issue", issueParam, pgIssue);
+		issueId = iss.id;
 	}
+	
+	ret = httpClient.get("/issue/" + issueId);
 
 	ddump("recv", ret);
 	if (islfine) log.log(Level.FINE, ")writeIssue=");
 	return ret;
-}
-
-/**
- * Read or update ITOL configuration. The configuration data is stored as an
- * encrypted blob in the description of the ITOL confguration project.
- */
-function readOrUpdateConfigurationProject() {
-	if (islfine) log.log(Level.FINE, "readOrUpdateConfigurationProject(");
-
-	// Read configuration project.
-	var configProject = null;
-	try {
-		var response = httpClient.get("/projects/" + config.configProjectIdentifier + ".json");
-		configProject = response.project;
-		idump("configProject", configProject);
-
-		// Encrypt configuration data
-		var configDesc = configProject.description;
-		var p = configDesc.indexOf(ITOL_CONFIG_DESC_TAG_BEGIN);
-		if (p >= 0) {
-			configDesc = configDesc.substring(p + ITOL_CONFIG_DESC_TAG_BEGIN.length);
-		}
-		p = configDesc.indexOf(ITOL_CONFIG_DESC_TAG_END);
-		if (p >= 0) {
-			configDesc = configDesc.substring(0, p);
-		}
-		configDesc = PasswordEncryption.decrypt(configDesc);
-		var configData = JSON.parse(configDesc);
-		data.custom_fields = configData.custom_fields;
-		ddump("data.custom_fields", data.custom_fields);
-
-		// Create property classes for custom fields
-		var propertyClasses = getPropertyClasses();
-		for (var i = 0; i < data.custom_fields.length; i++) {
-			var cfield = data.custom_fields[i];
-			var pclass = makePropertyClassForCustomField(cfield);
-			if (pclass) {
-				propertyClasses.add(pclass);
-			}
-		}
-
-	}
-	catch (ex) {
-		if (islfine) log.log(Level.FINE, "Configuration project not found, try to crate it. ", ex);
-	}
-
-	// Try to update or create config project
-	var isNew = !configProject;
-	var customFields = null;
-	try {
-
-		// Read custom fields.
-		// Only admins are allowed to. Ordinary users will jump to catch(ex)
-		customFields = readCustomFields(data);
-
-		// Put custom fields into a configuration object.
-		// Convert it to JSON.
-		var configData = {
-			"custom_fields" : customFields
-		};
-		var configDesc = JSON.stringify(configData);
-
-		// Encrypt the configuration object and wrap it into
-		// BEGIN and END.
-		configDesc = PasswordEncryption.encrypt(configDesc);
-		configDesc = ITOL_CONFIG_DESC + " " + (new Date()).toISOString() + ". " + ITOL_CONFIG_DESC_TAG_BEGIN
-				+ configDesc + ITOL_CONFIG_DESC_TAG_END;
-
-		// Create a project object and assign the encrypted configuraion
-		// as project description.
-		configProject = configProject || {
-			"name" : ITOL_CONFIG_NAME,
-			"identifier" : config.configProjectIdentifier,
-			"is_public" : true,
-			"enabled_module_names" : []
-		};
-		configProject.description = configDesc;
-		ddump("update configProject", configProject);
-
-		// Create or update the project
-		var projectRequest = {
-			"project" : configProject
-		};
-		if (isNew) {
-			ret = httpClient.post("/projects.json", projectRequest);
-		}
-		else {
-			ret = httpClient.put("/projects/" + config.configProjectIdentifier + ".json", projectRequest);
-		}
-
-		// Memorize that current user is an administrator
-		data.isAdmin = true;
-
-	}
-	catch (ex) {
-		if (islfine) log.log(Level.FINE, "Failed to read custom fields, I am not an administrator.");
-
-		// Memorize that current user is not an administrator
-		data.isAdmin = false;
-
-		if (isNew) {
-			var msg = "Cannot read ITOL configuration project. "
-					+ "The first login has to be made with an administrator account. "
-					+ "Thereby, the configuration project is created. Details: " + ex.toString();
-			log.log(Level.WARNING, msg);
-			// throw new IOException(msg);
-		}
-	}
-
-	if (islfine) log.log(Level.FINE, "data.isAdmin=" + data.isAdmin);
-
-	if (islfine) log.log(Level.FINE, ")readOrUpdateConfigurationProject");
 }
 
 function initialize() {
@@ -600,43 +492,21 @@ function initialize() {
 
 	data.clear();
 
-	// if (islinfo) log.log(Level.INFO, "readOrUpdateConfigurationProject");
-	// readOrUpdateConfigurationProject();
-
 	if (islinfo) log.log(Level.INFO, "readProjects");
 	readProjects(data);
 
 	if (islinfo) log.log(Level.INFO, "readCurrentUser");
 	readCurrentUser(data);
 	
-	// if (islinfo) log.log(Level.INFO, "readTrackers");
-	// readTrackers(data);
-	//
-	
 	if (islinfo) log.log(Level.INFO, "readPriorities");
 	readPriorities(data);
 	
-	// if (islinfo) log.log(Level.INFO, "readStatuses");
-	// readStatuses(data);
-
 	config.valid = true;
 	if (islinfo) log.log(Level.INFO, "initialized");
 
 	if (islfine) log.log(Level.FINE, ")initialize");
 }
 
-function readTrackers(data) {
-	if (islfine) log.log(Level.FINE, "readTrackers(");
-	var trackersResponse = httpClient.get("/trackers.json");
-	ddump("trackersResponse", trackersResponse);
-	for (var i = 0; i < trackersResponse.trackers.length; i++) {
-		var tracker = trackersResponse.trackers[i];
-		if (islinfo) log.log(Level.INFO, "tracker.id=" + tracker.id + ", .name=" + tracker.name);
-		data.trackers.push(new IdName(tracker.id, tracker.name));
-	}
-
-	if (islfine) log.log(Level.FINE, ")readTrackers");
-}
 
 function readPriorities(data) {
 	if (islfine) log.log(Level.FINE, "readPriorities(");
@@ -650,22 +520,6 @@ function readPriorities(data) {
 	}
 	if (islfine) log.log(Level.FINE, ")readPriorities");
 
-}
-
-function readStatuses(data) {
-	if (islfine) log.log(Level.FINE, "readStatuses(");
-	var statusesResponse = httpClient.get("/issue_statuses.json");
-	ddump("statusesResponse", statusesResponse);
-	data.statuses = [];
-	for (var i = 0; i < statusesResponse.issue_statuses.length; i++) {
-		var status = statusesResponse.issue_statuses[i];
-		if (islinfo) log.log(Level.INFO, "status.id=" + status.id + ", .name=" + status.name);
-		data.statuses.push(new IdName(status.id, status.name));
-	}
-	if (!data.statuses) {
-		data.statuses = [ new IdName(1, "New issue") ];
-	}
-	if (islfine) log.log(Level.FINE, ")readStatuses");
 }
 
 function readCustomFields(data) {
@@ -1002,12 +856,69 @@ function getIssueProjectMemberships(issue) {
 function getAssignees(issue) {
 	var ret = [ new IdName(-1, "Unassigned") ];
 	var issueId = issue ? issue.id : 0;
-	
 	return ret;
 };
 
+
+
+function getPropertyAutoCompletion(propId, issue, filter) {
+	if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "getPropertyAutoCompletion(propId=" + propId + ", filter=" + filter);
+	var ret = null;
+	
+	if (propId == Property.ASSIGNEE) {
+		
+		if (issue != null && filter != null) {
+			
+			var url = "/user/assignable/search?";
+			
+			var userName = URLEncoder.encode(filter, "UTF-8");
+			url += "username=" + userName;
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "userName=" + userName);
+			
+			var project = getIssueProject(issue);
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "project=" + project);
+			
+			if (project) {
+				url += "&project=" + project.key;
+			}
+
+			var issueKey = null;
+			if (issueKey) {
+				url += "&issueKey=" + issueKey;
+			}
+			
+			url += "&startAt=0";
+			url += "&maxResults=10";
+			
+			var response = httpClient.get(url);
+			ddump("assignees", response);
+			
+			ret = [];
+			for (var i = 0; i < response.length; i++) {
+				var user = response[i];
+				ret.push(new IdName(user.key, user.displayName));
+			}
+
+		}
+		else {
+			// Just a check whether auto completion is supported.
+			// Return an empty array in this case.
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "auto completion supported");
+			ret = [];
+		}
+	}
+	else {
+		// Auto complete is not supported, return null.
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "auto completion unsupported");
+		ret = null;
+	}
+	
+	if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")getPropertyAutoCompletion");
+	return ret;
+}
+
 function getCurrentUser() {
-	return data.user ? new IdName(parseInt(data.user.id), data.user.firstname + " " + data.user.lastname) : new IdName(
+	return data.user ? new IdName(parseInt(data.user.id), data.user.displayName) : new IdName(
 			0, "");
 };
 

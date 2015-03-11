@@ -23,8 +23,6 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import javafx.application.Platform;
-
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.reg.Registry;
 import com.wilutions.itol.db.IssueService;
@@ -87,13 +85,15 @@ public class Globals {
 			Class<?> clazz = Class.forName(config.serviceFactoryClass);
 			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
 			issueService = fact.getService(appDir, config.serviceFactoryParams);
+			
+			// Service initialization might have registered PropertyClass objects
+			// for encrypted values. Decrypt values of those classes:
+			encryptData(PasswordEncryption.EAction.DECRYPT);
 		}
 		catch (Throwable e1) {
 			log.log(Level.SEVERE, "Cannot load issue service class=" + config.serviceFactoryClass, e1);
 			return;
 		}
-		
-		decryptData();
 		
 		BackgTask.run(() -> {
 			try {
@@ -106,10 +106,10 @@ public class Globals {
 				issueServiceRunning = true;
 				
 				// TEST DIALOG
-				Platform.runLater(() -> {
-					DlgTestIssueTaskPane.showAndWait();
-					System.exit(0);
-				});
+//				Platform.runLater(() -> {
+//					DlgTestIssueTaskPane.showAndWait();
+//					System.exit(0);
+//				});
 				
 			} catch (Exception e) {
 				log.log(Level.SEVERE, "Cannot initialize issue service", e);
@@ -117,34 +117,6 @@ public class Globals {
 		});
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")initIssueService");
-	}
-
-	private static void decryptData() {
-		// Decrypt passwords
-		for (Property configProp : config.configProps) {
-			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
-			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
-				try {
-					configProp.setValue(PasswordEncryption.decrypt((String) configProp.getValue()));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-	}
-
-	private static void encryptData() {
-		// Decrypt passwords
-		for (Property configProp : config.configProps) {
-			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
-			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
-				try {
-					configProp.setValue(PasswordEncryption.encrypt((String) configProp.getValue()));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
 	}
 
 	public static boolean isIssueServiceRunning() {
@@ -181,33 +153,43 @@ public class Globals {
 			config.configProps.add(propLogFile);
 		}
 		
-
 	}
 
 	private static void writeData() {
+		getRegistry().write(REG_CONFIG, config);
+	}
+	
+	private static String encryptString(String s, PasswordEncryption.EAction action) {
+		String ret = s;
+		try {
+			ret = PasswordEncryption.encrypt(s, action);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return ret;
+	}
+
+	private static void encryptData(PasswordEncryption.EAction action) {
 		for (Property configProp : config.configProps) {
 			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
 			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
-				try {
-					configProp.setValue(PasswordEncryption.encrypt((String) configProp.getValue()));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				String r = encryptString((String)configProp.getValue(), action);
+				configProp.setValue(r);
 			}
 		}
-		getRegistry().write(REG_CONFIG, config);
 	}
 
-	public static void setConfig(List<Property> configProps) throws IOException {
+	public static List<Property> setConfig(List<Property> configProps) throws IOException {
 		config.configProps = configProps;
 		initLogging();
-		encryptData();
+		encryptData(PasswordEncryption.EAction.ENCRYPT);
 		writeData();
 		readData();
-		decryptData();
 		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams);
-		issueService.setConfig(configProps);
+		encryptData(PasswordEncryption.EAction.DECRYPT);
+		issueService.setConfig(config.configProps);
 		issueServiceRunning = true;
+		return config.configProps;
 	}
 
 	public static ItolAddin getThisAddin() {

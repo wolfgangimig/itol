@@ -280,7 +280,7 @@ public class BackstageConfig {
 	}
 
 	private void onSave() throws IOException {
-		Globals.setConfig(configProps);
+		configProps = Globals.setConfig(configProps);
 		IdName currentUser = Globals.getIssueService().getCurrentUser();
 		MessageBox.show(getOwnerWindow(), "OK", "Configuration saved and connection re-initialized. "
 				+ "You are logged in as " + currentUser.getName() + ".", null);
