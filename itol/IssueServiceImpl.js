@@ -1337,7 +1337,7 @@ function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue, progress
 	}
 
 	// Custom properties
-	if (data.custom_fields) {
+	if (data.custom_fields && data.custom_fields.length) {
 		redmineIssue.custom_fields = [];
 		for (var i = 0; i < data.custom_fields.length; i++) {
 			var cfield = data.custom_fields[i];
