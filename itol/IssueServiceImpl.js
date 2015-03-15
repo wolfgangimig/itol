@@ -817,8 +817,6 @@ function initializePropertyClasses() {
 	propertyClasses.add(PropertyClass.TYPE_STRING, config.PROPERTY_ID_PROJECT_NAMES,
 			"Projects (optional, comma separated)");
 	propertyClasses.add(PropertyClass.TYPE_STRING, config.PROPERTY_ID_MSG_FILE_TYPE, "Attach mail as");
-	propertyClasses.add(PropertyClass.TYPE_STRING, config.PROPERTY_ID_USE_CUSTOM_FIELDS, "Use custom fields", "0", [
-			new IdName("0", "No"), new IdName("1", "Yes") ]);
 
 	// propertyClass.add(PropertyClass.TYPE_STRING,
 	// config.PROPERTY_ID_MY_CONFIG_PROPERTY,
@@ -1283,18 +1281,14 @@ function updateIssue(trackerIssue, modifiedProperties, progressCallback) {
 		issue : redmineIssue
 	};
 	var issueReturn = writeIssue(issueParam, progressCallback);
+	
+	// New or updated issue ID. (issueReturn is null for an updated issue)
+	var issueId = issueReturn ? issueReturn.issue.id : trackerIssue.id;
+	
+	// Read the created or updated issue.
+	// This returns also the updated attachment URLs.
+	trackerIssue = readIssue(issueReturn.issue.id);
 
-	// Convert redmineIssue to trackerIssue,
-	// issueReturn is null when updating an exisiting issue.
-	if (issueReturn) {
-		var redmineIssue = issueReturn.issue;
-		toTrackerIssue(redmineIssue, trackerIssue);
-	}
-	
-	// Delete the Property.NOTES which is only used to add notes. 
-	// Existing notes cannot be edited with ITOL.
-	trackerIssue.setPropertyString(Property.NOTES, "");
-	
 	if (islfine) log.log(Level.FINE, ")updateIssue=" + trackerIssue);
 	return trackerIssue;
 };
