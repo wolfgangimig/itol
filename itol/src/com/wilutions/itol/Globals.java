@@ -185,8 +185,8 @@ public class Globals {
 		encryptData(PasswordEncryption.EAction.ENCRYPT);
 		writeData();
 		readData();
-		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams);
 		encryptData(PasswordEncryption.EAction.DECRYPT);
+		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams);
 		issueService.setConfig(config.configProps);
 		issueServiceRunning = true;
 		return config.configProps;

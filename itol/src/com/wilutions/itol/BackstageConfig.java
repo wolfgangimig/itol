@@ -296,7 +296,7 @@ public class BackstageConfig {
 				if (ex != null) {
 					ex.printStackTrace();
 				}
-				else {
+				else if (succ != null) {
 					configProp.setValue(succ);
 				}
 			});
