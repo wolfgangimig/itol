@@ -307,9 +307,7 @@ var data = {
 
 	/**
 	 * Map of projects. Key: project ID, value: project.
-	 * this.projects[.].issueTypes is a map of issue types returned from
-	 * /projects/./statuses this.projects[.].issueTypes[.].statuses is a map of
-	 * statuses returned from /projects/./statuses
+	 * this.projects[.].issueTypes is a map of issue types.
 	 */
 	projects : {},
 
@@ -330,14 +328,9 @@ var data = {
 	trackers : [],
 
 	/**
-	 * Array of priority IdName objects
-	 */
-	priorities : [],
-
-	/**
 	 * Default priority ID.
 	 */
-	defaultPriority : 0,
+	defaultPriority : 3, // Major
 
 	/**
 	 * Custom fields definitions.
@@ -364,49 +357,27 @@ function arrayIndexOf(arr, elm) {
 function readProjects(data) {
 	if (islfine) log.log(Level.FINE, "readProjects(");
 
-	var response = httpClient.get("/project");
-	ddump("projects", response);
+	var response = httpClient.get("/issue/createmeta?expand=projects.issuetypes.fields");
+	ddump("projects", response.projects);
+	
+	data.projects = {};
 
 	var projectCount = 0;
-	var arrOfProjects = response;
+	var arrOfProjects = response.projects;
 	for (var i = 0; i < arrOfProjects.length && projectCount < MAX_PROJECTS; i++) {
 		var project = arrOfProjects[i];
 		data.projects[project.id] = project;
-		ddump("project", project);
+		
+		// Make issueTypes map from issuetypes array
+		project.issueTypes = {};
+		for (var t = 0; t < project.issuetypes.length; t++) {
+			var issueType = project.issuetypes[t];
+			project.issueTypes[issueType.id] = issueType;
+		}
+		delete project.issuetypes;
+		
 		if (islinfo) log.log(Level.INFO, "project.id=" + project.id + ", .name=" + project.name);
 		projectCount++;
-	}
-
-	for (var projectId in data.projects) {
-		
-		var issueTypes = httpClient.get("/project/" + projectId + "/statuses");
-		ddump("issueTypes " + projectId, issueTypes);
-		var project = data.projects[projectId];
-		project.issueTypes = {};
-		for (var i = 0; i < issueTypes.length; i++) {
-			var issueType = issueTypes[i];
-			if (!issueType.subTask) {
-				project.issueTypes[issueType.id] = issueType;
-				if (islinfo) log.log(Level.INFO, "  issueType.id=" + issueType.id + ", .name=" + issueType.name);
-
-				var statuses = issueType.statuses;
-				issueType.statuses = {};
-				for (var j = 0; j < statuses.length; j++) {
-					var status = statuses[j];
-					issueType.statuses[status.id] = status;
-					if (islinfo) log.log(Level.INFO, "    status.id=" + status.id + ", .name=" + status.name);
-				}
-			}
-		}
-
-		var versions = httpClient.get("/project/" + projectId + "/versions?expand");
-		ddump("versions " + projectId, versions);
-		project.versions = {};
-		for (var i = 0; i < versions.length; i++) {
-			var version = versions[i];
-			project.versions[version.id] = version;
-			if (islinfo) log.log(Level.INFO, "  version.id=" + version.id + ", .name=" + version.name);
-		}
 	}
 
 	if (islfine) log.log(Level.FINE, ")readProjects");
@@ -461,7 +432,7 @@ function writeIssue(issueParam, progressCallback) {
 		pgIssue = progressCallback.createChild("Write issue");
 	}
 
-	var issueId = issueParam.issue.id;
+	var issueId = issueParam.fields.id;
 	var isUpdate = !!issueId;
 	if (islfine) log.log(Level.FINE, "issueId=" + issueId + ", isUpdate=" + isUpdate);
 
@@ -498,29 +469,12 @@ function initialize() {
 	if (islinfo) log.log(Level.INFO, "readCurrentUser");
 	readCurrentUser(data);
 	
-	if (islinfo) log.log(Level.INFO, "readPriorities");
-	readPriorities(data);
-	
 	config.valid = true;
 	if (islinfo) log.log(Level.INFO, "initialized");
 
 	if (islfine) log.log(Level.FINE, ")initialize");
 }
 
-
-function readPriorities(data) {
-	if (islfine) log.log(Level.FINE, "readPriorities(");
-	var prioritiesResponse = httpClient.get("/priority");
-	ddump("prioritiesResponse", prioritiesResponse);
-	data.priorities = [];
-	for (var i = 0; i < prioritiesResponse.length; i++) {
-		var priority = prioritiesResponse[i];
-		if (islinfo) log.log(Level.INFO, "priority.id=" + priority.id + ", .name=" + priority.name);
-		data.priorities.push(new IdName(priority.id, priority.name));
-	}
-	if (islfine) log.log(Level.FINE, ")readPriorities");
-
-}
 
 function readCustomFields(data) {
 	if (islfine) log.log(Level.FINE, "readCustomFields(");
@@ -699,7 +653,7 @@ function getPropertyClass(propertyId, issue) {
 		ret.selectList = getIssueTypes(issue);
 		break;
 	case Property.PRIORITY:
-		ret.selectList = data.priorities;
+		ret.selectList = getIssuePriorities(issue);
 		break;
 	case Property.PROJECT:
 		ret.selectList = getProjectsIdNames(issue);
@@ -726,7 +680,7 @@ function getIssueTypes(issue) {
 	if (islfine) log.log(Level.FINE, "getIssueTypes(");
 	var ret = [];
 	var project = getIssueProject(issue);
-	if (islfine) log.log(Level.FINE, "project=" + project + ", issueTypes=" + project.issueTypes);
+	if (islfine) log.log(Level.FINE, "project=" + project);
 	if (project && project.issueTypes) {
 		for ( var typeId in project.issueTypes) {
 			var issueType = project.issueTypes[typeId];
@@ -741,21 +695,58 @@ function getIssueTypes(issue) {
 	return ret;
 };
 
+function getIssuePriorities(issue) {
+	if (islfine) log.log(Level.FINE, "getIssuePriorities(");
+	var ret = [];
+	var project = getIssueProject(issue);
+	if (islfine) log.log(Level.FINE, "project=" + project + ", issue.type=" + issue.type);
+	if (project && project.issueTypes) {
+		if (islfine) log.log(Level.FINE, "for typeId...");
+		for ( var typeId in project.issueTypes) {
+			if (islfine) log.log(Level.FINE, "typeId=" + typeId);
+			var issueType = project.issueTypes[typeId];
+			if (islfine) log.log(Level.FINE, "issueType=" + issueType + ", issueType.id=" + issueType.id);
+			if (issueType.id == issue.type) {
+				if (islfine) log.log(Level.FINE, "issueType.fields=" + issueType);
+				if (issueType.fields) {
+					var priority = issueType.fields.priority;
+					if (islfine) log.log(Level.FINE, "issueType.fields.priority=" + priority + ", issueType.fields.allowedValues=" + priority.allowedValues);
+					if (priority && priority.allowedValues) {
+						for (var prioIdx = 0; prioIdx < priority.allowedValues.length; prioIdx++) {
+							var prioValue = priority.allowedValues[prioIdx];
+							var idn = new IdName(prioValue.id, prioValue.name);
+							ret.push(idn);
+							if (islfine) log.log(Level.FINE, "prioValue=" + idn);
+						}
+					}
+				}
+			}
+		}
+	}
+	if (islfine) log.log(Level.FINE, ")getIssuePriorities");
+	return ret;
+}
+
 function getIssueStatuses(issue) {
 	if (islfine) log.log(Level.FINE, "getIssueStatuses(");
 	var ret = [];
-	var project = getIssueProject(issue);
-	var typeId = issue ? issue.type : 0;
-	if (project && project.issueTypes && typeId) {
-		var issueType = project.issueTypes[typeId];
-		if (issueType) {
-			for (var statusId in issueType.statuses) {
-				var status = issueType.statuses[statusId];
-				var idn = new IdName(statusId, status.name);
-				ret.push(idn);
-				if (islfine) log.log(Level.FINE, "status=" + idn);
+	if (issue.id) {
+		var project = getIssueProject(issue);
+		var typeId = issue ? issue.type : 0;
+		if (project && project.issueTypes && typeId) {
+			var issueType = project.issueTypes[typeId];
+			if (issueType) {
+				for (var statusId in issueType.statuses) {
+					var status = issueType.statuses[statusId];
+					var idn = new IdName(statusId, status.name);
+					ret.push(idn);
+					if (islfine) log.log(Level.FINE, "status=" + idn);
+				}
 			}
 		}
+	}
+	else {
+		ret = [new IdName(-1, "New")];
 	}
 	if (islfine) log.log(Level.FINE, ")getIssueStatuses");
 	return ret;
@@ -1079,8 +1070,8 @@ function createIssue(subject, description, defaultIssueAsString) {
 	var defaultProps = makeDefaultProperties(defaultIssueAsString);
 	ddump("defaultProps", defaultProps);
 
-	issue.setPriority(data.defaultPriority); // Normal priority
-	issue.setStatus(1); // New issue
+	issue.setPriority(data.defaultPriority); 
+	issue.setStatus(-1); // New issue
 
 	issue.setProject(defaultProps.project);
 	issue.setType(defaultProps.type);
@@ -1111,18 +1102,13 @@ function updateIssue(trackerIssue, modifiedProperties, progressCallback) {
 			+ progressCallback);
 	config.checkValid();
 
-	var JIRAIssue = {};
-	toJIRAIssue(trackerIssue, modifiedProperties, JIRAIssue, progressCallback);
+	var JIRAIssue = toJIRAIssue(trackerIssue, modifiedProperties, progressCallback);
 
-	var issueParam = {
-		issue : JIRAIssue
-	};
-	var issueReturn = writeIssue(issueParam, progressCallback);
+	JIRAIssue = writeIssue(JIRAIssue, progressCallback);
 
 	// Convert JIRAIssue to trackerIssue,
 	// issueReturn is null when updating an exisiting issue.
-	if (issueReturn) {
-		var JIRAIssue = issueReturn.issue;
+	if (JIRAIssue) {
 		toTrackerIssue(JIRAIssue, trackerIssue);
 	}
 
@@ -1134,93 +1120,107 @@ function updateIssue(trackerIssue, modifiedProperties, progressCallback) {
 	return trackerIssue;
 };
 
-function toJIRAIssue(trackerIssue, modifiedProperties, JIRAIssue, progressCallback) {
-	if (islfine) log.log(Level.FINE, "toJIRAIssue(trackerIssue=" + trackerIssue + ", JIRAIssue=" + JIRAIssue
+function toJIRAIssue(trackerIssue, modifiedProperties,  progressCallback) {
+	if (islfine) log.log(Level.FINE, "toJIRAIssue(trackerIssue=" + trackerIssue
 			+ ", progressCallback=" + progressCallback);
-
-	JIRAIssue.id = trackerIssue.getId();
-	JIRAIssue.project_id = parseInt(trackerIssue.getProject());
-	JIRAIssue.tracker_id = parseInt(trackerIssue.getType());
-	JIRAIssue.status_id = parseInt(trackerIssue.getStatus());
-	JIRAIssue.priority_id = parseInt(trackerIssue.getPriority());
-	JIRAIssue.subject = "" + trackerIssue.getSubject();
-	JIRAIssue.description = "" + trackerIssue.getDescription();
-	JIRAIssue.notes = "" + trackerIssue.getPropertyString(Property.NOTES, "");
-
-	// Assignee
-	JIRAIssue.assigned_to_id = "";
-	if (trackerIssue.getAssignee().length() != 0) {
-		var userId = parseInt(trackerIssue.getAssignee());
-		if (userId >= 0) {
-			JIRAIssue.assigned_to_id = userId;
-		}
+	
+	var JIRAIssue = {};
+	var fields = JIRAIssue.fields = {};
+	
+	if (trackerIssue.id) {
+		//JIRAIssue.fields.id = trackerIssue.getId();
 	}
+	
+	fields.project = {};
+	fields.project.id = ""+trackerIssue.project;
+	
+	fields.issuetype = {}; 
+	fields.issuetype.id = ""+trackerIssue.type;
+	
+//	JIRAIssue.status_id = parseInt(trackerIssue.getStatus());
+//	JIRAIssue.priority_id = parseInt(trackerIssue.getPriority());
+	
+	fields.summary = "" + trackerIssue.getSubject();
+	fields.description = "" + trackerIssue.getDescription();
+	
+	
+//	JIRAIssue.comment = [{}];
+//	JIRAIssue.comment[0].add = "" + trackerIssue.getPropertyString(Property.NOTES, "");
+//
+//	// Assignee
+//	JIRAIssue.assigned_to_id = "";
+//	if (trackerIssue.getAssignee().length() != 0) {
+//		var userId = parseInt(trackerIssue.getAssignee());
+//		if (userId >= 0) {
+//			JIRAIssue.assigned_to_id = userId;
+//		}
+//	}
+//
+//	// JIRA specific properties
+//	var propertyIds = [ config.PROPERTY_ID_ISSUE_CATEGORY, config.PROPERTY_ID_FIXED_VERSION,
+//			config.PROPERTY_ID_START_DATE, config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
+//			config.PROPERTY_ID_DONE_RATIO ];
+//	for (var i = 0; i < propertyIds.length; i++) {
+//		var propId = propertyIds[i];
+//		var propValue = getIssuePropertyValue(trackerIssue, propId);
+//		if (islfine) log.log(Level.FINE, "propId=" + propId + ", propValue=" + propValue);
+//		JIRAIssue[propId] = propValue;
+//	}
+//
+//	// Custom properties
+//	if (data.custom_fields) {
+//		JIRAIssue.custom_fields = [];
+//		for (var i = 0; i < data.custom_fields.length; i++) {
+//			var cfield = data.custom_fields[i];
+//			var propId = makeCustomFieldPropertyId(cfield);
+//			var propValue = getIssuePropertyValue(trackerIssue, propId);
+//			if (islfine) log.log(Level.FINE, "custom propId=" + propId + ", propValue=" + propValue);
+//			setJIRAIssueCustomField(JIRAIssue, cfield.id, propId, propValue);
+//		}
+//	}
+//
+//	JIRAIssue.uploads = [];
+//	try {
+//		for (var i = 0; i < trackerIssue.getAttachments().size(); i++) {
+//			var trackerAttachment = trackerIssue.getAttachments().get(i);
+//			if (islfine) log.log(Level.FINE, "trackerAttachment=" + trackerAttachment);
+//
+//			// Upload only new attachments
+//			if (trackerAttachment.getId().isEmpty()) {
+//
+//				// Create inner progress callback
+//				var pgUpload = null;
+//				if (progressCallback) {
+//					if (progressCallback.isCancelled()) break;
+//					var str = "Upload attachment " + trackerAttachment.getFileName();
+//					str += ", " + makeAttachmentSizeString(trackerAttachment.getContentLength());
+//					pgUpload = progressCallback.createChild(str);
+//					pgUpload.setTotal(trackerAttachment.getContentLength());
+//				}
+//
+//				// Upload
+//				JIRAAttachment = writeAttachment(trackerAttachment, pgUpload);
+//				JIRAIssue.uploads.push(JIRAAttachment);
+//			}
+//			else if (trackerAttachment.isDeleted()) {
+//				deleteAttachment(trackerAttachment.getId());
+//			}
+//		}
+//	}
+//	catch (ex) {
+//
+//		// Remove so far uploaded attachments
+//		for (var i = 0; i < JIRAIssue.uploads.length; i++) {
+//			var token = JIRAIssue.uploads[i];
+//			try {
+//				deleteAttachment(token);
+//			}
+//			catch (ex2) {
+//			}
+//		}
+//	}
 
-	// JIRA specific properties
-	var propertyIds = [ config.PROPERTY_ID_ISSUE_CATEGORY, config.PROPERTY_ID_FIXED_VERSION,
-			config.PROPERTY_ID_START_DATE, config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
-			config.PROPERTY_ID_DONE_RATIO ];
-	for (var i = 0; i < propertyIds.length; i++) {
-		var propId = propertyIds[i];
-		var propValue = getIssuePropertyValue(trackerIssue, propId);
-		if (islfine) log.log(Level.FINE, "propId=" + propId + ", propValue=" + propValue);
-		JIRAIssue[propId] = propValue;
-	}
-
-	// Custom properties
-	if (data.custom_fields) {
-		JIRAIssue.custom_fields = [];
-		for (var i = 0; i < data.custom_fields.length; i++) {
-			var cfield = data.custom_fields[i];
-			var propId = makeCustomFieldPropertyId(cfield);
-			var propValue = getIssuePropertyValue(trackerIssue, propId);
-			if (islfine) log.log(Level.FINE, "custom propId=" + propId + ", propValue=" + propValue);
-			setJIRAIssueCustomField(JIRAIssue, cfield.id, propId, propValue);
-		}
-	}
-
-	JIRAIssue.uploads = [];
-	try {
-		for (var i = 0; i < trackerIssue.getAttachments().size(); i++) {
-			var trackerAttachment = trackerIssue.getAttachments().get(i);
-			if (islfine) log.log(Level.FINE, "trackerAttachment=" + trackerAttachment);
-
-			// Upload only new attachments
-			if (trackerAttachment.getId().isEmpty()) {
-
-				// Create inner progress callback
-				var pgUpload = null;
-				if (progressCallback) {
-					if (progressCallback.isCancelled()) break;
-					var str = "Upload attachment " + trackerAttachment.getFileName();
-					str += ", " + makeAttachmentSizeString(trackerAttachment.getContentLength());
-					pgUpload = progressCallback.createChild(str);
-					pgUpload.setTotal(trackerAttachment.getContentLength());
-				}
-
-				// Upload
-				JIRAAttachment = writeAttachment(trackerAttachment, pgUpload);
-				JIRAIssue.uploads.push(JIRAAttachment);
-			}
-			else if (trackerAttachment.isDeleted()) {
-				deleteAttachment(trackerAttachment.getId());
-			}
-		}
-	}
-	catch (ex) {
-
-		// Remove so far uploaded attachments
-		for (var i = 0; i < JIRAIssue.uploads.length; i++) {
-			var token = JIRAIssue.uploads[i];
-			try {
-				deleteAttachment(token);
-			}
-			catch (ex2) {
-			}
-		}
-	}
-
-	if (islfine) log.log(Level.FINE, ")toJIRAIssue=" + JIRAIssue);
+	if (islfine) log.log(Level.FINE, ")toJIRAIssue");
 	return JIRAIssue;
 }
 
@@ -1440,83 +1440,86 @@ function readIssue(issueId) {
 
 function toTrackerIssue(JIRAIssue, issue) {
 	if (islfine) log.log(Level.FINE, "toTrackerIssue(" + JIRAIssue.id);
+	
+	var fields = JIRAIssue.fields;
 
 	// Standard properties
 	issue.id = JIRAIssue.id;
-	issue.subject = JIRAIssue.subject;
-	issue.description = JIRAIssue.description;
+	issue.subject = fields.summary;
+	issue.description = fields.description;
 	if (islfine) log.log(Level.FINE, "issue.subject=" + issue.subject);
 
 	if (JIRAIssue.project) {
-		issue.project = JIRAIssue.project.id;
+		issue.project = fields.project.id;
 		if (islfine) log.log(Level.FINE, "issue.project=" + issue.project);
 	}
-	if (JIRAIssue.tracker) {
-		issue.type = JIRAIssue.tracker.id;
-		if (islfine) log.log(Level.FINE, "issue.type=" + issue.type);
-	}
-	if (JIRAIssue.status) {
-		issue.status = JIRAIssue.status.id;
-		if (islfine) log.log(Level.FINE, "issue.status=" + issue.status);
-	}
-	if (JIRAIssue.priority) {
-		issue.priority = JIRAIssue.priority.id;
-		if (islfine) log.log(Level.FINE, "issue.priority=" + issue.priority);
-	}
-	if (JIRAIssue.assigned_to) {
-		issue.assignee = JIRAIssue.assigned_to.id;
-	}
-	else {
-		issue.assignee = -1;
-	}
-	if (islfine) log.log(Level.FINE, "issue.assignee=" + issue.assignee);
-
-	if (JIRAIssue.category) {
-		setIssuePropertyValue(issue, config.PROPERTY_ID_ISSUE_CATEGORY, JIRAIssue.category.id);
-	}
-	if (JIRAIssue.fixed_version) {
-		setIssuePropertyValue(issue, config.PROPERTY_ID_FIXED_VERSION, JIRAIssue.fixed_version.id);
-	}
-
-	// JIRA specific properties
-	var propertyIds = [ config.PROPERTY_ID_START_DATE, config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
-			config.PROPERTY_ID_DONE_RATIO ];
-	for (var i = 0; i < propertyIds.length; i++) {
-		var propId = propertyIds[i];
-		var propValue = JIRAIssue[propId];
-		if (islfine) log.log(Level.FINE, "propId=" + propId + ", propValue=" + propValue);
-		setIssuePropertyValue(issue, propertyIds[i], propValue);
-	}
-
-	// Custom properties
-	if (JIRAIssue.custom_fields) {
-		if (islfine) log.log(Level.FINE, "#custom_fields=" + JIRAIssue.custom_fields.length);
-		for (var i = 0; i < JIRAIssue.custom_fields.length; i++) {
-			var propId = makeCustomFieldPropertyId(JIRAIssue.custom_fields[i]);
-			var propValue = JIRAIssue.custom_fields[i].value;
-			if (islfine) log.log(Level.FINE, "custom propId=" + propId + ", propValue=" + propValue);
-			setIssuePropertyValue(issue, propId, propValue);
-		}
-	}
-
-	// Attachments
-	if (JIRAIssue.attachments) {
-		if (islfine) log.log(Level.FINE, "#attachments=" + JIRAIssue.attachments.length);
-		var trackerAttachments = [];
-		for (var i = 0; i < JIRAIssue.attachments.length; i++) {
-			var ra = JIRAIssue.attachments[i];
-			var ta = new Attachment();
-			ta.id = ra.id;
-			ta.subject = ra.description;
-			ta.contentType = ra.content_type;
-			ta.fileName = ra.filename;
-			ta.contentLength = ra.filesize;
-			ta.url = ra.content_url;
-			if (islfine) log.log(Level.FINE, "attachment id=" + ta.id + ", file=" + ta.fileName);
-			trackerAttachments.push(ta);
-		}
-		issue.attachments = trackerAttachments;
-	}
+	
+//	if (JIRAIssue.tracker) {
+//		issue.type = JIRAIssue.tracker.id;
+//		if (islfine) log.log(Level.FINE, "issue.type=" + issue.type);
+//	}
+//	if (JIRAIssue.status) {
+//		issue.status = JIRAIssue.status.id;
+//		if (islfine) log.log(Level.FINE, "issue.status=" + issue.status);
+//	}
+//	if (JIRAIssue.priority) {
+//		issue.priority = JIRAIssue.priority.id;
+//		if (islfine) log.log(Level.FINE, "issue.priority=" + issue.priority);
+//	}
+//	if (JIRAIssue.assigned_to) {
+//		issue.assignee = JIRAIssue.assigned_to.id;
+//	}
+//	else {
+//		issue.assignee = -1;
+//	}
+//	if (islfine) log.log(Level.FINE, "issue.assignee=" + issue.assignee);
+//
+//	if (JIRAIssue.category) {
+//		setIssuePropertyValue(issue, config.PROPERTY_ID_ISSUE_CATEGORY, JIRAIssue.category.id);
+//	}
+//	if (JIRAIssue.fixed_version) {
+//		setIssuePropertyValue(issue, config.PROPERTY_ID_FIXED_VERSION, JIRAIssue.fixed_version.id);
+//	}
+//
+//	// JIRA specific properties
+//	var propertyIds = [ config.PROPERTY_ID_START_DATE, config.PROPERTY_ID_DUE_DATE, config.PROPERTY_ID_ESTIMATED_HOURS,
+//			config.PROPERTY_ID_DONE_RATIO ];
+//	for (var i = 0; i < propertyIds.length; i++) {
+//		var propId = propertyIds[i];
+//		var propValue = JIRAIssue[propId];
+//		if (islfine) log.log(Level.FINE, "propId=" + propId + ", propValue=" + propValue);
+//		setIssuePropertyValue(issue, propertyIds[i], propValue);
+//	}
+//
+//	// Custom properties
+//	if (JIRAIssue.custom_fields) {
+//		if (islfine) log.log(Level.FINE, "#custom_fields=" + JIRAIssue.custom_fields.length);
+//		for (var i = 0; i < JIRAIssue.custom_fields.length; i++) {
+//			var propId = makeCustomFieldPropertyId(JIRAIssue.custom_fields[i]);
+//			var propValue = JIRAIssue.custom_fields[i].value;
+//			if (islfine) log.log(Level.FINE, "custom propId=" + propId + ", propValue=" + propValue);
+//			setIssuePropertyValue(issue, propId, propValue);
+//		}
+//	}
+//
+//	// Attachments
+//	if (JIRAIssue.attachments) {
+//		if (islfine) log.log(Level.FINE, "#attachments=" + JIRAIssue.attachments.length);
+//		var trackerAttachments = [];
+//		for (var i = 0; i < JIRAIssue.attachments.length; i++) {
+//			var ra = JIRAIssue.attachments[i];
+//			var ta = new Attachment();
+//			ta.id = ra.id;
+//			ta.subject = ra.description;
+//			ta.contentType = ra.content_type;
+//			ta.fileName = ra.filename;
+//			ta.contentLength = ra.filesize;
+//			ta.url = ra.content_url;
+//			if (islfine) log.log(Level.FINE, "attachment id=" + ta.id + ", file=" + ta.fileName);
+//			trackerAttachments.push(ta);
+//		}
+//		issue.attachments = trackerAttachments;
+//	}
 
 	if (islfine) log.log(Level.FINE, ")toTrackerIssue");
 }
