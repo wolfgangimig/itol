@@ -901,7 +901,28 @@ function getPropertyClass(propertyId, issue) {
 }
 
 function getPropertyAutoCompletion(propId, issue, filter) {
-	return null;
+	var ret = null;
+	
+	if (propId == Property.ASSIGNEE) {
+		
+		if (issue != null && filter != null) {
+			
+			ret = [ new IdName(-1, "Unassigned") ];
+			var memberships = getIssueProjectMemberships(issue);
+			for (var i = 0; i < memberships.length && ret.length < 10; i++) {
+				var member = memberships[i].user;
+				if (member.name.toLowerCase().indexOf(filter) >= 0) {
+					ret.push(new IdName(member.id, member.name));
+				}
+			}
+			
+		}
+		else {
+			ret = [];
+		}
+	}
+	
+	return ret;
 }
 
 function getIssueTypes(issue) {
