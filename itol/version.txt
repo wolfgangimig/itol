@@ -4,6 +4,22 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+Version 1.3 2015-03-15
+
+- #16: Issues could not be created if no custom fields were defined.
+
+- Requested by Benoit LM redmine.org/plugins/itol:
+  	* See the list of projects with a hierarchical view.
+  	  Sub projects are shown like "main » sub" in the projects list. 
+	* Attach an email to existing task.
+  	  An email can be dragged into the attachment list.
+  	  
+- Replace only those characters in the attachment file name that are forbidden 
+  in file names in Windows. Previous versions replaced any character except 
+  "a-Z" and "0-9".
+  
+- JDK 8u40, Visual Studio 2010 Runtime Components are no more required.
+
 Version 1.2 2015-02-26
 
 - #7 New issues can be created without an existing mail.

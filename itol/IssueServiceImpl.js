@@ -1287,7 +1287,7 @@ function updateIssue(trackerIssue, modifiedProperties, progressCallback) {
 	
 	// Read the created or updated issue.
 	// This returns also the updated attachment URLs.
-	trackerIssue = readIssue(issueReturn.issue.id);
+	trackerIssue = readIssue(issueId);
 
 	if (islfine) log.log(Level.FINE, ")updateIssue=" + trackerIssue);
 	return trackerIssue;
