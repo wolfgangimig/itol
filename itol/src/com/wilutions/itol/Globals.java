@@ -23,8 +23,6 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import javafx.application.Platform;
-
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.reg.Registry;
 import com.wilutions.itol.db.IssueService;
@@ -279,6 +277,10 @@ public class Globals {
 			
 			String logLevel = getConfigPropertyString(Property.LOG_LEVEL);
 			String logFile = getConfigPropertyString(Property.LOG_FILE);
+			
+			if (logLevel == null || logLevel.isEmpty()) logLevel = "INFO";
+			if (logFile == null || logFile.isEmpty()) logFile = File.createTempFile("itol", ".log").getAbsolutePath();
+			
 			if (logLevel != null && !logLevel.isEmpty() && logFile != null && !logFile.isEmpty()) {
 				logFile = logFile.replace('\\', '/');
 				logprops = MessageFormat.format(logprops, logLevel, logFile);
