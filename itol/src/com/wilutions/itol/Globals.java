@@ -281,6 +281,10 @@ public class Globals {
 			
 			String logLevel = getConfigPropertyString(Property.LOG_LEVEL);
 			String logFile = getConfigPropertyString(Property.LOG_FILE);
+			
+			if (logLevel == null || logLevel.isEmpty()) logLevel = "INFO";
+			if (logFile == null || logFile.isEmpty()) logFile = File.createTempFile("itol", ".log").getAbsolutePath();
+			
 			if (logLevel != null && !logLevel.isEmpty() && logFile != null && !logFile.isEmpty()) {
 				logFile = logFile.replace('\\', '/');
 				logprops = MessageFormat.format(logprops, logLevel, logFile);

@@ -34,11 +34,15 @@ public class MsgFileTypes {
 	 */
 	public static String makeValidFileName(String subject) {
 		String ret = subject.trim();
-		ret = ret.replaceAll("[^a-zA-Z0-9.-]", "_");
+		//ret = ret.replaceAll("[^a-zA-Z0-9.-]", "_");
+		ret = ret.replaceAll("[\\<\\>\\:\\\"/\\\\|?*]", "_");
 		ret = ret.replace("  ", " ");
-		ret = ret.replace(" \\.", ".");
+		ret = ret.replace(" .", ".");
 		if (ret.length() > 200) {
 			ret = ret.substring(0, 200);
+		}
+		while (!ret.isEmpty() && (ret.endsWith(".") || Character.isWhitespace(ret.charAt(ret.length()-1)))) {
+			ret = ret.substring(0, ret.length()-1);
 		}
 		if (ret.isEmpty()) {
 		    DateFormat df = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
@@ -108,5 +112,14 @@ public class MsgFileTypes {
 			break;
 		}
 		return ret;
+	}
+	
+	
+	public final static void main(String[] args) {
+		System.out.println(makeValidFileName("< > x : \" x / \\ x | ? x * ."));
+		System.out.println(makeValidFileName("abcdefg.hij"));
+		System.out.println(makeValidFileName("<.x"));
+		System.out.println(makeValidFileName(">.>"));
+		System.out.println(makeValidFileName("\\./"));
 	}
 }

@@ -88,17 +88,23 @@ public class ItolAddin extends OutlookAddinEx {
 	}
 
 	private void newIssue(IRibbonControl control, Boolean pressed) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "newIssue(");
 		forContextWrapper(control, (context) -> {
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "for context=" + context);
 			if (Globals.isIssueServiceRunning()) {
+				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "setIssueTaskPaneVisible(" + pressed + ")");
 				context.setIssueTaskPaneVisible(pressed);
 			}
 			else if (pressed) {
 				ResourceBundle resb = Globals.getResourceBundle();
 				Object owner = context.getWrappedObject();
-				MessageBox.show(owner, resb.getString("MessageBox.title.error"), resb.getString("Error.NotConnected"), null);
+				String msg = resb.getString("Error.NotConnected");
+				log.log(Level.SEVERE, msg);
+				MessageBox.show(owner, resb.getString("MessageBox.title.error"), msg, null);
 			}
 			return true;
 		});
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")newIssue");
 	}
 
 	public boolean Button_getEnabled(IRibbonControl control) {
@@ -194,31 +200,40 @@ public class ItolAddin extends OutlookAddinEx {
 
 	@Override
 	protected InspectorWrapper createInspectorWrapper(Inspector inspector, OlObjectClass olclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "createInspectorWrapper(" + olclass);
+		InspectorWrapper ret = null;
 		switch (olclass.value) {
 		case OlObjectClass._olMail:
 			try {
 				IRibbonUI ribbon = getRibbon();
 				if (ribbon != null) ribbon.Invalidate();
-				return new MailInspector(inspector, inspector.getCurrentItem());
+				ret = new MailInspector(inspector, inspector.getCurrentItem());
 			}
 			catch (Throwable e) {
-				e.printStackTrace();
+				log.log(Level.SEVERE, "Failed to create inspector wrapper object.", e);
 			}
+			break;
 		default:
-			return super.createInspectorWrapper(inspector, olclass);
+			ret = super.createInspectorWrapper(inspector, olclass);
+			break;
 		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")createInspectorWrapper=" + ret);
+		return ret;
 	}
 
 	@Override
 	protected ExplorerWrapper createExplorerWrapper(Explorer explorer) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "createExplorerWrapper()");
 		return new MyExplorerWrapper(explorer);
 	}
 
 	@Override
 	public void onQuit() throws ComException {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "onQuit(");
 		super.onQuit();
 		httpServer.done();
 		Globals.releaseResources();
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")onQuit");
 	}
 
 	public AttachmentHttpServer getHttpServer() {
@@ -243,6 +258,8 @@ public class ItolAddin extends OutlookAddinEx {
 	}
 
 	private <T> T forContextWrapper(IRibbonControl control, Callback<MyWrapper, T> call) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "forContextWrapper(");
+		
 		T ret = null;
 		MyWrapper wrapper = null;
 
@@ -250,19 +267,24 @@ public class ItolAddin extends OutlookAddinEx {
 		if (dispContext.is(Inspector.class)) {
 			Inspector inspector = dispContext.as(Inspector.class);
 			wrapper = (MyWrapper) getInspectorWrapper(inspector);
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "inspector wrapper=" + wrapper);
 		}
 		else if (dispContext.is(Explorer.class)) {
 			Explorer explorer = dispContext.as(Explorer.class);
 			wrapper = (MyWrapper) getMyExplorerWrapper(explorer);
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "explorer wrapper=" + wrapper);
 		}
 
 		if (wrapper != null) {
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addRibbonControl");
 			wrapper.addRibbonControl(control);
 			if (call != null) {
+				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "call");
 				ret = call.call(wrapper);
 			}
 		}
 
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")forContextWrapper=" + ret);
 		return ret;
 	}
 

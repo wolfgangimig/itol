@@ -14,18 +14,21 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javafx.stage.Stage;
 
 import com.wilutions.com.ComException;
-import com.wilutions.com.JoaDll;
+import com.wilutions.com.reg.RegUtil;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.impl.IssueServiceFactory_JS;
 import com.wilutions.joa.AddinApplication;
 
 
 public class IssueApplication extends AddinApplication {
+	
+	private static Logger log = Logger.getLogger(IssueApplication.class.getName());
 
 	static {
 		Config config = Globals.getConfig();
@@ -37,21 +40,10 @@ public class IssueApplication extends AddinApplication {
 	}
 
 	public static File getAppDir() {
-		File ret = new File(System.getProperty("user.dir"));
-		String javaHome = System.getProperty("java.home");
-		System.out.println("javaHome=" + javaHome);
-
-		// Self-contained Java application?
-		boolean isSelfContainedApp = javaHome.endsWith("runtime\\jre");
-		System.out.println("isSelfContainedApp=" + isSelfContainedApp);
-
-		if (isSelfContainedApp) {
-
-			// Application is an EXE file found at "${java.home}/../../"
-			File appDir = new File(javaHome).getParentFile().getParentFile();
-			ret = new File(appDir, "app");
+		File ret = RegUtil.getAppPathIfSelfContained();
+		if (ret == null) {
+			ret = new File(System.getProperty("user.dir"));
 		}
-
 		return ret;
 	}
 
@@ -64,22 +56,37 @@ public class IssueApplication extends AddinApplication {
 	}
 
 	private void initIssueService() {
-
+		
 		File appDir = getAppDir();
 		try {
 			Globals.initIssueService(appDir);
 		}
 		catch (IOException e) {
 			e.printStackTrace();
-			Logger log = Logger.getLogger(IssueApplication.class.getName());
 			log.severe(e.toString());
 		}
 	}
 
 	public static void main(String[] args) {
+		
+		Globals.initLogging();
+		String javaHome = System.getProperty("java.home");
+		log.info("java.home=" + javaHome);
+		for (Object key : System.getProperties().keySet()) {
+			log.info(key + "=" + System.getProperty((String)key));
+		}
+		
+		log.info("app.dir=" + RegUtil.getAppPathIfSelfContained());
 
-		main(IssueApplication.class, IssueApplication.class, args);
-
+		try {
+			main(IssueApplication.class, IssueApplication.class, args);
+		}
+		catch (Throwable e) {
+			log.log(Level.SEVERE, "Failed to excecute main.", e);
+		}
+		
+		log.info("main finished");
+		
 		Globals.releaseResources();
 	}
 
@@ -87,6 +94,30 @@ public class IssueApplication extends AddinApplication {
 	public void start(Stage primaryStage) throws Exception {
 		instance = this;
 		super.start(primaryStage);
+	}
+
+	@Override
+	protected void register(boolean userNotMachine, String execPath) {
+		try {
+			instance = this;
+			super.register(userNotMachine, execPath);
+			showDocument("http://www.wilutions.com/joa/itol/installed.html");
+		}
+		catch (Throwable e) {
+			log.log(Level.SEVERE, "Failed to register Addin", e);
+		}
+	}
+	
+	@Override
+	protected void unregister(boolean userNotMachine) {
+		try {
+			instance = this;
+			super.unregister(userNotMachine);
+			showDocument("http://www.wilutions.com/joa/itol/uninstalled.html");
+		}
+		catch (Throwable e) {
+			log.log(Level.SEVERE, "Failed to register Addin", e);
+		}
 	}
 
 	private static volatile IssueApplication instance;

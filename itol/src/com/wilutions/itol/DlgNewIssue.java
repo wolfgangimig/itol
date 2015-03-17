@@ -39,7 +39,7 @@ public class DlgNewIssue extends ModalDialogFX<Boolean> {
 				Stage stage = new Stage();
 		        stage.setTitle(getTitle());
 		
-		        IssueTaskPane taskPane = new IssueTaskPane(mailInspector, mailItem);
+		        IssueTaskPane taskPane = new IssueTaskPane(mailInspector);
 		        
 		        Scene scene = taskPane.createScene();
 
@@ -69,7 +69,7 @@ public class DlgNewIssue extends ModalDialogFX<Boolean> {
 
 	@Override
 	public Scene createScene() {
-        IssueTaskPane taskPane = new IssueTaskPane(mailInspector, mailItem);
+        IssueTaskPane taskPane = new IssueTaskPane(mailInspector);
         taskPane.setWindowOwner(this);
         Scene scene = taskPane.createScene();
         return scene;
