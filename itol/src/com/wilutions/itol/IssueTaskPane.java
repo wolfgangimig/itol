@@ -69,10 +69,11 @@ import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.fx.TaskPaneFX;
+import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.mslib.office.CustomTaskPane;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.office._CustomTaskPane;
-import com.wilutions.mslib.outlook.Explorer;
+import com.wilutions.mslib.outlook.MailItem;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
@@ -158,16 +159,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private boolean modified;
 	private volatile boolean firstModifiedCheck;
 	private AttachmentHelper attachmentHelper = new AttachmentHelper();
-	private MailInspector mailInspectorOrNull;
+	private MyWrapper inspectorOrExplorer;
 
 	/**
 	 * Owner window for child dialogs (message boxes)
 	 */
 	private Object windowOwner;
 
-	public IssueTaskPane(MailInspector mailInspectorOrNull, IssueMailItem mailItem) {
-		this.mailItem = mailItem;
-		this.mailInspectorOrNull = mailInspectorOrNull;
+	public IssueTaskPane(MyWrapper inspectorOrExplorer) {
+		this.inspectorOrExplorer = inspectorOrExplorer;
+		this.mailItem = inspectorOrExplorer.getSelectedItem();
 
 		this.resb = Globals.getResourceBundle();
 		Globals.getRegistry().readFields(this);
@@ -433,7 +434,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			detectIssueModifiedStart();
 			
 			// Press Assign button when called from inspector.
-			if (mailInspectorOrNull != null) {
+			if (inspectorOrExplorer instanceof InspectorWrapper) {
 				bnAssignSelection.setSelected(true);
 			}
 			// Show defaults when called from explorer.
@@ -884,9 +885,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			queryDiscardChangesAsync((succ, ex) -> {
 				if (ex == null && succ) {
 					try {
-						Explorer explorer = Globals.getThisAddin().getApplication().ActiveExplorer().as(Explorer.class);
-						MyExplorerWrapper myExplorer = Globals.getThisAddin().getMyExplorerWrapper(explorer);
-						myExplorer.showSelectedMailItem(true);
+						IssueMailItem mailItem = inspectorOrExplorer.getSelectedItem();
+						IssueTaskPane.this.setMailItem(mailItem);
 					} catch (Throwable e) {
 
 					}

@@ -28,7 +28,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 
 	public MyExplorerWrapper(Explorer explorer) {
 		super(explorer);
-		issuePane = new IssueTaskPane(null, new IssueMailItemBlank());
+		issuePane = new IssueTaskPane(this);
 
 		deferShowSelectedItem = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
 			@Override
@@ -41,6 +41,19 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 
 		deferShowSelectedItem.setCycleCount(Timeline.INDEFINITE);
 		deferShowSelectedItem.play();
+	}
+	
+	@Override
+	public IssueMailItem getSelectedItem() {
+		IssueMailItem ret = new IssueMailItemBlank();
+		Selection selection = explorer.getSelection();
+		int c = selection.getCount();
+		if (c != 0) {
+			IDispatch disp = selection.Item(1);
+			MailItem mailItem = disp.as(MailItem.class);
+			ret = new IssueMailItemImpl(mailItem);
+		}
+		return ret;
 	}
 
 	public void addRibbonControl(IRibbonControl control) {

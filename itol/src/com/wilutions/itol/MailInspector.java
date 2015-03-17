@@ -31,11 +31,14 @@ public class MailInspector extends InspectorWrapper implements MyWrapper {
 	public MailInspector(Inspector inspector, IDispatch currentItem) throws ComException, IOException {
 		super(inspector, currentItem);
 
-		IssueMailItem mailItem = new IssueMailItemImpl(currentItem.as(MailItem.class));
+		issuePane = new IssueTaskPane(this);
+		historyPane = new IssueHistoryTaskPane_off(this, null);
 
-		issuePane = new IssueTaskPane(this, mailItem);
-		historyPane = new IssueHistoryTaskPane_off(this, mailItem);
-
+	}
+	
+	@Override
+	public IssueMailItem getSelectedItem() {
+		return new IssueMailItemImpl(currentItem.as(MailItem.class));
 	}
 	
 	public void addRibbonControl(IRibbonControl control) {
