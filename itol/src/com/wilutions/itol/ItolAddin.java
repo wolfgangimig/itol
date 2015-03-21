@@ -248,12 +248,14 @@ public class ItolAddin extends OutlookAddinEx {
 	}
 
 	public MyExplorerWrapper getMyExplorerWrapper(Explorer explorer) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "getMyExplorerWrapper(");
 		MyExplorerWrapper explorerWrapper = (MyExplorerWrapper) super.getExplorerWrapper(explorer);
 		if (explorerWrapper == null) { // Might be null, if IssueServiceImpl was
 										// not available on startup.
 			onNewExplorer(explorer);
 			explorerWrapper = (MyExplorerWrapper) super.getExplorerWrapper(explorer);
 		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")getMyExplorerWrapper=" + explorerWrapper);
 		return explorerWrapper;
 	}
 
