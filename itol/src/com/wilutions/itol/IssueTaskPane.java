@@ -39,6 +39,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -73,7 +74,6 @@ import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.mslib.office.CustomTaskPane;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.office._CustomTaskPane;
-import com.wilutions.mslib.outlook.MailItem;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
@@ -97,7 +97,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private Button bnClear;
 	@FXML
-	private Button bnShowIssueInBrowser;
+	private MenuItem bnShowIssueInBrowser;
 	@FXML
 	private ChoiceBox<IdName> cbTracker;
 	@FXML
