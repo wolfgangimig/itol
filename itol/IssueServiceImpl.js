@@ -898,6 +898,10 @@ function getPropertyClass(propertyId, issue) {
 	return ret;
 }
 
+function getPropertyAutoCompletion(propertyId, issue, filter) {
+	return null;
+}
+
 function getIssueTypes(issue) {
 	var ret = [];
 	var projectId = issue ? issue.getProject() : -1;
