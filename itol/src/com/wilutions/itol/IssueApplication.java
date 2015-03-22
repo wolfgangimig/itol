@@ -32,7 +32,7 @@ public class IssueApplication extends AddinApplication {
 
 	static {
 		Config config = Globals.getConfig();
-		config.appName = "Issue Tracker for Microsoft Outlook and Redmine";
+		config.appName = "Issue Tracker for Microsoft Outlook " + System.getProperty("sun.arch.data.model") + "bit";
 		config.manufacturerName = "WILUTIONS";
 		config.serviceFactoryClass = IssueServiceFactory_JS.class.getName();
 		config.serviceFactoryParams = Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT);
