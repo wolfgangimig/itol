@@ -72,27 +72,18 @@ public class Globals {
 		Globals.appDir = appDir;
 		Globals.issueServiceRunning = false;
 
-		// Required for PasswordEncryption.decrypt
-		com.sun.org.apache.xml.internal.security.Init.init();
-
 		readData();
 		
 		initLogging();
 		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" + appDir);
 
-		try {
-			Class<?> clazz = Class.forName(config.serviceFactoryClass);
-			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
-			issueService = fact.getService(appDir, config.serviceFactoryParams);
-		}
-		catch (Throwable e1) {
-			log.log(Level.SEVERE, "Cannot load issue service class=" + config.serviceFactoryClass, e1);
-			return;
-		}
-		
 		BackgTask.run(() -> {
 			try {
+				Class<?> clazz = Class.forName(config.serviceFactoryClass);
+				IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
+				issueService = fact.getService(appDir, config.serviceFactoryParams);
+			
 				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
 				issueService.setConfig(config.configProps);
 				
@@ -208,7 +199,7 @@ public class Globals {
 			try {
 				ClassLoader classLoader = Globals.class.getClassLoader();
 				InputStream inputStream = classLoader.getResourceAsStream("com/wilutions/itol/res_en.properties");
-				resb = new PropertyResourceBundle(inputStream);
+				resb = new ResourceBundleNoThrow(new PropertyResourceBundle(inputStream));
 			} catch (IOException e) {
 				e.printStackTrace();
 				try {

@@ -21,7 +21,7 @@ import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingExcepti
 import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 public class PasswordEncryption {
-	
+
 	private final static String IV = "happynewyearh201";
 	private final static String encryptionKey = "18afc39c755144a9";
 
@@ -37,7 +37,8 @@ public class PasswordEncryption {
 			SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
 			cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(IV.getBytes("UTF-8")));
 			return bytesToString(cipher.doFinal(data));
-		} catch (Throwable e) {
+		}
+		catch (Throwable e) {
 			throw new IOException(e);
 		}
 	}
@@ -48,18 +49,43 @@ public class PasswordEncryption {
 			SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
 			cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(IV.getBytes("UTF-8")));
 			return new String(cipher.doFinal(stringToBytes(cipherText)), "UTF-8").trim();
-		} catch (Throwable e) {
+		}
+		catch (Throwable e) {
 			throw new IOException(e);
 		}
 	}
 
-	private static byte[] stringToBytes(String s) throws Base64DecodingException, UnsupportedEncodingException {
-		return Base64.decode(s.getBytes("UTF-8"));
+	private static byte[] stringToBytes(String s) throws UnsupportedEncodingException {
+		// Previous version used
+		// com.sun.org.apache.xml.internal.security.utils.Base64.
+		// This class adds \n after each 76 chars, which disturbs the
+		// java.util.Base64.
+		StringBuilder sbuf = new StringBuilder(s.length());
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			if (!Character.isWhitespace(c)) {
+				sbuf.append(c);
+			}
+		}
+		return java.util.Base64.getDecoder().decode(sbuf.toString());
 	}
 
-	private static String bytesToString(byte[] b) {
-		return Base64.encode(b);
+	private static String bytesToString(byte[] b) throws UnsupportedEncodingException {
+		String s = java.util.Base64.getEncoder().encodeToString(b);
+		// Add a \n after each 80 chars
+		StringBuilder sbuf = new StringBuilder(s.length() + (s.length() / 76));
+		int p = 0;
+		while (p < s.length()) {
+			int e = p + 76;
+			if (e > s.length()) {
+				e = s.length();
+			}
+			if (p != 0) {
+				sbuf.append('\n');
+			}
+			sbuf.append(s.substring(p, e));
+			p = e;
+		}
+		return sbuf.toString();
 	}
-
-
 }
