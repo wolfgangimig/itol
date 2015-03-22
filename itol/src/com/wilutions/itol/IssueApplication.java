@@ -101,7 +101,7 @@ public class IssueApplication extends AddinApplication {
 		try {
 			instance = this;
 			super.register(userNotMachine, execPath);
-			showDocument("http://www.wilutions.com/joa/itol/installed.html");
+			//showDocument("http://www.wilutions.com/joa/itol/installed.html");
 		}
 		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to register Addin", e);
@@ -113,7 +113,7 @@ public class IssueApplication extends AddinApplication {
 		try {
 			instance = this;
 			super.unregister(userNotMachine);
-			showDocument("http://www.wilutions.com/joa/itol/uninstalled.html");
+			//showDocument("http://www.wilutions.com/joa/itol/uninstalled.html");
 		}
 		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to register Addin", e);
