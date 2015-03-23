@@ -101,6 +101,31 @@ public class IssueApplication extends AddinApplication {
 		try {
 			instance = this;
 			super.register(userNotMachine, execPath);
+			
+//		      String exe = RegUtil.getExecPath(RemoteTestMain.class);
+//		      if (exe.startsWith("\"")) exe = exe.substring(1);
+//		      if (exe.endsWith("\"")) exe = exe.substring(0, exe.length()-1);
+//		      String linkName = makeValidPath(AUTOSTART_FOLDER + "\\" + (new File(exe)).getName() + ".lnk");
+//		      if (log.isDebugEnabled()) log.debug("linkName=" + linkName);
+//		      
+//		      // Im Autostart-Ordner ablegen
+//		      if (arg.equals("/Register")) {
+//		        try {
+//		          String targetName = exe;
+//		          String description = "";
+//		          if (log.isInfoEnabled()) log.info("Create shortcut=" + linkName + " to " + targetName);
+//		          JoaDll.nativeCreateShortcut(linkName, targetName, description);
+//		        } catch (Exception e) {
+//		          log.error("Failed to create shortcut=" + linkName, e);
+//		        }
+//		      }
+//		      
+//		      // Im Autostart-Ordner löschen.
+//		      else if (arg.equals("/Unregister")) {
+//		        log.info("Delete lnk=" + linkName);
+//		        new File(linkName).delete();
+//		      }
+			
 			showDocument("http://www.wilutions.com/joa/itol/installed.html");
 		}
 		catch (Throwable e) {
