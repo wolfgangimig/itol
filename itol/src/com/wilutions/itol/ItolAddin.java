@@ -34,7 +34,7 @@ import com.wilutions.mslib.outlook.Inspector;
 import com.wilutions.mslib.outlook.OlObjectClass;
 
 @CoClass(progId = "ItolAddin.Class", guid = "{013ebe9e-fbb4-4ccf-857b-ab716f7273c1}")
-@DeclAddin(application = OfficeApplication.Outlook, loadBehavior = LoadBehavior.LoadOnStart, friendlyName = "Issue Tracker Addin", description = "Issue Tracker Addin for Microsoft Outlook")
+@DeclAddin(application = OfficeApplication.Outlook, loadBehavior = LoadBehavior.LoadByJoaUtil, friendlyName = "Issue Tracker Addin", description = "Issue Tracker Addin for Microsoft Outlook")
 public class ItolAddin extends OutlookAddinEx {
 
 	private AttachmentHttpServer httpServer = new AttachmentHttpServer();
@@ -140,7 +140,7 @@ public class ItolAddin extends OutlookAddinEx {
 			}
 			return str;
 		});
-		return text;
+		return text != null ? text : "";
 	}
 
 	public String ComboBox_getText(IRibbonControl control) {
@@ -261,28 +261,30 @@ public class ItolAddin extends OutlookAddinEx {
 
 	private <T> T forContextWrapper(IRibbonControl control, Callback<MyWrapper, T> call) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "forContextWrapper(");
-		
+
 		T ret = null;
 		MyWrapper wrapper = null;
 
 		IDispatch dispContext = control.getContext();
-		if (dispContext.is(Inspector.class)) {
-			Inspector inspector = dispContext.as(Inspector.class);
-			wrapper = (MyWrapper) getInspectorWrapper(inspector);
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "inspector wrapper=" + wrapper);
-		}
-		else if (dispContext.is(Explorer.class)) {
-			Explorer explorer = dispContext.as(Explorer.class);
-			wrapper = (MyWrapper) getMyExplorerWrapper(explorer);
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "explorer wrapper=" + wrapper);
-		}
+		if (dispContext != null) {
+			if (dispContext.is(Inspector.class)) {
+				Inspector inspector = dispContext.as(Inspector.class);
+				wrapper = (MyWrapper) getInspectorWrapper(inspector);
+				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "inspector wrapper=" + wrapper);
+			}
+			else if (dispContext.is(Explorer.class)) {
+				Explorer explorer = dispContext.as(Explorer.class);
+				wrapper = (MyWrapper) getMyExplorerWrapper(explorer);
+				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "explorer wrapper=" + wrapper);
+			}
 
-		if (wrapper != null) {
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addRibbonControl");
-			wrapper.addRibbonControl(control);
-			if (call != null) {
-				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "call");
-				ret = call.call(wrapper);
+			if (wrapper != null) {
+				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addRibbonControl");
+				wrapper.addRibbonControl(control);
+				if (call != null) {
+					if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "call");
+					ret = call.call(wrapper);
+				}
 			}
 		}
 

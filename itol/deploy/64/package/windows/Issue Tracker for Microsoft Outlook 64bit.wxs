@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
     <Product Id="12a60bef-3f46-44a1-8a4a-d09d7f113ceb" Name="Issue Tracker for Microsoft Outlook 64bit" 
-             Language="1033" Version="1.1"
+             Language="1033" Version="1.4"
              Manufacturer="WILUTIONS" 
              UpgradeCode="db5365f6-ba46-42cd-8c9a-b502cabc1d33">
         <Package Description="Issue Tracker for Microsoft Outlook 64bit" Comments="None"

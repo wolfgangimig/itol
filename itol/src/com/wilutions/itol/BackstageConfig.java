@@ -30,10 +30,10 @@ import com.wilutions.mslib.office.IRibbonUI;
 public class BackstageConfig {
 
 	public final static String CONTROL_ID_PREFIX = "BackstageConfig_";
-	private List<Property> configProps;
+	private final List<Property> configProps = new ArrayList<Property>();
 	private IRibbonUI ribbon;
 	private Logger log = Logger.getLogger("BackstageConfig");
-	
+
 	public BackstageConfig() {
 	}
 
@@ -42,9 +42,8 @@ public class BackstageConfig {
 		String version = Globals.getVersion();
 		StringBuilder propsUI = new StringBuilder();
 		ResourceBundle resb = Globals.getResourceBundle();
-		
-		if (init()) {
 
+		if (init()) {
 
 			propsUI.append("<layoutContainer id=\"").append(CONTROL_ID_PREFIX)
 					.append("vert1\" layoutChildren=\"vertical\" >");
@@ -54,17 +53,17 @@ public class BackstageConfig {
 			}
 
 			propsUI.append("</layoutContainer>");
-			
+
 			final String saveText = resb.getString("bnSave.text");
 			final String cancelText = resb.getString("bnCancel.text");
 
 			// Save and Cancel buttons
 			propsUI.append("<layoutContainer id=\"").append(CONTROL_ID_PREFIX)
 					.append("horz1\" layoutChildren=\"horizontal\" >");
-			propsUI.append("<button id=\"").append(CONTROL_ID_PREFIX)
-					.append("bnSave\" label=\"").append(saveText).append("\" onAction=\"Button_onAction\" />");
-			propsUI.append("<button id=\"").append(CONTROL_ID_PREFIX)
-					.append("bnCancel\" label=\"").append(cancelText).append("\" onAction=\"Button_onAction\" />");
+			propsUI.append("<button id=\"").append(CONTROL_ID_PREFIX).append("bnSave\" label=\"").append(saveText)
+					.append("\" onAction=\"Button_onAction\" />");
+			propsUI.append("<button id=\"").append(CONTROL_ID_PREFIX).append("bnCancel\" label=\"").append(cancelText)
+					.append("\" onAction=\"Button_onAction\" />");
 			propsUI.append("</layoutContainer>");
 
 		}
@@ -83,7 +82,7 @@ public class BackstageConfig {
 	private boolean init() {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "init(");
 		boolean ret = false;
-		this.configProps = new ArrayList<Property>();
+		this.configProps.clear();
 
 		try {
 			List<Property> props = Globals.getIssueService().getConfig();
