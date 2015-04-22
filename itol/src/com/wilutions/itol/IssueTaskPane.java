@@ -256,13 +256,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		BackgTask.run(() -> {
 
+			IssueService srv = null;
 			boolean succ = false;
 			try {
 
 				// Get issue ID from mailItem
 				final String subject = mailItem.getSubject();
 				final String description = mailItem.getBody();
-				IssueService srv = Globals.getIssueService();
+				srv = Globals.getIssueService();
 				String issueId = srv.extractIssueIdFromMailSubject(subject);
 
 				// If issue ID found...
@@ -294,7 +295,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					log.log(Level.SEVERE, text, e);
 				}
 
-				showMessageBoxError(text);
+				if (srv != null) {
+					showMessageBoxError(text);
+				}
 
 			} finally {
 
