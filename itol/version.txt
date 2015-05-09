@@ -4,7 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
-Version 1.4 2015-04-20
+Version 1.4 
+
+- Accept # plus number as issue ID in subject in order to show the
+  issue related to an RSS feed item.
 
 - #17: Slow startup caused Addin to be disabled in Outlook. 
   Now, ITOL is loaded by the JOA Util Addin and not by Outlook.

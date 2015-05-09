@@ -9,6 +9,7 @@ import javafx.event.EventHandler;
 import javafx.util.Duration;
 
 import com.wilutions.com.ComException;
+import com.wilutions.com.Dispatch;
 import com.wilutions.com.IDispatch;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.ExplorerWrapper;
@@ -21,7 +22,7 @@ import com.wilutions.mslib.outlook.Selection;
 public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 
 	final IssueTaskPane issuePane;
-	String lastEntryID = "";
+	Object lastEntryID = "";
 	private long showAtMillis = Long.MAX_VALUE;
 	private final static long SHOW_DELAY_MILLIS = 500;
 	private final Timeline deferShowSelectedItem;
@@ -34,7 +35,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 			@Override
 			public void handle(ActionEvent event) {
 				if (isSelectionDelayOver()) {
-					showSelectedMailItem(false);
+					showSelectedItem();
 				}
 			}
 		}));
@@ -78,7 +79,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		// Globals.getThisAddin().getRibbon().InvalidateControl("ShowIssue");
 		IRibbonUI ribbon = Globals.getThisAddin().getRibbon();
 		if (ribbon != null) {
-			internalShowSelectedMailItem();
+			internalShowSelectedItem();
 		}
 	}
 
@@ -104,41 +105,19 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 	 *            Explorer object
 	 * @return MailItem object or null.
 	 */
-	public MailItem getSelectedMail() {
-		MailItem mailItem = null;
+	public IDispatch getSelectedExplorerItem() {
+		IDispatch ret = null;
 		try {
 			Selection selection = explorer.getSelection();
 			int nbOfSelectedItems = selection.getCount();
 			if (nbOfSelectedItems != 0) {
-				IDispatch selectedItem = selection.Item(1);
-				if (selectedItem.is(MailItem.class)) {
-					mailItem = selectedItem.as(MailItem.class);
-				}
+				ret = selection.Item(1);
 			}
 		} catch (ComException ignored) {
 			// explorer.getSelection() causes a HRESULT=0x80020009 when
 			// Outlook starts.
 		}
-		return mailItem;
-	}
-
-	/**
-	 * Return the issue ID of the selected mail.
-	 * 
-	 * @return issue ID or empty string.
-	 */
-	public String getIssueIdOfSelectedMail() {
-		String issueId = "";
-		MailItem mailItem = getSelectedMail();
-		if (mailItem != null) {
-			String subject = mailItem.getSubject();
-			try {
-				issueId = Globals.getIssueService().extractIssueIdFromMailSubject(subject);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return issueId;
+		return ret;
 	}
 
 	public void setIssueTaskPaneVisible(boolean visible) {
@@ -149,14 +128,14 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 					if (ex != null) {
 						MessageBox.show(explorer, "Error", ex.getMessage(), null);
 					} else {
-						internalShowSelectedMailItem();
+						internalShowSelectedItem();
 					}
 				});
 			}
 
 			issuePane.setVisible(visible, (succ, ex) -> {
 				if (succ && visible) {
-					internalShowSelectedMailItem();
+					internalShowSelectedItem();
 				}
 			});
 		}
@@ -166,17 +145,17 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		return issuePane != null && issuePane.hasWindow() && issuePane.isVisible();
 	}
 
-	private void internalShowSelectedMailItem() {
+	private void internalShowSelectedItem() {
 		startSelectionDelay();
 	}
 
-	public void showSelectedMailItem(boolean ignoreLastItem) {
+	public void showSelectedItem() {
 		if (issuePane != null) {
 			if (issuePane.hasWindow() && issuePane.isVisible()) {
-				MailItem mailItem = getSelectedMail();
+				IDispatch mailItem = getSelectedExplorerItem();
 				if (mailItem != null) {
-					String mailId = mailItem.getEntryID();
-					if (ignoreLastItem || !mailId.equals(lastEntryID)) {
+					Object mailId = mailItem._get("EntryID");
+					if (!mailId.equals(lastEntryID)) {
 						issuePane.setMailItem(new IssueMailItemImpl(mailItem));
 						lastEntryID = mailId;
 					}

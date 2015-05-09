@@ -1,20 +1,20 @@
 package com.wilutions.itol;
 
 import com.wilutions.com.ComException;
+import com.wilutions.com.IDispatch;
 import com.wilutions.mslib.outlook.Attachment;
 import com.wilutions.mslib.outlook.Attachments;
-import com.wilutions.mslib.outlook.MailItem;
 
 public class IssueMailItemImpl implements IssueMailItem {
 	
-	private final MailItem mailItem;
+	private final IDispatch mailItem;
 	private String subject;
 	private String body;
 	
-	IssueMailItemImpl(MailItem mailItem) {
+	IssueMailItemImpl(IDispatch mailItem) {
 		this.mailItem = mailItem;
-		this.subject = mailItem.getSubject();
-		this.body = mailItem.getBody();
+		this.subject = (String)mailItem._get("Subject");
+		this.body = (String)mailItem._get("Body");
 	}
 	
 	public String getSubject() {
@@ -22,7 +22,7 @@ public class IssueMailItemImpl implements IssueMailItem {
 	}
 
 	public void setSubject(String mailSubject) throws ComException {
-		mailItem.setSubject(this.subject = mailSubject);
+		mailItem._put("Subject", mailSubject);
 	}
 
 	public String getBody() {
@@ -30,18 +30,18 @@ public class IssueMailItemImpl implements IssueMailItem {
 	}
 	
 	public void Save() {
-		mailItem.Save();
+		mailItem._call("Save");
 	}
 
 	@Override
 	public void SaveAs(String Path, Object Type) throws ComException {
-		mailItem.SaveAs(Path, Type);
+		mailItem._call("SaveAs", Path, Type);
 	}
 
 	@Override
 	public IssueAttachments getAttachments() throws ComException {
 		
-		final Attachments atts = mailItem.getAttachments();
+		final Attachments atts = (Attachments)mailItem._get("Attachments");
 		
 		IssueAttachments ret = new IssueAttachments() {
 			

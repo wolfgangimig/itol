@@ -56,6 +56,7 @@ import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
 
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.IO;
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
@@ -470,13 +471,19 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private boolean lockChangeListener;
 
 	private void updateData(boolean saveAndValidate) throws IOException {
-		if (lockChangeListener)
-			return;
 		try {
-			lockChangeListener = true;
-			internalUpdateData(saveAndValidate);
-		} finally {
-			lockChangeListener = false;
+			if (lockChangeListener)
+				return;
+			try {
+				lockChangeListener = true;
+				internalUpdateData(saveAndValidate);
+			} finally {
+				lockChangeListener = false;
+			}
+		}
+		catch (Throwable e) {
+			e.printStackTrace();
+			throw new IOException(e);
 		}
 	}
 

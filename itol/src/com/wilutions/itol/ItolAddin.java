@@ -19,6 +19,7 @@ import javafx.util.Callback;
 
 import com.wilutions.com.CoClass;
 import com.wilutions.com.ComException;
+import com.wilutions.com.Dispatch;
 import com.wilutions.com.IDispatch;
 import com.wilutions.joa.DeclAddin;
 import com.wilutions.joa.LoadBehavior;
@@ -27,6 +28,7 @@ import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.ExplorerWrapper;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
+import com.wilutions.joa.outlook.ex.Wrapper;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.outlook.Explorer;
@@ -93,7 +95,7 @@ public class ItolAddin extends OutlookAddinEx {
 			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "for context=" + context);
 			if (Globals.isIssueServiceRunning()) {
 				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "setIssueTaskPaneVisible(" + pressed + ")");
-				context.setIssueTaskPaneVisible(pressed);
+				((MyWrapper)context).setIssueTaskPaneVisible(pressed);
 			}
 			else if (pressed) {
 				ResourceBundle resb = Globals.getResourceBundle();
@@ -119,7 +121,7 @@ public class ItolAddin extends OutlookAddinEx {
 
 	public boolean Button_getPressed(IRibbonControl control) {
 		Boolean ret = forContextWrapper(control, (wrapper) -> {
-			return wrapper.isIssueTaskPaneVisible();
+			return ((MyWrapper)wrapper).isIssueTaskPaneVisible();
 		});
 		return ret != null ? ret : false;
 	}
@@ -185,15 +187,17 @@ public class ItolAddin extends OutlookAddinEx {
 	public String GetCustomUI(String ribbonId) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "GetCustomUI(" + ribbonId);
 		String ui = super.GetCustomUI(ribbonId);
-		if (!ribbonId.equals("Microsoft.Outlook.Explorer")) {
-			return ui;
+		if (ribbonId.equals("Microsoft.Outlook.Explorer")) {
+			try {
+				ui = backstageConfig.getCustomUI(ui);
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
-		try {
-			ui = backstageConfig.getCustomUI(ui);
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
+		
+		
+		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")GetCustomUI=" + ui);
 		return ui;
 	}
@@ -204,6 +208,7 @@ public class ItolAddin extends OutlookAddinEx {
 		InspectorWrapper ret = null;
 		switch (olclass.value) {
 		case OlObjectClass._olMail:
+		case OlObjectClass._olPost:
 			try {
 				IRibbonUI ribbon = getRibbon();
 				if (ribbon != null) ribbon.Invalidate();
@@ -259,22 +264,22 @@ public class ItolAddin extends OutlookAddinEx {
 		return explorerWrapper;
 	}
 
-	private <T> T forContextWrapper(IRibbonControl control, Callback<MyWrapper, T> call) {
+	private <T> T forContextWrapper(IRibbonControl control, Callback<Wrapper, T> call) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "forContextWrapper(");
 
 		T ret = null;
-		MyWrapper wrapper = null;
+		Wrapper wrapper = null;
 
 		IDispatch dispContext = control.getContext();
-		if (dispContext != null) {
+		if (dispContext != null && !dispContext.equals(Dispatch.NULL)) {
 			if (dispContext.is(Inspector.class)) {
 				Inspector inspector = dispContext.as(Inspector.class);
-				wrapper = (MyWrapper) getInspectorWrapper(inspector);
+				wrapper = (Wrapper) getInspectorWrapper(inspector);
 				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "inspector wrapper=" + wrapper);
 			}
 			else if (dispContext.is(Explorer.class)) {
 				Explorer explorer = dispContext.as(Explorer.class);
-				wrapper = (MyWrapper) getMyExplorerWrapper(explorer);
+				wrapper = (Wrapper) getMyExplorerWrapper(explorer);
 				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "explorer wrapper=" + wrapper);
 			}
 

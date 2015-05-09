@@ -18,6 +18,10 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.wilutions.com.ByRef;
+import com.wilutions.com.IDispatch;
+import com.wilutions.com.Missing;
+import com.wilutions.com.Variant;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.Property;
@@ -26,6 +30,11 @@ import com.wilutions.itol.db.PropertyClasses;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
+import com.wilutions.mslib.outlook.Explorer;
+import com.wilutions.mslib.outlook.MAPIFolder;
+import com.wilutions.mslib.outlook.OlFolderDisplayMode;
+import com.wilutions.mslib.outlook._Application;
+import com.wilutions.mslib.outlook._NameSpace;
 
 public class BackstageConfig {
 
@@ -246,6 +255,7 @@ public class BackstageConfig {
 			switch (propId) {
 			case "bnSave":
 				onSave();
+				//onCreateRSSFolders(control);
 				break;
 			case "bnCancel":
 				onCancel();
@@ -267,6 +277,31 @@ public class BackstageConfig {
 			MessageBox.show(getOwnerWindow(), "Error", msg, null);
 		}
 	}
+
+	// Hier könnte man die Issue-Queries als RSS Feed im Outlook einrichten.
+	// Das ist mir jetzt aber zu aufwendig. 
+	// Beachte: Queries können auch Parameter (z.B. Projekt) erfordern. 
+//	private void onCreateRSSFolders(IRibbonControl control) {
+//		// https://msdn.microsoft.com/en-us/library/office/ff424473.aspx
+//		IDispatch context = control.getContext();
+//		if (context.is(Explorer.class)) {
+//			try {
+//				String feedUrl = "feed://192.168.0.105/projects/project1/issues.atom?key=320db4a241b1aaffe62419b4dfb6b59309efd8cb&query_id=3";
+//				Explorer explorer = context.as(Explorer.class);
+//				_Application application = explorer.getApplication();
+//				_NameSpace session = application.getSession();
+//				String title = "hello12";
+//				MAPIFolder subscriptionFolder = session.OpenSharedFolder(feedUrl, 
+//						Variant.param(title),
+//						Variant.param(false),
+//						Variant.param(true));
+//				application.getExplorers().Add(subscriptionFolder, OlFolderDisplayMode.olFolderDisplayNormal);
+//			}
+//			catch (Throwable e) {
+//				e.printStackTrace();
+//			}
+//		}
+//	}
 
 	private void onReload() {
 		init();
