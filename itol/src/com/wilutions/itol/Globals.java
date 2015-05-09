@@ -69,6 +69,7 @@ public class Globals {
 	}
 
 	public static void initIssueService(File appDir) throws IOException {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" + appDir);
 		Globals.appDir = appDir;
 		Globals.issueServiceRunning = false;
 
@@ -111,17 +112,24 @@ public class Globals {
 	}
 
 	private static void readData() {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "readData(");
+		
 		Config newConfig = (Config) getRegistry().read(REG_CONFIG);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "newConfig=" + newConfig);
 
 		if (newConfig != null) {
+			
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "newConfig.serviceFactoryClass=" + newConfig.serviceFactoryClass);
 			if (newConfig.serviceFactoryClass != null) {
 				config.serviceFactoryClass = newConfig.serviceFactoryClass;
 			}
 
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "newConfig.serviceFactoryParams=" + newConfig.serviceFactoryParams);
 			if (newConfig.serviceFactoryParams != null) {
 				config.serviceFactoryParams = newConfig.serviceFactoryParams;
 			}
 
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "newConfig.configProps=" + newConfig.configProps);
 			if (newConfig.configProps != null) {
 				config.configProps = newConfig.configProps;
 			}
@@ -133,7 +141,7 @@ public class Globals {
 			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
 				try {
 					configProp.setValue(PasswordEncryption.decrypt((String) configProp.getValue()));
-				} catch (IOException e) {
+				} catch (Throwable e) {
 					e.printStackTrace();
 				}
 			}
@@ -152,7 +160,7 @@ public class Globals {
 			config.configProps.add(propLogFile);
 		}
 		
-
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")readData");
 	}
 
 	private static void writeData() {
@@ -270,7 +278,10 @@ public class Globals {
 			String logFile = getConfigPropertyString(Property.LOG_FILE);
 			
 			if (logLevel == null || logLevel.isEmpty()) logLevel = "INFO";
-			if (logFile == null || logFile.isEmpty()) logFile = File.createTempFile("itol", ".log").getAbsolutePath();
+			if (logFile == null || logFile.isEmpty()) {
+				logFile = File.createTempFile("itol", ".log").getAbsolutePath();
+				logLevel = "FINE";
+			}
 			
 			if (logLevel != null && !logLevel.isEmpty() && logFile != null && !logFile.isEmpty()) {
 				logFile = logFile.replace('\\', '/');

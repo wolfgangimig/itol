@@ -48,23 +48,27 @@ public class IssueApplication extends AddinApplication {
 	}
 
 	public boolean parseCommandLine(String[] args) throws ComException, IOException {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "parseCommandLine(");
 		boolean finished = super.parseCommandLine(args);
 		if (!finished) {
 			initIssueService();
 		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")parseCommandLine=" + finished);
 		return finished;
 	}
 
 	private void initIssueService() {
-		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(");
 		File appDir = getAppDir();
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "appDir=" + appDir);
 		try {
 			Globals.initIssueService(appDir);
 		}
-		catch (IOException e) {
+		catch (Throwable e) {
 			e.printStackTrace();
 			log.severe(e.toString());
 		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")initIssueService");
 	}
 
 	public static void main(String[] args) {
@@ -79,7 +83,8 @@ public class IssueApplication extends AddinApplication {
 		log.info("app.dir=" + RegUtil.getAppPathIfSelfContained());
 
 		try {
-			main(IssueApplication.class, IssueApplication.class, args);
+			log.info("call main");
+			AddinApplication.main(IssueApplication.class, IssueApplication.class, args);
 		}
 		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to excecute main.", e);
@@ -92,8 +97,10 @@ public class IssueApplication extends AddinApplication {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "start(");
 		instance = this;
 		super.start(primaryStage);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")start");
 	}
 
 	@Override

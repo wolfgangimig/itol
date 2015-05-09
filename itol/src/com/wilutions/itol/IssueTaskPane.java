@@ -56,7 +56,6 @@ import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.IO;
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
@@ -257,13 +256,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		BackgTask.run(() -> {
 
+			IssueService srv = null;
 			boolean succ = false;
 			try {
 
 				// Get issue ID from mailItem
 				final String subject = mailItem.getSubject();
 				final String description = mailItem.getBody();
-				IssueService srv = Globals.getIssueService();
+				srv = Globals.getIssueService();
 				String issueId = srv.extractIssueIdFromMailSubject(subject);
 
 				// If issue ID found...
@@ -295,7 +295,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					log.log(Level.SEVERE, text, e);
 				}
 
-				showMessageBoxError(text);
+				if (srv != null) {
+					showMessageBoxError(text);
+				}
 
 			} finally {
 
@@ -471,19 +473,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private boolean lockChangeListener;
 
 	private void updateData(boolean saveAndValidate) throws IOException {
+		if (lockChangeListener)
+			return;
 		try {
-			if (lockChangeListener)
-				return;
-			try {
-				lockChangeListener = true;
-				internalUpdateData(saveAndValidate);
-			} finally {
-				lockChangeListener = false;
-			}
-		}
-		catch (Throwable e) {
-			e.printStackTrace();
-			throw new IOException(e);
+			lockChangeListener = true;
+			internalUpdateData(saveAndValidate);
+		} finally {
+			lockChangeListener = false;
 		}
 	}
 
