@@ -9,6 +9,22 @@
 
  */
 
+// TODO: Names of fields used in all projects:
+// Add one line for each field in format ... "fieldname" : true,
+var customFieldsInAllProjects = {
+		"Text1 with leerzeichen" : true,
+		"MultiList" : true,
+};
+
+// TODO: Field to project relationship.
+// Add one line for each relation in format ... "fieldname in projectname" : true,
+var mapCustomFieldsToProjects = {
+		"field1 in project1" : true,
+		"field2 in project1" : true,
+		"field1 in project2" : true,
+		"Float1 Fließkomma in project1" : true,
+};
+
 /**
  * Maximum number of projects to be read. This value constraints the number of
  * combo box items in the UI.
@@ -779,7 +795,7 @@ function makePropertyClassForCustomField(cfield) {
 		var name = cfield.name;
 		var defaultValue = cfield.default_value ? cfield.default_value : null;
 		if (islfine) log.log(Level.FINE, "defaultValue=" + defaultValue);
-		
+
 		var selectList = [];
 		if (cfield.possible_values) {
 			for (var i = 0; i < cfield.possible_values.length; i++) {
@@ -1128,6 +1144,7 @@ function getPropertyDisplayOrder(issue) {
 	if (data.custom_fields) {
 		for (var i = 0; i < data.custom_fields.length; i++) {
 			var cfield = data.custom_fields[i];
+			if (!isCustomFieldForProject(cfield, issue)) continue;
 			if (isCustomFieldForIssueType(cfield, issue)) {
 				if (isCustomFieldForCurrentUser(cfield, issue)) {
 					propertyIds.push(cfield.propertyId);
@@ -1139,6 +1156,17 @@ function getPropertyDisplayOrder(issue) {
 
 	if (islfine) log.log(Level.FINE, ")getPropertyDisplayOrder=" + propertyIds);
 	return propertyIds;
+}
+
+function isCustomFieldForProject(cfield, issue) {
+	var ret = customFieldsInAllProjects[cfield.name];
+	if (!ret) {
+		var project = getIssueProject(issue);
+		if (project) {
+			ret = mapCustomFieldsToProjects[cfield.name + " in " + project.name];
+		}
+	}
+	return ret;
 }
 
 function isCustomFieldForIssueType(cfield, issue) {
@@ -1285,10 +1313,10 @@ function updateIssue(trackerIssue, modifiedProperties, progressCallback) {
 		issue : redmineIssue
 	};
 	var issueReturn = writeIssue(issueParam, progressCallback);
-	
+
 	// New or updated issue ID. (issueReturn is null for an updated issue)
 	var issueId = issueReturn ? issueReturn.issue.id : trackerIssue.id;
-	
+
 	// Read the created or updated issue.
 	// This returns also the updated attachment URLs.
 	trackerIssue = readIssue(issueId);
@@ -1482,15 +1510,34 @@ function validateIssue(iss) {
 };
 
 function extractIssueIdFromMailSubject(subject) {
+	if (islfine) log.log(Level.FINE, "extractIssueIdFromMailSubject(" + subject);
 	var issueId = "";
 	var startTag = "[R-";
 	var p = subject.indexOf(startTag);
 	if (p >= 0) {
 		var q = subject.indexOf("]", p);
+		if (islfine) log.log(Level.FINE, "found " + startTag + " at " + p + ", ] at " + q);
 		if (q >= 0) {
 			issueId = subject.substring(p + startTag.length, q);
 		}
 	}
+	else {
+		p = subject.indexOf(" #");
+		if (p >= 0) {
+			if (islfine) log.log(Level.FINE, "found # at " + p);
+			p += 2;
+			var q = p;
+			for (; q < subject.length; q++) {
+				var c = subject.charAt(q);
+				if (isNaN(parseInt(c))) break;
+			}
+			if (islfine) log.log(Level.FINE, "last number at " + q);
+			if (q > p) {
+				issueId = subject.substring(p, q);
+			}
+		}
+	}
+	if (islfine) log.log(Level.FINE, ")extractIssueIdFromMailSubject=" + issueId);
 	return issueId;
 };
 
@@ -1565,8 +1612,7 @@ function injectIssueIdIntoMailSubject(subject, iss) {
 };
 
 function writeAttachment(trackerAttachment, progressCallback) {
-	if (islfine) log
-			.log(Level.FINE, "writeAttachment(" + trackerAttachment + ", progressCallback=" + progressCallback);
+	if (islfine) log.log(Level.FINE, "writeAttachment(" + trackerAttachment + ", progressCallback=" + progressCallback);
 	var content = trackerAttachment.getStream();
 
 	var uploadResult = httpClient.upload("/uploads.json", content, trackerAttachment.getContentLength(),
