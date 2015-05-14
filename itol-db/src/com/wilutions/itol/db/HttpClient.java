@@ -33,6 +33,13 @@ public class HttpClient {
 
 	private final static Logger log = Logger.getLogger(HttpClient.class.getName());
 	
+	static
+	{
+		// see #12 "handshake alert: unrecognized_name"
+		// http://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0
+		System.setProperty ("jsse.enableSNIExtension", "false");
+	}
+	
 	public static HttpResponse send(String url, String method, String[] headers, Object content, ProgressCallback cb) {
 		if (log.isLoggable(Level.FINE)) {
 			log.fine("send(" + method + ", url=" + url);
@@ -168,9 +175,9 @@ public class HttpClient {
 			log.log(Level.WARNING, msg, e);
 			ret.setErrorMessage(msg + e.toString());
 		} finally {
-			if (conn != null) {
-				conn.disconnect();
-			}
+//			if (conn != null) {
+//				conn.disconnect();
+//			}
 		}
 
 		if (log.isLoggable(Level.FINE)) {
