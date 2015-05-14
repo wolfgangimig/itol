@@ -58,6 +58,7 @@ public class HttpClient {
 			conn = (HttpURLConnection) (new URL(url).openConnection());
 			conn.setRequestMethod(method);
 			conn.setDoOutput(content != null);
+			conn.setInstanceFollowRedirects(false);
 			
 			long contentLength = -1;
 			String contentDisposition = "";
