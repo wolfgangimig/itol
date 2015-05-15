@@ -6,6 +6,8 @@ Version History
 
 Version 1.4 
 
+- #12: Follow redirected URLs.
+
 - Accept # plus number as issue ID in subject in order to show the
   issue related to an RSS feed item.
 
