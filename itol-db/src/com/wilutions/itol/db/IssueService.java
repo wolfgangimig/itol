@@ -18,6 +18,8 @@ public interface IssueService {
 	List<Property> getConfig();
 	void setConfig(List<Property> configProps);
 	
+	void initialize();
+	
 	PropertyClasses getPropertyClasses();
 	
 	PropertyClass getPropertyClass(String propertyId, Issue iss) throws IOException;
