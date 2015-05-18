@@ -196,7 +196,7 @@ var config = {
  * Execute HTTP requests. JavaScript wrapper around the Java class JHttpClient.
  */
 var httpClient = {
-
+	
 	/**
 	 * Send a request.
 	 * 
@@ -213,29 +213,6 @@ var httpClient = {
 		var destUrl = config.url + params;
 		this._addAuthHeader(headers);
 		var response = JHttpClient.send(destUrl, method, headers, content, progressCallback ? progressCallback : null);
-		
-		if (!params && (response.status >= 300 || response.status <= 302)) {
-			
-			if (islfine) log.log(Level.FINE, "redirected, find location header");
-			
-			var location = "";
-			for (var i = 0; i < response.headers.length; i++) {
-				var header = response.headers[i];
-				if (islfine) log.log(Level.FINE, "header=" + header);
-				if (header && header.startsWith("Location:")) {
-					location = header.substring(10).trim();
-					if (location.endsWith("/")) location = location.substring(0, location.length()-1);
-					if (islfine) log.log(Level.FINE, "location=" + location);
-				}
-			}
-			
-			if (location) {
-				if (islinfo) log.log(Level.INFO, "follow redirection to " + location);
-				config.url = location;
-				destUrl = config.url + params;
-				response = JHttpClient.send(destUrl, method, headers, content, progressCallback ? progressCallback : null);
-			}
-		}
 		
 		if (response.status < 200 || response.status > 299) {
 			var msg = "";
@@ -669,9 +646,6 @@ function initialize() {
 
 	data.clear();
 	
-	if (islinfo) log.log(Level.INFO, "test redirect");
-	httpClient.send("GET", [], "", null)
-
 	if (islinfo) log.log(Level.INFO, "readOrUpdateConfigurationProject");
 	readOrUpdateConfigurationProject();
 
@@ -903,7 +877,6 @@ function getConfig() {
 function setConfig(configProperties) {
 	if (configProperties) {
 		config.fromProperties(configProperties);
-		initialize();
 	}
 };
 
