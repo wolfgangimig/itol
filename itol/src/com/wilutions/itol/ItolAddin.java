@@ -196,8 +196,6 @@ public class ItolAddin extends OutlookAddinEx {
 			}
 		}
 		
-		
-		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")GetCustomUI=" + ui);
 		return ui;
 	}
