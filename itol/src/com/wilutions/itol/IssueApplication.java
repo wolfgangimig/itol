@@ -133,6 +133,12 @@ public class IssueApplication extends AddinApplication {
 //		        new File(linkName).delete();
 //		      }
 			
+//			pushd "%APPDATA%\..\Local\Issue Tracker for Microsoft Outlook 32bit"
+//			REG add "HKCU\Software\Microsoft\Office\Outlook\Addins\ItolAddin.Class" /f /v "LoadBehavior" /t REG_DWORD /d 3
+//			START "" "Issue Tracker for Microsoft Outlook 32bit.exe"
+//			popd
+
+			
 			//showDocument("http://www.wilutions.com/joa/itol/installed.html");
 		}
 		catch (Throwable e) {
