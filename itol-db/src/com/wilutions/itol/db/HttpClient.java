@@ -25,6 +25,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,6 +34,8 @@ public class HttpClient {
 
 	private final static Logger log = Logger.getLogger(HttpClient.class.getName());
 	
+	private static HashMap<String,String> redirections = new HashMap<>();
+	
 	static
 	{
 		// see #12 "handshake alert: unrecognized_name"
@@ -40,9 +43,9 @@ public class HttpClient {
 		System.setProperty ("jsse.enableSNIExtension", "false");
 	}
 	
-	public static HttpResponse send(String url, String method, String[] headers, Object content, ProgressCallback cb) {
+	public static HttpResponse send(String surl, String method, String[] headers, Object content, ProgressCallback cb) {
 		if (log.isLoggable(Level.FINE)) {
-			log.fine("send(" + method + ", url=" + url);
+			log.fine("send(" + method + ", surl=" + surl);
 			log.fine("headers=" + Arrays.toString(headers));
 			log.fine("content=" + content);
 		}
@@ -53,12 +56,25 @@ public class HttpClient {
 
 		HttpURLConnection conn = null;
 		HttpResponse ret = new HttpResponse();
+		
+		for (String key : redirections.keySet()) {
+			int p = surl.indexOf(key);
+			if (p >= 0) {
+				String srepl = redirections.get(key);
+				log.fine("redirect, replace part=" + key + " with " + srepl);
+				
+				String nurl = surl.substring(0, p) + srepl + surl.substring(p + key.length());
+				log.info("redirect, new-url=" + nurl);
+				surl = nurl;
+			}
+		}
 
 		try {
-			conn = (HttpURLConnection) (new URL(url).openConnection());
+			URL url = new URL(surl);
+			conn = (HttpURLConnection) (url.openConnection());
 			conn.setRequestMethod(method);
 			conn.setDoOutput(content != null);
-			conn.setInstanceFollowRedirects(false);
+			//conn.setInstanceFollowRedirects(false);
 			
 			long contentLength = -1;
 			String contentDisposition = "";
@@ -148,6 +164,23 @@ public class HttpClient {
 			ret.setHeaders(responseHeaders.toArray(new String[responseHeaders.size()]));
 			subcbRecv.setFinished();
 			
+			if (!url.equals(conn.getURL())) {
+				String ol = surl;
+				String nl = conn.getURL().toString();
+				log.info("was redirected, old-url=" + ol + ", new-url=" + nl);
+				for (int i = 0; i < ol.length(); i++) {
+					String sub = ol.substring(i);
+					int p = nl.indexOf(sub);
+					if (p >= 0) {
+						String sfind = ol.substring(0, i);
+						String srepl = nl.substring(0, p);
+						log.fine("add redirection replacement " + sfind + " -> " + srepl);
+						redirections.put(sfind, srepl);
+						break;
+					}
+				}
+			}
+			
 			ProgressCallback subcbDownload = cb.createChild("download");
 			if (contentDisposition != null && contentDisposition.length() != 0) {
 				subcbDownload.setParams(contentDisposition);
@@ -172,7 +205,7 @@ public class HttpClient {
 			}
 
 		} catch (IOException e) {
-			String msg = "HTTP request to URL=" + url + " failed. ";
+			String msg = "HTTP request to URL=" + surl + " failed. ";
 			log.log(Level.WARNING, msg, e);
 			ret.setErrorMessage(msg + e.toString());
 		} finally {
