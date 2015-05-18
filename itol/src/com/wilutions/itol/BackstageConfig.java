@@ -18,10 +18,6 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.wilutions.com.ByRef;
-import com.wilutions.com.IDispatch;
-import com.wilutions.com.Missing;
-import com.wilutions.com.Variant;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.Property;
@@ -30,11 +26,6 @@ import com.wilutions.itol.db.PropertyClasses;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
-import com.wilutions.mslib.outlook.Explorer;
-import com.wilutions.mslib.outlook.MAPIFolder;
-import com.wilutions.mslib.outlook.OlFolderDisplayMode;
-import com.wilutions.mslib.outlook._Application;
-import com.wilutions.mslib.outlook._NameSpace;
 
 public class BackstageConfig {
 
