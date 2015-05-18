@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -79,30 +81,46 @@ public class Globals {
 		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" + appDir);
 
-		BackgTask.run(() -> {
-			try {
-				Class<?> clazz = Class.forName(config.serviceFactoryClass);
-				IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
-				issueService = fact.getService(appDir, config.serviceFactoryParams);
+		try {
+			Class<?> clazz = Class.forName(config.serviceFactoryClass);
+			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
+			issueService = fact.getService(appDir, config.serviceFactoryParams);
+		
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
+			issueService.setConfig(config.configProps);
 			
-				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
-				issueService.setConfig(config.configProps);
+			// Initialize in background
+			CountDownLatch cdl =  new CountDownLatch(1);
+			BackgTask.run(() -> {
+				try {
+					if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initializing...");
+					issueService.initialize();
+					if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initialized.");
+					System.out.println("Issue service initialized.");
 				
-				if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initialized.");
-				System.out.println("Issue service initialized.");
-				
-				issueServiceRunning = true;
-				
+					issueServiceRunning = true;
+				}
+				catch (Exception e) {
+					log.log(Level.SEVERE, "Cannot initialize issue service", e);
+				}
+				finally {
+					cdl.countDown();
+				}
+			});
+			
+			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Waiting for initialized service...");
+			cdl.await(10, TimeUnit.SECONDS);
+			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Service initialized=" + issueServiceRunning);
+			
 //				// TEST DIALOG
 //				Platform.runLater(() -> {
 //					DlgTestIssueTaskPane.showAndWait();
 //					System.exit(0);
 //				});
-				
-			} catch (Exception e) {
-				log.log(Level.SEVERE, "Cannot initialize issue service", e);
-			}
-		});
+			
+		} catch (Exception e) {
+			log.log(Level.SEVERE, "Cannot initialize issue service", e);
+		}
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")initIssueService");
 	}
@@ -184,6 +202,7 @@ public class Globals {
 		readData();
 		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams);
 		issueService.setConfig(configProps);
+		issueService.initialize();
 		issueServiceRunning = true;
 	}
 
