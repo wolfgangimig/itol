@@ -324,5 +324,11 @@ public class IssueServiceImpl implements IssueService {
 		return null;
 	}
 
+	@Override
+	public void initialize() {
+		// TODO Auto-generated method stub
+		
+	}
+
 
 }
