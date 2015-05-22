@@ -25,6 +25,15 @@ var mapCustomFieldsToProjects = {
 		"Float1 Fließkomma in project1" : true,
 };
 
+
+// TODO: Names of roles whose members cannot be assignees.
+// Add one line for each role, that does NOT have checked the option 
+// "Issues can be assigned to this role". 
+// Format ... "rolename" : true, 
+var dontAssignIssuesToThisRoles = {
+     "ExampleRoleNameNotAssignee" : true,
+};
+
 /**
  * Maximum number of projects to be read. This value constraints the number of
  * combo box items in the UI.
@@ -367,6 +376,11 @@ var data = {
 	 * Custom fields definitions.
 	 */
 	custom_fields : [],
+	
+	/**
+	 * Map of roles, Key: Role ID, Value : role object.
+	 */
+	roles : {},
 
 	clear : function() {
 		this.projects = {};
@@ -663,6 +677,9 @@ function initialize() {
 
 	if (islinfo) log.log(Level.INFO, "readStatuses");
 	readStatuses(data);
+	
+	if (islinfo) log.log(Level.INFO, "readRoles");
+	readRoles(data);
 
 	config.valid = true;
 	if (islinfo) log.log(Level.INFO, "initialized");
@@ -737,6 +754,24 @@ function readCustomFields(data) {
 
 	if (islfine) log.log(Level.FINE, ")readCustomFields");
 	return data.custom_fields;
+}
+
+function readRoles(data) {
+	if (islfine) log.log(Level.FINE, "readRoles(");
+	var rolesResponse = httpClient.get("/roles.json");
+	ddump("rolesResponse", rolesResponse);
+	data.roles = {};
+	for (var i = 0; i < rolesResponse.roles.length; i++) {
+		var role = rolesResponse.roles[i];
+		
+		role = httpClient.get("/roles/" + role.id + ".json").role;
+		data.roles[role.id] = role;
+		
+		role.canAssigneIssuesToThisRole = !dontAssignIssuesToThisRoles[role.name];
+		
+		if (islinfo) log.log(Level.INFO, "role.id=" + role.id + ", .name=" + role.name + ", .canAssigneIssuesToThisRole=" + role.canAssigneIssuesToThisRole);
+	}
+	if (islfine) log.log(Level.FINE, ")readRoles");
 }
 
 function makeCustomFieldPropertyId(cfield) {
@@ -1062,12 +1097,35 @@ function getIssueProjectMemberships(issue) {
 }
 
 function getAssignees(issue) {
+	if (islfine) log.log(Level.FINE, "getAssignees(" + issue);
+	
 	var ret = [ new IdName(-1, "Unassigned") ];
+	
 	var memberships = getIssueProjectMemberships(issue);
 	for (var i = 0; i < memberships.length; i++) {
-		var member = memberships[i].user;
-		ret.push(new IdName(member.id, member.name));
+		
+		ddump("project.memberships[" + i + "]", memberships[i]);
+		
+		var canAssignIssues = true;
+		var roles = memberships[i].roles;
+		if (roles) {
+			for (var j = 0; j < roles.length && canAssignIssues; j++) {
+				var roleId = roles[j].id;
+				var role = data.roles[roleId];
+				if (islfine) log.log(Level.FINE, "role.name=" + role.name + ", canAssigneIssuesToThisRole=" + role.canAssigneIssuesToThisRole);
+				
+				canAssignIssues &= role.canAssigneIssuesToThisRole;
+			}
+		}
+		
+		if (canAssignIssues) {
+			var member = memberships[i].user;
+			ret.push(new IdName(member.id, member.name));
+			if (islfine) log.log(Level.FINE, "add member=" + member.name);
+		}
 	}
+	
+	if (islfine) log.log(Level.FINE, ")getAssignees=" + ret);
 	return ret;
 };
 
