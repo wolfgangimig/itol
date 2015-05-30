@@ -12,8 +12,7 @@ Version 1.4
   issue related to an RSS feed item.
 
 - #17: Slow startup caused Addin to be disabled in Outlook. 
-  Now, ITOL is loaded by the JOA Util Addin and not by Outlook.
-  So the load time is no more tracked by Outlook.
+  ITOL is now added into Windows Autostart folder.
 
 Version 1.3 2015-03-17
 
