@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javafx.application.Platform;
 import javafx.stage.Stage;
 
 import com.wilutions.com.ComException;
@@ -115,9 +116,9 @@ public class IssueApplication extends AddinApplication {
 			
 			if (linkName != null && linkName.length() != 0) {
 				showDocument(linkName);
+				showDocument("http://www.wilutions.com/joa/itol/installed.html");
 			}
 
-			// showDocument("http://www.wilutions.com/joa/itol/installed.html");
 		}
 		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to register Addin", e);
@@ -129,10 +130,15 @@ public class IssueApplication extends AddinApplication {
 		try {
 			instance = this;
 			
-			registerAutostart(false);
+			String linkName = registerAutostart(false);
+			
+			if (linkName != null && linkName.length() != 0) {
+				showDocument("http://www.wilutions.com/joa/itol/uninstalled.html");
+			}
 
 			super.unregister(userNotMachine);
-			// showDocument("http://www.wilutions.com/joa/itol/uninstalled.html");
+			
+			
 		}
 		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to register Addin", e);
