@@ -112,7 +112,7 @@ var config = {
 	/**
 	 * Redmine URL
 	 */
-	url : "http://192.168.0.11",
+	url : "URL to Redmine service, e.g. http://192.168.0.11",
 
 	/**
 	 * API key for authentication.
@@ -659,6 +659,10 @@ function initialize() {
 	}
 
 	data.clear();
+	
+	if (!config.url || !config.url.toLowerCase().startsWith("http")) {
+		throw new IOException("Invalid Redmine URL"); 
+	}
 	
 	if (islinfo) log.log(Level.INFO, "readOrUpdateConfigurationProject");
 	readOrUpdateConfigurationProject();
