@@ -108,15 +108,9 @@ public class Globals {
 				}
 			});
 			
-			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Waiting for initialized service...");
-			cdl.await(10, TimeUnit.SECONDS);
-			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Service initialized=" + issueServiceRunning);
-			
-//				// TEST DIALOG
-//				Platform.runLater(() -> {
-//					DlgTestIssueTaskPane.showAndWait();
-//					System.exit(0);
-//				});
+//			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Waiting for initialized service...");
+//			cdl.await(1, TimeUnit.SECONDS);
+//			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Service initialized=" + issueServiceRunning);
 			
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "Cannot initialize issue service", e);

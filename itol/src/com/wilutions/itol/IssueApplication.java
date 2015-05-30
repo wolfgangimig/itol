@@ -111,7 +111,11 @@ public class IssueApplication extends AddinApplication {
 			instance = this;
 			super.register(userNotMachine, execPath);
 			
-			registerAutostart(true);
+			String linkName = registerAutostart(true);
+			
+			if (linkName != null && linkName.length() != 0) {
+				showDocument(linkName);
+			}
 
 			// showDocument("http://www.wilutions.com/joa/itol/installed.html");
 		}
@@ -141,7 +145,7 @@ public class IssueApplication extends AddinApplication {
 		instance.getHostServices().showDocument(url);
 	}
 
-	private void registerAutostart(boolean registerNotUnregister) {
+	private String registerAutostart(boolean registerNotUnregister) {
 		String exe = RegUtil.getExecPath(IssueApplication.class);
 		if (exe.startsWith("\"")) exe = exe.substring(1);
 		if (exe.endsWith("\"")) exe = exe.substring(0, exe.length() - 1);
@@ -177,6 +181,7 @@ public class IssueApplication extends AddinApplication {
 		// START "" "Issue Tracker for Microsoft Outlook 32bit.exe"
 		// popd
 
+		return exe.toLowerCase().endsWith("exe") ? linkName : null;
 	}
 
 	/**
