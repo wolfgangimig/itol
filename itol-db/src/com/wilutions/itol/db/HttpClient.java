@@ -106,7 +106,7 @@ public class HttpClient {
 				if (contentLength >= 0) {
 					conn.setFixedLengthStreamingMode(contentLength);
 				}
-				else {
+				else if (!(content instanceof String)) {
 					conn.setChunkedStreamingMode(9000);
 				}
 
