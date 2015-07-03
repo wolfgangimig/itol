@@ -4,6 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+Version 1.5
+
+- Write exceptions in issue dialog to log file.
+
 Version 1.4 
 
 - #12: Follow redirected URLs.

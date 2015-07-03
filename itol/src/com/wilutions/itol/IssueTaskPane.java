@@ -378,7 +378,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 						initDescription();
 						initNotes();
 					} catch (Throwable e) {
-						e.printStackTrace();
+						log.log(Level.WARNING, "", e);
 						ex = e;
 					}
 				}
@@ -389,7 +389,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			});
 
 		} catch (Throwable e) {
-			e.printStackTrace();
+			log.log(Level.WARNING, "", e);
 			if (asyncResult != null) {
 				asyncResult.setAsyncResult(Boolean.FALSE, e);
 			}
@@ -429,7 +429,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 									// }
 								}
 							} catch (IOException e) {
-								e.printStackTrace();
+								log.log(Level.WARNING, "", e);
 							}
 						}
 					}));
@@ -447,7 +447,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			
 			
 		} catch (Throwable e) {
-			e.printStackTrace();
+			log.log(Level.WARNING, "", e);
 			showMessageBoxError(e.toString());
 		}
 	}
@@ -593,7 +593,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				issue.setPropertyString(propertyId, text);
 			}
 		} catch (Throwable e) {
-			e.printStackTrace();
+			log.log(Level.WARNING, "", e);
 		}
 	}
 
@@ -794,7 +794,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 			}
 		} catch (Throwable e) {
-			e.printStackTrace();
+			log.log(Level.WARNING, "", e);
 		}
 	}
 
@@ -925,7 +925,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			String url = srv.getShowIssueUrl(issue.getId());
 			IssueApplication.showDocument(url);
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.log(Level.WARNING, "", e);
 		}
 	}
 
@@ -999,7 +999,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			try {
 				webView.getEngine().executeScript(scriptToFocusControl);
 			} catch (Throwable e) {
-				e.printStackTrace();
+				log.log(Level.WARNING, "", e);
 			}
 		});
 	}
@@ -1036,7 +1036,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					updateData(false);
 
 				} catch (IOException e) {
-					e.printStackTrace();
+					log.log(Level.WARNING, "", e);
 				}
 			}
 		}
