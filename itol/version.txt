@@ -8,6 +8,11 @@ Version 1.5
 
 - Write exceptions in issue dialog to log file.
 
+- Compile with Java 8u60. 
+  F-Secure alerts a virus for Previous version (Java 8u45). 
+  After submission to f-secure.com accepted as false positive.
+  This version 1.5 is accepted by F-Secure.
+
 Version 1.4 
 
 - #12: Follow redirected URLs.
