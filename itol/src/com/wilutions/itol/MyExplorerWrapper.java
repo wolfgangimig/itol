@@ -1,6 +1,8 @@
 package com.wilutions.itol;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -26,9 +28,13 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 	private long showAtMillis = Long.MAX_VALUE;
 	private final static long SHOW_DELAY_MILLIS = 500;
 	private final Timeline deferShowSelectedItem;
+	private final static Logger log = Logger.getLogger("MyExplorerWrapper");
 
 	public MyExplorerWrapper(Explorer explorer) {
 		super(explorer);
+		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "MyExplorerWrapper(");
+		
 		issuePane = new IssueTaskPane(this);
 
 		deferShowSelectedItem = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
@@ -40,8 +46,11 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 			}
 		}));
 
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "deferShowSelectedItem.play");
 		deferShowSelectedItem.setCycleCount(Timeline.INDEFINITE);
 		deferShowSelectedItem.play();
+		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")MyExplorerWrapper");
 	}
 	
 	@Override

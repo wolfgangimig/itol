@@ -195,7 +195,6 @@ public class ItolAddin extends OutlookAddinEx {
 				e.printStackTrace();
 			}
 		}
-		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")GetCustomUI=" + ui);
 		return ui;
 	}
@@ -226,8 +225,10 @@ public class ItolAddin extends OutlookAddinEx {
 
 	@Override
 	protected ExplorerWrapper createExplorerWrapper(Explorer explorer) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "createExplorerWrapper()");
-		return new MyExplorerWrapper(explorer);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "createExplorerWrapper(");
+		MyExplorerWrapper v = new MyExplorerWrapper(explorer);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")createExplorerWrapper=" + v);
+		return v;
 	}
 
 	@Override

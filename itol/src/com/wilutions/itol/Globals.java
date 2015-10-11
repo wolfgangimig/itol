@@ -72,27 +72,35 @@ public class Globals {
 
 	public static void initIssueService(File appDir) throws IOException {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" + appDir);
+		long t1, t2, t3;
+		
 		Globals.appDir = appDir;
 		Globals.issueServiceRunning = false;
 
+		t1 = System.currentTimeMillis();
 		readData();
+		t2 = System.currentTimeMillis();
 		
 		initLogging();
+		t3 = System.currentTimeMillis();
+		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "readData ms=" + (t2-t1) + ", initLogging ms=" + (t3-t2));
 		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" + appDir);
 
 		try {
-			Class<?> clazz = Class.forName(config.serviceFactoryClass);
-			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
-			issueService = fact.getService(appDir, config.serviceFactoryParams);
-		
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
-			issueService.setConfig(config.configProps);
-			
 			// Initialize in background
 			CountDownLatch cdl =  new CountDownLatch(1);
 			BackgTask.run(() -> {
 				try {
+					if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "getService");
+					Class<?> clazz = Class.forName(config.serviceFactoryClass);
+					IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
+					issueService = fact.getService(appDir, config.serviceFactoryParams);
+				
+					if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
+					issueService.setConfig(config.configProps);
+					
 					if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initializing...");
 					issueService.initialize();
 					if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initialized.");

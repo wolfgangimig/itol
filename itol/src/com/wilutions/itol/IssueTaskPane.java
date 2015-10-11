@@ -167,13 +167,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private Object windowOwner;
 
 	public IssueTaskPane(MyWrapper inspectorOrExplorer) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "IssueTaskPane(");
 		this.inspectorOrExplorer = inspectorOrExplorer;
+		
 		this.mailItem = inspectorOrExplorer.getSelectedItem();
 
 		this.resb = Globals.getResourceBundle();
 		Globals.getRegistry().readFields(this);
 
 		updateIssueFromMailItem(null);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")IssueTaskPane");
 	}
 
 	public void setMailItem(IssueMailItem mailItem) {
@@ -251,6 +254,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void updateIssueFromMailItem(AsyncResult<Boolean> asyncResult) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "updateIssueFromMailItem(");
 
 		final ProgressCallback progressCallback = new MyFakeProgressCallback();
 
@@ -308,6 +312,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 			}
 		});
+		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueFromMailItem");
 	}
 
 	public IssueMailItem getMailItem() {
