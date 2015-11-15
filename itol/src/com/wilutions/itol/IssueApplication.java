@@ -165,7 +165,6 @@ public class IssueApplication extends AddinApplication {
 				if (log.isLoggable(Level.INFO)) log
 						.log(Level.INFO, "Create shortcut=" + linkName + " to " + targetName);
 				
-				// MISSING
 				JoaDll.nativeCreateShortcut(linkName, targetName, description);
 			}
 			catch (Throwable e) {
