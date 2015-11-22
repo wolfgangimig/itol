@@ -203,7 +203,7 @@ public class Globals {
 		writeData();
 		readData();
 		issueService = new IssueServiceFactory_JS().getService(appDir, config.serviceFactoryParams);
-		issueService.setConfig(configProps);
+		issueService.setConfig(config.configProps);
 		issueService.initialize();
 		issueServiceRunning = true;
 	}
