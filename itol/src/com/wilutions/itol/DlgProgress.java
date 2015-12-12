@@ -14,6 +14,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import com.sun.istack.internal.logging.Logger;
+import com.wilutions.itol.db.ProgressCallback;
+import com.wilutions.itol.db.ProgressCallbackImpl;
+import com.wilutions.joa.fx.ModalDialogFX;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -24,11 +29,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-
-import com.sun.istack.internal.logging.Logger;
-import com.wilutions.itol.db.ProgressCallback;
-import com.wilutions.itol.db.ProgressCallbackImpl;
-import com.wilutions.joa.fx.ModalDialogFX;
 
 public class DlgProgress extends ModalDialogFX<Boolean> implements Initializable {
 
@@ -144,9 +144,9 @@ public class DlgProgress extends ModalDialogFX<Boolean> implements Initializable
 		return progressCallback;
 	}
 
-	public ProgressCallback startProgress(long totalBytes) {
-		this.progressCallback = new MyProgressCallback("Create issue");
-		this.progressCallback.setTotal(totalBytes);
+	public ProgressCallback startProgress(String name, long total) {
+		this.progressCallback = new MyProgressCallback(name);
+		this.progressCallback.setTotal(total);
 		return progressCallback;
 	}
 

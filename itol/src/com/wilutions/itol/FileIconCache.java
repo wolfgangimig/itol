@@ -19,6 +19,9 @@ public class FileIconCache {
 		if (p >= 0) {
 			ext = fname.substring(p);
 		}
+		else {
+			ext = "." + fname;
+		}
 		return ext.toLowerCase();
 	}
 
@@ -35,6 +38,11 @@ public class FileIconCache {
 		// }
 
 		return icon;
+	}
+	
+	public static Image getFileIcon(String ext) {
+		ext = getFileExt(ext);
+		return getFileIcon(new File("x", ext));
 	}
 
 	public static Image getFileIcon(File file) {

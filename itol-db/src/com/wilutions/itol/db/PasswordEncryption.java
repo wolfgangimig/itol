@@ -10,22 +10,18 @@
  */
 package com.wilutions.itol.db;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
-
 public class PasswordEncryption {
 
 	private final static String IV = "happynewyearh201";
 	private final static String encryptionKey = "18afc39c755144a9";
 
-	public static String encrypt(String plainText) throws IOException {
+	public static String encrypt(String plainText) {
 		try {
 			byte[] data = plainText.getBytes("UTF-8");
 			if (data.length % 16 != 0) {
@@ -39,11 +35,11 @@ public class PasswordEncryption {
 			return bytesToString(cipher.doFinal(data));
 		}
 		catch (Throwable e) {
-			throw new IOException(e);
+			throw new IllegalStateException(e);
 		}
 	}
 
-	public static String decrypt(String cipherText) throws IOException {
+	public static String decrypt(String cipherText) {
 		try {
 			Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
 			SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
@@ -51,7 +47,7 @@ public class PasswordEncryption {
 			return new String(cipher.doFinal(stringToBytes(cipherText)), "UTF-8").trim();
 		}
 		catch (Throwable e) {
-			throw new IOException(e);
+			throw new IllegalStateException(e);
 		}
 	}
 

@@ -10,25 +10,23 @@
  */
 package com.wilutions.itol;
 
-import java.io.IOException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javafx.util.Callback;
-
+import com.wilutions.com.AsyncResult;
 import com.wilutions.com.CoClass;
 import com.wilutions.com.ComException;
-import com.wilutions.com.Dispatch;
-import com.wilutions.com.IDispatch;
+import com.wilutions.itol.db.Property;
 import com.wilutions.joa.DeclAddin;
 import com.wilutions.joa.LoadBehavior;
 import com.wilutions.joa.OfficeApplication;
-import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.ExplorerWrapper;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
 import com.wilutions.joa.outlook.ex.Wrapper;
+import com.wilutions.joa.ribbon.RibbonButton;
+import com.wilutions.joa.ribbon.RibbonToggleButton;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.outlook.Explorer;
@@ -40,161 +38,114 @@ import com.wilutions.mslib.outlook.OlObjectClass;
 public class ItolAddin extends OutlookAddinEx {
 
 	private AttachmentHttpServer httpServer = new AttachmentHttpServer();
-	private BackstageConfig backstageConfig = new BackstageConfig();
 	private Logger log = Logger.getLogger("ItolAddin");
+	private ResourceBundle resb;
+
+	RibbonButton bnNewIssue = new RibbonButton();
+	RibbonButton bnConnect = new RibbonButton();
+	RibbonToggleButton bnMsg = new RibbonToggleButton();
+	RibbonToggleButton bnMhtml = new RibbonToggleButton();
+	RibbonToggleButton bnRtf = new RibbonToggleButton();
 
 	public ItolAddin() {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "ItolAddin(");
 		Globals.setThisAddin(this);
-		// httpServer.start();
+		resb = Globals.getResourceBundle();
+		initRibbonControls();
+
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")ItolAddin");
 	}
 
-	public void onLoadRibbon(IRibbonUI ribbon) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "onLoadRibbon(");
-		super.onLoadRibbon(ribbon);
-		this.backstageConfig.onLoadRibbon(ribbon);
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")onLoadRibbon");
-	}
+	private void initRibbonControls() {
 
-	public String EditBox_getText(IRibbonControl control) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "EditBox_getText(");
-		String ret = "";
-		String controlId = control.getId();
-		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
-			ret = backstageConfig.EditBox_getText(control);
-		}
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")EditBox_getText=" + ret);
-		return ret;
-	}
+		getRibbonControls().group("grpIssue", resb.getString("Ribbon.grpIssue"));
 
-	public void EditBox_onChange(IRibbonControl control, String text) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "EditBox_onChange(" + text);
-		String controlId = control.getId();
-		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
-			backstageConfig.EditBox_onChange(control, text);
-		}
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")ditBox_onChange");
-	}
-
-	public void Button_onAction(IRibbonControl control, Boolean pressed) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "Button_onAction(" + pressed);
-		String controlId = control.getId();
-		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
-			backstageConfig.Button_onAction(control);
-		}
-		else if (controlId.equals("NewIssue")) {
-			newIssue(control, pressed);
-		}
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")Button_onAction");
-	}
-
-	private void newIssue(IRibbonControl control, Boolean pressed) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "newIssue(");
-		forContextWrapper(control, (context) -> {
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "for context=" + context);
-			if (Globals.isIssueServiceRunning()) {
-				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "setIssueTaskPaneVisible(" + pressed + ")");
-				((MyWrapper)context).setIssueTaskPaneVisible(pressed);
-			}
-			else if (pressed) {
-				ResourceBundle resb = Globals.getResourceBundle();
-				Object owner = context.getWrappedObject();
-				String msg = resb.getString("Error.NotConnected");
-				log.log(Level.SEVERE, msg);
-				MessageBox.show(owner, resb.getString("MessageBox.title.error"), msg, null);
-			}
-			return true;
+		bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
+		bnNewIssue.setImage("Alert-icon-32.png");
+		bnNewIssue.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
+			newIssue(control, context, pressed);
 		});
+
+		///////////////////////
+		// Configure
+
+		getRibbonControls().group("grpConnect", resb.getString("Ribbon.Connect"));
+
+		// Connect
+
+		bnConnect = getRibbonControls().button("bnConnect", resb.getString("Ribbon.bnConnect"));
+		bnConnect.setImage("Connect32.png");
+		bnConnect.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
+			onConnect(control, context, null);
+		});
+
+		// Attach Mail as
+
+		getRibbonControls().group("grpAttachMailAs", resb.getString("Ribbon.AttachMailAs"));
+
+		Property msgFileType = Globals.getConfigProperty(Property.MSG_FILE_TYPE);
+		if (msgFileType == null) {
+			msgFileType = new Property(".msg", "Outlook (.msg)");
+		}
+
+		bnMsg = getRibbonControls().toggleButton("bnMsg", "Outlook (.msg)");
+		bnMsg.setImage("File.msg");
+		bnMsg.setPressed(msgFileType.getId().equals(".msg"));
+		bnMsg.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
+			onAddMailFormatChanged(control, context, pressed);
+		});
+
+		bnMhtml = getRibbonControls().toggleButton("bnMhtml", "MIME HTML (.mhtml)");
+		bnMhtml.setImage("File.mhtml");
+		bnMhtml.setPressed(msgFileType.getId().equals(".mhtml"));
+		bnMhtml.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
+			onAddMailFormatChanged(control, context, pressed);
+		});
+
+		bnRtf = getRibbonControls().toggleButton("bnRtf", "Rich Text Format (.rtf)");
+		bnRtf.setImage("File.rtf");
+		bnRtf.setPressed(msgFileType.getId().equals(".rtf"));
+		bnRtf.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
+			onAddMailFormatChanged(control, context, pressed);
+		});
+	}
+
+	private void newIssue(IRibbonControl control, Wrapper context, Boolean pressed) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "newIssue(");
+
+		if (Globals.isIssueServiceRunning()) {
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "setIssueTaskPaneVisible(" + pressed + ")");
+			((MyWrapper) context).setIssueTaskPaneVisible(pressed);
+		}
+		else if (pressed) {
+			onConnect(control, context, (succ, ex) -> {
+				if (ex != null) {
+					ResourceBundle resb = Globals.getResourceBundle();
+					Object owner = context.getWrappedObject();
+					String msg = resb.getString("Error.NotConnected");
+					log.log(Level.SEVERE, msg, ex);
+					msg += "\n" + ex.getMessage();
+					MessageBox.error(owner, msg, null);
+				}
+				else if (succ != null && succ) {
+					((MyWrapper) context).setIssueTaskPaneVisible(pressed);
+				}
+			});
+		}
+		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")newIssue");
 	}
 
-	public boolean Button_getEnabled(IRibbonControl control) {
-		forContextWrapper(control, null);
-		return true;
-	}
-
-	public boolean Button_getVisible(IRibbonControl control) {
-		forContextWrapper(control, null);
-		return true;
-	}
-
-	public boolean Button_getPressed(IRibbonControl control) {
-		Boolean ret = forContextWrapper(control, (wrapper) -> {
-			return ((MyWrapper)wrapper).isIssueTaskPaneVisible();
-		});
-		return ret != null ? ret : false;
-	}
-
-	public String Button_getLabel(IRibbonControl control) {
-		String text = forContextWrapper(control, (context) -> {
-			String localResId = "";
-			String controlId = control.getId();
-			switch (controlId) {
-			case "NewIssue":
-				localResId = "Ribbon.NewIssue";
-				break;
-			default:
-			}
-			String str = "";
-			if (!localResId.isEmpty()) {
-				str = Globals.getResourceBundle().getString(localResId);
-			}
-			return str;
-		});
-		return text != null ? text : "";
-	}
-
-	public String ComboBox_getText(IRibbonControl control) {
-		String ret = "";
-		String controlId = control.getId();
-		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
-			ret = backstageConfig.ComboBox_getText(control);
-		}
-		System.out.println("ComboBox_getText id=" + control.getId() + ", text=" + ret);
-		return ret;
-	}
-
-	public int ComboBox_getItemCount(IRibbonControl control) {
-		int ret = 0;
-		String controlId = control.getId();
-		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
-			ret = backstageConfig.ComboBox_getItemCount(control);
-		}
-		System.out.println("ComboBox_getItemCount id=" + control.getId() + ", ret=" + ret);
-		return ret;
-	}
-
-	public String ComboBox_getItemLabel(IRibbonControl control, Integer idx) {
-		String ret = "";
-		String controlId = control.getId();
-		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
-			ret = backstageConfig.ComboBox_getItemLabel(control, idx);
-		}
-		System.out.println("ComboBox_getItemLabel id=" + control.getId() + ", idx=" + idx + ", ret=" + ret);
-		return ret;
-	}
-
-	public void ComboBox_onChange(IRibbonControl control, String text) {
-		String controlId = control.getId();
-		if (controlId.startsWith(BackstageConfig.CONTROL_ID_PREFIX)) {
-			backstageConfig.ComboBox_onChange(control, text);
-		}
-		System.out.println("ComboBox_onChange id=" + control.getId() + ", text=" + text);
+	public void onConnect(IRibbonControl control, Wrapper context, AsyncResult<Boolean> asyncResult) {
+		DlgConnect dlg = new DlgConnect();
+		Object owner = context.getWrappedObject();
+		dlg.showAsync(owner, asyncResult);
 	}
 
 	@Override
 	public String GetCustomUI(String ribbonId) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "GetCustomUI(" + ribbonId);
 		String ui = super.GetCustomUI(ribbonId);
-		if (ribbonId.equals("Microsoft.Outlook.Explorer")) {
-			try {
-				ui = backstageConfig.getCustomUI(ui);
-			}
-			catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")GetCustomUI=" + ui);
 		return ui;
 	}
@@ -263,37 +214,19 @@ public class ItolAddin extends OutlookAddinEx {
 		return explorerWrapper;
 	}
 
-	private <T> T forContextWrapper(IRibbonControl control, Callback<Wrapper, T> call) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "forContextWrapper(");
-
-		T ret = null;
-		Wrapper wrapper = null;
-
-		IDispatch dispContext = control.getContext();
-		if (dispContext != null && !dispContext.equals(Dispatch.NULL)) {
-			if (dispContext.is(Inspector.class)) {
-				Inspector inspector = dispContext.as(Inspector.class);
-				wrapper = (Wrapper) getInspectorWrapper(inspector);
-				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "inspector wrapper=" + wrapper);
-			}
-			else if (dispContext.is(Explorer.class)) {
-				Explorer explorer = dispContext.as(Explorer.class);
-				wrapper = (Wrapper) getMyExplorerWrapper(explorer);
-				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "explorer wrapper=" + wrapper);
-			}
-
-			if (wrapper != null) {
-				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addRibbonControl");
-				wrapper.addRibbonControl(control);
-				if (call != null) {
-					if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "call");
-					ret = call.call(wrapper);
+	private void onAddMailFormatChanged(IRibbonControl control, Wrapper context, Boolean pressed) {
+		// if (pressed != null && pressed)
+		{
+			String controlId = control.getId();
+			RibbonButton[] cbs = new RibbonButton[] { bnMsg, bnMhtml, bnRtf };
+			for (int i = 0; i < cbs.length; i++) {
+				boolean p = cbs[i].getId().equals(controlId);
+				cbs[i].setPressed(p);
+				if (!p) {
+					getRibbon().InvalidateControl(cbs[i].getId());
 				}
 			}
 		}
-
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")forContextWrapper=" + ret);
-		return ret;
 	}
 
 }

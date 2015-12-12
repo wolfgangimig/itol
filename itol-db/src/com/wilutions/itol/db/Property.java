@@ -70,6 +70,13 @@ public class Property {
 	 */
 	public static final String NOTES = "IssueProperty.Notes";
 	
+	
+	public static final String URL = "url";
+	public static final String USER_NAME = "userName";
+	public static final String PASSWORD = "password";
+	public static final String API_KEY = "apiKey";
+	public static final String MSG_FILE_TYPE = "msgFileType";
+
 	public static final String LOG_FILE = "Log.file";
 	
 	public static final String LOG_LEVEL = "Log.level";

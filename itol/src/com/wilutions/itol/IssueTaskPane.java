@@ -19,6 +19,26 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.wilutions.com.AsyncResult;
+import com.wilutions.com.BackgTask;
+import com.wilutions.com.ComException;
+import com.wilutions.fx.AutoCompletions;
+import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.IdName;
+import com.wilutions.itol.db.Issue;
+import com.wilutions.itol.db.IssueHtmlEditor;
+import com.wilutions.itol.db.IssueService;
+import com.wilutions.itol.db.ProgressCallback;
+import com.wilutions.itol.db.ProgressCallbackImpl;
+import com.wilutions.itol.db.Property;
+import com.wilutions.itol.db.PropertyClass;
+import com.wilutions.joa.fx.MessageBox;
+import com.wilutions.joa.fx.TaskPaneFX;
+import com.wilutions.joa.outlook.ex.InspectorWrapper;
+import com.wilutions.mslib.office.CustomTaskPane;
+import com.wilutions.mslib.office.IRibbonUI;
+import com.wilutions.mslib.office._CustomTaskPane;
+
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -39,6 +59,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tab;
@@ -46,6 +69,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -53,27 +77,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
+import javafx.util.Callback;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
-
-import com.wilutions.com.AsyncResult;
-import com.wilutions.com.BackgTask;
-import com.wilutions.com.ComException;
-import com.wilutions.itol.db.Attachment;
-import com.wilutions.itol.db.IdName;
-import com.wilutions.itol.db.Issue;
-import com.wilutions.itol.db.IssueHtmlEditor;
-import com.wilutions.itol.db.IssueService;
-import com.wilutions.itol.db.ProgressCallback;
-import com.wilutions.itol.db.ProgressCallbackImpl;
-import com.wilutions.itol.db.Property;
-import com.wilutions.itol.db.PropertyClass;
-import com.wilutions.joa.fx.MessageBox;
-import com.wilutions.joa.fx.TaskPaneFX;
-import com.wilutions.joa.outlook.ex.InspectorWrapper;
-import com.wilutions.mslib.office.CustomTaskPane;
-import com.wilutions.mslib.office.IRibbonUI;
-import com.wilutions.mslib.office._CustomTaskPane;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
@@ -101,7 +107,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private ChoiceBox<IdName> cbTracker;
 	@FXML
-	private ChoiceBox<IdName> cbProject;
+	private ComboBox<IdName> cbProject;
 	@FXML
 	private ChoiceBox<IdName> cbPriority;
 	@FXML
@@ -169,7 +175,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public IssueTaskPane(MyWrapper inspectorOrExplorer) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "IssueTaskPane(");
 		this.inspectorOrExplorer = inspectorOrExplorer;
-		
+
 		this.mailItem = inspectorOrExplorer.getSelectedItem();
 
 		this.resb = Globals.getResourceBundle();
@@ -193,19 +199,20 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		Platform.runLater(() -> {
 
-				detectIssueModifiedStop();
+			detectIssueModifiedStop();
 
-				updateIssueFromMailItem((succ, ex) -> {
-					if (succ) {
-						Platform.runLater(() -> {
-							try {
-								initialUpdate();
-							} catch (Exception e) {
-								log.log(Level.SEVERE, "initialUpdate failed", e);
-							}
-						});
-					}
-				});
+			updateIssueFromMailItem((succ, ex) -> {
+				if (succ) {
+					Platform.runLater(() -> {
+						try {
+							initialUpdate();
+						}
+						catch (Exception e) {
+							log.log(Level.SEVERE, "initialUpdate failed", e);
+						}
+					});
+				}
+			});
 
 		});
 	}
@@ -230,7 +237,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			fakeProgressTimer.setCycleCount(Timeline.INDEFINITE);
 			fakeProgressTimer.play();
 		}
-		
+
 		private synchronized void syncSetProgress(double q) {
 			if (!finished) {
 				internalSetProgress(q);
@@ -275,7 +282,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 					// read issue
 					issue = srv.readIssue(issueId);
-				} else {
+				}
+				else {
 
 					// ... no issue ID: create blank issue
 					String defaultIssueAsString = (String) Globals.getRegistry().read(Globals.REG_defaultIssueAsString);
@@ -289,13 +297,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 				succ = true;
 
-			} catch (Throwable e) {
+			}
+			catch (Throwable e) {
 
 				String text = e.toString();
 				if (text.indexOf("404") >= 0) {
 					text = resb.getString("Error.IssueNotFound");
 					log.log(Level.INFO, text, e);
-				} else {
+				}
+				else {
 					log.log(Level.SEVERE, text, e);
 				}
 
@@ -303,7 +313,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					showMessageBoxError(text);
 				}
 
-			} finally {
+			}
+			finally {
 
 				progressCallback.setFinished();
 
@@ -312,7 +323,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 			}
 		});
-		
+
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueFromMailItem");
 	}
 
@@ -340,7 +351,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		for (Runnable run : resourcesToRelease) {
 			try {
 				run.run();
-			} catch (Throwable ignored) {
+			}
+			catch (Throwable ignored) {
 			}
 		}
 
@@ -369,7 +381,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			// ScenicView.show(scene);
 
 			return scene;
-		} catch (Throwable e) {
+		}
+		catch (Throwable e) {
 			throw new IllegalStateException("Cannot create scene.", e);
 		}
 	}
@@ -383,7 +396,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					try {
 						initDescription();
 						initNotes();
-					} catch (Throwable e) {
+					}
+					catch (Throwable e) {
 						log.log(Level.WARNING, "", e);
 						ex = e;
 					}
@@ -394,7 +408,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 			});
 
-		} catch (Throwable e) {
+		}
+		catch (Throwable e) {
 			log.log(Level.WARNING, "", e);
 			if (asyncResult != null) {
 				asyncResult.setAsyncResult(Boolean.FALSE, e);
@@ -407,15 +422,43 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
 		try {
 
-			cbTracker.valueProperty().addListener(new ComboboxChangeListener(cbTracker, Property.ISSUE_TYPE));
-			cbStatus.valueProperty().addListener(new ComboboxChangeListener(cbStatus, Property.STATUS));
-			cbPriority.valueProperty().addListener(new ComboboxChangeListener(cbPriority, Property.PRIORITY));
-			cbProject.valueProperty().addListener(new ComboboxChangeListener(cbProject, Property.PROJECT));
+			IssueService srv = Globals.getIssueService();
+			PropertyClass pclass = srv.getPropertyClass(Property.PROJECT, issue);
+			List<IdName> allItems = pclass.getSelectList();
+			ArrayList<IdName> recentItems = new ArrayList<IdName>();
+			String recentCaption = resb.getString("cbProject.recentCaption");
+			String suggestionsCaption = resb.getString("cbProject.suggestionsCaption");
+			AutoCompletions.bindAutoCompletion(cbProject, recentCaption, suggestionsCaption, recentItems, allItems);
+
+			cbProject.setCellFactory(new Callback<ListView<IdName>, ListCell<IdName>>() {
+				@Override
+				public ListCell<IdName> call(ListView<IdName> l) {
+					return new ListCell<IdName>() {
+						@Override
+						protected void updateItem(IdName item, boolean empty) {
+							super.updateItem(item, empty);
+							if (item == null || empty) {
+								setGraphic(null);
+								setText(null);
+							}
+							else {
+								ImageView imageView = new ImageView(item.getImage());
+				                setGraphic(imageView);
+				                setText(item.toString());							}
+						}
+					};
+				}
+			});
+
+			cbTracker.valueProperty().addListener(new ComboboxChangeListener(Property.ISSUE_TYPE));
+			cbStatus.valueProperty().addListener(new ComboboxChangeListener(Property.STATUS));
+			cbPriority.valueProperty().addListener(new ComboboxChangeListener(Property.PRIORITY));
+			cbProject.valueProperty().addListener(new ComboboxChangeListener(Property.PROJECT));
 
 			initialUpdate();
 
-			detectIssueModifiedTimer = new Timeline(new KeyFrame(Duration.seconds(0.3),
-					new EventHandler<ActionEvent>() {
+			detectIssueModifiedTimer = new Timeline(
+					new KeyFrame(Duration.seconds(0.3), new EventHandler<ActionEvent>() {
 						@Override
 						public void handle(ActionEvent event) {
 							try {
@@ -426,7 +469,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 									issueCopy = (Issue) issue.clone();
 									// System.out.println("issueCopy=" +
 									// issueCopy.getLastUpdate().getProperties());
-								} else {
+								}
+								else {
 									boolean eq = issue.equals(issueCopy);
 									setModified(!eq);
 									// if (modified) {
@@ -434,14 +478,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 									// issue.getLastUpdate().getProperties());
 									// }
 								}
-							} catch (IOException e) {
+							}
+							catch (IOException e) {
 								log.log(Level.WARNING, "", e);
 							}
 						}
 					}));
 			detectIssueModifiedTimer.setCycleCount(Timeline.INDEFINITE);
 			detectIssueModifiedStart();
-			
+
 			// Press Assign button when called from inspector.
 			if (inspectorOrExplorer instanceof InspectorWrapper) {
 				bnAssignSelection.setSelected(true);
@@ -450,9 +495,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			else {
 				internalSetMailItem(new IssueMailItemBlank());
 			}
-			
-			
-		} catch (Throwable e) {
+
+		}
+		catch (Throwable e) {
 			log.log(Level.WARNING, "", e);
 			showMessageBoxError(e.toString());
 		}
@@ -479,12 +524,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private boolean lockChangeListener;
 
 	private void updateData(boolean saveAndValidate) throws IOException {
-		if (lockChangeListener)
-			return;
+		if (lockChangeListener) return;
 		try {
 			lockChangeListener = true;
 			internalUpdateData(saveAndValidate);
-		} finally {
+		}
+		finally {
 			lockChangeListener = false;
 		}
 	}
@@ -504,13 +549,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			saveChoiceBox(cbPriority, Property.PRIORITY);
 
-			saveChoiceBox(cbProject, Property.PROJECT);
+			// saveChoiceBox(cbProject, Property.PROJECT);
 
 			saveProperties();
 
 			saveAttachments();
 
-		} else {
+		}
+		else {
 
 			initIssueId();
 
@@ -524,7 +570,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initChoiceBox(cbTracker, Property.ISSUE_TYPE);
 
-			initChoiceBox(cbProject, Property.PROJECT);
+			// initChoiceBox(cbProject, Property.PROJECT);
 
 			initChoiceBox(cbPriority, Property.PRIORITY);
 
@@ -566,7 +612,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		if (idn != null && !idn.equals(IdName.NULL)) {
 			Property prop = new Property(propertyId, idn.getId());
 			issue.getLastUpdate().setProperty(prop);
-		} else {
+		}
+		else {
 			issue.getLastUpdate().removeProperty(propertyId);
 		}
 	}
@@ -574,7 +621,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void saveDescription() {
 		if (descriptionHtmlEditor != null) {
 			saveTextFromHtmlEditor(descriptionHtmlEditor, webDescription, Property.DESCRIPTION);
-		} else {
+		}
+		else {
 			String text = edDescription.getHtmlText().trim();
 			issue.setDescription(text);
 		}
@@ -583,7 +631,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void saveNotes() {
 		if (notesHtmlEditor != null) {
 			saveTextFromHtmlEditor(notesHtmlEditor, webNotes, Property.NOTES);
-		} else {
+		}
+		else {
 			String text = edNotes.getHtmlText().trim();
 			issue.setPropertyString(Property.NOTES, text);
 		}
@@ -598,7 +647,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				String text = (String) elm.getMember("value");
 				issue.setPropertyString(propertyId, text);
 			}
-		} catch (Throwable e) {
+		}
+		catch (Throwable e) {
 			log.log(Level.WARNING, "", e);
 		}
 	}
@@ -675,7 +725,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			if (webDescription != null) {
 				descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
 				webDescription.getEngine().loadContent(descriptionHtmlEditor.getHtmlContent());
-			} else {
+			}
+			else {
 				edDescription.setHtmlText(issue.getDescription());
 			}
 		}
@@ -686,7 +737,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			if (webNotes != null) {
 				notesHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.NOTES);
 				webNotes.getEngine().loadContent(notesHtmlEditor.getHtmlContent());
-			} else {
+			}
+			else {
 				edNotes.setHtmlText(issue.getPropertyString(Property.NOTES, ""));
 			}
 		}
@@ -704,7 +756,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				Object propValue = prop.getValue();
 				if (propValue instanceof String) {
 					value = (String) propValue;
-				} else if (propValue instanceof String[]) {
+				}
+				else if (propValue instanceof String[]) {
 					String[] values = (String[]) propValue;
 					if (values.length != 0) {
 						value = values[0];
@@ -765,11 +818,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void addOrRemoveTab(Tab t, boolean add) {
 		if (add) {
 			for (Tab p : tabpIssue.getTabs()) {
-				if (p == t)
-					return;
+				if (p == t) return;
 			}
 			tabpIssue.getTabs().add(t);
-		} else {
+		}
+		else {
 			tabpIssue.getTabs().remove(t);
 		}
 	}
@@ -799,7 +852,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					tabAttachments.getItems().add(att);
 				}
 			}
-		} catch (Throwable e) {
+		}
+		catch (Throwable e) {
 			log.log(Level.WARNING, "", e);
 		}
 	}
@@ -815,7 +869,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				// The attachment is deleted in IssueService.updateIssue().
 				// --- THIS IS CURRENTLY NOT SUPPORTED OVER REDMINE API ---
 				// att.setDeleted(true);
-			} else {
+			}
+			else {
 				issue.getAttachments().remove(att);
 			}
 		}
@@ -866,13 +921,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			String yes = resb.getString("Button.Yes");
 			String no = resb.getString("Button.No");
 			Object owner = getDialogOwner();
-			MessageBox.create(owner).title(title).text(text).button(1, yes).button(0, no).bdefault()
-					.show((btn, ex) -> {
-						Boolean succ = btn != null && btn != 0;
-						asyncResult.setAsyncResult(succ, ex);
-						detectIssueModifiedStart();
-					});
-		} else {
+			MessageBox.create(owner).title(title).text(text).button(1, yes).button(0, no).bdefault().show((btn, ex) -> {
+				Boolean succ = btn != null && btn != 0;
+				asyncResult.setAsyncResult(succ, ex);
+				detectIssueModifiedStart();
+			});
+		}
+		else {
 			asyncResult.setAsyncResult(true, null);
 		}
 	}
@@ -896,10 +951,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					try {
 						IssueMailItem mailItem = inspectorOrExplorer.getSelectedItem();
 						IssueTaskPane.this.setMailItem(mailItem);
-					} catch (Throwable e) {
+					}
+					catch (Throwable e) {
 
 					}
-				} else {
+				}
+				else {
 					bnAssignSelection.setSelected(false);
 				}
 			});
@@ -930,7 +987,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			IssueService srv = Globals.getIssueService();
 			String url = srv.getShowIssueUrl(issue.getId());
 			IssueApplication.showDocument(url);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			log.log(Level.WARNING, "", e);
 		}
 	}
@@ -944,7 +1002,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			if (++idx >= tabpIssue.getTabs().size()) {
 				idx = 0;
 			}
-		} else {
+		}
+		else {
 			idx = 0;
 		}
 		tabpIssue.getSelectionModel().select(idx);
@@ -976,7 +1035,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				try {
 					Thread.sleep(200);
 					setNodeFocusLater(nodeF);
-				} catch (Throwable e) {
+				}
+				catch (Throwable e) {
 				}
 			});
 		}
@@ -989,7 +1049,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					try {
 						Thread.sleep(200);
 						focuseWebViewHtmlEditor((WebView) node, descriptionHtmlEditor);
-					} catch (Exception e) {
+					}
+					catch (Exception e) {
 					}
 				});
 			}
@@ -1004,7 +1065,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			String scriptToFocusControl = "document.getElementById('" + elementId + "').focus()";
 			try {
 				webView.getEngine().executeScript(scriptToFocusControl);
-			} catch (Throwable e) {
+			}
+			catch (Throwable e) {
 				log.log(Level.WARNING, "", e);
 			}
 		});
@@ -1013,12 +1075,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private class ComboboxChangeListener implements ChangeListener<IdName> {
 
 		@SuppressWarnings("unused")
-		final ChoiceBox<IdName> cb;
-		@SuppressWarnings("unused")
 		final String propertyId;
 
-		ComboboxChangeListener(ChoiceBox<IdName> cb, String propertyId) {
-			this.cb = cb;
+		ComboboxChangeListener(String propertyId) {
 			this.propertyId = propertyId;
 		}
 
@@ -1027,10 +1086,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			if (lockChangeListener) {
 				return;
 			}
-			if (oldValue == null)
-				oldValue = IdName.NULL;
-			if (newValue == null)
-				newValue = IdName.NULL;
+			if (oldValue == null) oldValue = IdName.NULL;
+			if (newValue == null) newValue = IdName.NULL;
 			if (!oldValue.equals(newValue)) {
 
 				try {
@@ -1041,7 +1098,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 					updateData(false);
 
-				} catch (IOException e) {
+				}
+				catch (IOException e) {
 					log.log(Level.WARNING, "", e);
 				}
 			}
@@ -1072,7 +1130,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			Platform.runLater(() -> {
 				if (pgProgress != null) {
 					pgProgress.setProgress(quote);
-//					System.out.println("progress " + quote);
+					// System.out.println("progress " + quote);
 				}
 			});
 		}
@@ -1092,7 +1150,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			Platform.runLater(() -> {
 				if (pgProgress != null) {
 					pgProgress.setProgress(0);
-//					System.out.println("progress 0");
+					// System.out.println("progress 0");
 				}
 			});
 		}
@@ -1148,12 +1206,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 							progressCallback.setFinished();
 
-						} catch (Exception e) {
+						}
+						catch (Exception e) {
 							log.log(Level.SEVERE, "Failed to read issue data into UI controls.", e);
 						}
 					});
 
-				} catch (Throwable e) {
+				}
+				catch (Throwable e) {
 
 					if (!progressCallback.isCancelled()) {
 						log.log(Level.SEVERE, "Failed to update issue", e);
@@ -1168,7 +1228,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 			});
 
-		} catch (Throwable e) {
+		}
+		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to update issue", e);
 
 			String text = resb.getString("Error.FailedToUpdateIssue");
@@ -1219,7 +1280,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		try {
 			String str = Globals.getIssueService().getDefaultIssueAsString(issue);
 			Globals.getRegistry().write(Globals.REG_defaultIssueAsString, str);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			showMessageBoxError(e.toString());
 		}
 	}
@@ -1236,7 +1298,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				mailItem.setSubject(newSubject);
 				mailItem.Save();
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			showMessageBoxError(e.toString());
 		}
 	}

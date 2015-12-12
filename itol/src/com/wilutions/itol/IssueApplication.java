@@ -12,33 +12,30 @@ package com.wilutions.itol;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javafx.stage.Stage;
-
 import com.wilutions.com.ComException;
 import com.wilutions.com.JoaDll;
 import com.wilutions.com.reg.RegUtil;
-import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.impl.IssueServiceFactory_JS;
 import com.wilutions.joa.AddinApplication;
+
+import javafx.stage.Stage;
 
 public class IssueApplication extends AddinApplication {
 
 	private static Logger log = Logger.getLogger(IssueApplication.class.getName());
 
 	static {
-		Config config = Globals.getConfig();
+		AppInfo config = Globals.getAppInfo();
 		// config.appName = "Issue Tracker for Microsoft Outlook " +
 		// System.getProperty("sun.arch.data.model") + "bit";
-		config.appName = "Issue Tracker for Microsoft Outlook and Redmine";
-		config.manufacturerName = "WILUTIONS";
-		config.serviceFactoryClass = IssueServiceFactory_JS.class.getName();
-		config.serviceFactoryParams = Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT);
-		config.configProps = new ArrayList<Property>(0);
+		config.setAppName("Issue Tracker for Microsoft Outlook and Redmine");
+		config.setManufacturerName("WILUTIONS");
+		config.setServiceFactoryClass(IssueServiceFactory_JS.class.getName());
+		config.setServiceFactoryParams(Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT));
 	}
 
 	public static File getAppDir() {
@@ -53,23 +50,25 @@ public class IssueApplication extends AddinApplication {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "parseCommandLine(");
 		boolean finished = super.parseCommandLine(args);
 		if (!finished) {
-			initIssueService();
+			try {
+				initIssueService();
+			}
+			catch (IOException e) {
+				throw e;
+			}
+			catch (Throwable e) {
+				throw new IOException(e);
+			}
 		}
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")parseCommandLine=" + finished);
 		return finished;
 	}
 
-	private void initIssueService() {
+	private void initIssueService() throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(");
 		File appDir = getAppDir();
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "appDir=" + appDir);
-		try {
-			Globals.initIssueService(appDir);
-		}
-		catch (Throwable e) {
-			e.printStackTrace();
-			log.severe(e.toString());
-		}
+		Globals.initIssueService(appDir, true);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")initIssueService");
 	}
 
@@ -110,9 +109,9 @@ public class IssueApplication extends AddinApplication {
 		try {
 			instance = this;
 			super.register(userNotMachine, execPath);
-			
+
 			String linkName = registerAutostart(true);
-			
+
 			if (linkName != null && linkName.length() != 0) {
 				showDocument(linkName);
 				showDocument("http://www.wilutions.com/joa/itol/installed.html");
@@ -128,16 +127,15 @@ public class IssueApplication extends AddinApplication {
 	protected void unregister(boolean userNotMachine) {
 		try {
 			instance = this;
-			
+
 			String linkName = registerAutostart(false);
-			
+
 			if (linkName != null && linkName.length() != 0) {
 				showDocument("http://www.wilutions.com/joa/itol/uninstalled.html");
 			}
 
 			super.unregister(userNotMachine);
-			
-			
+
 		}
 		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to register Addin", e);
@@ -162,9 +160,9 @@ public class IssueApplication extends AddinApplication {
 			try {
 				String targetName = exe;
 				String description = "";
-				if (log.isLoggable(Level.INFO)) log
-						.log(Level.INFO, "Create shortcut=" + linkName + " to " + targetName);
-				
+				if (log.isLoggable(Level.INFO))
+					log.log(Level.INFO, "Create shortcut=" + linkName + " to " + targetName);
+
 				JoaDll.nativeCreateShortcut(linkName, targetName, description);
 			}
 			catch (Throwable e) {
@@ -211,6 +209,6 @@ public class IssueApplication extends AddinApplication {
 
 		return path;
 	}
-	
+
 	private final static String AUTOSTART_FOLDER = "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup";
 }

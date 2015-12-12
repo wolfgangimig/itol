@@ -12,6 +12,8 @@ package com.wilutions.itol.db;
 
 import java.io.Serializable;
 
+import javafx.scene.image.Image;
+
 public class IdName implements Serializable {
 	
 	private static final long serialVersionUID = 5993942030314036816L;
@@ -21,6 +23,8 @@ public class IdName implements Serializable {
 	private String id;
 	
 	private String name;
+	
+	private Image image;
 
 	public IdName(String id, String name) {
 		this.id = id;
@@ -35,6 +39,12 @@ public class IdName implements Serializable {
 	public IdName(int id, String name) {
 		this.id = String.valueOf(id);
 		this.name = name;
+	}
+
+	public IdName(String id, String name, Image image) {
+		this.id = id;
+		this.name = name;
+		this.image = image;
 	}
 
 	public IdName() {
@@ -57,6 +67,10 @@ public class IdName implements Serializable {
 
 	public String getName() {
 		return name;
+	}
+	
+	public Image getImage() {
+		return image;
 	}
 
 	@Override

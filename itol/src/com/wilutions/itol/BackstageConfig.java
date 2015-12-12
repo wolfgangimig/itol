@@ -304,7 +304,7 @@ public class BackstageConfig {
 		this.ribbon.Invalidate();
 	}
 
-	private void onSave() throws IOException {
+	private void onSave() throws Exception {
 		Globals.setConfig(configProps);
 		IdName currentUser = Globals.getIssueService().getCurrentUser();
 		MessageBox.show(getOwnerWindow(), "OK", "Configuration saved and connection re-initialized. "

@@ -36,6 +36,8 @@ public class HttpClient {
 	
 	private static HashMap<String,String> redirections = new HashMap<>();
 	
+	public final static int CONNECT_TIMEOUT_SECONDS = 10;
+	
 	static
 	{
 		// see #12 "handshake alert: unrecognized_name"
@@ -72,6 +74,9 @@ public class HttpClient {
 		try {
 			URL url = new URL(surl);
 			conn = (HttpURLConnection) (url.openConnection());
+			
+			conn.setConnectTimeout(CONNECT_TIMEOUT_SECONDS * 1000);
+			
 			conn.setRequestMethod(method);
 			conn.setDoOutput(content != null);
 			//conn.setInstanceFollowRedirects(false);

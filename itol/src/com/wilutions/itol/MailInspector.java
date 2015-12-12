@@ -25,15 +25,12 @@ import com.wilutions.mslib.outlook.MailItem;
 public class MailInspector extends InspectorWrapper implements MyWrapper {
 
 	private final IssueTaskPane issuePane;
-	private final IssueHistoryTaskPane_off historyPane;
 	private Map<String, IRibbonControl> ribbonControls = new HashMap<String, IRibbonControl>();
 
 	public MailInspector(Inspector inspector, IDispatch currentItem) throws ComException, IOException {
 		super(inspector, currentItem);
 
 		issuePane = new IssueTaskPane(this);
-		historyPane = new IssueHistoryTaskPane_off(this, null);
-
 	}
 	
 	@Override
@@ -66,20 +63,10 @@ public class MailInspector extends InspectorWrapper implements MyWrapper {
 		return issuePane.hasWindow() && issuePane.isVisible();
 	}
 
-	public void setHistoryTaskPaneVisible(boolean visible) {
-		if (!historyPane.hasWindow() && visible) {
-			Globals.getThisAddin().createTaskPaneWindowAsync(historyPane, "Issue History", inspector, null);
-		}
-		historyPane.setVisible(visible);
-	}
-
 	@Override
 	public void onClose() throws ComException {
 		if (issuePane != null) {
 			issuePane.close();
-		}
-		if (historyPane != null) {
-			historyPane.close();
 		}
 		ribbonControls.clear();
 		super.onClose();
