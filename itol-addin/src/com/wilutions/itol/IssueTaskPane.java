@@ -22,7 +22,10 @@ import java.util.logging.Logger;
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
-import com.wilutions.fx.AutoCompletions;
+import com.wilutions.fx.acpl.AutoCompletionBinding;
+import com.wilutions.fx.acpl.AutoCompletions;
+import com.wilutions.fx.acpl.DefaultSuggest;
+import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
@@ -60,8 +63,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tab;
@@ -69,7 +70,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.image.ImageView;
+import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -77,7 +78,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
-import javafx.util.Callback;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
 
@@ -105,11 +105,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private MenuItem bnShowIssueInBrowser;
 	@FXML
-	private ChoiceBox<IdName> cbTracker;
+	private ComboBox<IdName> cbTracker;
 	@FXML
 	private ComboBox<IdName> cbProject;
 	@FXML
-	private ChoiceBox<IdName> cbPriority;
+	private ComboBox<IdName> cbPriority;
 	@FXML
 	private Tab tpDescription;
 	@FXML
@@ -148,6 +148,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private CheckMenuItem mnInjectIssueIdIntoSubject;
 	@FXML
 	private ProgressBar pgProgress;
+
+	private AutoCompletionBinding<IdName> autoCompletionProject;
+	private AutoCompletionBinding<IdName> autoCompletionTracker;
+	private AutoCompletionBinding<IdName> autoCompletionPriority;
 
 	private boolean tabAttachmentsApplyHandler = true;
 
@@ -423,37 +427,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		try {
 
 			IssueService srv = Globals.getIssueService();
-			PropertyClass pclass = srv.getPropertyClass(Property.PROJECT, issue);
-			List<IdName> allItems = pclass.getSelectList();
-			ArrayList<IdName> recentItems = new ArrayList<IdName>();
-			String recentCaption = resb.getString("cbProject.recentCaption");
-			String suggestionsCaption = resb.getString("cbProject.suggestionsCaption");
-			AutoCompletions.bindAutoCompletion(cbProject, recentCaption, suggestionsCaption, recentItems, allItems);
+			autoCompletionProject = initAutoComplete(srv, cbProject, Property.PROJECT);
+			autoCompletionTracker = initAutoComplete(srv, cbTracker, Property.ISSUE_TYPE);
+			autoCompletionPriority = initAutoComplete(srv, cbPriority, Property.PRIORITY);
 
-			cbProject.setCellFactory(new Callback<ListView<IdName>, ListCell<IdName>>() {
-				@Override
-				public ListCell<IdName> call(ListView<IdName> l) {
-					return new ListCell<IdName>() {
-						@Override
-						protected void updateItem(IdName item, boolean empty) {
-							super.updateItem(item, empty);
-							if (item == null || empty) {
-								setGraphic(null);
-								setText(null);
-							}
-							else {
-								ImageView imageView = new ImageView(item.getImage());
-				                setGraphic(imageView);
-				                setText(item.toString());							}
-						}
-					};
-				}
-			});
-
-			cbTracker.valueProperty().addListener(new ComboboxChangeListener(Property.ISSUE_TYPE));
+			// cbTracker.valueProperty().addListener(new
+			// ComboboxChangeListener(Property.ISSUE_TYPE));
 			cbStatus.valueProperty().addListener(new ComboboxChangeListener(Property.STATUS));
-			cbPriority.valueProperty().addListener(new ComboboxChangeListener(Property.PRIORITY));
-			cbProject.valueProperty().addListener(new ComboboxChangeListener(Property.PROJECT));
 
 			initialUpdate();
 
@@ -503,6 +483,30 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
+	private AutoCompletionBinding<IdName> initAutoComplete(IssueService srv, ComboBox<IdName> cb, String propertyId)
+			throws IOException {
+		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
+		List<IdName> allItems = pclass != null ? pclass.getSelectList() : new ArrayList<IdName>();
+		
+		ArrayList<IdName> recentItems = null;
+		if (propertyId.equals(Property.PROJECT)) {
+			recentItems = new ArrayList<IdName>();
+		}
+		
+		String recentCaption = resb.getString("autocomplete.recentCaption");
+		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
+
+		AutoCompletionBinding<IdName> ret = AutoCompletions.bindAutoCompletion(new ExtractImage<IdName>() {
+			public Image getImage(IdName item) {
+				return item.getImage();
+			}
+		}, cb, recentCaption, suggestionsCaption, recentItems, allItems);
+
+		cb.valueProperty().addListener(new ComboboxChangeListener(propertyId));
+
+		return ret;
+	}
+
 	private void detectIssueModifiedStop() {
 		if (detectIssueModifiedTimer != null) {
 			detectIssueModifiedTimer.stop();
@@ -543,13 +547,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			saveNotes();
 
-			saveChoiceBox(cbTracker, Property.ISSUE_TYPE);
+			saveComboBox(cbProject, Property.PROJECT);
+
+			saveComboBox(cbTracker, Property.ISSUE_TYPE);
 
 			saveChoiceBox(cbStatus, Property.STATUS);
 
-			saveChoiceBox(cbPriority, Property.PRIORITY);
-
-			// saveChoiceBox(cbProject, Property.PROJECT);
+			saveComboBox(cbPriority, Property.PRIORITY);
 
 			saveProperties();
 
@@ -568,11 +572,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initNotes();
 
-			initChoiceBox(cbTracker, Property.ISSUE_TYPE);
+			initAutoComplete(autoCompletionProject, Property.PROJECT);
 
-			// initChoiceBox(cbProject, Property.PROJECT);
+			initAutoComplete(autoCompletionTracker, Property.ISSUE_TYPE);
 
-			initChoiceBox(cbPriority, Property.PRIORITY);
+			initAutoComplete(autoCompletionPriority, Property.PRIORITY);
 
 			initChoiceBox(cbStatus, Property.STATUS);
 
@@ -608,6 +612,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void saveChoiceBox(ChoiceBox<IdName> cb, String propertyId) {
+		IdName idn = cb.getValue();
+		if (idn != null && !idn.equals(IdName.NULL)) {
+			Property prop = new Property(propertyId, idn.getId());
+			issue.getLastUpdate().setProperty(prop);
+		}
+		else {
+			issue.getLastUpdate().removeProperty(propertyId);
+		}
+	}
+
+	private void saveComboBox(ComboBox<IdName> cb, String propertyId) {
 		IdName idn = cb.getValue();
 		if (idn != null && !idn.equals(IdName.NULL)) {
 			Property prop = new Property(propertyId, idn.getId());
@@ -654,7 +669,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void saveSubject() {
-		issue.setSubject(edSubject.getText().trim());
+		String text = edSubject.getText().trim();
+		if (issue != null) {
+			issue.setSubject(text);
+		}
 	}
 
 	private void initHistory() throws IOException {
@@ -740,6 +758,27 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			}
 			else {
 				edNotes.setHtmlText(issue.getPropertyString(Property.NOTES, ""));
+			}
+		}
+	}
+
+	private void initAutoComplete(AutoCompletionBinding<IdName> autoCompletionBinding, String propertyId)
+			throws IOException {
+		IssueService srv = Globals.getIssueService();
+		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
+		if (pclass != null) {
+			List<IdName> items = pclass.getSelectList();
+			autoCompletionBinding.setSuggest(new DefaultSuggest<IdName>(items));
+		
+			Property prop = issue.getLastUpdate().getProperty(propertyId);
+			if (prop != null) {
+				String id = (String)prop.getValue();
+				for (IdName idn : items) {
+					if (idn.getId().equals(id)) {
+						autoCompletionBinding.getComboBox().getSelectionModel().select(idn);
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -1086,8 +1125,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			if (lockChangeListener) {
 				return;
 			}
+
 			if (oldValue == null) oldValue = IdName.NULL;
 			if (newValue == null) newValue = IdName.NULL;
+
 			if (!oldValue.equals(newValue)) {
 
 				try {
@@ -1099,7 +1140,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					updateData(false);
 
 				}
-				catch (IOException e) {
+				catch (Throwable e) {
 					log.log(Level.WARNING, "", e);
 				}
 			}

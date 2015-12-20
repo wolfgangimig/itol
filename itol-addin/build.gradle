@@ -1,0 +1,46 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.8
+version = '1.0'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+            srcDir 'src-gen'
+        }
+        resources {
+            srcDir 'res'
+        }
+    }
+}
+
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Quickstart',
+                   'Implementation-Version': version
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+	compile project(":itol-db")
+	compile project(":joa")
+}
+
+test {
+    systemProperties 'property': 'value'
+}
+
+uploadArchives {
+    repositories {
+       flatDir {
+           dirs 'repos'
+       }
+    }
+}

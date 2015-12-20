@@ -13,8 +13,8 @@ package com.wilutions.itol;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
-import com.sun.istack.internal.logging.Logger;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackImpl;
 import com.wilutions.joa.fx.ModalDialogFX;
@@ -32,7 +32,7 @@ import javafx.scene.control.ProgressBar;
 
 public class DlgProgress extends ModalDialogFX<Boolean> implements Initializable {
 
-	private static Logger log = Logger.getLogger(DlgProgress.class);
+	//private static Logger log = Logger.getLogger("DlgProgress");
 	private volatile ProgressCallback progressCallback;
 	private volatile boolean cancelled = false;
 

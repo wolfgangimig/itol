@@ -1,0 +1,104 @@
+.rootgrid {
+	-fx-background-color: WHITE;
+}
+
+.vboxRoot {
+	-fx-background-color: WHITE;
+}
+
+.button {
+    -fx-background-color: WHITE;
+    -fx-border-color: DARKGREY;
+}
+.button:hover {
+    -fx-background-color: rgb(205,230,247);
+    -fx-border-color: DARKGREY;
+}
+.button:pressed {
+    -fx-background-color: rgb(146,192,224);
+    -fx-border-color: DARKGREY;
+}
+
+.toggle-button {
+    -fx-background-color: WHITE;
+    -fx-border-color: DARKGREY;
+}
+
+.toggle-button:hover {
+    -fx-background-color: rgb(205,230,247);
+    -fx-border-color: DARKGREY;
+}
+
+.menu-button {
+    -fx-background-color: WHITE;
+    -fx-border-color: DARKGREY;
+}
+.toggle-button:hover {
+    -fx-background-color: rgb(205,230,247);
+    -fx-border-color: DARKGREY;
+}
+.toggle-button:selected {
+    -fx-background-color: rgb(205,230,247);
+    -fx-border-color: DARKGREY;
+}
+
+.split-menu-button {
+    -fx-background-color: WHITE;
+    -fx-border-color: DARKGREY;
+}
+.split-menu-button:hover {
+    -fx-background-color: rgb(205,230,247);
+    -fx-border-color: DARKGREY;
+}
+
+
+.dlgProgress {
+	-fx-background-color: WHITE;
+}
+
+.scroll-pane > .viewport  { 
+	-fx-background-color: WHITE;
+	-fx-border-color: LIGHTGREY;
+}
+
+.tab-pane {
+	-fx-background-color: WHITE;
+}
+
+.tab {
+	-fx-background-color: WHITE;
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: WHITE;
+}
+
+
+.tab-pane .tab:selected .tab-label
+{
+    -fx-text-fill: BLUE;
+}
+
+.tab-pane .tab-label {
+	/*
+	-fx-text-fill: BLUE;
+	*/
+}
+
+.descriptionEditor {
+}
+
+.tbbuttons {
+	-fx-background-color: WHITE;
+}
+
+.tooltip {
+    -fx-background: WHITE;
+    -fx-text-fill: BLACK;
+    -fx-background-color: WHITE;
+    -fx-background-radius: 0px;
+    -fx-background-insets: 0;
+    -fx-padding: 0.667em 0.75em 0.667em 0.75em; /* 10px */
+    -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.5) , 10, 0.0 , 0 , 3 );
+    -fx-font-size: 1.0em;
+}

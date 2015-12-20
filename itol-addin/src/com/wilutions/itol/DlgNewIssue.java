@@ -23,6 +23,7 @@ public class DlgNewIssue extends ModalDialogFX<Boolean> {
 		this.modal = false;
 	}
 
+	@SuppressWarnings("deprecation")
 	public void show(Explorer explorer) throws IOException {
 		
 		if (modal) {

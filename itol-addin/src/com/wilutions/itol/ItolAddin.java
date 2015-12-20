@@ -26,6 +26,7 @@ import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
 import com.wilutions.joa.outlook.ex.Wrapper;
 import com.wilutions.joa.ribbon.RibbonButton;
+import com.wilutions.joa.ribbon.RibbonControls;
 import com.wilutions.joa.ribbon.RibbonToggleButton;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
@@ -58,7 +59,9 @@ public class ItolAddin extends OutlookAddinEx {
 
 	private void initRibbonControls() {
 
-		getRibbonControls().group("grpIssue", resb.getString("Ribbon.grpIssue"));
+		RibbonControls ribbonControls = getRibbonControls();
+		String grpName = resb.getString("Ribbon.grpIssue");
+		ribbonControls.group("grpIssue", grpName);
 
 		bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
 		bnNewIssue.setImage("Alert-icon-32.png");

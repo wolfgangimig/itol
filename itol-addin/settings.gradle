@@ -1,0 +1,5 @@
+
+includeFlat "itol-db"
+
+include ("joa") 
+project(":joa").projectDir = new File("$settingsDir/../../joa/java/joa")

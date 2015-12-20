@@ -69,8 +69,8 @@
                </font>
             </TextField>
             <ComboBox fx:id="cbProject" maxWidth="1.7976931348623157E308" GridPane.rowIndex="2" />
-            <ChoiceBox fx:id="cbTracker" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-            <ChoiceBox fx:id="cbPriority" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+            <ComboBox fx:id="cbTracker" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <ComboBox fx:id="cbPriority" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" GridPane.rowIndex="2" />
             <VBox spacing="10.0" GridPane.columnSpan="3" GridPane.rowIndex="3">
                <children>
                   <TabPane fx:id="tabpIssue" prefHeight="270.0" prefWidth="621.0" tabClosingPolicy="UNAVAILABLE" GridPane.columnSpan="3" GridPane.rowIndex="3" VBox.vgrow="ALWAYS">

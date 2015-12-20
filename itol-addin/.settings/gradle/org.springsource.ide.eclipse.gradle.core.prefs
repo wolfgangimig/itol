@@ -1,0 +1,5 @@
+#org.springsource.ide.eclipse.gradle.core.preferences.GradleProjectPreferences
+#Sun Dec 13 21:05:30 CET 2015
+build.family.org.gradle.tooling.model.eclipse.HierarchicalEclipseProject=;../../joa/java/joa;../itol-db;
+org.springsource.ide.eclipse.gradle.linkedresources=
+org.springsource.ide.eclipse.gradle.rootprojectloc=../../jirod/itol-jira
