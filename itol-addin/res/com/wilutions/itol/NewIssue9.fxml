@@ -166,7 +166,7 @@
                </children>
             </VBox>
             <Button fx:id="bnNextPage" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onNextPage" text="%Button.NextTab" GridPane.rowIndex="4" GridPane.valignment="TOP" />
-            <ChoiceBox fx:id="cbStatus" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" GridPane.valignment="TOP" />
+            <ComboBox fx:id="cbStatus" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" GridPane.valignment="TOP" />
             <Button fx:id="bnUpdate" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onUpdate" text="%bnUpdate.text.create" textFill="#007800" GridPane.columnIndex="2" GridPane.rowIndex="4">
                <font>
                   <Font name="System Bold" size="18.0" />

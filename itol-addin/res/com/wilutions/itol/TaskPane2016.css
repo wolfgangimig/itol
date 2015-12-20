@@ -7,56 +7,95 @@
 }
 
 .button {
-    -fx-background-color: WHITE;
-    -fx-border-color: DARKGREY;
+	-fx-background-color: WHITE;
+	-fx-border-color: DARKGREY;
 }
+
 .button:hover {
-    -fx-background-color: rgb(205,230,247);
-    -fx-border-color: DARKGREY;
+	-fx-background-color: rgb(205, 230, 247);
 }
+
 .button:pressed {
-    -fx-background-color: rgb(146,192,224);
-    -fx-border-color: DARKGREY;
+	-fx-background-color: rgb(146, 192, 224);
 }
 
 .toggle-button {
-    -fx-background-color: WHITE;
-    -fx-border-color: DARKGREY;
+	-fx-background-color: WHITE;
+	-fx-border-color: DARKGREY;
 }
 
 .toggle-button:hover {
-    -fx-background-color: rgb(205,230,247);
-    -fx-border-color: DARKGREY;
+	-fx-background-color: rgb(205, 230, 247);
+}
+
+.toggle-button:selected {
+	-fx-background-color: rgb(205, 230, 247);
 }
 
 .menu-button {
-    -fx-background-color: WHITE;
-    -fx-border-color: DARKGREY;
+	-fx-background-color: WHITE;
+	-fx-border-color: DARKGREY;
 }
-.toggle-button:hover {
-    -fx-background-color: rgb(205,230,247);
-    -fx-border-color: DARKGREY;
-}
-.toggle-button:selected {
-    -fx-background-color: rgb(205,230,247);
-    -fx-border-color: DARKGREY;
+
+.menu-button:hover {
+	-fx-background-color: rgb(205, 230, 247);
 }
 
 .split-menu-button {
-    -fx-background-color: WHITE;
-    -fx-border-color: DARKGREY;
-}
-.split-menu-button:hover {
-    -fx-background-color: rgb(205,230,247);
-    -fx-border-color: DARKGREY;
+	-fx-background-color: WHITE;
+	-fx-border-color: DARKGREY;
 }
 
+.split-menu-button .arrow-button {
+	-fx-background-color: WHITE;
+}
+
+.split-menu-button .label {
+	-fx-background-color: WHITE;
+}
+
+.split-menu-button .label:hover {
+	-fx-background-color: rgb(205, 230, 247);
+}
+
+.split-menu-button .label:pressed {
+	-fx-background-color: rgb(146, 192, 224);
+}
+
+.progress-bar>.bar {
+	-fx-background-color: rgb(146, 192, 224);
+}
+
+.progress-bar>.track {
+	-fx-background-color: WHITE;
+	-fx-background-radius: 0;
+	-fx-border-color: DARKGREY;
+}
+
+.text-field {
+	-fx-background-color: WHITE;
+	-fx-background-radius: 0;
+	-fx-border-color: DARKGREY;
+}
+
+.combo-box-base {
+	-fx-background-color: WHITE;
+	-fx-background-radius: 0;
+	-fx-border-color: DARKGREY;
+}
+
+.combo-box-base:editable>.text-field, .combo-box-base:editable>.arrow-button
+	{
+	-fx-background-color: WHITE;
+	-fx-background-radius: 0;
+	-fx-border-color: WHITE;
+}
 
 .dlgProgress {
 	-fx-background-color: WHITE;
 }
 
-.scroll-pane > .viewport  { 
+.scroll-pane>.viewport {
 	-fx-background-color: WHITE;
 	-fx-border-color: LIGHTGREY;
 }
@@ -70,22 +109,22 @@
 }
 
 .tab-pane .tab-header-area .tab-header-background {
-    -fx-background-color: WHITE;
+	-fx-background-color: WHITE;
 }
 
-
-.tab-pane .tab:selected .tab-label
-{
-    -fx-text-fill: BLUE;
+.tab-pane .tab:selected .tab-label {
+	-fx-text-fill: BLUE;
 }
 
 .tab-pane .tab-label {
 	/*
 	-fx-text-fill: BLUE;
 	*/
+	
 }
 
 .descriptionEditor {
+	
 }
 
 .tbbuttons {
@@ -93,12 +132,12 @@
 }
 
 .tooltip {
-    -fx-background: WHITE;
-    -fx-text-fill: BLACK;
-    -fx-background-color: WHITE;
-    -fx-background-radius: 0px;
-    -fx-background-insets: 0;
-    -fx-padding: 0.667em 0.75em 0.667em 0.75em; /* 10px */
-    -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.5) , 10, 0.0 , 0 , 3 );
-    -fx-font-size: 1.0em;
+	-fx-background: WHITE;
+	-fx-text-fill: BLACK;
+	-fx-background-color: WHITE;
+	-fx-background-radius: 0px;
+	-fx-background-insets: 0;
+	-fx-padding: 0.667em 0.75em 0.667em 0.75em; /* 10px */
+	-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 10, 0.0, 0, 3);
+	-fx-font-size: 1.0em;
 }

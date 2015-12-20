@@ -61,7 +61,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
@@ -129,7 +128,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private TabPane tabpIssue;
 	@FXML
-	private ChoiceBox<IdName> cbStatus;
+	private ComboBox<IdName> cbStatus;
 	@FXML
 	private Button bnUpdate;
 	@FXML
@@ -152,6 +151,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private AutoCompletionBinding<IdName> autoCompletionProject;
 	private AutoCompletionBinding<IdName> autoCompletionTracker;
 	private AutoCompletionBinding<IdName> autoCompletionPriority;
+	private AutoCompletionBinding<IdName> autoCompletionStatus;
 
 	private boolean tabAttachmentsApplyHandler = true;
 
@@ -380,7 +380,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			Parent p = loader.load();
 
 			Scene scene = new Scene(p);
-			scene.getStylesheets().add(getClass().getResource("TaskPane.css").toExternalForm());
+			scene.getStylesheets().add(getClass().getResource("TaskPane2016.css").toExternalForm());
 
 			// ScenicView.show(scene);
 
@@ -430,10 +430,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			autoCompletionProject = initAutoComplete(srv, cbProject, Property.PROJECT);
 			autoCompletionTracker = initAutoComplete(srv, cbTracker, Property.ISSUE_TYPE);
 			autoCompletionPriority = initAutoComplete(srv, cbPriority, Property.PRIORITY);
-
-			// cbTracker.valueProperty().addListener(new
-			// ComboboxChangeListener(Property.ISSUE_TYPE));
-			cbStatus.valueProperty().addListener(new ComboboxChangeListener(Property.STATUS));
+			autoCompletionPriority = initAutoComplete(srv, cbStatus, Property.STATUS);
 
 			initialUpdate();
 
@@ -551,7 +548,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			saveComboBox(cbTracker, Property.ISSUE_TYPE);
 
-			saveChoiceBox(cbStatus, Property.STATUS);
+			saveComboBox(cbStatus, Property.STATUS);
 
 			saveComboBox(cbPriority, Property.PRIORITY);
 
@@ -578,7 +575,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initAutoComplete(autoCompletionPriority, Property.PRIORITY);
 
-			initChoiceBox(cbStatus, Property.STATUS);
+			initAutoComplete(autoCompletionStatus, Property.STATUS);
 
 			initProperties();
 
@@ -609,17 +606,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void saveProperties() {
 		propGridView.saveProperties(issue);
-	}
-
-	private void saveChoiceBox(ChoiceBox<IdName> cb, String propertyId) {
-		IdName idn = cb.getValue();
-		if (idn != null && !idn.equals(IdName.NULL)) {
-			Property prop = new Property(propertyId, idn.getId());
-			issue.getLastUpdate().setProperty(prop);
-		}
-		else {
-			issue.getLastUpdate().removeProperty(propertyId);
-		}
 	}
 
 	private void saveComboBox(ComboBox<IdName> cb, String propertyId) {
@@ -776,35 +762,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				for (IdName idn : items) {
 					if (idn.getId().equals(id)) {
 						autoCompletionBinding.getComboBox().getSelectionModel().select(idn);
-						break;
-					}
-				}
-			}
-		}
-	}
-
-	private void initChoiceBox(ChoiceBox<IdName> cb, String propertyId) throws IOException {
-		IssueService srv = Globals.getIssueService();
-		Property prop = issue.getLastUpdate().getProperty(propertyId);
-		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
-		if (pclass != null) {
-			List<IdName> items = pclass.getSelectList();
-			cb.setItems(FXCollections.observableArrayList(items));
-			String value = "";
-			if (prop != null) {
-				Object propValue = prop.getValue();
-				if (propValue instanceof String) {
-					value = (String) propValue;
-				}
-				else if (propValue instanceof String[]) {
-					String[] values = (String[]) propValue;
-					if (values.length != 0) {
-						value = values[0];
-					}
-				}
-				for (IdName item : items) {
-					if (item.getId().equals(value)) {
-						cb.setValue(item);
 						break;
 					}
 				}
