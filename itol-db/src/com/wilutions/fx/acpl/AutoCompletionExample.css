@@ -1,0 +1,26 @@
+.custom-text-field {
+	-fx-background-color: WHITE;
+}
+
+.auto-completion-field .arrow {
+    -fx-background-color: WHITE;
+    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+    -fx-padding: 0.333333em 0.666667em 0.333333em 0.666667em; /* 4 8 4 8 */
+    -fx-text-fill: -fx-text-base-color;
+    -fx-alignment: CENTER;
+    -fx-content-display: LEFT;
+} 
+
+.auto-completion-field .arrow:hover {
+    -fx-background-color: GREEN;
+} 
+.auto-completion-field .arrow .graphic {
+    -fx-background-color: -fx-mark-highlight-color, -fx-mark-color;
+    -fx-background-insets: 0 0 -1 0, 0;
+    -fx-padding: 0.25em;
+    -fx-shape: "M 0 -3.5 v 7 l 4 -3.5 z";
+    -fx-rotate: 90;
+    -fx-scale-x: .8;
+    -fx-scale-y: .5;
+} 
+

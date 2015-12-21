@@ -430,7 +430,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			autoCompletionProject = initAutoComplete(srv, cbProject, Property.PROJECT);
 			autoCompletionTracker = initAutoComplete(srv, cbTracker, Property.ISSUE_TYPE);
 			autoCompletionPriority = initAutoComplete(srv, cbPriority, Property.PRIORITY);
-			autoCompletionPriority = initAutoComplete(srv, cbStatus, Property.STATUS);
+			autoCompletionStatus = initAutoComplete(srv, cbStatus, Property.STATUS);
 
 			initialUpdate();
 
@@ -484,12 +484,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			throws IOException {
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
 		List<IdName> allItems = pclass != null ? pclass.getSelectList() : new ArrayList<IdName>();
-		
+
 		ArrayList<IdName> recentItems = null;
 		if (propertyId.equals(Property.PROJECT)) {
 			recentItems = new ArrayList<IdName>();
 		}
-		
+
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
 
@@ -500,6 +500,27 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}, cb, recentCaption, suggestionsCaption, recentItems, allItems);
 
 		cb.valueProperty().addListener(new ComboboxChangeListener(propertyId));
+
+		// AutoCompletionBinding<IdName> ret =
+		// AutoCompletions.createAutoCompletionBinding(new
+		// ExtractImage<IdName>() {
+		// public Image getImage(IdName item) {
+		// return item.getImage();
+		// }
+		// }, recentCaption, suggestionsCaption, recentItems, new
+		// DefaultSuggest<IdName>(allItems));
+		//
+		// GridPane grid = (GridPane)cb.getParent();
+		// List<Node> children = grid.getChildren();
+		// int idx = children.indexOf(cb);
+		// Integer col = GridPane.getColumnIndex(cb);
+		// Integer row = GridPane.getRowIndex(cb);
+		// children.remove(idx);
+		//
+		// Node autoField = ret.getControl().getNode();
+		// children.add(idx, autoField);
+		// GridPane.setColumnIndex(autoField, col);
+		// GridPane.setRowIndex(autoField, row);
 
 		return ret;
 	}
@@ -755,13 +776,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		if (pclass != null) {
 			List<IdName> items = pclass.getSelectList();
 			autoCompletionBinding.setSuggest(new DefaultSuggest<IdName>(items));
-		
+
 			Property prop = issue.getLastUpdate().getProperty(propertyId);
 			if (prop != null) {
-				String id = (String)prop.getValue();
+				String id = (String) prop.getValue();
 				for (IdName idn : items) {
 					if (idn.getId().equals(id)) {
-						autoCompletionBinding.getComboBox().getSelectionModel().select(idn);
+						autoCompletionBinding.getControl().select(idn);
 						break;
 					}
 				}

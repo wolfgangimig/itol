@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import javafx.scene.control.ComboBox;
 
 public class AutoCompletionBinding<T> {
-	private ComboBox<T> comboBox;
+	private AutoCompletionControl<T> control;
 	private String recentCaption;
 	private String suggestionsCaption;
 	private ArrayList<T> recentItems;
@@ -13,12 +13,6 @@ public class AutoCompletionBinding<T> {
 	private ExtractImage<T> extractImage;
 	private boolean lockChangeEvent;
 	
-	public ComboBox<T> getComboBox() {
-		return comboBox;
-	}
-	public void setComboBox(ComboBox<T> comboBox) {
-		this.comboBox = comboBox;
-	}
 	public String getRecentCaption() {
 		return recentCaption;
 	}
@@ -54,6 +48,12 @@ public class AutoCompletionBinding<T> {
 	}
 	public void setLockChangeEvent(boolean lockChangeEvent) {
 		this.lockChangeEvent = lockChangeEvent;
+	}
+	public AutoCompletionControl<T> getControl() {
+		return control;
+	}
+	public void setControl(AutoCompletionControl<T> control) {
+		this.control = control;
 	}
 }
 

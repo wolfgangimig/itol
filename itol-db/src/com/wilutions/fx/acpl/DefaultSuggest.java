@@ -17,6 +17,8 @@ public class DefaultSuggest<T> implements Suggest<T> {
 	 * All items. Passed in the constructor.
 	 */
 	protected Collection<T> allItems;
+	
+	protected Comparator<T> defaultComparator;
 
 	/**
 	 * Constructor.
@@ -26,6 +28,13 @@ public class DefaultSuggest<T> implements Suggest<T> {
 	 */
 	public DefaultSuggest(Collection<T> allItems) {
 		this.allItems = allItems;
+		this.defaultComparator = new Comparator<T>() {
+			public int compare(T o1, T o2) {
+				String s1 = o1.toString().toLowerCase();
+				String s2 = o2.toString().toLowerCase();
+				return s1.compareTo(s2);
+			}
+		};
 	}
 
 	/**
