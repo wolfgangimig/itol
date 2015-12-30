@@ -41,7 +41,8 @@ public class IssueMailItemImpl implements IssueMailItem {
 	@Override
 	public IssueAttachments getAttachments() throws ComException {
 		
-		final Attachments atts = (Attachments)mailItem._get("Attachments");
+		final IDispatch disp = (IDispatch)mailItem._get("Attachments");
+		final Attachments atts = disp.as(Attachments.class);
 		
 		IssueAttachments ret = new IssueAttachments() {
 			

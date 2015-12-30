@@ -24,10 +24,7 @@ import com.wilutions.com.BackgTask;
 import com.wilutions.com.reg.Registry;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
-import com.wilutions.itol.db.PasswordEncryption;
 import com.wilutions.itol.db.Property;
-import com.wilutions.itol.db.PropertyClass;
-import com.wilutions.itol.db.PropertyClasses;
 import com.wilutions.joa.OfficeAddinUtil;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
 
@@ -166,24 +163,11 @@ public class Globals {
 			}
 		}
 
-		// Decrypt passwords
-		for (Property configProp : appInfo.getConfigProps()) {
-			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
-			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
-				try {
-					configProp.setValue(PasswordEncryption.decrypt((String) configProp.getValue()));
-				}
-				catch (Throwable e) {
-					e.printStackTrace();
-				}
-			}
-		}
-
 		// Set default logging options if nessesary
-		String logLevel = getConfigPropertyString(Property.LOG_LEVEL);
-		String logFile = getConfigPropertyString(Property.LOG_FILE);
+		String logLevel = getConfigPropertyString(Property.LOG_LEVEL, "");
+		String logFile = getConfigPropertyString(Property.LOG_FILE, "");
 		if (logLevel.isEmpty()) {
-			Property propLogLevel = new Property(Property.LOG_LEVEL, "SEVERE");
+			Property propLogLevel = new Property(Property.LOG_LEVEL, "INFO");
 			appInfo.getConfigProps().add(propLogLevel);
 		}
 		if (logFile.isEmpty()) {
@@ -195,18 +179,7 @@ public class Globals {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")readData");
 	}
 
-	private static void writeData() {
-		for (Property configProp : appInfo.getConfigProps()) {
-			PropertyClass propClass = PropertyClasses.getDefault().get(configProp.getId());
-			if (propClass != null && propClass.getType() == PropertyClass.TYPE_PASSWORD) {
-				try {
-					configProp.setValue(PasswordEncryption.encrypt((String) configProp.getValue()));
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}
+	public static void writeData() {
 		getRegistry().write(REG_CONFIG, appInfo);
 	}
 
@@ -287,9 +260,27 @@ public class Globals {
 		return ret;
 	}
 
-	private static String getConfigPropertyString(String propId) {
+	public static String getConfigPropertyString(String propId, String defaultValue) {
 		Property prop = getConfigProperty(propId);
-		return prop != null ? (String) prop.getValue() : "";
+		String ret = defaultValue;
+		if (prop != null) {
+			Object value = prop.getValue();
+			if (value != null) {
+				ret = (String)value;
+			}
+		}
+		return ret;
+	}
+
+	public static void setConfigPropertyString(String propId, String value) {
+		Property prop = getConfigProperty(propId);
+		if (prop == null) {
+			prop = new Property(propId, value);
+			appInfo.getConfigProps().add(prop);
+		}
+		else {
+			prop.setValue(value);
+		}
 	}
 
 	public static void initLogging() {
@@ -297,14 +288,8 @@ public class Globals {
 			ClassLoader classLoader = Globals.class.getClassLoader();
 			String logprops = OfficeAddinUtil.getResourceAsString(classLoader, "com/wilutions/itol/logging.properties");
 
-			String logLevel = getConfigPropertyString(Property.LOG_LEVEL);
-			String logFile = getConfigPropertyString(Property.LOG_FILE);
-
-			if (logLevel == null || logLevel.isEmpty()) logLevel = "INFO";
-			if (logFile == null || logFile.isEmpty()) {
-				logFile = File.createTempFile("itol", ".log").getAbsolutePath();
-				logLevel = "FINE";
-			}
+			String logLevel = getConfigPropertyString(Property.LOG_LEVEL, "INFO");
+			String logFile = getConfigPropertyString(Property.LOG_FILE, new File(System.getProperty("java.io.tmpdir"), "itol.log").getAbsolutePath());
 
 			if (logLevel != null && !logLevel.isEmpty() && logFile != null && !logFile.isEmpty()) {
 				logFile = logFile.replace('\\', '/');
@@ -326,4 +311,5 @@ public class Globals {
 		}
 
 	}
+
 }

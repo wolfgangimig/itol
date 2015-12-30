@@ -1,134 +1,80 @@
-.rootgrid {
-	-fx-background-color: WHITE;
-}
-
-.vboxRoot {
-	-fx-background-color: WHITE;
-}
-
-.button {
-	-fx-background-color: WHITE;
-	-fx-border-color: DARKGREY;
-}
-
-.button:hover {
-	-fx-background-color: rgb(205, 230, 247);
-}
-
-.button:pressed {
-	-fx-background-color: rgb(146, 192, 224);
-}
-
-.toggle-button {
-	-fx-background-color: WHITE;
-	-fx-border-color: DARKGREY;
-}
-
-.toggle-button:hover {
-	-fx-background-color: rgb(205, 230, 247);
-}
-
-.toggle-button:selected {
-	-fx-background-color: rgb(205, 230, 247);
-}
-
-.menu-button {
-	-fx-background-color: WHITE;
-	-fx-border-color: DARKGREY;
-}
-
-.menu-button:hover {
-	-fx-background-color: rgb(205, 230, 247);
-}
-
-.split-menu-button {
-	-fx-background-color: WHITE;
-	-fx-border-color: DARKGREY;
-}
-
-.split-menu-button .arrow-button {
-	-fx-background-color: WHITE;
-}
-
-.split-menu-button .label {
-	-fx-background-color: WHITE;
-}
-
-.split-menu-button .label:hover {
-	-fx-background-color: rgb(205, 230, 247);
-}
-
-.split-menu-button .label:pressed {
-	-fx-background-color: rgb(146, 192, 224);
-}
-
-.progress-bar>.bar {
-	-fx-background-color: rgb(146, 192, 224);
-}
-
-.progress-bar>.track {
-	-fx-background-color: WHITE;
+.root {
+	-fx-background: WHITE;
+	-fx-body-color: WHITE;
+	-fx-shadow-highlight-color: WHITE;
+	-fx-outer-border: WHITE;
+	-fx-inner-border: WHITE;
 	-fx-background-radius: 0;
 	-fx-border-color: DARKGREY;
+	-fx-hover-base: rgb(205, 230, 247);
+	-fx-focused-edit-base: rgb(0, 114, 198);
+	-fx-pressed-base: rgb(146, 192, 224);
+	-fx-focused-button-base: rgb(146, 192, 224);
 }
 
-.text-field {
-	-fx-background-color: WHITE;
-	-fx-background-radius: 0;
+.button, .toggle-button, .radio-button>.radio, .check-box>.box,
+	.menu-button, .split-menu-button, .choice-box, .color-picker.split-button>.color-picker-label,
+	.combo-box-base, .text-field {
+	-fx-background: WHITE;
 	-fx-border-color: DARKGREY;
 }
 
-.combo-box-base {
-	-fx-background-color: WHITE;
-	-fx-background-radius: 0;
-	-fx-border-color: DARKGREY;
-}
-
-.combo-box-base:editable>.text-field, .combo-box-base:editable>.arrow-button
-	{
-	-fx-background-color: WHITE;
-	-fx-background-radius: 0;
+.combo-box-base:editable>.text-field, .date-picker>.text-field {
 	-fx-border-color: WHITE;
 }
 
-.dlgProgress {
+.button:hover,
+.toggle-button:hover,
+.radio-button:hover > .radio,
+.check-box:hover > .box,
+.menu-button:hover,
+.slider .thumb:hover,
+.scroll-bar > .thumb:hover,
+.scroll-bar > .increment-button:hover, 
+.scroll-bar > .decrement-button:hover,
+.choice-box:hover,
+.color-picker.split-button > .arrow-button:hover,
+.color-picker.split-button > .color-picker-label:hover,
+.combo-box-base:editable > .arrow-button:hover,
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover,
+.tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:hover {
+    -fx-background-color: -fx-hover-base;
+    -fx-border-color: -fx-focused-button-base;
+} 
+
+.split-menu-button > .label:hover,
+.split-menu-button > .arrow-button:hover {
+    -fx-background-color: -fx-hover-base;
+}
+
+.text-field, .combo-box-base:editable {
 	-fx-background-color: WHITE;
 }
 
-.scroll-pane>.viewport {
-	-fx-background-color: WHITE;
-	-fx-border-color: LIGHTGREY;
+.button:focused,
+.toggle-button:focused,
+.radio-button:focused > .radio,
+.check-box:focused > .box,
+.menu-button:focused,
+.slider .thumb:focused,
+.scroll-bar > .thumb:focused,
+.scroll-bar > .increment-button:focused, 
+.scroll-bar > .decrement-button:focused,
+.choice-box:focused,
+.color-picker.split-button > .arrow-button:focused,
+.color-picker.split-button > .color-picker-label:focused,
+.combo-box-base:editable > .arrow-button:focused,
+.spinner .increment-arrow-button:focused,
+.spinner .decrement-arrow-button:focused,
+.tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:focused {
+	-fx-border-color: -fx-focused-button-base;
+	-fx-background-radius: 0;
 }
-
-.tab-pane {
-	-fx-background-color: WHITE;
-}
-
-.tab {
-	-fx-background-color: WHITE;
-}
-
-.tab-pane .tab-header-area .tab-header-background {
-	-fx-background-color: WHITE;
-}
-
-.tab-pane .tab:selected .tab-label {
-	-fx-text-fill: BLUE;
-}
-
-.tab-pane .tab-label {
-	/*
-	-fx-text-fill: BLUE;
-	*/
 	
-}
-
-.descriptionEditor {
-	
-}
-
-.tbbuttons {
-	-fx-background-color: WHITE;
+.text-field:focused, .combo-box-base:editable:focused {
+	-fx-border-color: -fx-focused-edit-base;
+	-fx-background-radius: 0;
 }
 
 .tooltip {

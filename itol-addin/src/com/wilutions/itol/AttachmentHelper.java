@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
+import com.wilutions.itol.db.Property;
 import com.wilutions.mslib.outlook.OlSaveAsType;
 
 public class AttachmentHelper {
@@ -42,27 +44,31 @@ public class AttachmentHelper {
 	private void initialUpdateNewIssue(Issue issue) throws IOException {
 
 		if (mailItem.getBody().length() != 0) {
+			String ext = getConfigMsgFileExt(MsgFileTypes.NOTHING);
 
-			MailAtt mailAtt = new MailAtt(mailItem);
-			issue.getAttachments().add(mailAtt);
+			if (!ext.equals(MsgFileTypes.NOTHING.getId())) {
+				
+				MailAtt mailAtt = new MailAtt(mailItem, ext);
+				issue.getAttachments().add(mailAtt);
 
-			String ext = Globals.getIssueService().getMsgFileType();
-			OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
+				OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
 
-			if (!MsgFileTypes.isContainerFormat(saveAsType)) {
-				IssueAttachments mailAtts = mailItem.getAttachments();
-				int n = mailAtts.getCount();
-				for (int i = 1; i <= n; i++) {
-					com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
-					MailAttAtt attatt = new MailAttAtt(matt);
-					issue.getAttachments().add(attatt);
+				if (!MsgFileTypes.isContainerFormat(saveAsType)) {
+					IssueAttachments mailAtts = mailItem.getAttachments();
+					int n = mailAtts.getCount();
+					for (int i = 1; i <= n; i++) {
+						com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
+						MailAttAtt attatt = new MailAttAtt(matt);
+						issue.getAttachments().add(attatt);
+					}
 				}
 			}
 		}
 	}
-	
+
 	public Attachment makeMailAttachment(IssueMailItem mailItem) throws IOException {
-		MailAtt mailAtt = new MailAtt(mailItem);
+		String ext = getConfigMsgFileExt(MsgFileTypes.NOTHING);
+		MailAtt mailAtt = new MailAtt(mailItem, ext);
 		return mailAtt;
 	}
 
@@ -70,7 +76,8 @@ public class AttachmentHelper {
 		for (Runnable run : resourcesToRelease) {
 			try {
 				run.run();
-			} catch (Throwable ignored) {
+			}
+			catch (Throwable ignored) {
 			}
 		}
 		if (__tempDir != null) {
@@ -171,7 +178,8 @@ public class AttachmentHelper {
 			File f = save();
 			try {
 				return new FileInputStream(f);
-			} catch (FileNotFoundException e) {
+			}
+			catch (FileNotFoundException e) {
 				return null;
 			}
 		}
@@ -196,17 +204,18 @@ public class AttachmentHelper {
 	}
 
 	/**
-	 * Issue attachment for mail.
-	 * Must be public, otherwise it cannot be viewed in the table.
+	 * Issue attachment for mail. Must be public, otherwise it cannot be viewed
+	 * in the table.
 	 */
 	public class MailAtt extends Attachment {
 
 		private final IssueMailItem mailItem;
+		private final String ext;
 
-		private MailAtt(IssueMailItem mailItem) throws IOException {
+		private MailAtt(IssueMailItem mailItem, String ext) {
 			this.mailItem = mailItem;
+			this.ext = ext;
 
-			String ext = Globals.getIssueService().getMsgFileType();
 			OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
 			String msgFileName = MsgFileTypes.makeMsgFileName(mailItem.getSubject(), saveAsType);
 			File msgFile = new File(getTempDir(), msgFileName);
@@ -222,7 +231,8 @@ public class AttachmentHelper {
 			File f = save();
 			try {
 				return new FileInputStream(f);
-			} catch (FileNotFoundException e) {
+			}
+			catch (FileNotFoundException e) {
 				return null;
 			}
 		}
@@ -245,7 +255,6 @@ public class AttachmentHelper {
 
 				if (getContentLength() < 0) {
 
-					String ext = Globals.getIssueService().getMsgFileType();
 					OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
 
 					resourcesToRelease.add(() -> msgFile.delete());
@@ -256,7 +265,8 @@ public class AttachmentHelper {
 					super.setContentLength(msgFile.length());
 					super.setUrl(getFileUrl(msgFile));
 				}
-			} catch (IOException e) {
+			}
+			catch (Exception e) {
 				e.printStackTrace();
 			}
 
@@ -283,11 +293,17 @@ public class AttachmentHelper {
 			InputStream ret = null;
 			try {
 				ret = new FileInputStream(file);
-			} catch (FileNotFoundException e) {
+			}
+			catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
 			return ret;
 		}
 
+	}
+
+	private static String getConfigMsgFileExt(IdName defaultMsgFileExt) {
+		String ext = Globals.getConfigPropertyString(Property.MSG_FILE_TYPE, defaultMsgFileExt.getId());
+		return ext;
 	}
 }

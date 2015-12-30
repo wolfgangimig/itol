@@ -16,9 +16,27 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import com.wilutions.itol.db.IdName;
 import com.wilutions.mslib.outlook.OlSaveAsType;
 
 public class MsgFileTypes {
+	
+	/**
+	 * Do not attach mail.
+	 */
+	public final static IdName NOTHING = new IdName("", "");
+	/**
+	 * Attach mail as MSG.
+	 */
+	public final static IdName MSG = new IdName(".msg", "Outlook (.msg)");
+	/**
+	 * Attach mail as MHTML.
+	 */
+	public final static IdName MHTML = new IdName(".mhtml", "MIME HTML (.mhtml)");
+	/**
+	 * Attach mail as RTF.
+	 */
+	public final static IdName RTF = new IdName(".rtf", "Rich Text Format (.rtf)");
 
 	/**
 	 * File extensions in relation to OlSaveAsType

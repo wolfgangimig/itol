@@ -380,7 +380,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			Parent p = loader.load();
 
 			Scene scene = new Scene(p);
-			scene.getStylesheets().add(getClass().getResource("TaskPane2016.css").toExternalForm());
+			scene.getStylesheets().add(getClass().getResource("TaskPane.css").toExternalForm());
 
 			// ScenicView.show(scene);
 
@@ -771,6 +771,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initAutoComplete(AutoCompletionBinding<IdName> autoCompletionBinding, String propertyId)
 			throws IOException {
+		if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "initAutoComplete " + propertyId);
 		IssueService srv = Globals.getIssueService();
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
 		if (pclass != null) {
@@ -797,9 +798,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		initalUpdateAttachmentView();
 
 		// Show/Hide History and Notes
-		addOrRemoveTab(tpHistory, !isNew());
 		addOrRemoveTab(tpNotes, !isNew());
-		tabpIssue.getSelectionModel().select(tpDescription);
+		addOrRemoveTab(tpHistory, !isNew());
+		tabpIssue.getSelectionModel().select(isNew() ? tpDescription : tpHistory);
 
 		bnShowIssueInBrowser.setDisable(isNew());
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
@@ -837,7 +838,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			for (Tab p : tabpIssue.getTabs()) {
 				if (p == t) return;
 			}
-			tabpIssue.getTabs().add(t);
+			tabpIssue.getTabs().add(0, t);
 		}
 		else {
 			tabpIssue.getTabs().remove(t);

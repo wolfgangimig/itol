@@ -75,6 +75,24 @@
                <children>
                   <TabPane fx:id="tabpIssue" prefHeight="270.0" prefWidth="621.0" tabClosingPolicy="UNAVAILABLE" GridPane.columnSpan="3" GridPane.rowIndex="3" VBox.vgrow="ALWAYS">
                     <tabs>
+                        <Tab fx:id="tpHistory" text="%tpHistory.text">
+                           <content>
+                              <HBox spacing="10.0">
+                                 <children>
+                                    <WebView fx:id="webHistory" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                        <Tab fx:id="tpNotes" text="%tpNotes.text">
+                           <content>
+                              <HBox fx:id="hboxNotes">
+                                 <children>
+                                    <HTMLEditor fx:id="edNotes" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="251.0" prefWidth="211.0" HBox.hgrow="ALWAYS" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
                       <Tab text="%tpDescription.text">
                            <content>
                               <HBox fx:id="hboxDescription">
@@ -140,24 +158,6 @@
                                  <padding>
                                     <Insets left="1.0" right="1.0" />
                                  </padding>
-                              </HBox>
-                           </content>
-                        </Tab>
-                        <Tab fx:id="tpHistory" text="%tpHistory.text">
-                           <content>
-                              <HBox spacing="10.0">
-                                 <children>
-                                    <WebView fx:id="webHistory" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
-                                 </children>
-                              </HBox>
-                           </content>
-                        </Tab>
-                        <Tab fx:id="tpNotes" text="%tpNotes.text">
-                           <content>
-                              <HBox fx:id="hboxNotes">
-                                 <children>
-                                    <HTMLEditor fx:id="edNotes" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="251.0" prefWidth="211.0" HBox.hgrow="ALWAYS" />
-                                 </children>
                               </HBox>
                            </content>
                         </Tab>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<customUI onLoad="onLoadRibbon"
+	xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+
+	<ribbon>
+		<tabs>
+			<tab idMso="TabMail">
+				<group id="grpIssue" getLabel="Ribbon_getLabel">
+					<!-- Icon from http://www.doublejdesign.co.uk http://www.iconarchive.com/show/childish-icons-by-double-j-design.html -->
+					<toggleButton id="bnNewIssue" size="large" getLabel="Ribbon_getLabel"
+						onAction="Ribbon_onAction" getEnabled="Ribbon_getEnabled"
+						getVisible="Ribbon_getVisible" getImage="Ribbon_getImage"
+						getPressed="Ribbon_getPressed" />
+				</group>
+			</tab>
+			<tab id="ItolTab" label="Redmine Addin">
+
+				<group id="grpConnect" getLabel="Ribbon_getLabel">
+					<button id="bnConnect" getImage="Ribbon_getImage" size="large"
+						getLabel="Ribbon_getLabel" onAction="Ribbon_onAction" />
+				</group>
+
+				<group id="grpAttachMailAs" getLabel="Ribbon_getLabel">
+					<toggleButton id="bnMsg" getImage="Ribbon_getImage"
+						getLabel="Ribbon_getLabel" getPressed="Ribbon_getPressed"
+						onAction="Ribbon_onAction" />
+					<toggleButton id="bnMhtml" getImage="Ribbon_getImage"
+						getLabel="Ribbon_getLabel" getPressed="Ribbon_getPressed"
+						onAction="Ribbon_onAction" />
+					<toggleButton id="bnRtf" getImage="Ribbon_getImage"
+						getLabel="Ribbon_getLabel" getPressed="Ribbon_getPressed"
+						onAction="Ribbon_onAction" />
+				</group>
+			</tab>
+		</tabs>
+	</ribbon>
+
+
+
+</customUI>
+
+

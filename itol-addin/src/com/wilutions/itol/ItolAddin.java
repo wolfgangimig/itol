@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.CoClass;
 import com.wilutions.com.ComException;
+import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Property;
 import com.wilutions.joa.DeclAddin;
 import com.wilutions.joa.LoadBehavior;
@@ -52,6 +53,9 @@ public class ItolAddin extends OutlookAddinEx {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "ItolAddin(");
 		Globals.setThisAddin(this);
 		resb = Globals.getResourceBundle();
+
+		getIconManager().addPackageAsResourceDirectory(ItolAddin.class);
+
 		initRibbonControls();
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")ItolAddin");
@@ -86,28 +90,25 @@ public class ItolAddin extends OutlookAddinEx {
 
 		getRibbonControls().group("grpAttachMailAs", resb.getString("Ribbon.AttachMailAs"));
 
-		Property msgFileType = Globals.getConfigProperty(Property.MSG_FILE_TYPE);
-		if (msgFileType == null) {
-			msgFileType = new Property(".msg", "Outlook (.msg)");
-		}
+		String msgFileTypeId = Globals.getConfigPropertyString(Property.MSG_FILE_TYPE, MsgFileTypes.MSG.getId());
 
-		bnMsg = getRibbonControls().toggleButton("bnMsg", "Outlook (.msg)");
+		bnMsg = getRibbonControls().toggleButton("bnMsg", MsgFileTypes.MSG.getName());
 		bnMsg.setImage("File.msg");
-		bnMsg.setPressed(msgFileType.getId().equals(".msg"));
+		bnMsg.setPressed(msgFileTypeId.equals(MsgFileTypes.MSG.getId()));
 		bnMsg.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
 			onAddMailFormatChanged(control, context, pressed);
 		});
 
-		bnMhtml = getRibbonControls().toggleButton("bnMhtml", "MIME HTML (.mhtml)");
+		bnMhtml = getRibbonControls().toggleButton("bnMhtml", MsgFileTypes.MHTML.getName());
 		bnMhtml.setImage("File.mhtml");
-		bnMhtml.setPressed(msgFileType.getId().equals(".mhtml"));
+		bnMhtml.setPressed(msgFileTypeId.equals(MsgFileTypes.MHTML.getId()));
 		bnMhtml.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
 			onAddMailFormatChanged(control, context, pressed);
 		});
 
-		bnRtf = getRibbonControls().toggleButton("bnRtf", "Rich Text Format (.rtf)");
+		bnRtf = getRibbonControls().toggleButton("bnRtf", MsgFileTypes.RTF.getName());
 		bnRtf.setImage("File.rtf");
-		bnRtf.setPressed(msgFileType.getId().equals(".rtf"));
+		bnRtf.setPressed(msgFileTypeId.equals(MsgFileTypes.RTF.getId()));
 		bnRtf.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
 			onAddMailFormatChanged(control, context, pressed);
 		});
@@ -135,14 +136,11 @@ public class ItolAddin extends OutlookAddinEx {
 				}
 			});
 		}
-		
+
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")newIssue");
 	}
 
-	public void onConnect(IRibbonControl control, Wrapper context, AsyncResult<Boolean> asyncResult) {
-		DlgConnect dlg = new DlgConnect();
-		Object owner = context.getWrappedObject();
-		dlg.showAsync(owner, asyncResult);
+	protected void onConnect(IRibbonControl control, Wrapper context, AsyncResult<Boolean> asyncResult) {
 	}
 
 	@Override
@@ -218,18 +216,25 @@ public class ItolAddin extends OutlookAddinEx {
 	}
 
 	private void onAddMailFormatChanged(IRibbonControl control, Wrapper context, Boolean pressed) {
-		// if (pressed != null && pressed)
-		{
+		RibbonButton[] cbs = new RibbonButton[] { bnMsg, bnMhtml, bnRtf };
+		if (pressed) {
 			String controlId = control.getId();
-			RibbonButton[] cbs = new RibbonButton[] { bnMsg, bnMhtml, bnRtf };
+			IdName[] fileTypes = new IdName[] { MsgFileTypes.MSG, MsgFileTypes.MHTML, MsgFileTypes.RTF };
 			for (int i = 0; i < cbs.length; i++) {
 				boolean p = cbs[i].getId().equals(controlId);
-				cbs[i].setPressed(p);
-				if (!p) {
+				if (p) {
+					Globals.setConfigPropertyString(Property.MSG_FILE_TYPE, fileTypes[i].getId());
+				}
+				else {
+					cbs[i].setPressed(false);
 					getRibbon().InvalidateControl(cbs[i].getId());
 				}
 			}
 		}
+		else {
+			Globals.setConfigPropertyString(Property.MSG_FILE_TYPE, MsgFileTypes.NOTHING.getId());
+		}
+		Globals.writeData();
 	}
 
 }

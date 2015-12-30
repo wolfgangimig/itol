@@ -275,12 +275,6 @@ public class IssueServiceImpl implements IssueService {
 		return null;
 	}
 
-	@Override
-	public String getMsgFileType() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	public DescriptionTextEditor getDescriptionTextEditor(Issue issue)
 			throws IOException {
 		// TODO Auto-generated method stub

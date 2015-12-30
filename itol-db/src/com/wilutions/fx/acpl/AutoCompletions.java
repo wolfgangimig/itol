@@ -16,6 +16,7 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
@@ -46,32 +47,6 @@ public class AutoCompletions {
 	 * Display at most 3 recent items.
 	 */
 	public static final int NB_OF_RECENT_ITEMS = 3;
-
-	// public static <T> AutoCompletionBinding<T>
-	// bindAutoCompletion(ExtractImage<T> extractImage, AutoCompletionControl<T>
-	// control,
-	// String recentCaption, String suggestionsCaption, final ArrayList<T>
-	// recentItems, final Suggest<T> suggest) {
-	//
-	//
-	// }
-
-	public static <T> AutoCompletionBinding<T> createAutoCompletionBinding(ExtractImage<T> extractImage,
-			String recentCaption, String suggestionsCaption, final ArrayList<T> recentItems, final Suggest<T> suggest) {
-
-		AutoCompletionField<T> autoField = new AutoCompletionField<T>();
-		AutoCompletionControl<T> control = createAutoCompletionControl(autoField);
-		AutoCompletionBinding<T> binding = createAutoCompletionBinding(extractImage, recentCaption, suggestionsCaption,
-				recentItems, suggest, control);
-
-		ContextMenu popup = createPopup(autoField);
-
-		bindAutoField(autoField, binding, popup);
-
-		internalBindTextField(autoField, binding, popup);
-
-		return binding;
-	}
 
 	/**
 	 * Prepare the given ComboBox for auto completion. This function uses the
@@ -105,11 +80,11 @@ public class AutoCompletions {
 
 		return binding;
 	}
-	
+
 	private static class TextFieldSkinWithImage extends TextFieldSkin {
-		
+
 		StackPane leftPane = new StackPane();
-		
+
 		public void setImage(Image image) {
 			leftPane.getChildren().clear();
 			if (image != null) {
@@ -125,7 +100,7 @@ public class AutoCompletions {
 			getChildren().add(leftPane);
 			leftPane.setPadding(new Insets(0, 0, 0, 4.0));
 		}
-		
+
 		@Override
 		protected void layoutChildren(double x, double y, double w, double h) {
 			final double fullHeight = h + snappedTopInset() + snappedBottomInset();
@@ -136,10 +111,26 @@ public class AutoCompletions {
 			final double textFieldStartX = snapPosition(x) + snapSize(leftWidth);
 			final double textFieldWidth = w - snapSize(leftWidth) - snapSize(rightWidth);
 
-	        super.layoutChildren(textFieldStartX, 0, textFieldWidth, fullHeight);
+			super.layoutChildren(textFieldStartX, 0, textFieldWidth, fullHeight);
 
 			final double leftStartX = 0;
-            leftPane.resizeRelocate(leftStartX, 0, leftWidth, fullHeight);
+			leftPane.resizeRelocate(leftStartX, 0, leftWidth, fullHeight);
+		}
+
+		@Override
+		protected int translateCaretPosition(int cp) {
+			final double h = getSkinnable().getHeight();
+			final double fullHeight = h + snappedTopInset() + snappedBottomInset();
+			final double leftWidth = leftPane == null ? 0.0 : snapSize(leftPane.prefWidth(fullHeight));
+			int offs = (int)leftWidth;
+			return Math.max(0, cp - offs);
+		}
+
+		@Override
+		protected Point2D translateCaretPosition(Point2D p) {
+			int cp = translateCaretPosition((int)p.getX());
+			Point2D p1 = new Point2D(cp, p.getY());
+			return p1;
 		}
 
 	}
@@ -187,20 +178,6 @@ public class AutoCompletions {
 		});
 	}
 
-	private static <T> void bindAutoField(AutoCompletionField<T> autoField, AutoCompletionBinding<T> binding,
-			ContextMenu popup) {
-
-		// Show suggestion list, if button is pressed
-		autoField.setOnShowSuggestions(new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent event) {
-				Platform.runLater(() -> {
-					showList(popup, binding, SHOW_ALWAYS_IGNORE_EDIT_TEXT);
-				});
-
-			}
-		});
-	}
-
 	private static <T> AutoCompletionBinding<T> createAutoCompletionBinding(ExtractImage<T> extractImage,
 			String recentCaption, String suggestionsCaption, final ArrayList<T> recentItems, final Suggest<T> suggest,
 			AutoCompletionControl<T> control) {
@@ -228,24 +205,35 @@ public class AutoCompletions {
 						node.fireEvent(new KeyEvent(event.getSource(), event.getTarget(), KeyEvent.KEY_PRESSED, "\r",
 								"", KeyCode.ENTER, false, false, false, false));
 
-						// Wenn ein Menü-Eintrag ausgewählt ist, dann soll bei TAB 
-						// der Auswahl im Auto-Editfeld eingetragen werden und anschließend
+						// Wenn ein Menü-Eintrag ausgewählt ist, dann soll bei
+						// TAB
+						// der Auswahl im Auto-Editfeld eingetragen werden und
+						// anschließend
 						// der Fokus zum nächsten Control weitergegeben werden.
-						// Ist aber kein Menü-Eintrag ausgewählt, dann soll der Fokus nicht
-						// weiter wandern. Ich kann hier aber nicht feststellen, ob ein 
-						// Menüeintrag gewählt ist. Das führt dazu, dass das Menü nicht 
-						// geschlossen wird und die Tab-Key-Ereignisse gepuffert werden.
-						// Erfolgt dann eine Selektion z. B. mit Cursortasten, geht das 
+						// Ist aber kein Menü-Eintrag ausgewählt, dann soll der
+						// Fokus nicht
+						// weiter wandern. Ich kann hier aber nicht feststellen,
+						// ob ein
+						// Menüeintrag gewählt ist. Das führt dazu, dass das
+						// Menü nicht
+						// geschlossen wird und die Tab-Key-Ereignisse gepuffert
+						// werden.
+						// Erfolgt dann eine Selektion z. B. mit Cursortasten,
+						// geht das
 						// Menü unerwartet zu und der Fokus zum nächsten Control
 						// Deshal ist der Block hier auskommentiert.
-//						Platform.runLater(() -> {
-//							node.fireEvent(new KeyEvent(event.getSource(), event.getTarget(), KeyEvent.KEY_PRESSED,
-//									"\t", "", KeyCode.TAB, event.isShiftDown(), event.isControlDown(),
-//									event.isAltDown(), event.isMetaDown()));
-//							node.fireEvent(new KeyEvent(event.getSource(), event.getTarget(), KeyEvent.KEY_RELEASED,
-//									"\t", "", KeyCode.TAB, event.isShiftDown(), event.isControlDown(),
-//									event.isAltDown(), event.isMetaDown()));
-//						});
+						// Platform.runLater(() -> {
+						// node.fireEvent(new KeyEvent(event.getSource(),
+						// event.getTarget(), KeyEvent.KEY_PRESSED,
+						// "\t", "", KeyCode.TAB, event.isShiftDown(),
+						// event.isControlDown(),
+						// event.isAltDown(), event.isMetaDown()));
+						// node.fireEvent(new KeyEvent(event.getSource(),
+						// event.getTarget(), KeyEvent.KEY_RELEASED,
+						// "\t", "", KeyCode.TAB, event.isShiftDown(),
+						// event.isControlDown(),
+						// event.isAltDown(), event.isMetaDown()));
+						// });
 					}
 
 					// System.out.println("TAB consumed");
@@ -299,7 +287,6 @@ public class AutoCompletions {
 						Platform.runLater(() -> {
 							textField.selectAll();
 							T selectedItem = binding.getControl().getSelectedItem();
-							System.out.println("selectedItem=" + selectedItem);
 							if (selectedItem == null) {
 								showList(popup, binding, SHOW_IF_EDIT_TEXT_DOES_NOT_MATCH);
 							}
@@ -439,8 +426,11 @@ public class AutoCompletions {
 
 	private static <T> void addMenuItem(List<MenuItem> items, AutoCompletionBinding<T> binding, T item) {
 		ExtractImage<T> extractImage = binding.getExtractImage();
-		Image image = extractImage.getImage(item);
-		ImageView imageView = makeImageView(image);
+		ImageView imageView = null;
+		if (extractImage != null) {
+			Image image = extractImage.getImage(item);
+			imageView = makeImageView(image);
+		}
 		MenuItem cmItem1 = new MenuItem(item.toString(), imageView);
 		cmItem1.setOnAction(new EventHandler<ActionEvent>() {
 			public void handle(ActionEvent e) {
@@ -509,20 +499,23 @@ public class AutoCompletions {
 		popup.show(window, x, y);
 	}
 
-	private static <T> AutoCompletionControl<T> createAutoCompletionControl(final ComboBox<T> cbox, final ExtractImage<T> extractImage) {
+	private static <T> AutoCompletionControl<T> createAutoCompletionControl(final ComboBox<T> cbox,
+			final ExtractImage<T> extractImage) {
 		AutoCompletionControl<T> control = new AutoCompletionControl<T>() {
 			public void select(T item) {
 				final TextField ed = cbox.getEditor();
 				if (item != null) {
 					cbox.getSelectionModel().select(item);
-					Image image = extractImage.getImage(item);
-					((TextFieldSkinWithImage)ed.getSkin()).setImage(image);
+					if (extractImage != null) {
+						Image image = extractImage.getImage(item);
+						((TextFieldSkinWithImage) ed.getSkin()).setImage(image);
+					}
 					ed.setText(item.toString());
 					ed.selectAll();
 				}
 				else {
 					cbox.getSelectionModel().select(-1);
-					((TextFieldSkinWithImage)ed.getSkin()).setImage(null);
+					((TextFieldSkinWithImage) ed.getSkin()).setImage(null);
 					ed.setText("");
 				}
 			}
@@ -545,43 +538,6 @@ public class AutoCompletions {
 
 			public String getEditText() {
 				return cbox.getEditor().getText();
-			}
-		};
-		return control;
-	}
-
-	private static <T> AutoCompletionControl<T> createAutoCompletionControl(final AutoCompletionField<T> autoField) {
-		AutoCompletionControl<T> control = new AutoCompletionControl<T>() {
-			public void select(T item) {
-				if (item != null) {
-					autoField.setSelectedItem(item);
-					autoField.setText(item.toString());
-					autoField.selectAll();
-				}
-				else {
-					autoField.setSelectedItem(null);
-					autoField.setText("");
-				}
-			}
-
-			public T getSelectedItem() {
-				return autoField.getSelectedItem();
-			}
-
-			public Node getNode() {
-				return autoField;
-			}
-
-			public void setEditable(boolean en) {
-				autoField.setEditable(en);
-			}
-
-			public boolean isEditable() {
-				return autoField.isEditable();
-			}
-
-			public String getEditText() {
-				return autoField.getText();
 			}
 		};
 		return control;
