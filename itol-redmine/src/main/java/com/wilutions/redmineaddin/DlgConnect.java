@@ -51,10 +51,6 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 	@FXML
 	TextField edApiKey;
 	@FXML
-	TextField edLogFile;
-	@FXML
-	ChoiceBox<IdName> cbLogLevel;
-	@FXML
 	ProgressBar pgProgress;
 
 	public DlgConnect() {
@@ -169,10 +165,6 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 	@Override
 	public void initialize(URL location, ResourceBundle resb) {
 
-		cbLogLevel.getItems().add(new IdName("INFO", resb.getString("DlgConnect.LogLevel.Info")));
-		cbLogLevel.getItems().add(new IdName("FINE", resb.getString("DlgConnect.LogLevel.Debug")));
-		cbLogLevel.getSelectionModel().select(0);
-
 		bnOK.visibleProperty().bind(Bindings.not(connectionInProcess));
 		bnOK.managedProperty().bind(Bindings.not(connectionInProcess));
 		pgProgress.visibleProperty().bind(connectionInProcess);
@@ -185,8 +177,6 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 			setConfigProperty(Property.URL, edUrl.getText());
 			setConfigProperty(Property.USER_NAME, edApiKey.getText());
 			setConfigProperty(Property.API_KEY, edApiKey.getText());
-			setConfigProperty(Property.LOG_FILE, edLogFile.getText());
-			setConfigProperty(Property.LOG_LEVEL, cbLogLevel.getSelectionModel().getSelectedItem().getId());
 		}
 		else {
 			String url = getConfigProperty(Property.URL);
@@ -195,13 +185,6 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 
 			String apiKey = getConfigProperty(Property.API_KEY);
 			edApiKey.setText(apiKey);
-
-			String logFile = getConfigProperty(Property.LOG_FILE);
-			if (logFile.isEmpty())
-				logFile = (new File(System.getProperty("java.io.tmpdir"), "itol.log")).getAbsolutePath();
-			edLogFile.setText(logFile);
-
-			cbLogLevel.getSelectionModel().select(new IdName(getConfigProperty(Property.LOG_LEVEL), ""));
 		}
 	}
 

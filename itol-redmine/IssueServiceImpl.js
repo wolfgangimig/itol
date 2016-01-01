@@ -663,14 +663,14 @@ function initialize() {
 		throw new IOException("Invalid Redmine URL"); 
 	}
 	
+	if (islinfo) log.log(Level.INFO, "readCurrentUser");
+	readCurrentUser(data);
+	
 	if (islinfo) log.log(Level.INFO, "readOrUpdateConfigurationProject");
 	readOrUpdateConfigurationProject();
 
 	if (islinfo) log.log(Level.INFO, "readProjects");
 	readProjects(data);
-
-	if (islinfo) log.log(Level.INFO, "readCurrentUser");
-	readCurrentUser(data);
 
 	if (islinfo) log.log(Level.INFO, "readTrackers");
 	readTrackers(data);

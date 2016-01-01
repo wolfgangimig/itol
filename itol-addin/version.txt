@@ -4,6 +4,15 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+Version 2.0
+
+- #31: Auto completion fields for project, tracker, priority, status, and assignee.
+
+- #35: Moved configuration options from backstage view to menu "Extra" of issue pane.
+  This allows to edit the configuration running in Outlook 2016. 
+  Split configuration for Redmine connection and Addin options over two dialogs. 
+
+
 Version 1.5
 
 - Write exceptions in issue dialog to log file.

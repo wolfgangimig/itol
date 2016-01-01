@@ -17,8 +17,6 @@ import java.util.logging.Logger;
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.CoClass;
 import com.wilutions.com.ComException;
-import com.wilutions.itol.db.IdName;
-import com.wilutions.itol.db.Property;
 import com.wilutions.joa.DeclAddin;
 import com.wilutions.joa.LoadBehavior;
 import com.wilutions.joa.OfficeApplication;
@@ -26,9 +24,6 @@ import com.wilutions.joa.outlook.ex.ExplorerWrapper;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
 import com.wilutions.joa.outlook.ex.Wrapper;
-import com.wilutions.joa.ribbon.RibbonButton;
-import com.wilutions.joa.ribbon.RibbonControls;
-import com.wilutions.joa.ribbon.RibbonToggleButton;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.outlook.Explorer;
@@ -41,106 +36,60 @@ public class ItolAddin extends OutlookAddinEx {
 
 	private AttachmentHttpServer httpServer = new AttachmentHttpServer();
 	private Logger log = Logger.getLogger("ItolAddin");
-	private ResourceBundle resb;
-
-	RibbonButton bnNewIssue = new RibbonButton();
-	RibbonButton bnConnect = new RibbonButton();
-	RibbonToggleButton bnMsg = new RibbonToggleButton();
-	RibbonToggleButton bnMhtml = new RibbonToggleButton();
-	RibbonToggleButton bnRtf = new RibbonToggleButton();
 
 	public ItolAddin() {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "ItolAddin(");
 		Globals.setThisAddin(this);
-		resb = Globals.getResourceBundle();
 
 		getIconManager().addPackageAsResourceDirectory(ItolAddin.class);
-
-		initRibbonControls();
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")ItolAddin");
 	}
 
-	private void initRibbonControls() {
-
-		RibbonControls ribbonControls = getRibbonControls();
-		String grpName = resb.getString("Ribbon.grpIssue");
-		ribbonControls.group("grpIssue", grpName);
-
-		bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
-		bnNewIssue.setImage("Alert-icon-32.png");
-		bnNewIssue.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
-			newIssue(control, context, pressed);
-		});
-
-		///////////////////////
-		// Configure
-
-		getRibbonControls().group("grpConnect", resb.getString("Ribbon.Connect"));
-
-		// Connect
-
-		bnConnect = getRibbonControls().button("bnConnect", resb.getString("Ribbon.bnConnect"));
-		bnConnect.setImage("Connect32.png");
-		bnConnect.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
-			onConnect(control, context, null);
-		});
-
-		// Attach Mail as
-
-		getRibbonControls().group("grpAttachMailAs", resb.getString("Ribbon.AttachMailAs"));
-
-		String msgFileTypeId = Globals.getConfigPropertyString(Property.MSG_FILE_TYPE, MsgFileTypes.MSG.getId());
-
-		bnMsg = getRibbonControls().toggleButton("bnMsg", MsgFileTypes.MSG.getName());
-		bnMsg.setImage("File.msg");
-		bnMsg.setPressed(msgFileTypeId.equals(MsgFileTypes.MSG.getId()));
-		bnMsg.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
-			onAddMailFormatChanged(control, context, pressed);
-		});
-
-		bnMhtml = getRibbonControls().toggleButton("bnMhtml", MsgFileTypes.MHTML.getName());
-		bnMhtml.setImage("File.mhtml");
-		bnMhtml.setPressed(msgFileTypeId.equals(MsgFileTypes.MHTML.getId()));
-		bnMhtml.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
-			onAddMailFormatChanged(control, context, pressed);
-		});
-
-		bnRtf = getRibbonControls().toggleButton("bnRtf", MsgFileTypes.RTF.getName());
-		bnRtf.setImage("File.rtf");
-		bnRtf.setPressed(msgFileTypeId.equals(MsgFileTypes.RTF.getId()));
-		bnRtf.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
-			onAddMailFormatChanged(control, context, pressed);
-		});
-	}
-
-	private void newIssue(IRibbonControl control, Wrapper context, Boolean pressed) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "newIssue(");
+	/**
+	 * Show issue pane.
+	 * This function is invoked from MyExplorerWrapper and MailInspector.
+	 * @param control
+	 * @param context
+	 * @param pressed
+	 */
+	public void showIssuePane(IRibbonControl control, Wrapper context, Boolean pressed) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "showIssuePane(");
 
 		if (Globals.isIssueServiceRunning()) {
 			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "setIssueTaskPaneVisible(" + pressed + ")");
 			((MyWrapper) context).setIssueTaskPaneVisible(pressed);
 		}
 		else if (pressed) {
-			onConnect(control, context, (succ, ex) -> {
-				if (ex != null) {
-					ResourceBundle resb = Globals.getResourceBundle();
-					Object owner = context.getWrappedObject();
-					String msg = resb.getString("Error.NotConnected");
-					log.log(Level.SEVERE, msg, ex);
-					msg += "\n" + ex.getMessage();
-					MessageBox.error(owner, msg, null);
-				}
-				else if (succ != null && succ) {
+			internalConnect(context, (succ, ex) -> {
+				if (succ) {
 					((MyWrapper) context).setIssueTaskPaneVisible(pressed);
 				}
 			});
 		}
 
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")newIssue");
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")showIssuePane");
 	}
 
-	protected void onConnect(IRibbonControl control, Wrapper context, AsyncResult<Boolean> asyncResult) {
+	
+	protected void internalConnect(Wrapper context, AsyncResult<Boolean> asyncResult) {
+		onConnect(context, (succ, ex) -> {
+			if (ex != null) {
+				ResourceBundle resb = Globals.getResourceBundle();
+				Object owner = context.getWrappedObject();
+				String msg = resb.getString("Error.NotConnected");
+				log.log(Level.SEVERE, msg, ex);
+				msg += "\n" + ex.getMessage();
+				MessageBox.error(owner, msg, null);
+			}
+			if (asyncResult != null) {
+				asyncResult.setAsyncResult(succ != null && succ && ex == null, null);
+			}
+		});
+	}
+
+	// Overriden by Redmine and Jira Addin
+	protected void onConnect(Wrapper context, AsyncResult<Boolean> asyncResult) {
 	}
 
 	@Override
@@ -214,27 +163,4 @@ public class ItolAddin extends OutlookAddinEx {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")getMyExplorerWrapper=" + explorerWrapper);
 		return explorerWrapper;
 	}
-
-	private void onAddMailFormatChanged(IRibbonControl control, Wrapper context, Boolean pressed) {
-		RibbonButton[] cbs = new RibbonButton[] { bnMsg, bnMhtml, bnRtf };
-		if (pressed) {
-			String controlId = control.getId();
-			IdName[] fileTypes = new IdName[] { MsgFileTypes.MSG, MsgFileTypes.MHTML, MsgFileTypes.RTF };
-			for (int i = 0; i < cbs.length; i++) {
-				boolean p = cbs[i].getId().equals(controlId);
-				if (p) {
-					Globals.setConfigPropertyString(Property.MSG_FILE_TYPE, fileTypes[i].getId());
-				}
-				else {
-					cbs[i].setPressed(false);
-					getRibbon().InvalidateControl(cbs[i].getId());
-				}
-			}
-		}
-		else {
-			Globals.setConfigPropertyString(Property.MSG_FILE_TYPE, MsgFileTypes.NOTHING.getId());
-		}
-		Globals.writeData();
-	}
-
 }

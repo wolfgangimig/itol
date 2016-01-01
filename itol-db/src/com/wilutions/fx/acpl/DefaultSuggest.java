@@ -25,7 +25,7 @@ public class DefaultSuggest<T> implements Suggest<T> {
 	 *            Collection of all items.
 	 */
 	public DefaultSuggest(Collection<T> allItems) {
-		this.allItems = allItems;
+		this.allItems = allItems != null ? allItems : new ArrayList<T>(0);
 	}
 
 	/**

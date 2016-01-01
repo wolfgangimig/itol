@@ -13,25 +13,6 @@
 						getPressed="Ribbon_getPressed" />
 				</group>
 			</tab>
-			<tab id="ItolTab" label="Redmine Addin">
-
-				<group id="grpConnect" getLabel="Ribbon_getLabel">
-					<button id="bnConnect" getImage="Ribbon_getImage" size="large"
-						getLabel="Ribbon_getLabel" onAction="Ribbon_onAction" />
-				</group>
-
-				<group id="grpAttachMailAs" getLabel="Ribbon_getLabel">
-					<toggleButton id="bnMsg" getImage="Ribbon_getImage"
-						getLabel="Ribbon_getLabel" getPressed="Ribbon_getPressed"
-						onAction="Ribbon_onAction" />
-					<toggleButton id="bnMhtml" getImage="Ribbon_getImage"
-						getLabel="Ribbon_getLabel" getPressed="Ribbon_getPressed"
-						onAction="Ribbon_onAction" />
-					<toggleButton id="bnRtf" getImage="Ribbon_getImage"
-						getLabel="Ribbon_getLabel" getPressed="Ribbon_getPressed"
-						onAction="Ribbon_onAction" />
-				</group>
-			</tab>
 		</tabs>
 	</ribbon>
 

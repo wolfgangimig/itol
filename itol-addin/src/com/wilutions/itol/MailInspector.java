@@ -11,13 +11,16 @@
 package com.wilutions.itol;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
 import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
+import com.wilutions.joa.outlook.ex.Wrapper;
+import com.wilutions.joa.ribbon.RibbonButton;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.outlook.Inspector;
 import com.wilutions.mslib.outlook.MailItem;
@@ -25,21 +28,30 @@ import com.wilutions.mslib.outlook.MailItem;
 public class MailInspector extends InspectorWrapper implements MyWrapper {
 
 	private final IssueTaskPane issuePane;
-	private Map<String, IRibbonControl> ribbonControls = new HashMap<String, IRibbonControl>();
-
+	private ResourceBundle resb = Globals.getResourceBundle();
+	
 	public MailInspector(Inspector inspector, IDispatch currentItem) throws ComException, IOException {
 		super(inspector, currentItem);
 
 		issuePane = new IssueTaskPane(this);
+		
+		initRibbonControls();
+	}
+	
+	private void initRibbonControls() {
+
+		RibbonButton bnNewIssue = new RibbonButton();
+		bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
+		bnNewIssue.setImage("Alert-icon-32.png");
+		bnNewIssue.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
+			ItolAddin addin = (ItolAddin)Globals.getThisAddin();
+			addin.showIssuePane(control, context, pressed);
+		});
 	}
 	
 	@Override
 	public IssueMailItem getSelectedItem() {
 		return new IssueMailItemImpl(currentItem.as(MailItem.class));
-	}
-	
-	public void addRibbonControl(IRibbonControl control) {
-		ribbonControls.put(control.getId(), control);
 	}
 	
 	public String getIssueId() throws ComException, IOException {
@@ -68,7 +80,6 @@ public class MailInspector extends InspectorWrapper implements MyWrapper {
 		if (issuePane != null) {
 			issuePane.close();
 		}
-		ribbonControls.clear();
 		super.onClose();
 	}
 

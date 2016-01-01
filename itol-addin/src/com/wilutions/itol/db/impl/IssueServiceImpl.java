@@ -313,7 +313,7 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public List<IdName> getPropertyAutoCompletion(String propertyId, Issue iss, String filter) throws IOException {
+	public List<IdName> getPropertyAutoCompletion(String propertyId, Issue iss, String filter, int max) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

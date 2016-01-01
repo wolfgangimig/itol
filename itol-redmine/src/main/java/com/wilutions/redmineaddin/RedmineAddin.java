@@ -27,7 +27,8 @@ public class RedmineAddin extends ItolAddin {
 		return super.GetCustomUI(ribbonId);
 	}
 	
-	protected void onConnect(IRibbonControl control, Wrapper context, AsyncResult<Boolean> asyncResult) {
+	@Override
+	protected void onConnect(Wrapper context, AsyncResult<Boolean> asyncResult) {
 		DlgConnect dlg = new DlgConnect();
 		Object owner = context.getWrappedObject();
 		dlg.showAsync(owner, asyncResult);

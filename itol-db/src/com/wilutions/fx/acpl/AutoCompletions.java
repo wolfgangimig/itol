@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import com.sun.javafx.scene.control.skin.TextFieldSkin;
-
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -15,10 +13,6 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
-import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
@@ -31,7 +25,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Window;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
@@ -80,67 +73,28 @@ public class AutoCompletions {
 
 		return binding;
 	}
-
-	private static class TextFieldSkinWithImage extends TextFieldSkin {
-
-		StackPane leftPane = new StackPane();
-
-		public void setImage(Image image) {
-			leftPane.getChildren().clear();
-			if (image != null) {
-				final ImageView iv1 = makeImageView(image);
-				iv1.setCursor(Cursor.DEFAULT);
-				leftPane.getChildren().add(iv1);
-			}
-		}
-
-		public TextFieldSkinWithImage(TextField textField) {
-			super(textField);
-			leftPane.setAlignment(Pos.CENTER_LEFT);
-			getChildren().add(leftPane);
-			leftPane.setPadding(new Insets(0, 0, 0, 4.0));
-		}
-
-		@Override
-		protected void layoutChildren(double x, double y, double w, double h) {
-			final double fullHeight = h + snappedTopInset() + snappedBottomInset();
-
-			final double leftWidth = leftPane == null ? 0.0 : snapSize(leftPane.prefWidth(fullHeight));
-			final double rightWidth = 0.0;
-
-			final double textFieldStartX = snapPosition(x) + snapSize(leftWidth);
-			final double textFieldWidth = w - snapSize(leftWidth) - snapSize(rightWidth);
-
-			super.layoutChildren(textFieldStartX, 0, textFieldWidth, fullHeight);
-
-			final double leftStartX = 0;
-			leftPane.resizeRelocate(leftStartX, 0, leftWidth, fullHeight);
-		}
-
-		@Override
-		protected int translateCaretPosition(int cp) {
-			final double h = getSkinnable().getHeight();
-			final double fullHeight = h + snappedTopInset() + snappedBottomInset();
-			final double leftWidth = leftPane == null ? 0.0 : snapSize(leftPane.prefWidth(fullHeight));
-			int offs = (int)leftWidth;
-			return Math.max(0, cp - offs);
-		}
-
-		@Override
-		protected Point2D translateCaretPosition(Point2D p) {
-			int cp = translateCaretPosition((int)p.getX());
-			Point2D p1 = new Point2D(cp, p.getY());
-			return p1;
-		}
-
+	
+	public static <T> AutoCompletionComboBox<T> createAutoCompletionNode(
+			ExtractImage<T> extractImage, 
+			String recentCaption, 
+			String suggestionsCaption, 
+			ArrayList<T> recentItems, 
+			 Suggest<T> suggest) {
+		AutoCompletionComboBox<T> cbox = new AutoCompletionComboBox<T>();
+		bindAutoCompletion(extractImage, cbox, recentCaption, suggestionsCaption, recentItems, suggest);
+		return cbox;
 	}
-
+	
 	private static <T> void bindComboBox(ComboBox<T> cbox, AutoCompletionBinding<T> binding, ContextMenu popup) {
 
 		cbox.setEditable(true);
 
 		TextField ed = cbox.getEditor();
-		ed.setSkin(new TextFieldSkinWithImage(ed));
+		
+		// 
+		if (binding.getExtractImage() != null) {
+			ed.setSkin(new TextFieldSkinWithImage(ed));
+		}
 
 		// Set String converter.
 		// Without a string converter, I receive a ClassCastException
@@ -441,6 +395,7 @@ public class AutoCompletions {
 	}
 
 	private static ImageView makeImageView(Image image) {
+		if (image == null) return null;
 		ImageView imageView = new ImageView();
 		imageView.setImage(image);
 		imageView.setFitWidth(16);
@@ -508,14 +463,15 @@ public class AutoCompletions {
 					cbox.getSelectionModel().select(item);
 					if (extractImage != null) {
 						Image image = extractImage.getImage(item);
-						((TextFieldSkinWithImage) ed.getSkin()).setImage(image);
+						ImageView imageView = makeImageView(image);
+						((TextFieldSkinWithImage) ed.getSkin()).setImageView(imageView);
 					}
 					ed.setText(item.toString());
 					ed.selectAll();
 				}
 				else {
 					cbox.getSelectionModel().select(-1);
-					((TextFieldSkinWithImage) ed.getSkin()).setImage(null);
+					((TextFieldSkinWithImage) ed.getSkin()).setImageView(null);
 					ed.setText("");
 				}
 			}

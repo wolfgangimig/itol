@@ -2,7 +2,7 @@ package com.wilutions.fx.acpl;
 
 import java.util.ArrayList;
 
-import javafx.scene.control.ComboBox;
+import javafx.scene.Node;
 
 public class AutoCompletionBinding<T> {
 	private AutoCompletionControl<T> control;
@@ -49,11 +49,34 @@ public class AutoCompletionBinding<T> {
 	public void setLockChangeEvent(boolean lockChangeEvent) {
 		this.lockChangeEvent = lockChangeEvent;
 	}
-	public AutoCompletionControl<T> getControl() {
+	
+	AutoCompletionControl<T> getControl() {
 		return control;
 	}
-	public void setControl(AutoCompletionControl<T> control) {
+	void setControl(AutoCompletionControl<T> control) {
 		this.control = control;
+	}
+	
+	public void select(T item) {
+		boolean lock = isLockChangeEvent();
+		setLockChangeEvent(true);
+		control.select(item);
+		setLockChangeEvent(lock);
+	}
+	public T getSelectedItem() {
+		return control.getSelectedItem();
+	}
+	public Node getNode() {
+		return control.getNode();
+	}
+	public void setEditable(boolean en) {
+		control.setEditable(en);
+	}
+	public boolean isEditable() {
+		return control.isEditable();
+	}
+	public String getEditText() {
+		return control.getEditText();
 	}
 }
 

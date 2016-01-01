@@ -2,7 +2,7 @@ package com.wilutions.fx.acpl;
 
 import javafx.scene.Node;
 
-public interface AutoCompletionControl<T> {
+interface AutoCompletionControl<T> {
 	public void select(T item);
 	public T getSelectedItem();
 	public Node getNode();

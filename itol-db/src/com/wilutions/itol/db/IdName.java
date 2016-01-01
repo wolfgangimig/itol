@@ -69,8 +69,16 @@ public class IdName implements Serializable {
 		return name;
 	}
 	
+	public void setName(String name) {
+		this.name = name;
+	}
+	
 	public Image getImage() {
 		return image;
+	}
+	
+	public void setImage(Image image) {
+		this.image = image;
 	}
 
 	@Override

@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.wilutions.itol.db.IdName;
+import com.wilutions.joa.ribbon.RibbonListItem;
 import com.wilutions.mslib.outlook.OlSaveAsType;
 
 public class MsgFileTypes {
@@ -37,6 +38,11 @@ public class MsgFileTypes {
 	 * Attach mail as RTF.
 	 */
 	public final static IdName RTF = new IdName(".rtf", "Rich Text Format (.rtf)");
+	/**
+	 * Attach mail as plain text.
+	 */
+	public final static IdName TEXT = new IdName(".txt", "Plain Text (.txt)");
+	
 
 	/**
 	 * File extensions in relation to OlSaveAsType
@@ -132,12 +138,17 @@ public class MsgFileTypes {
 		return ret;
 	}
 	
-	
-	public final static void main(String[] args) {
-		System.out.println(makeValidFileName("< > x : \" x / \\ x | ? x * ."));
-		System.out.println(makeValidFileName("abcdefg.hij"));
-		System.out.println(makeValidFileName("<.x"));
-		System.out.println(makeValidFileName(">.>"));
-		System.out.println(makeValidFileName("\\./"));
+	private static RibbonListItem makeRibbonListItem(IdName idn, String fileName) {
+		return new RibbonListItem(idn.getId(), idn.getName(), fileName);
 	}
+
+
+//	public final static void main(String[] args) {
+//		System.out.println(makeValidFileName("< > x : \" x / \\ x | ? x * ."));
+//		System.out.println(makeValidFileName("abcdefg.hij"));
+//		System.out.println(makeValidFileName("<.x"));
+//		System.out.println(makeValidFileName(">.>"));
+//		System.out.println(makeValidFileName("\\./"));
+//	}
+
 }

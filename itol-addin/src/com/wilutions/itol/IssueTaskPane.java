@@ -35,9 +35,9 @@ import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackImpl;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
-import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
+import com.wilutions.joa.outlook.ex.Wrapper;
 import com.wilutions.mslib.office.CustomTaskPane;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.office._CustomTaskPane;
@@ -425,6 +425,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	// This method is called by the FXMLLoader when initialization is complete
 	public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
 		try {
+			edSubject.requestFocus();
 
 			IssueService srv = Globals.getIssueService();
 			autoCompletionProject = initAutoComplete(srv, cbProject, Property.PROJECT);
@@ -434,35 +435,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initialUpdate();
 
-			detectIssueModifiedTimer = new Timeline(
-					new KeyFrame(Duration.seconds(0.3), new EventHandler<ActionEvent>() {
-						@Override
-						public void handle(ActionEvent event) {
-							try {
-								updateData(true);
-								if (firstModifiedCheck) {
-									firstModifiedCheck = false;
-									// Backup issue
-									issueCopy = (Issue) issue.clone();
-									// System.out.println("issueCopy=" +
-									// issueCopy.getLastUpdate().getProperties());
-								}
-								else {
-									boolean eq = issue.equals(issueCopy);
-									setModified(!eq);
-									// if (modified) {
-									// System.out.println("modified issue=" +
-									// issue.getLastUpdate().getProperties());
-									// }
-								}
-							}
-							catch (IOException e) {
-								log.log(Level.WARNING, "", e);
-							}
-						}
-					}));
-			detectIssueModifiedTimer.setCycleCount(Timeline.INDEFINITE);
-			detectIssueModifiedStart();
+			initDetectIssueModified();
 
 			// Press Assign button when called from inspector.
 			if (inspectorOrExplorer instanceof InspectorWrapper) {
@@ -478,6 +451,38 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			log.log(Level.WARNING, "", e);
 			showMessageBoxError(e.toString());
 		}
+	}
+
+	private void initDetectIssueModified() {
+		detectIssueModifiedTimer = new Timeline(
+				new KeyFrame(Duration.seconds(0.3), new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent event) {
+						try {
+							updateData(true);
+							if (firstModifiedCheck) {
+								firstModifiedCheck = false;
+								// Backup issue
+								issueCopy = (Issue) issue.clone();
+								// System.out.println("issueCopy=" +
+								// issueCopy.getLastUpdate().getProperties());
+							}
+							else {
+								boolean eq = issue.equals(issueCopy);
+								setModified(!eq);
+								// if (modified) {
+								// System.out.println("modified issue=" +
+								// issue.getLastUpdate().getProperties());
+								// }
+							}
+						}
+						catch (IOException e) {
+							log.log(Level.WARNING, "", e);
+						}
+					}
+				}));
+		detectIssueModifiedTimer.setCycleCount(Timeline.INDEFINITE);
+		detectIssueModifiedStart();
 	}
 
 	private AutoCompletionBinding<IdName> initAutoComplete(IssueService srv, ComboBox<IdName> cb, String propertyId)
@@ -783,7 +788,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				String id = (String) prop.getValue();
 				for (IdName idn : items) {
 					if (idn.getId().equals(id)) {
-						autoCompletionBinding.getControl().select(idn);
+						autoCompletionBinding.select(idn);
 						break;
 					}
 				}
@@ -926,9 +931,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		String title = resb.getString("MessageBox.title.error");
 		String ok = resb.getString("Button.OK");
 		Object owner = getDialogOwner();
-		MessageBox.create(owner).title(title).text(text).button(1, ok).bdefault().show((btn, ex) -> {
-			detectIssueModifiedStart();
-		});
+		com.wilutions.joa.fx.MessageBox.create(owner).title(title).text(text).button(1, ok).bdefault()
+				.show((btn, ex) -> {
+					detectIssueModifiedStart();
+				});
 	}
 
 	private void queryDiscardChangesAsync(AsyncResult<Boolean> asyncResult) {
@@ -939,11 +945,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			String yes = resb.getString("Button.Yes");
 			String no = resb.getString("Button.No");
 			Object owner = getDialogOwner();
-			MessageBox.create(owner).title(title).text(text).button(1, yes).button(0, no).bdefault().show((btn, ex) -> {
-				Boolean succ = btn != null && btn != 0;
-				asyncResult.setAsyncResult(succ, ex);
-				detectIssueModifiedStart();
-			});
+			com.wilutions.joa.fx.MessageBox.create(owner).title(title).text(text).button(1, yes).button(0, no)
+					.bdefault().show((btn, ex) -> {
+						Boolean succ = btn != null && btn != 0;
+						asyncResult.setAsyncResult(succ, ex);
+						detectIssueModifiedStart();
+					});
 		}
 		else {
 			asyncResult.setAsyncResult(true, null);
@@ -1334,4 +1341,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
+	@FXML
+	public void onConnect() {
+		ItolAddin addin = (ItolAddin) Globals.getThisAddin();
+		Wrapper context = inspectorOrExplorer;
+		addin.internalConnect(context, null);
+	}
+	
+	@FXML
+	public void onConfigure() {
+		Wrapper context = inspectorOrExplorer;
+		DlgConfigure dlg = new DlgConfigure();
+		dlg.showAsync(context.getWrappedObject(), null);
+	}
 }

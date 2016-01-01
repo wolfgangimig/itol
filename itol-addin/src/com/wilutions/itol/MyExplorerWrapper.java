@@ -1,25 +1,26 @@
 package com.wilutions.itol;
 
-import java.io.IOException;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.wilutions.com.ComException;
+import com.wilutions.com.IDispatch;
+import com.wilutions.joa.fx.MessageBox;
+import com.wilutions.joa.outlook.ex.ExplorerWrapper;
+import com.wilutions.joa.outlook.ex.Wrapper;
+import com.wilutions.joa.ribbon.RibbonButton;
+import com.wilutions.mslib.office.IRibbonControl;
+import com.wilutions.mslib.office.IRibbonUI;
+import com.wilutions.mslib.outlook.Explorer;
+import com.wilutions.mslib.outlook.MailItem;
+import com.wilutions.mslib.outlook.Selection;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.util.Duration;
-
-import com.wilutions.com.ComException;
-import com.wilutions.com.Dispatch;
-import com.wilutions.com.IDispatch;
-import com.wilutions.joa.fx.MessageBox;
-import com.wilutions.joa.outlook.ex.ExplorerWrapper;
-import com.wilutions.mslib.office.IRibbonControl;
-import com.wilutions.mslib.office.IRibbonUI;
-import com.wilutions.mslib.outlook.Explorer;
-import com.wilutions.mslib.outlook.MailItem;
-import com.wilutions.mslib.outlook.Selection;
 
 public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 
@@ -29,6 +30,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 	private final static long SHOW_DELAY_MILLIS = 500;
 	private final Timeline deferShowSelectedItem;
 	private final static Logger log = Logger.getLogger("MyExplorerWrapper");
+	private ResourceBundle resb = Globals.getResourceBundle();
 
 	public MyExplorerWrapper(Explorer explorer) {
 		super(explorer);
@@ -50,7 +52,21 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		deferShowSelectedItem.setCycleCount(Timeline.INDEFINITE);
 		deferShowSelectedItem.play();
 		
+		initRibbonControls();
+		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")MyExplorerWrapper");
+	}
+	
+	private void initRibbonControls() {
+
+		RibbonButton bnNewIssue = new RibbonButton();
+		bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
+		bnNewIssue.setImage("Alert-icon-32.png");
+		bnNewIssue.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
+			ItolAddin addin = (ItolAddin)Globals.getThisAddin();
+			addin.showIssuePane(control, context, pressed);
+		});
+		
 	}
 	
 	@Override
@@ -66,8 +82,8 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		return ret;
 	}
 
-	public void addRibbonControl(IRibbonControl control) {
-		ribbonControls.put(control.getId(), control);
+	public void addRibbonControlDispatchReference(IRibbonControl control) {
+		ribbonControlsDispatchReferences.put(control.getId(), control);
 	}
 
 	private synchronized boolean isSelectionDelayOver() {
@@ -103,7 +119,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 			issuePane.close();
 		}
 		
-		ribbonControls.clear();
+		ribbonControlsDispatchReferences.clear();
 		super.onClose();
 	}
 
