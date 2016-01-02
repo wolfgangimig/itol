@@ -10,11 +10,17 @@ public class IssueMailItemImpl implements IssueMailItem {
 	private final IDispatch mailItem;
 	private String subject;
 	private String body;
+	private String entryId;
+	private String from;
+	private String to;
 	
 	IssueMailItemImpl(IDispatch mailItem) {
 		this.mailItem = mailItem;
 		this.subject = (String)mailItem._get("Subject");
 		this.body = (String)mailItem._get("Body");
+		this.entryId = (String)mailItem._get("EntryID");
+		this.from = (String)mailItem._get("SenderName");
+		this.to = (String)mailItem._get("ReceivedByName");
 	}
 	
 	public String getSubject() {
@@ -27,6 +33,10 @@ public class IssueMailItemImpl implements IssueMailItem {
 
 	public String getBody() {
 		return body;
+	}
+	
+	public String getEntryId() {
+		return entryId;
 	}
 	
 	public void Save() {
@@ -58,6 +68,22 @@ public class IssueMailItemImpl implements IssueMailItem {
 			
 		};
 		return ret;
+	}
+
+	public String getFrom() {
+		return from;
+	}
+
+	public void setFrom(String from) {
+		this.from = from;
+	}
+
+	public String getTo() {
+		return to;
+	}
+
+	public void setTo(String to) {
+		this.to = to;
 	}
 
 }

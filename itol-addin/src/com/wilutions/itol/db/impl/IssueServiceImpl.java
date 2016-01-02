@@ -154,50 +154,6 @@ public class IssueServiceImpl implements IssueService {
 		// TODO Auto-generated method stub
 	}
 
-	@Override
-	public String extractIssueIdFromMailSubject(String subject) {
-		assert subject != null;
-		String issueId = "";
-		int p = subject.indexOf("[");
-		if (p >= 0) {
-			int q = subject.indexOf("]", p);
-			if (q >= 0) {
-				int m = subject.indexOf("-", p);
-				if (m >= 0 && m < q) {
-					issueId = subject.substring(m + 1, q);
-				}
-			}
-		}
-		return issueId;
-	}
-
-	@Override
-	public String injectIssueIdIntoMailSubject(String subject, Issue iss) {
-		assert subject != null;
-		assert iss != null;
-		StringBuilder sbuf = new StringBuilder();
-		sbuf.append("[");
-		switch (Integer.parseInt(iss.getType())) {
-		case TYPE_BUG:
-			sbuf.append("F");
-			break;
-		case TYPE_DOCUMENTATION:
-			sbuf.append("D");
-			break;
-		case TYPE_FEATURE_REQUEST:
-			sbuf.append("R");
-			break;
-		case TYPE_SUPPORT:
-			sbuf.append("S");
-			break;
-		default:
-			throw new IllegalStateException("Unknown issue type=" + iss.getType());
-		}
-		sbuf.append("-").append(iss.getId()).append("] ");
-		sbuf.append(subject);
-		return sbuf.toString();
-	}
-
 	public Issue readIssue(String issueId) {
 		return issues.get(issueId);
 	}

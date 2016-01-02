@@ -89,11 +89,11 @@
                         </Tab>
                         <Tab fx:id="tpNotes" text="%tpNotes.text">
                            <content>
-                              <HBox fx:id="hboxNotes">
+                              <VBox fx:id="boxNotes">
                                  <children>
-                                    <HTMLEditor fx:id="edNotes" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="251.0" prefWidth="211.0" HBox.hgrow="ALWAYS" />
+                                    <HTMLEditor fx:id="edNotes" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" prefHeight="293.0" prefWidth="443.0" HBox.hgrow="NEVER" VBox.vgrow="ALWAYS" />
                                  </children>
-                              </HBox>
+                              </VBox>
                            </content>
                         </Tab>
                       <Tab text="%tpDescription.text">

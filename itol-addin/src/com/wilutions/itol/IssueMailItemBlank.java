@@ -18,6 +18,16 @@ public class IssueMailItemBlank implements IssueMailItem {
 	public String getBody() throws ComException {
 		return "";
 	}
+	
+	@Override
+	public String getFrom() {
+		return "";
+	}
+	
+	@Override
+	public String getTo() {
+		return "";
+	}
 
 	@Override
 	public void Save() throws ComException {

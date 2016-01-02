@@ -118,7 +118,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private HTMLEditor edNotes;
 	@FXML
-	private HBox hboxNotes;
+	private VBox boxNotes;
+	@FXML
+	private Button bnCopyMailBody;
 	@FXML
 	private WebView webHistory;
 	@FXML
@@ -276,16 +278,28 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			try {
 
 				// Get issue ID from mailItem
-				final String subject = mailItem.getSubject();
-				final String description = mailItem.getBody();
+				String subject = mailItem.getSubject();
+				String description = mailItem.getBody();
+				
 				srv = Globals.getIssueService();
-				String issueId = srv.extractIssueIdFromMailSubject(subject);
+				String issueId = IssueSubjectId.extractIssueIdFromMailSubject(subject);
 
 				// If issue ID found...
 				if (issueId != null && issueId.length() != 0) {
-
+					
 					// read issue
 					issue = srv.readIssue(issueId);
+					
+					// Set reply description (without original message) as issue notes.
+					// Provided that the computed reply description is not already contained
+					// in the issue description. This is the case if the issue has been 
+					// created based on this mail.
+					String replyDescription = IssueDescriptionParser.stripOriginalMessageFromReply(mailItem.getFrom(), mailItem.getTo(), subject, description);
+					String issueDescription = issue.getDescription().trim();
+					if (!issueDescription.startsWith(replyDescription)) {
+						issue.setPropertyString(Property.NOTES, replyDescription);
+					}
+					
 				}
 				else {
 
@@ -294,11 +308,18 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					if (defaultIssueAsString == null) {
 						defaultIssueAsString = "";
 					}
+					
+					subject = IssueSubjectId.stripIssueIdFromMailSubject(subject);
+
+					// strip RE:, Fwd:, AW:, WG: ...
+					subject = IssueSubjectId.stripReFwdFromSubject(subject);
+
 					issue = srv.createIssue(subject, description, defaultIssueAsString);
 
 					Thread.sleep(300);
 				}
 
+				
 				succ = true;
 
 			}
@@ -454,33 +475,32 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initDetectIssueModified() {
-		detectIssueModifiedTimer = new Timeline(
-				new KeyFrame(Duration.seconds(0.3), new EventHandler<ActionEvent>() {
-					@Override
-					public void handle(ActionEvent event) {
-						try {
-							updateData(true);
-							if (firstModifiedCheck) {
-								firstModifiedCheck = false;
-								// Backup issue
-								issueCopy = (Issue) issue.clone();
-								// System.out.println("issueCopy=" +
-								// issueCopy.getLastUpdate().getProperties());
-							}
-							else {
-								boolean eq = issue.equals(issueCopy);
-								setModified(!eq);
-								// if (modified) {
-								// System.out.println("modified issue=" +
-								// issue.getLastUpdate().getProperties());
-								// }
-							}
-						}
-						catch (IOException e) {
-							log.log(Level.WARNING, "", e);
-						}
+		detectIssueModifiedTimer = new Timeline(new KeyFrame(Duration.seconds(0.3), new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				try {
+					updateData(true);
+					if (firstModifiedCheck) {
+						firstModifiedCheck = false;
+						// Backup issue
+						issueCopy = (Issue) issue.clone();
+						// System.out.println("issueCopy=" +
+						// issueCopy.getLastUpdate().getProperties());
 					}
-				}));
+					else {
+						boolean eq = issue.equals(issueCopy);
+						setModified(!eq);
+						// if (modified) {
+						// System.out.println("modified issue=" +
+						// issue.getLastUpdate().getProperties());
+						// }
+					}
+				}
+				catch (IOException e) {
+					log.log(Level.WARNING, "", e);
+				}
+			}
+		}));
 		detectIssueModifiedTimer.setCycleCount(Timeline.INDEFINITE);
 		detectIssueModifiedStart();
 	}
@@ -803,16 +823,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		initalUpdateAttachmentView();
 
 		// Show/Hide History and Notes
-		addOrRemoveTab(tpNotes, !isNew());
-		addOrRemoveTab(tpHistory, !isNew());
-		tabpIssue.getSelectionModel().select(isNew() ? tpDescription : tpHistory);
+		addOrRemoveTab(tpNotes, !isNew(), 0);
+		addOrRemoveTab(tpHistory, !isNew(), Integer.MAX_VALUE);
+		tabpIssue.getSelectionModel().select(isNew() ? tpDescription : tpNotes);
 
 		bnShowIssueInBrowser.setDisable(isNew());
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
 		descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
-		if (descriptionHtmlEditor != null) {
-			edDescription.setVisible(false);
+		if (descriptionHtmlEditor != null && webDescription == null) {
+			hboxDescription.getChildren().remove(edDescription);
 			webDescription = new WebView();
 			hboxDescription.getChildren().clear();
 			hboxDescription.getChildren().add(webDescription);
@@ -820,12 +840,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 
 		notesHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.NOTES);
-		if (notesHtmlEditor != null) {
-			edNotes.setVisible(false);
+		if (notesHtmlEditor != null && webNotes == null) {
+			boxNotes.getChildren().remove(edNotes);
 			webNotes = new WebView();
-			hboxNotes.getChildren().clear();
-			hboxNotes.getChildren().add(webNotes);
-			hboxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+			boxNotes.getChildren().add(webNotes);
+			boxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 		}
 
 		Boolean injectId = (Boolean) Globals.getRegistry().read(Globals.REG_injectIssueIdIntoMailSubject);
@@ -838,12 +857,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		detectIssueModifiedStart();
 	}
 
-	private void addOrRemoveTab(Tab t, boolean add) {
+	private void addOrRemoveTab(Tab t, boolean add, int pos) {
 		if (add) {
 			for (Tab p : tabpIssue.getTabs()) {
 				if (p == t) return;
 			}
-			tabpIssue.getTabs().add(0, t);
+			pos = Math.min(pos, tabpIssue.getTabs().size());
+			tabpIssue.getTabs().add(pos, t);
 		}
 		else {
 			tabpIssue.getTabs().remove(t);
@@ -1283,15 +1303,18 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void saveMailWithIssueId(final ProgressCallback progressCallback) throws IOException {
 		Boolean injectId = (Boolean) Globals.getRegistry().read(Globals.REG_injectIssueIdIntoMailSubject);
 		if (injectId == null || injectId) {
-			IssueService srv = Globals.getIssueService();
 			String mailSubjectPrev = mailItem.getSubject();
-			String mailSubject = srv.injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
+			String mailSubject = injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
 			if (!mailSubjectPrev.equals(mailSubject)) {
 				mailItem.setSubject(mailSubject);
 				progressCallback.setParams("Save mail as \"" + mailSubject + "\n");
 				mailItem.Save();
 			}
 		}
+	}
+	
+	private String injectIssueIdIntoMailSubject(String subject, Issue issue) {
+		return IssueSubjectId.injectIssueIdIntoMailSubject(subject, issue);
 	}
 
 	@Override
@@ -1318,9 +1341,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		try {
 			Boolean succ = mnInjectIssueIdIntoSubject.isSelected();
 			Globals.getRegistry().write(Globals.REG_injectIssueIdIntoMailSubject, succ);
-			IssueService srv = Globals.getIssueService();
 			String oldSubject = mailItem.getSubject();
-			String newSubject = srv.injectIssueIdIntoMailSubject(oldSubject, succ ? issue : null);
+			String newSubject = injectIssueIdIntoMailSubject(oldSubject, succ ? issue : null);
 			if (!oldSubject.equals(newSubject)) {
 				mailItem.setSubject(newSubject);
 				mailItem.Save();
@@ -1347,7 +1369,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		Wrapper context = inspectorOrExplorer;
 		addin.internalConnect(context, null);
 	}
-	
+
 	@FXML
 	public void onConfigure() {
 		Wrapper context = inspectorOrExplorer;

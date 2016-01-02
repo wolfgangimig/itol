@@ -12,8 +12,6 @@ package com.wilutions.itol;
 
 import java.io.IOException;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
@@ -56,7 +54,7 @@ public class MailInspector extends InspectorWrapper implements MyWrapper {
 	
 	public String getIssueId() throws ComException, IOException {
 		IssueMailItem mailItem = issuePane.getMailItem();
-		return Globals.getIssueService().extractIssueIdFromMailSubject(mailItem.getSubject());
+		return IssueSubjectId.extractIssueIdFromMailSubject(mailItem.getSubject());
 	}
 
 	public void setIssueTaskPaneVisible(boolean visible) {

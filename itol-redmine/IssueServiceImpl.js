@@ -1156,7 +1156,8 @@ function getHtmlEditor(issue, propertyId) {
 			+ "<link href=\"REDMINE_URL/stylesheets/context_menu.css?1420968012\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\" />"
 			+ "</head>"
 			+ "<body>"
-			+ "<textarea class=\"wiki-edit\" style=\"width:100%;height:90%\" cols=\"60\" id=\"issue_notes\" name=\"issue[notes]\" rows=\"10\">ISSUE_DESCRIPTION"
+			+ "<textarea class=\"wiki-edit\" style=\"width:100%;height:90%\" cols=\"60\" id=\"issue_notes\" name=\"issue[notes]\" rows=\"10\">"
+			+ "ISSUE_DESCRIPTION"
 			+ "</textarea>" + "<script type=\"text/javascript\">"
 			+ "var wikiToolbar = new jsToolBar(document.getElementById('issue_notes'));"
 			+ "wikiToolbar.setHelpLink('/help/en/wiki_syntax.html');" + "wikiToolbar.draw();" + "</script>" + "</body>"
@@ -1321,13 +1322,6 @@ function createIssue(subject, description, defaultIssueAsString) {
 	if (islfine) log.log(Level.FINE, "createIssue(");
 
 	config.checkValid();
-
-	subject = stripIssueIdFromMailSubject(subject);
-	if (islfine) log.log(Level.FINE, "subject without issue ID=" + subject);
-
-	// strip RE:, Fwd:, AW:, WG: ...
-	subject = stripReFwdFromSubject(subject);
-	if (islfine) log.log(Level.FINE, "subject without RE, FWD, ... =" + subject);
 
 	var issue = new Issue();
 	var defaultProps = makeDefaultProperties(defaultIssueAsString);
@@ -1565,108 +1559,6 @@ function makeAttachmentSizeString(contentLength) {
 
 function validateIssue(iss) {
 	var ret = iss;
-	return ret;
-};
-
-function extractIssueIdFromMailSubject(subject) {
-	if (islfine) log.log(Level.FINE, "extractIssueIdFromMailSubject(" + subject);
-	var issueId = "";
-	var startTag = "[R-";
-	var p = subject.indexOf(startTag);
-	if (p >= 0) {
-		var q = subject.indexOf("]", p);
-		if (islfine) log.log(Level.FINE, "found " + startTag + " at " + p + ", ] at " + q);
-		if (q >= 0) {
-			issueId = subject.substring(p + startTag.length, q);
-		}
-	}
-	else {
-		p = subject.indexOf(" #");
-		if (p >= 0) {
-			if (islfine) log.log(Level.FINE, "found # at " + p);
-			p += 2;
-			var q = p;
-			for (; q < subject.length; q++) {
-				var c = subject.charAt(q);
-				if (isNaN(parseInt(c))) break;
-			}
-			if (islfine) log.log(Level.FINE, "last number at " + q);
-			if (q > p) {
-				issueId = subject.substring(p, q);
-			}
-		}
-	}
-	if (islfine) log.log(Level.FINE, ")extractIssueIdFromMailSubject=" + issueId);
-	return issueId;
-};
-
-function stripOneIssueIdFromMailSubject(subject) {
-	if (islfine) log.log(Level.FINE, "stripOneIssueIdFromMailSubject(" + subject);
-	var ret = subject;
-
-	var startTag = "[R-";
-	var p = subject.indexOf(startTag);
-	if (p >= 0) {
-		if (islfine) log.log(Level.FINE, "found issue ID at " + p);
-		var q = subject.indexOf("]", p);
-		if (q >= 0) {
-			ret = subject.substring(q + 1).trim();
-			if (islfine) log.log(Level.FINE, "removed issue ID at " + p);
-		}
-	}
-	ret = ret.trim();
-	if (islfine) log.log(Level.FINE, ")stripOneIssueIdFromMailSubject=" + ret);
-	return ret;
-};
-
-function stripIssueIdFromMailSubject(subject) {
-	var ret = stripOneIssueIdFromMailSubject(subject);
-	while (ret != subject) {
-		subject = ret;
-		ret = stripOneIssueIdFromMailSubject(subject);
-	}
-	ret = ret.trim();
-	return ret;
-}
-
-function stripReFwdFromSubject(subject) {
-	var p = "";
-	while (p != subject) {
-		p = subject;
-		subject = stripFirstReFwdFromSubject(p);
-	}
-	return subject;
-}
-
-function stripFirstReFwdFromSubject(subject) {
-	subject = subject.trim();
-	var s = subject.toLowerCase();
-	var p = s.indexOf(":");
-	if (p < 4) {
-		subject = subject.substring(p + 1);
-	}
-	return subject;
-}
-
-function injectIssueIdIntoMailSubject(subject, iss) {
-	var ret = stripIssueIdFromMailSubject("" + subject);
-
-	if (iss && iss.id && iss.id.length) {
-		ret = "[R-" + iss.getId() + "] ";
-		ret += subject;
-	}
-	else {
-		var p = subject.indexOf("[R-");
-		if (p >= 0) {
-			var q = subject.indexOf("]", p + 3);
-			if (q >= 0) {
-				ret = subject.substring(0, p);
-				ret += subject.substring(q + 1);
-			}
-		}
-	}
-
-	ret = ret.trim();
 	return ret;
 };
 

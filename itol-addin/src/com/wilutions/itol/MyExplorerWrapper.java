@@ -34,9 +34,9 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 
 	public MyExplorerWrapper(Explorer explorer) {
 		super(explorer);
-		
+
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "MyExplorerWrapper(");
-		
+
 		issuePane = new IssueTaskPane(this);
 
 		deferShowSelectedItem = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
@@ -51,24 +51,24 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "deferShowSelectedItem.play");
 		deferShowSelectedItem.setCycleCount(Timeline.INDEFINITE);
 		deferShowSelectedItem.play();
-		
+
 		initRibbonControls();
-		
+
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")MyExplorerWrapper");
 	}
-	
+
 	private void initRibbonControls() {
 
 		RibbonButton bnNewIssue = new RibbonButton();
 		bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
 		bnNewIssue.setImage("Alert-icon-32.png");
 		bnNewIssue.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
-			ItolAddin addin = (ItolAddin)Globals.getThisAddin();
+			ItolAddin addin = (ItolAddin) Globals.getThisAddin();
 			addin.showIssuePane(control, context, pressed);
 		});
-		
+
 	}
-	
+
 	@Override
 	public IssueMailItem getSelectedItem() {
 		IssueMailItem ret = new IssueMailItemBlank();
@@ -118,7 +118,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		if (issuePane != null) {
 			issuePane.close();
 		}
-		
+
 		ribbonControlsDispatchReferences.clear();
 		super.onClose();
 	}
@@ -138,7 +138,8 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 			if (nbOfSelectedItems != 0) {
 				ret = selection.Item(1);
 			}
-		} catch (ComException ignored) {
+		}
+		catch (ComException ignored) {
 			// explorer.getSelection() causes a HRESULT=0x80020009 when
 			// Outlook starts.
 		}
@@ -152,7 +153,8 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 				Globals.getThisAddin().createTaskPaneWindowAsync(issuePane, title, explorer, (succ, ex) -> {
 					if (ex != null) {
 						MessageBox.show(explorer, "Error", ex.getMessage(), null);
-					} else {
+					}
+					else {
 						internalShowSelectedItem();
 					}
 				});
