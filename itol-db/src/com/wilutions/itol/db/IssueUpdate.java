@@ -58,14 +58,7 @@ public class IssueUpdate implements Serializable {
 			properties.remove(prop.getId());
 		}
 		else {
-			Property oldProp = properties.get(prop.getId());
-			if (oldProp != null && oldProp.equals(prop)) {
-
-			}
-			else {
-				System.out.println("set property=" + prop + ", old=" + oldProp);
-				properties.put(prop.getId(), prop);
-			}
+			properties.put(prop.getId(), prop);
 		}
 	}
 

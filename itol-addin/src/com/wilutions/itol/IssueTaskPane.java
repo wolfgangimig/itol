@@ -84,8 +84,6 @@ import netscape.javascript.JSObject;
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private volatile Issue issue = new Issue();
-	private Issue issueCopy;
-	private Logger log = Logger.getLogger("IssueTaskPane");
 
 	@FXML
 	private VBox vboxRoot;
@@ -170,9 +168,34 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private ResourceBundle resb;
 	private Timeline detectIssueModifiedTimer;
 	private boolean modified;
-	private volatile boolean firstModifiedCheck;
 	private AttachmentHelper attachmentHelper = new AttachmentHelper();
 	private MyWrapper inspectorOrExplorer;
+	private Logger log = Logger.getLogger("IssueTaskPane");
+
+	/**
+	 * Backup issue copy used to check for modifications. The
+	 * detectIssueModifiedTimer frequently compares the {@link #issue} with this
+	 * member to find out, if the issue has been modified.
+	 */
+	private Issue issueCopy;
+
+	/**
+	 * Is first check for modification after a new issue has been assigned. If
+	 * this member is true, the detectIssueModifiedModifiedTimer creates a
+	 * backup copy of the issue instead of checking for modifications. Creating
+	 * the backup copy has to be delayed after the issue has been read, because
+	 * custom properties with default values might be added to the issue in the
+	 * first call to updateData(true).
+	 */
+	private volatile boolean firstModifiedCheck;
+
+	/**
+	 * Run this objects after backup copy of issue has been created. This is
+	 * currently used to set the NEW NOTES after an issue has been read.
+	 * 
+	 * @see #updateIssueFromMailItem(AsyncResult)
+	 */
+	private List<Runnable> autoIssueModifications = new ArrayList<Runnable>();
 
 	/**
 	 * Owner window for child dialogs (message boxes)
@@ -300,8 +323,19 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 						String replyDescription = IssueDescriptionParser.stripOriginalMessageFromReply(
 								mailItem.getFrom(), mailItem.getTo(), subject, description);
 						if (!replyDescription.isEmpty()) {
-							issue.setPropertyString(Property.NOTES, replyDescription);
-							setModified(true);
+
+							// Set NEW NOTES property after the backup copy
+							// has been created. Otherwise the issue would not
+							// bee seen as modified.
+							autoIssueModifications.add(() -> {
+
+								issue.setPropertyString(Property.NOTES, replyDescription);
+
+								Platform.runLater(() -> {
+									tabpIssue.getSelectionModel().select(tpNotes);
+								});
+
+							});
 						}
 					}
 				}
@@ -473,25 +507,33 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initDetectIssueModified() {
-		detectIssueModifiedTimer = new Timeline(new KeyFrame(Duration.seconds(0.3), new EventHandler<ActionEvent>() {
+		detectIssueModifiedTimer = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
 				try {
 					updateData(true);
+
 					if (firstModifiedCheck) {
+
 						firstModifiedCheck = false;
+
 						// Backup issue
 						issueCopy = (Issue) issue.clone();
-						// System.out.println("issueCopy=" +
-						// issueCopy.getLastUpdate().getProperties());
+
+						// Run the deferred issue modifications.
+						{
+							for (Runnable run : autoIssueModifications) {
+								run.run();
+							}
+							if (!autoIssueModifications.isEmpty()) {
+								updateData(false);
+							}
+							autoIssueModifications.clear();
+						}
 					}
 					else {
 						boolean eq = issue.equals(issueCopy);
 						setModified(!eq);
-						// if (modified) {
-						// System.out.println("modified issue=" +
-						// issue.getLastUpdate().getProperties());
-						// }
 					}
 				}
 				catch (IOException e) {
@@ -627,8 +669,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initHistory();
 
-			bnUpdate.setDisable(issue.getSubject().isEmpty());
 		}
+	}
+
+	private void setBnUpdateEnabled(boolean enable) {
+		bnUpdate.setDisable(!enable);
 	}
 
 	private void saveAttachments() {
@@ -641,7 +686,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			bnAssignSelection.setSelected(false);
 		}
 		boolean enabled = modified || isNew();
-		bnUpdate.setDisable(!enabled || issue.getSubject().isEmpty());
+		boolean hasSubject = !issue.getSubject().isEmpty();
+		setBnUpdateEnabled(enabled && hasSubject);
 	}
 
 	private void initIssueId() {
@@ -765,7 +811,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initSubject() {
-		edSubject.setText(issue.getSubject());
+		String text = issue.getSubject();
+		edSubject.setText(text);
 	}
 
 	private void initDescription() throws IOException {
@@ -822,9 +869,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		// Show/Hide History and Notes
 		addOrRemoveTab(tpNotes, !isNew(), 0);
-		addOrRemoveTab(tpHistory, !isNew(), Integer.MAX_VALUE);
-		tabpIssue.getSelectionModel().select(isNew() ? tpDescription : tpNotes);
-
+		addOrRemoveTab(tpHistory, !isNew(), 0);
+		tabpIssue.getSelectionModel().select(isNew() ? tpDescription : tpHistory);
+		
 		bnShowIssueInBrowser.setDisable(isNew());
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
