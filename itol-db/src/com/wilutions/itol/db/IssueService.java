@@ -46,6 +46,10 @@ public interface IssueService {
 
 	Issue validateIssue(Issue iss) throws IOException;
 
+	String extractIssueIdFromMailSubject(String subject) throws IOException;
+
+	String injectIssueIdIntoMailSubject(String subject, Issue iss) throws IOException;
+
 	IdName getCurrentUser() throws IOException;
 
 	String getShowIssueUrl(String issueId) throws IOException;

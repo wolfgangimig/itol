@@ -20,7 +20,7 @@ import java.util.Map;
 public class IssueUpdate implements Serializable {
 
 	private static final long serialVersionUID = -814436458752378253L;
-	
+
 	private String id;
 
 	private Date createDate;
@@ -56,8 +56,16 @@ public class IssueUpdate implements Serializable {
 	public void setProperty(Property prop) {
 		if (prop.isNull()) {
 			properties.remove(prop.getId());
-		} else {
-			properties.put(prop.getId(), prop);
+		}
+		else {
+			Property oldProp = properties.get(prop.getId());
+			if (oldProp != null && oldProp.equals(prop)) {
+
+			}
+			else {
+				System.out.println("set property=" + prop + ", old=" + oldProp);
+				properties.put(prop.getId(), prop);
+			}
 		}
 	}
 

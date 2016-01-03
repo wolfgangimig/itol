@@ -54,7 +54,7 @@ public class MailInspector extends InspectorWrapper implements MyWrapper {
 	
 	public String getIssueId() throws ComException, IOException {
 		IssueMailItem mailItem = issuePane.getMailItem();
-		return IssueSubjectId.extractIssueIdFromMailSubject(mailItem.getSubject());
+		return Globals.getIssueService().extractIssueIdFromMailSubject(mailItem.getSubject());
 	}
 
 	public void setIssueTaskPaneVisible(boolean visible) {

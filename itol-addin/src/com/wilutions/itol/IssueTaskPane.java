@@ -283,7 +283,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				String description = mailItem.getBody().replace("\r\n", "\n");
 
 				srv = Globals.getIssueService();
-				String issueId = IssueSubjectId.extractIssueIdFromMailSubject(subject);
+				String issueId = srv.extractIssueIdFromMailSubject(subject);
 
 				// If issue ID found...
 				if (issueId != null && issueId.length() != 0) {
@@ -299,7 +299,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					if (lastModified.before(receivedTime)) {
 						String replyDescription = IssueDescriptionParser.stripOriginalMessageFromReply(
 								mailItem.getFrom(), mailItem.getTo(), subject, description);
-						issue.setPropertyString(Property.NOTES, replyDescription);
+						if (!replyDescription.isEmpty()) {
+							issue.setPropertyString(Property.NOTES, replyDescription);
+							setModified(true);
+						}
 					}
 				}
 				else {
@@ -309,11 +312,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					if (defaultIssueAsString == null) {
 						defaultIssueAsString = "";
 					}
-
-					subject = IssueSubjectId.stripIssueIdFromMailSubject(subject);
-
-					// strip RE:, Fwd:, AW:, WG: ...
-					subject = IssueSubjectId.stripReFwdFromSubject(subject);
 
 					issue = srv.createIssue(subject, description, defaultIssueAsString);
 
@@ -1313,8 +1311,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private String injectIssueIdIntoMailSubject(String subject, Issue issue) {
-		return IssueSubjectId.injectIssueIdIntoMailSubject(subject, issue);
+	private String injectIssueIdIntoMailSubject(String subject, Issue issue) throws IOException {
+		return Globals.getIssueService().injectIssueIdIntoMailSubject(subject, issue);
 	}
 
 	@Override

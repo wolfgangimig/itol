@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import com.wilutions.itol.IssueSubjectId;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.DescriptionTextEditor;
 import com.wilutions.itol.db.FindIssuesInfo;
@@ -30,7 +31,6 @@ import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueHtmlEditor;
 import com.wilutions.itol.db.IssueService;
-import com.wilutions.itol.db.IssueUpdate;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
@@ -277,6 +277,16 @@ public class IssueServiceImpl implements IssueService {
 	public void initialize() {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public String extractIssueIdFromMailSubject(String subject) throws IOException {
+		return IssueSubjectId.extractIssueIdFromMailSubject(subject);
+	}
+
+	@Override
+	public String injectIssueIdIntoMailSubject(String subject, Issue iss) throws IOException {
+		return IssueSubjectId.injectIssueIdIntoMailSubject(subject, iss);
 	}
 
 
