@@ -65,8 +65,8 @@ var PropertyClasses = Java.type("com.wilutions.itol.db.PropertyClasses");
 var IdName = Java.type("com.wilutions.itol.db.IdName");
 var JHttpClient = Java.type("com.wilutions.itol.db.HttpClient");
 var HttpResponse = Java.type("com.wilutions.itol.db.HttpResponse");
-var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
 var Issue = Java.type("com.wilutions.itol.db.Issue");
+var IssueUpdate = Java.type("com.wilutions.itol.db.IssueUpdate");
 var Attachment = Java.type("com.wilutions.itol.db.Attachment");
 var IssueHtmlEditor = Java.type("com.wilutions.itol.db.IssueHtmlEditor");
 var PasswordEncryption = Java.type("com.wilutions.itol.db.PasswordEncryption");
@@ -1042,6 +1042,9 @@ function getIssueProject(issue) {
 	if (islfine) log.log(Level.FINE, "getIssueProject(");
 	var projectId = issue ? issue.getProject() : 0;
 	var project = data.projects[projectId];
+	if (!project) {
+		log.log(Level.WARNING, "No project definition found for issue.projectId=" + projectId);
+	}
 	if (islfine) log.log(Level.FINE, ")getIssueProject=" + project);
 	return project;
 }
@@ -1589,7 +1592,7 @@ function readIssue(issueId) {
 	if (islfine) log.log(Level.FINE, "readIssue(" + issueId);
 	var response = httpClient.get("/issues/" + issueId + ".json?"
 			+ "include=children,attachments,relations,changesets,journals,watchers");
-	ddump("issue", response);
+	idump("issue", response);
 
 	var redmineIssue = response.issue;
 	var trackerIssue = new Issue();
@@ -1677,6 +1680,20 @@ function toTrackerIssue(redmineIssue, issue) {
 			trackerAttachments.push(ta);
 		}
 		issue.attachments = trackerAttachments;
+	}
+	
+	// Updates, ordered by time
+	if (redmineIssue.journals) {
+		if (islfine) log.log(Level.FINE, "#journals=" + redmineIssue.journals.length);
+		for (var i = 0; i < redmineIssue.journals.length; i++) {
+			var redmineUpdate = redmineIssue.journals[i];
+			var trackerUpdate = new IssueUpdate();
+			trackerUpdate.setId(redmineUpdate.id);
+			trackerUpdate.setCreateDateIso(redmineUpdate.created_on);
+			trackerUpdate.setCreatedBy(redmineUpdate.user.id);	
+			if (islfine) log.log(Level.FINE, "journal id=" + trackerUpdate.id + ", date=" + trackerUpdate.createDate);
+			issue.updates.add(trackerUpdate);
+		}
 	}
 
 	if (islfine) log.log(Level.FINE, ")toTrackerIssue");

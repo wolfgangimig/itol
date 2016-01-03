@@ -1,5 +1,7 @@
 package com.wilutions.itol;
 
+import java.util.Date;
+
 import com.wilutions.com.ComException;
 import com.wilutions.mslib.outlook.Attachment;
 
@@ -53,6 +55,11 @@ public class IssueMailItemBlank implements IssueMailItem {
 			
 		};
 		return ret;
+	}
+
+	@Override
+	public Date getReceivedTime() {
+		return new Date();
 	}
 
 }

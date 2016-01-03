@@ -1,5 +1,7 @@
 package com.wilutions.itol;
 
+import java.util.Date;
+
 import com.wilutions.com.ComException;
 
 public interface IssueMailItem {
@@ -18,5 +20,7 @@ public interface IssueMailItem {
 	public void SaveAs(final String Path, final Object Type) throws ComException;
 	
 	public IssueAttachments getAttachments() throws ComException;
+
+	public Date getReceivedTime();
 
 }

@@ -11,6 +11,7 @@
 package com.wilutions.itol.db;
 
 import java.io.Serializable;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,8 @@ import java.util.Map;
 public class IssueUpdate implements Serializable {
 
 	private static final long serialVersionUID = -814436458752378253L;
+	
+	private String id;
 
 	private Date createDate;
 
@@ -111,5 +114,29 @@ public class IssueUpdate implements Serializable {
 				propIds.add(propId);
 			}
 		}
+	}
+
+	public void setCreateDate(Date createDate) {
+		this.createDate = createDate;
+	}
+
+	public void setCreateDateIso(String createDate) {
+		this.createDate = Date.from(ZonedDateTime.parse(createDate).toInstant());
+	}
+
+	public void setCreatedBy(String createdBy) {
+		this.createdBy = createdBy;
+	}
+
+	public void setProperties(Map<String, Property> properties) {
+		this.properties = properties;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
 	}
 }

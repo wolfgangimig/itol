@@ -8,7 +8,7 @@ import java.util.HashSet;
 public class IssueDescriptionParser {
 
 	public static String stripOriginalMessageFromReply(String from, String to, String subject, String description) {
-		String ret = "";
+		String ret = description;
 		OultookOriginalMessageDelimiter delim = new OultookOriginalMessageDelimiter();
 		delim.replyFrom = from;
 		delim.replyTo = to;

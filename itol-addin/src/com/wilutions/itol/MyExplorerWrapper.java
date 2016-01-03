@@ -183,7 +183,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 				if (mailItem != null) {
 					Object mailId = mailItem._get("EntryID");
 					if (!mailId.equals(lastEntryID)) {
-						issuePane.setMailItem(new IssueMailItemImpl(mailItem));
+						issuePane.setMailItem(new IssueMailItemImpl(mailItem.as(MailItem.class)));
 						lastEntryID = mailId;
 					}
 				}

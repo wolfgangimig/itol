@@ -114,13 +114,12 @@ public class IssueServiceImpl implements IssueService {
 
 	@Override
 	public Issue createIssue(String subject, String description, String defaultIssueAsString) {
-		IssueUpdate issi = new IssueUpdate();
 //		issi.setProperty(new Property(Property.ISSUE_TYPE, getIssueTypes(Issue.NULL).get(0).getId()));
 //		issi.setProperty(new Property(Property.ASSIGNEE, getAssignees(Issue.NULL).get(0).getId()));
 //		issi.setProperty(new Property(Property.CATEGORY, getCategories(Issue.NULL).get(0).getId()));
 //		issi.setProperty(new Property(Property.PRIORITY, getPriorities(Issue.NULL).get(2).getId()));
 //		issi.setProperty(new Property(Property.STATE, getIssueStates(Issue.NULL).get(0).getId()));
-		Issue iss = new Issue("0", issi);
+		Issue iss = new Issue();
 		iss.setSubject(subject);
 		iss.setDescription(description);
 		return iss;

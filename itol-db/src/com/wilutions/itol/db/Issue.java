@@ -12,6 +12,7 @@ package com.wilutions.itol.db;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
@@ -30,47 +31,38 @@ public class Issue implements Serializable {
 	private List<String> relatedIssueIds;
 	
 	/**
+	 * Current issue data.
+	 */
+	private IssueUpdate currentUpdate;
+	
+	/**
 	 * Issue items in reverse order.
-	 * The latest item is at index 0.
-	 * The initial item is at end position.
+	 * The oldest item is at index 0.
 	 */
 	private List<IssueUpdate> updates;
 	
 	/**
-	 * Initializes a NULL object.
+	 * Initialize.
 	 */
 	public Issue() {
 		this.id = "";
-		this.updates = new ArrayList<IssueUpdate>(1);
-		this.updates.add(new IssueUpdate());
+		this.currentUpdate = new IssueUpdate();
+		this.updates = new ArrayList<IssueUpdate>();
 	}
 	
 	public Issue(String id, Issue rhs) {
 		assert id != null && id.length() != 0;
 		assert rhs != null;
 		this.id = id;
+		this.currentUpdate = rhs.getCurrentUpdate();
 		this.updates = rhs.getUpdates();
-	}
-	
-	public Issue(String id, List<IssueUpdate> updates) {
-		assert id != null && id.length() != 0;
-		assert updates != null && updates.size() != 0;
-		this.id = id;
-		this.updates = updates;
-	}
-	
-	public Issue(String id, IssueUpdate initialUpdate) {
-		assert id != null && id.length() != 0;
-		assert initialUpdate != null;
-		this.id = id;
-		this.updates = new ArrayList<IssueUpdate>(1);
-		this.updates.add(initialUpdate);
 	}
 	
 	@Override
 	public Object clone() {
 		Issue ret = new Issue();
 		ret.id = this.id;
+		ret.currentUpdate = (IssueUpdate)this.currentUpdate.clone();
 		ret.updates = new ArrayList<IssueUpdate>(this.updates.size());
 		for (IssueUpdate upd : this.updates) {
 			IssueUpdate updCopy = (IssueUpdate)upd.clone();
@@ -85,6 +77,9 @@ public class Issue implements Serializable {
 		if (rhs != null && rhs instanceof Issue) {
 			Issue issue = (Issue)rhs;
 			ret = this.id.equals(issue.id);
+			if (ret) {
+				ret = currentUpdate.equals(issue.currentUpdate);
+			}
 			if (ret) {
 				ret = updates.equals(issue.updates);
 			}
@@ -133,16 +128,20 @@ public class Issue implements Serializable {
 		return updates;
 	}
 
-	public IssueUpdate getInitialUpdate() {
-		return updates.get(updates.size()-1);
+	public IssueUpdate getCurrentUpdate() {
+		return currentUpdate;
 	}
 	
 	public IssueUpdate getLastUpdate() {
-		return updates.get(0);
+		IssueUpdate ret = currentUpdate;
+		if (updates.size() != 0) {
+			ret = updates.get(updates.size()-1);
+		}
+		return ret;
 	}
 	
 	public Object getPropertyValue(String propertyId, Object defaultValue) {
-		Object ret = getLastUpdate().getProperty(propertyId).getValue();
+		Object ret = getCurrentUpdate().getProperty(propertyId).getValue();
 		if (ret == null) {
 			ret = defaultValue;
 			setPropertyValue(propertyId, ret);
@@ -153,10 +152,10 @@ public class Issue implements Serializable {
 	public void setPropertyValue(String propertyId, Object value) {
 		if (value != null) {
 			Property prop = new Property(propertyId, value);
-			getLastUpdate().setProperty(prop);
+			getCurrentUpdate().setProperty(prop);
 		}
 		else {
-			getLastUpdate().removeProperty(propertyId);
+			getCurrentUpdate().removeProperty(propertyId);
 		}
 	}
 	
@@ -210,7 +209,8 @@ public class Issue implements Serializable {
 	}
 	
 	public String getProject() {
-		return (String)getPropertyValue(Property.PROJECT, "");
+		String ret = (String)getPropertyValue(Property.PROJECT, "");
+		return ret;
 	}
 	
 	public void setProject(String value) {
@@ -250,5 +250,9 @@ public class Issue implements Serializable {
 		setPropertyValue(Property.ATTACHMENTS, atts);
 	}
 	
+	public Date getLastModified() {
+		Date ret = getLastUpdate().getCreateDate();
+		return ret;
+	}
 
 }

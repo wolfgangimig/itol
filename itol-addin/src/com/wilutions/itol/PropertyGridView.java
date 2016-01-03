@@ -148,7 +148,7 @@ public class PropertyGridView {
 		List<IdName> selectList = pclass.getSelectList();
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList);
 
-		Property prop = issue.getLastUpdate().getProperty(propertyId);
+		Property prop = issue.getCurrentUpdate().getProperty(propertyId);
 		if (prop != null && prop.getValue() == null) {
 			Object defaultValue = pclass.getDefaultValue();
 			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "defaultValue=" + defaultValue);

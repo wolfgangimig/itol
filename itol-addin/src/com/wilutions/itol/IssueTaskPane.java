@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -279,27 +280,27 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 				// Get issue ID from mailItem
 				String subject = mailItem.getSubject();
-				String description = mailItem.getBody();
-				
+				String description = mailItem.getBody().replace("\r\n", "\n");
+
 				srv = Globals.getIssueService();
 				String issueId = IssueSubjectId.extractIssueIdFromMailSubject(subject);
 
 				// If issue ID found...
 				if (issueId != null && issueId.length() != 0) {
-					
+
 					// read issue
 					issue = srv.readIssue(issueId);
-					
-					// Set reply description (without original message) as issue notes.
-					// Provided that the computed reply description is not already contained
-					// in the issue description. This is the case if the issue has been 
-					// created based on this mail.
-					String replyDescription = IssueDescriptionParser.stripOriginalMessageFromReply(mailItem.getFrom(), mailItem.getTo(), subject, description);
-					String issueDescription = issue.getDescription().trim();
-					if (!issueDescription.startsWith(replyDescription)) {
+
+					Date lastModified = issue.getLastModified();
+					Date receivedTime = mailItem.getReceivedTime();
+
+					// Set reply description (without original message) as issue
+					// notes, if the mail is newer than the last update.
+					if (lastModified.before(receivedTime)) {
+						String replyDescription = IssueDescriptionParser.stripOriginalMessageFromReply(
+								mailItem.getFrom(), mailItem.getTo(), subject, description);
 						issue.setPropertyString(Property.NOTES, replyDescription);
 					}
-					
 				}
 				else {
 
@@ -308,7 +309,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					if (defaultIssueAsString == null) {
 						defaultIssueAsString = "";
 					}
-					
+
 					subject = IssueSubjectId.stripIssueIdFromMailSubject(subject);
 
 					// strip RE:, Fwd:, AW:, WG: ...
@@ -319,7 +320,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					Thread.sleep(300);
 				}
 
-				
 				succ = true;
 
 			}
@@ -658,10 +658,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		IdName idn = cb.getValue();
 		if (idn != null && !idn.equals(IdName.NULL)) {
 			Property prop = new Property(propertyId, idn.getId());
-			issue.getLastUpdate().setProperty(prop);
+			issue.getCurrentUpdate().setProperty(prop);
 		}
 		else {
-			issue.getLastUpdate().removeProperty(propertyId);
+			issue.getCurrentUpdate().removeProperty(propertyId);
 		}
 	}
 
@@ -803,7 +803,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			List<IdName> items = pclass.getSelectList();
 			autoCompletionBinding.setSuggest(new DefaultSuggest<IdName>(items));
 
-			Property prop = issue.getLastUpdate().getProperty(propertyId);
+			Property prop = issue.getCurrentUpdate().getProperty(propertyId);
 			if (prop != null) {
 				String id = (String) prop.getValue();
 				for (IdName idn : items) {
@@ -1312,7 +1312,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			}
 		}
 	}
-	
+
 	private String injectIssueIdIntoMailSubject(String subject, Issue issue) {
 		return IssueSubjectId.injectIssueIdIntoMailSubject(subject, issue);
 	}

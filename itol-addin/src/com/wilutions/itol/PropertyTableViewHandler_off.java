@@ -42,7 +42,7 @@ public class PropertyTableViewHandler_off {
 	}
 	
 	private void addProperty(Issue issue, String propertyId) throws IOException {
-		Property prop = issue.getLastUpdate().getProperty(propertyId);
+		Property prop = issue.getCurrentUpdate().getProperty(propertyId);
 		if (prop == null) return;
 		
 		PropertyClass pclass = new PropertyClass(PropertyClass.TYPE_STRING_LIST, 
