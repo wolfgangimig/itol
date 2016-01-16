@@ -5,6 +5,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import com.wilutions.com.IDispatch;
+import com.wilutions.itol.db.Attachment;
+import com.wilutions.mslib.outlook.MailItem;
+import com.wilutions.mslib.outlook.Selection;
+import com.wilutions.mslib.outlook._Explorer;
+
 import javafx.event.EventHandler;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
@@ -18,12 +24,6 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.util.Callback;
-
-import com.wilutions.com.IDispatch;
-import com.wilutions.itol.db.Attachment;
-import com.wilutions.mslib.outlook.MailItem;
-import com.wilutions.mslib.outlook.Selection;
-import com.wilutions.mslib.outlook._Explorer;
 
 public class AttachmentTableViewHandler {
 
@@ -76,6 +76,9 @@ public class AttachmentTableViewHandler {
 					protected void updateItem(String fileName, boolean empty) {
 						super.updateItem(fileName, empty);
 						if (fileName != null) {
+							Attachment att = (Attachment) getTableRow().getItem();
+							String style = att.getId().isEmpty() ? "-fx-font-weight: bold;" : "fx-font-weight: normal;";
+							setStyle(style);
 							String str = AttachmentHelper.getFileName(fileName);
 							setText(str);
 						}
@@ -122,8 +125,8 @@ public class AttachmentTableViewHandler {
 		// contentLengthColumn.setMaxWidth(contentLengthColumnWidth);
 		// contentLengthColumn.setMinWidth(contentLengthColumnWidth);
 
-		fileNameColumn.prefWidthProperty().bind(
-				table.widthProperty().subtract(iconColumnWidth + contentLengthColumnWidth));
+		fileNameColumn.prefWidthProperty()
+				.bind(table.widthProperty().subtract(iconColumnWidth + contentLengthColumnWidth));
 
 		table.getColumns().clear();
 		table.getColumns().add(iconColumn);
@@ -132,6 +135,37 @@ public class AttachmentTableViewHandler {
 
 		table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 		table.setPlaceholder(new Label(resb.getString("tabAttachments.emptyMessage")));
+
+		// table.setOnKeyPressed(new EventHandler<KeyEvent>() {
+		// @Override
+		// public void handle(KeyEvent event) {
+		// if (event.getCode() == KeyCode.V && event.isControlDown()) {
+		// Clipboard cb = Clipboard.getSystemClipboard();
+		// System.out.println("clipboard: image=" + cb.hasImage() +
+		// ", files=" + cb.hasFiles() +
+		// ", html=" + cb.hasHtml() +
+		// ", rtf=" + cb.hasRtf() +
+		// ", string=" + cb.hasString());
+		// if (cb.hasImage()) {
+		// bild wird falsch dargestellt.
+		// Image image = cb.getImage();
+		// ImageView iv = new ImageView();
+		// iv.setImage(image);
+		//
+		// VBox vbox = new VBox();
+		// vbox.getChildren().add(iv);
+		// Scene scene = new Scene(vbox);
+		// Stage stage = new Stage();
+		// stage.setScene(scene);
+		// stage.show();
+		//
+		// Attachment att = attachmentHelper.createFromImage(image, "");
+		// table.getItems().add(att);
+		// }
+		//
+		// }
+		// }
+		// });
 
 		// //////////////////
 		// Drag&Drop
@@ -149,7 +183,12 @@ public class AttachmentTableViewHandler {
 			@Override
 			public void handle(DragEvent event) {
 				Dragboard db = event.getDragboard();
-				if (db.hasFiles()) {
+				System.out.println("clipboard: image=" + db.hasImage() + ", files=" + db.hasFiles() + ", html="
+						+ db.hasHtml() + ", rtf=" + db.hasRtf() + ", string=" + db.hasString());
+				if (db.hasImage()) {
+
+				}
+				else if (db.hasFiles()) {
 					// D&D from Outlook also enteres this block,
 					// although Java does not understand the format.
 					// In contrast to this, db.hasFiles() is false
@@ -168,6 +207,8 @@ public class AttachmentTableViewHandler {
 			public void handle(DragEvent event) {
 				Dragboard db = event.getDragboard();
 				boolean success = false;
+				Object src = event.getGestureSource();
+				System.out.println("src=" + src);
 				if (db.hasFiles()) {
 					success = true;
 					List<File> files = db.getFiles();
@@ -177,14 +218,14 @@ public class AttachmentTableViewHandler {
 					}
 				}
 				else {
-					
+
 					// Because db.hasFiles() was true in onDragOver
 					// and it is false here, we assume that Outlook
 					// data is dropped.
 					// Here, all selected items in the explorer are
 					// dropped.
-					
-					// Mail attachments are sent as ordinary file drops. 
+
+					// Mail attachments are sent as ordinary file drops.
 
 					try {
 						_Explorer explorer = Globals.getThisAddin().getApplication().ActiveExplorer();

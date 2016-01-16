@@ -204,7 +204,7 @@ var config = {
  * Execute HTTP requests. JavaScript wrapper around the Java class JHttpClient.
  */
 var httpClient = {
-	
+		
 	/**
 	 * Send a request.
 	 * 
@@ -219,29 +219,7 @@ var httpClient = {
 	 */
 	send : function(method, headers, params, content, progressCallback) {
 		var destUrl = config.url + params;
-		this._addAuthHeader(headers);
-		var response = JHttpClient.send(destUrl, method, headers, content, progressCallback ? progressCallback : null);
-		
-		if (response.status < 200 || response.status > 299) {
-			var msg = "";
-			if (response.status) {
-				msg += "HTTP Status " + response.status;
-			}
-			if (response.errorMessage) {
-				if (msg) {
-					msg += ", ";
-				}
-				msg += response.errorMessage;
-			}
-			if (response.content) {
-				if (msg) {
-					msg += ", ";
-				}
-				msg += response.content;
-			}
-			throw new IOException(msg);
-		}
-		return response;
+		return this._internalSend(method, headers, destUrl, content, progressCallback);
 	},
 
 	/**
@@ -313,6 +291,18 @@ var httpClient = {
 	},
 
 	/**
+	 * Send GET request to receive a file object.
+	 * 
+	 * @param url
+	 *            URL of issue attachment
+	 * @return File in temporary directory. Extension .tmp.
+	 */
+	download : function(url, progressCallback) {
+		var headers = [];
+		return this._internalSend("GET", headers, url, null, progressCallback).file;
+	},
+
+	/**
 	 * Add the Redmine API key in header X-Redmine-API-Key for authentication.
 	 */
 	_addAuthHeader : function(headers) {
@@ -323,7 +313,34 @@ var httpClient = {
 			var auth = JHttpClient.makeBasicAuthenticationHeader(config.userName, config.userPwd);
 			headers.push("Authorization: Basic " + auth);
 		}
+	},
+
+	_internalSend : function(method, headers, destUrl, content, progressCallback) {
+		this._addAuthHeader(headers);
+		var response = JHttpClient.send(destUrl, method, headers, content, progressCallback ? progressCallback : null);
+		
+		if (response.status < 200 || response.status > 299) {
+			var msg = "";
+			if (response.status) {
+				msg += "HTTP Status " + response.status;
+			}
+			if (response.errorMessage) {
+				if (msg) {
+					msg += ", ";
+				}
+				msg += response.errorMessage;
+			}
+			if (response.content) {
+				if (msg) {
+					msg += ", ";
+				}
+				msg += response.content;
+			}
+			throw new IOException(msg);
+		}
+		return response;
 	}
+	
 };
 
 /**
@@ -1837,6 +1854,10 @@ function setIssuePropertyValue(issue, propId, propValue) {
 
 function getIssueHistoryUrl(issueId) {
 	return config.url + "/issues/" + issueId + "?key=" + config.apiKey;
+}
+
+function downloadAttachment(url, progressCallback) {
+	return httpClient.download(url, progressCallback);
 }
 
 initializePropertyClasses();

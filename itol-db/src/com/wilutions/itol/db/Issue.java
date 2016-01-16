@@ -89,7 +89,7 @@ public class Issue implements Serializable {
 	
 	public void findChangedMembers(Issue rhs, List<String> propIds) {
 		if (rhs != null) {
-			updates.get(0).findChangedMembers(rhs.updates.get(0), propIds);
+			currentUpdate.findChangedMembers(rhs.currentUpdate, propIds);
 		}
 	}
 	
@@ -102,6 +102,7 @@ public class Issue implements Serializable {
 	}
 	
 	public String getId() {
+		if (id == null) id = "";
 		return id;
 	}
 

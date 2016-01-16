@@ -23,7 +23,7 @@ public class Attachment {
 	private InputStream stream;
 	private String url;
 	private boolean deleted;
-
+	
 	public Attachment() {
 		id = "";
 		subject = "";
@@ -149,4 +149,5 @@ public class Attachment {
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
 	}
+
 }

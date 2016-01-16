@@ -27,11 +27,11 @@ public class RedmineAddin extends ItolAddin {
 		return super.GetCustomUI(ribbonId);
 	}
 	
-	@Override
-	protected void onConnect(Wrapper context, AsyncResult<Boolean> asyncResult) {
-		DlgConnect dlg = new DlgConnect();
-		Object owner = context.getWrappedObject();
-		dlg.showAsync(owner, asyncResult);
-	}
+//	@Override
+//	protected void onConnect(Wrapper context, AsyncResult<Boolean> asyncResult) {
+//		DlgConnect dlg = new DlgConnect();
+//		Object owner = context.getWrappedObject();
+//		dlg.showAsync(owner, asyncResult);
+//	}
 
 }

@@ -72,10 +72,8 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 	@Override
 	public IssueMailItem getSelectedItem() {
 		IssueMailItem ret = new IssueMailItemBlank();
-		Selection selection = explorer.getSelection();
-		int c = selection.getCount();
-		if (c != 0) {
-			IDispatch disp = selection.Item(1);
+		IDispatch disp = getSelectedExplorerItem();
+		if (disp != null) {
 			MailItem mailItem = disp.as(MailItem.class);
 			ret = new IssueMailItemImpl(mailItem);
 		}
@@ -130,7 +128,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 	 *            Explorer object
 	 * @return MailItem object or null.
 	 */
-	public IDispatch getSelectedExplorerItem() {
+	private IDispatch getSelectedExplorerItem() {
 		IDispatch ret = null;
 		try {
 			Selection selection = explorer.getSelection();

@@ -88,8 +88,10 @@ public class ItolAddin extends OutlookAddinEx {
 		});
 	}
 
-	// Overriden by Redmine and Jira Addin
 	protected void onConnect(Wrapper context, AsyncResult<Boolean> asyncResult) {
+		DlgConnect dlg = new DlgConnect();
+		Object owner = context.getWrappedObject();
+		dlg.showAsync(owner, asyncResult);
 	}
 
 	@Override

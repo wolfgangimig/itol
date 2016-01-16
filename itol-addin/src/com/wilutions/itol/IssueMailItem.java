@@ -22,5 +22,7 @@ public interface IssueMailItem {
 	public IssueAttachments getAttachments() throws ComException;
 
 	public Date getReceivedTime();
+	
+	public boolean isNew();
 
 }

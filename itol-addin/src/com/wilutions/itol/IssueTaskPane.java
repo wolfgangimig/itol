@@ -115,6 +115,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private Tab tpNotes;
 	@FXML
+	private Tab tpAttachments;
+	@FXML
 	private HTMLEditor edNotes;
 	@FXML
 	private VBox boxNotes;
@@ -211,7 +213,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		this.resb = Globals.getResourceBundle();
 		Globals.getRegistry().readFields(this);
 
-		updateIssueFromMailItem(null);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")IssueTaskPane");
 	}
 
@@ -308,38 +309,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				srv = Globals.getIssueService();
 				String issueId = srv.extractIssueIdFromMailSubject(subject);
 
+				issue = null;
+
 				// If issue ID found...
 				if (issueId != null && issueId.length() != 0) {
 
 					// read issue
-					issue = srv.readIssue(issueId);
-
-					Date lastModified = issue.getLastModified();
-					Date receivedTime = mailItem.getReceivedTime();
-
-					// Set reply description (without original message) as issue
-					// notes, if the mail is newer than the last update.
-					if (lastModified.before(receivedTime)) {
-						String replyDescription = IssueDescriptionParser.stripOriginalMessageFromReply(
-								mailItem.getFrom(), mailItem.getTo(), subject, description);
-						if (!replyDescription.isEmpty()) {
-
-							// Set NEW NOTES property after the backup copy
-							// has been created. Otherwise the issue would not
-							// bee seen as modified.
-							autoIssueModifications.add(() -> {
-
-								issue.setPropertyString(Property.NOTES, replyDescription);
-
-								Platform.runLater(() -> {
-									tabpIssue.getSelectionModel().select(tpNotes);
-								});
-
-							});
-						}
-					}
+					issue = tryReadIssue(srv, subject, description, issueId);
 				}
-				else {
+
+				if (issue == null) {
 
 					// ... no issue ID: create blank issue
 					String defaultIssueAsString = (String) Globals.getRegistry().read(Globals.REG_defaultIssueAsString);
@@ -358,13 +337,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			catch (Throwable e) {
 
 				String text = e.toString();
-				if (text.indexOf("404") >= 0) {
-					text = resb.getString("Error.IssueNotFound");
-					log.log(Level.INFO, text, e);
-				}
-				else {
-					log.log(Level.SEVERE, text, e);
-				}
+				log.log(Level.SEVERE, text, e);
 
 				if (srv != null) {
 					showMessageBoxError(text);
@@ -382,6 +355,61 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		});
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueFromMailItem");
+	}
+
+	private Issue tryReadIssue(IssueService srv, String subject, String description, String issueId)
+			throws IOException {
+
+		Issue ret = null;
+
+		try {
+			final Issue issue = srv.readIssue(issueId);
+
+			Date lastModified = issue.getLastModified();
+
+			boolean newMail = mailItem.isNew();
+			Date receivedTime = mailItem.getReceivedTime();
+
+			// Set reply description (without original message) as issue
+			// notes, if the mail is newer than the last update.
+			if (newMail || lastModified.before(receivedTime)) {
+				String replyDescription = IssueDescriptionParser.stripOriginalMessageFromReply(mailItem.getFrom(),
+						mailItem.getTo(), subject, description);
+
+				// Set NEW NOTES property after the backup copy
+				// has been created. Otherwise the issue would not
+				// bee seen as modified.
+				autoIssueModifications.add(() -> {
+
+					issue.setPropertyString(Property.NOTES, replyDescription);
+
+					Platform.runLater(() -> {
+
+						tabpIssue.getSelectionModel().select(tpNotes);
+						tpNotes.setStyle("-fx-font-weight:bold;");
+
+						try {
+							attachmentHelper.initialUpdate(mailItem, issue);
+							initalUpdateAttachmentView();
+							tpAttachments.setStyle("-fx-font-weight:bold");
+						}
+						catch (Exception e) {
+							log.log(Level.SEVERE, "Failed to update mail attachments.", e);
+						}
+					});
+
+				});
+			}
+
+			ret = issue;
+		}
+		catch (Throwable e) {
+
+			String text = e.toString();
+			log.log(Level.SEVERE, text, e);
+		}
+
+		return ret;
 	}
 
 	public IssueMailItem getMailItem() {
@@ -486,13 +514,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			autoCompletionPriority = initAutoComplete(srv, cbPriority, Property.PRIORITY);
 			autoCompletionStatus = initAutoComplete(srv, cbStatus, Property.STATUS);
 
-			initialUpdate();
-
 			initDetectIssueModified();
 
 			// Press Assign button when called from inspector.
 			if (inspectorOrExplorer instanceof InspectorWrapper) {
 				bnAssignSelection.setSelected(true);
+				internalSetMailItem(mailItem);
 			}
 			// Show defaults when called from explorer.
 			else {
@@ -695,7 +722,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void saveProperties() {
-		propGridView.saveProperties(issue);
+		if (propGridView != null) {
+			propGridView.saveProperties(issue);
+		}
 	}
 
 	private void saveComboBox(ComboBox<IdName> cb, String propertyId) {
@@ -863,6 +892,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initialUpdate() throws IOException {
 
+		tpNotes.setStyle("-fx-font-weight:normal;");
+		tpAttachments.setStyle("-fx-font-weight:normal;");
+
 		attachmentHelper.initialUpdate(mailItem, issue);
 
 		initalUpdateAttachmentView();
@@ -871,7 +903,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		addOrRemoveTab(tpNotes, !isNew(), 0);
 		addOrRemoveTab(tpHistory, !isNew(), 0);
 		tabpIssue.getSelectionModel().select(isNew() ? tpDescription : tpHistory);
-		
+
 		bnShowIssueInBrowser.setDisable(isNew());
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
@@ -918,8 +950,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void showSelectedIssueAttachment() {
 		Attachment att = tabAttachments.getSelectionModel().getSelectedItem();
 		if (att != null) {
-			String url = att.getUrl();
-			IssueApplication.showDocument(url);
+			MyProgressCallback cb = new MyProgressCallback();
+			BackgTask.run(() -> {
+				try {
+					attachmentHelper.showAttachment(att, cb);
+				}
+				catch (IOException e) {
+					showMessageBoxError(e.toString());
+				}
+			});
 		}
 	}
 
@@ -1208,6 +1247,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 
 		public void setProgress(final double current) {
+			System.out.println("prg=" + current);
 			internalSetProgress(current);
 		}
 
@@ -1403,7 +1443,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		super.setVisible(v);
 		if (v) {
 			if (bnAssignSelection != null && !bnAssignSelection.isSelected() && !modified) {
-				internalSetMailItem(new IssueMailItemBlank());
+				// internalSetMailItem(new IssueMailItemBlank());
 			}
 		}
 	}

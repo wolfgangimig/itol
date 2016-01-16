@@ -62,4 +62,9 @@ public class IssueMailItemBlank implements IssueMailItem {
 		return new Date();
 	}
 
+	@Override
+	public boolean isNew() {
+		return false;
+	}
+
 }

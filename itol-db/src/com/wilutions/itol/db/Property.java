@@ -73,7 +73,7 @@ public class Property {
 	
 	public static final String URL = "url";
 	public static final String USER_NAME = "userName";
-	public static final String PASSWORD = "password";
+	public static final String PASSWORD = "userPwd";
 	public static final String API_KEY = "apiKey";
 	
 	public static final String RECENTLY_USED_PROJECTS = "recentlyUsedProjects";

@@ -289,5 +289,11 @@ public class IssueServiceImpl implements IssueService {
 		return IssueSubjectId.injectIssueIdIntoMailSubject(subject, iss);
 	}
 
+	@Override
+	public String downloadAttachment(String url, ProgressCallback cb) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 }

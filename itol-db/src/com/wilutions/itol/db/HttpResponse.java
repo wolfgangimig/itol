@@ -10,6 +10,7 @@
  */
 package com.wilutions.itol.db;
 
+import java.io.File;
 import java.util.Arrays;
 
 public class HttpResponse {
@@ -18,6 +19,7 @@ public class HttpResponse {
 	private String[] headers;
 	private int status;
 	private String errorMessage;
+	private File file;
 
 	public String getContent() {
 		return content;
@@ -58,5 +60,13 @@ public class HttpResponse {
 		sbuf.append(",content=" + content);
 		sbuf.append("]");
 		return sbuf.toString();
+	}
+
+	public File getFile() {
+		return file;
+	}
+
+	public void setFile(File file) {
+		this.file = file;
 	}
 }

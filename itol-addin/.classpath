@@ -3,9 +3,9 @@
 	<classpathentry kind="src" path="res"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="src-gen"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER" exported="true"/>
-	<classpathentry kind="con" path="org.springsource.ide.eclipse.gradle.classpathcontainer" exported="true"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk8_32"/>
+	<classpathentry exported="true" kind="con" path="org.springsource.ide.eclipse.gradle.classpathcontainer"/>
+	<classpathentry exported="true" kind="src" path="/itol-db"/>
+	<classpathentry exported="true" kind="src" path="/joa"/>
 	<classpathentry kind="output" path="bin"/>
-	<classpathentry kind="src" path="/itol-db" exported="true"/>
-	<classpathentry kind="src" path="/joa" exported="true"/>
 </classpath>

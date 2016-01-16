@@ -1,5 +1,7 @@
 package com.wilutions.itol;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -8,11 +10,17 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
+import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
 import com.wilutions.mslib.outlook.OlSaveAsType;
+
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.Image;
 
 public class AttachmentHelper {
 
@@ -28,8 +36,12 @@ public class AttachmentHelper {
 
 		this.mailItem = mailItem;
 
-		if (issue != null && (issue.getId() == null || issue.getId().length() == 0)) {
-			initialUpdateNewIssue(issue);
+		if (issue != null) {
+			boolean isNew = issue.getId().isEmpty();
+			String newNotes = issue.getPropertyString(Property.NOTES, "");
+			if (isNew || newNotes.length() != 0) {
+				initialUpdateNewIssueAttachments(issue);
+			}
 		}
 	}
 
@@ -41,13 +53,13 @@ public class AttachmentHelper {
 		return __tempDir;
 	}
 
-	private void initialUpdateNewIssue(Issue issue) throws IOException {
+	private void initialUpdateNewIssueAttachments(Issue issue) throws IOException {
 
 		if (mailItem.getBody().length() != 0) {
 			String ext = getConfigMsgFileExt(MsgFileTypes.NOTHING);
 
 			if (!ext.equals(MsgFileTypes.NOTHING.getId())) {
-				
+
 				MailAtt mailAtt = new MailAtt(mailItem, ext);
 				issue.getAttachments().add(mailAtt);
 
@@ -87,6 +99,34 @@ public class AttachmentHelper {
 	}
 
 	public static Attachment createFromFile(File file) {
+		return new FileAtt(file);
+	}
+
+	public Attachment createFromImage(Image image, String optionalFileName) {
+		String fileName = optionalFileName;
+		if (fileName == null || fileName.isEmpty()) {
+			String name = mailItem.getSubject() + "-" + image.getWidth() + "x" + image.getHeight();
+			fileName = MsgFileTypes.makeValidFileName(name) + ".jpg";
+		}
+		File file = new File(getTempDir(), fileName);
+		try {
+			file.delete();
+			BufferedImage bimage = SwingFXUtils.fromFXImage(image, null); // Get
+																			// buffered
+																			// image.
+			BufferedImage imageRGB = new BufferedImage(bimage.getWidth(), bimage.getHeight(), BufferedImage.OPAQUE); // Remove
+																														// alpha-channel
+																														// from
+																														// buffered
+																														// image.
+			Graphics2D graphics = imageRGB.createGraphics();
+			graphics.drawImage(bimage, 0, 0, null);
+			ImageIO.write(imageRGB, "jpg", file);
+			graphics.dispose();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 		return new FileAtt(file);
 	}
 
@@ -305,5 +345,32 @@ public class AttachmentHelper {
 	private static String getConfigMsgFileExt(IdName defaultMsgFileExt) {
 		String ext = Globals.getConfigPropertyString(Property.MSG_FILE_TYPE, defaultMsgFileExt.getId());
 		return ext;
+	}
+
+	public void showAttachment(Attachment att, ProgressCallback cb) throws IOException {
+		String url = att.getUrl();
+		if (!url.startsWith("file:")) {
+			url = internalDownloadAttachment(att, cb);
+		}
+		IssueApplication.showDocument(url);
+	}
+
+	private String internalDownloadAttachment(Attachment att, ProgressCallback cb) {
+		String url = att.getUrl();
+		try {
+			String fileName = Globals.getIssueService().downloadAttachment(url, cb);
+			File srcFile = new File(fileName);
+			if (srcFile.exists()) {
+				File destFile = new File(getTempDir(), att.getFileName());
+				destFile.delete();
+				if (srcFile.renameTo(destFile)) {
+					fileName = destFile.getAbsolutePath();
+					url = fileName;
+				}
+			}
+		}
+		catch (IOException e) {
+		}
+		return url;
 	}
 }

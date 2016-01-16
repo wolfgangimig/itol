@@ -133,7 +133,7 @@
                               </ScrollPane>
                            </content>
                         </Tab>
-                        <Tab text="%tpAttachments.text">
+                        <Tab fx:id="tpAttachments" text="%tpAttachments.text">
                            <content>
                               <HBox fx:id="hboxAttachments" spacing="10.0">
                                  <children>

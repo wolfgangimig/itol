@@ -104,4 +104,9 @@ public class IssueMailItemImpl implements IssueMailItem {
 		this.receivedTime = receivedTime;
 	}
 
+	@Override
+	public boolean isNew() {
+		return entryId.isEmpty();
+	}
+
 }

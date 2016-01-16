@@ -62,6 +62,8 @@ public interface IssueService {
 	
 	String getIssueHistoryUrl(String issueId) throws IOException;
 	
+	String downloadAttachment(String url, ProgressCallback cb) throws IOException;
+	
 //
 //	FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) throws IOException;
 //
