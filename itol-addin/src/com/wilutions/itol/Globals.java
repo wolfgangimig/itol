@@ -32,7 +32,6 @@ public class Globals {
 
 	public final static String REG_CONFIG = "Config";
 	public final static String REG_defaultIssueAsString = "defaultIssueAsString";
-	public final static String REG_injectIssueIdIntoMailSubject = "injectIssueIdIntoMailSubject";
 
 	private static OutlookAddinEx addin;
 	private static MailExport mailExport = new MailExport();
@@ -175,7 +174,15 @@ public class Globals {
 			Property propLogFile = new Property(Property.LOG_FILE, flog.getAbsolutePath());
 			appInfo.getConfigProps().add(propLogFile);
 		}
-
+		
+		// Convert old configuration values.
+		Boolean injectId = (Boolean) getRegistry().read(Globals.REG_injectIssueIdIntoMailSubject);
+		if (injectId != null) {
+			Property propInject = new Property(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, injectId.toString());
+			appInfo.getConfigProps().add(propInject);
+			getRegistry().write(Globals.REG_injectIssueIdIntoMailSubject, null);
+		}
+		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")readData");
 	}
 
@@ -311,5 +318,11 @@ public class Globals {
 		}
 
 	}
+
+	/**
+	 * Old configuration value.
+	 * Value stored in config property INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, now.
+	 */
+	private final static String REG_injectIssueIdIntoMailSubject = "injectIssueIdIntoMailSubject";
 
 }

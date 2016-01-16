@@ -75,6 +75,7 @@ public class Property {
 	public static final String USER_NAME = "userName";
 	public static final String PASSWORD = "userPwd";
 	public static final String API_KEY = "apiKey";
+	public static final String INJECT_ISSUE_ID_INTO_MAIL_SUBJECT = "injectIssueIdIntoMailSubject";
 	
 	public static final String RECENTLY_USED_PROJECTS = "recentlyUsedProjects";
 	

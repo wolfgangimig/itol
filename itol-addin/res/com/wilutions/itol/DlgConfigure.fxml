@@ -22,7 +22,7 @@
             <Label text="%DlgConfigure.AttachMailAs" />
             <ComboBox fx:id="cbAttachMailAs" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" />
              <Label text="%DlgConfigure.MailSubject" GridPane.rowIndex="1" />
-            <CheckBox mnemonicParsing="false" text="%DlgConfigure.ckIssueIdIntoMailSubject" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <CheckBox fx:id="ckInsertIssueId" mnemonicParsing="false" text="%DlgConfigure.ckIssueIdIntoMailSubject" GridPane.columnIndex="1" GridPane.rowIndex="1" />
             <Label text="%DlgConfigure.LogFile" GridPane.rowIndex="2" />
             <TextField fx:id="edLogFile" GridPane.columnIndex="1" GridPane.rowIndex="2" />
             <Label text="%DlgConfigure.LogLevel" GridPane.rowIndex="3" />

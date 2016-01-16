@@ -22,6 +22,7 @@ import javafx.fxml.JavaFXBuilderFactory;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
@@ -36,7 +37,6 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	@FXML
 	Button bnOK;
 	@FXML
-
 	Button bnCancel;
 	@FXML
 	ComboBox<IdName> cbAttachMailAs;
@@ -44,9 +44,11 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	TextField edLogFile;
 	@FXML
 	ChoiceBox<IdName> cbLogLevel;
+	@FXML
+	CheckBox ckInsertIssueId;
 
-	List<IdName> msgFileTypes = Arrays.asList(MsgFileTypes.NOTHING, MsgFileTypes.TEXT, MsgFileTypes.MSG, MsgFileTypes.MHTML,
-			MsgFileTypes.RTF);
+	List<IdName> msgFileTypes = Arrays.asList(MsgFileTypes.NOTHING, MsgFileTypes.TEXT, MsgFileTypes.MSG,
+			MsgFileTypes.MHTML, MsgFileTypes.RTF);
 	private AutoCompletionBinding<IdName> autoCompletionAttachMailAs;
 
 	public DlgConfigure() {
@@ -125,6 +127,9 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			IdName fileType = autoCompletionAttachMailAs.getSelectedItem();
 			String fileTypeId = fileType.getId();
 			setConfigProperty(Property.MSG_FILE_TYPE, fileTypeId);
+			
+			boolean injectIssueId = ckInsertIssueId.isSelected();
+			setConfigProperty(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, Boolean.toString(injectIssueId));
 		}
 		else {
 			String logFile = getConfigProperty(Property.LOG_FILE);
@@ -141,6 +146,10 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 					break;
 				}
 			}
+			
+			String insertIssueIdStr = getConfigProperty(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT);
+			Boolean insertIssueId = (insertIssueIdStr.isEmpty()) ? Boolean.FALSE : Boolean.valueOf(insertIssueIdStr);
+			ckInsertIssueId.setSelected(insertIssueId);
 		}
 	}
 

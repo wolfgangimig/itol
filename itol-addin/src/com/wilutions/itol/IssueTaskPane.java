@@ -147,8 +147,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private TextField edIssueId;
 	@FXML
-	private CheckMenuItem mnInjectIssueIdIntoSubject;
-	@FXML
 	private ProgressBar pgProgress;
 
 	private AutoCompletionBinding<IdName> autoCompletionProject;
@@ -924,14 +922,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			boxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 		}
 
-		Boolean injectId = (Boolean) Globals.getRegistry().read(Globals.REG_injectIssueIdIntoMailSubject);
-		mnInjectIssueIdIntoSubject.setSelected(injectId == null || injectId);
-
 		modified = false;
 
 		updateData(false);
 
 		detectIssueModifiedStart();
+	}
+	
+	private boolean isInjectIssueId() {
+		Boolean injectId = Boolean.valueOf(Globals.getConfigPropertyString(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, "false"));
+		return injectId == null || injectId;
 	}
 
 	private void addOrRemoveTab(Tab t, boolean add, int pos) {
@@ -1386,8 +1386,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void saveMailWithIssueId(final ProgressCallback progressCallback) throws IOException {
-		Boolean injectId = (Boolean) Globals.getRegistry().read(Globals.REG_injectIssueIdIntoMailSubject);
-		if (injectId == null || injectId) {
+		if (isInjectIssueId()) {
 			String mailSubjectPrev = mailItem.getSubject();
 			String mailSubject = injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
 			if (!mailSubjectPrev.equals(mailSubject)) {
@@ -1417,23 +1416,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			Globals.getRegistry().write(Globals.REG_defaultIssueAsString, str);
 		}
 		catch (IOException e) {
-			showMessageBoxError(e.toString());
-		}
-	}
-
-	@FXML
-	public void onInjectIssueIdIntoSubject() {
-		try {
-			Boolean succ = mnInjectIssueIdIntoSubject.isSelected();
-			Globals.getRegistry().write(Globals.REG_injectIssueIdIntoMailSubject, succ);
-			String oldSubject = mailItem.getSubject();
-			String newSubject = injectIssueIdIntoMailSubject(oldSubject, succ ? issue : null);
-			if (!oldSubject.equals(newSubject)) {
-				mailItem.setSubject(newSubject);
-				mailItem.Save();
-			}
-		}
-		catch (Exception e) {
 			showMessageBoxError(e.toString());
 		}
 	}
