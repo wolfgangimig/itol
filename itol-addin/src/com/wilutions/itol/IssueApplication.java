@@ -29,6 +29,8 @@ public class IssueApplication extends AddinApplication {
 	private static Logger log = Logger.getLogger(IssueApplication.class.getName());
 
 	static {
+		System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %2$s %5$s%6$s%n");
+		
 		AppInfo config = Globals.getAppInfo();
 		// config.appName = "Issue Tracker for Microsoft Outlook " +
 		// System.getProperty("sun.arch.data.model") + "bit";
