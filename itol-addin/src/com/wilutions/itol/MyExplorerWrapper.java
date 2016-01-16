@@ -10,6 +10,7 @@ import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.ExplorerWrapper;
 import com.wilutions.joa.outlook.ex.Wrapper;
 import com.wilutions.joa.ribbon.RibbonButton;
+import com.wilutions.joa.ribbon.RibbonGroup;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.outlook.Explorer;
@@ -58,9 +59,8 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 	}
 
 	private void initRibbonControls() {
-
-		RibbonButton bnNewIssue = new RibbonButton();
-		bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
+		
+		RibbonButton bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
 		bnNewIssue.setImage("Alert-icon-32.png");
 		bnNewIssue.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
 			ItolAddin addin = (ItolAddin) Globals.getThisAddin();

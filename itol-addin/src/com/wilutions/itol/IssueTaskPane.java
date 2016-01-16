@@ -101,7 +101,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private Button bnClear;
 	@FXML
-	private MenuItem bnShowIssueInBrowser;
+	private Button bnShowIssueInBrowser;
 	@FXML
 	private ComboBox<IdName> cbTracker;
 	@FXML

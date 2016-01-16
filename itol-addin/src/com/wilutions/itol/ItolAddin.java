@@ -42,7 +42,7 @@ public class ItolAddin extends OutlookAddinEx {
 		Globals.setThisAddin(this);
 
 		getIconManager().addPackageAsResourceDirectory(ItolAddin.class);
-
+		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")ItolAddin");
 	}
 

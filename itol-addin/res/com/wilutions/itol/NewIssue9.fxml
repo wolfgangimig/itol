@@ -42,11 +42,8 @@
                      <HBox.margin>
                         <Insets left="10.0" />
                      </HBox.margin></TextField>
-                  <SplitMenuButton fx:id="bnShow" mnemonicParsing="false" onAction="#onShowExistingIssue" text="%bnShow.text">
-                    <items>
-                      <MenuItem fx:id="bnShowIssueInBrowser" mnemonicParsing="false" onAction="#onShowIssueInBrowser" text="%bnShowIssueInBrowser.text" />
-                    </items>
-                  </SplitMenuButton>
+                  <Button fx:id="bnShow" mnemonicParsing="false" onAction="#onShowExistingIssue" text="%bnShow.text" />
+                  <Button fx:id="bnShowIssueInBrowser" mnemonicParsing="false" onAction="#onShowIssueInBrowser" text="%bnShowIssueInBrowser.text" />
                   <MenuButton mnemonicParsing="false" onAction="#onSaveAsDefault" text="%bnExtra.text">
                     <items>
                       <MenuItem mnemonicParsing="false" onAction="#onSaveAsDefault" text="%mnSaveAsDefaults.text" />
