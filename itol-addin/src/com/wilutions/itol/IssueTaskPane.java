@@ -812,6 +812,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					showSelectedIssueAttachment();
 				}
 			});
+			tabAttachments.setOnKeyPressed((keyEvent) -> {
+				if (keyEvent.getCode() == KeyCode.ENTER) {
+					showSelectedIssueAttachment();
+				}
+			});
 
 			// This selection listener disables the "Remove" button, if
 			// an already uploaded attachment is selected. Attachments
