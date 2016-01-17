@@ -14,6 +14,7 @@
 var customFieldsInAllProjects = {
 		"Text1 with leerzeichen" : true,
 		"MultiList" : true,
+		"Overtime Date" : true,
 };
 
 // TODO: Field to project relationship.
@@ -527,7 +528,7 @@ function readProjectMembers(project) {
 
 function writeIssue(issueParam, progressCallback) {
 	if (islfine) log.log(Level.FINE, "writeIssue(");
-	ddump("send", issueParam);
+	idump("writeIssue", issueParam);
 	var ret = null;
 
 	var pgIssue = null;
@@ -547,7 +548,7 @@ function writeIssue(issueParam, progressCallback) {
 		ret = httpClient.post("/issues.json", issueParam, pgIssue);
 	}
 
-	ddump("recv", ret);
+	idump("recv", ret);
 	if (islfine) log.log(Level.FINE, ")writeIssue=");
 	return ret;
 }
@@ -1382,10 +1383,9 @@ function createIssue(subject, description, defaultIssueAsString) {
 };
 
 function updateIssue(trackerIssue, modifiedProperties, progressCallback) {
-	if (islfine) log.log(Level.FINE, "updateIssue(trackerIssue=" + trackerIssue + ", progressCallback="
-			+ progressCallback);
+	if (islfine) log.log(Level.FINE, "updateIssue(modifiedProperties=" + modifiedProperties);
 	config.checkValid();
-
+	
 	var redmineIssue = {};
 	toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue, progressCallback);
 
@@ -1853,7 +1853,11 @@ function setIssuePropertyValue(issue, propId, propValue) {
 }
 
 function getIssueHistoryUrl(issueId) {
-	return config.url + "/issues/" + issueId + "?key=" + config.apiKey;
+	var ret = config.url + "/issues/" + issueId;
+	if (config.key) {
+		ret += "?key=" + config.apiKey;
+	}
+	return ret;
 }
 
 function downloadAttachment(url, progressCallback) {

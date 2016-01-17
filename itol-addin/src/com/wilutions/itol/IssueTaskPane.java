@@ -46,6 +46,7 @@ import com.wilutions.mslib.office._CustomTaskPane;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -61,9 +62,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -71,6 +70,8 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -100,6 +101,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private ToggleButton bnAssignSelection;
 	@FXML
 	private Button bnClear;
+	@FXML
+	private Button bnShow;
 	@FXML
 	private Button bnShowIssueInBrowser;
 	@FXML
@@ -504,6 +507,20 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	// This method is called by the FXMLLoader when initialization is complete
 	public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
 		try {
+			edIssueId.setOnKeyPressed(new EventHandler<KeyEvent>() {
+				public void handle(KeyEvent event) {
+					if (event.getCode() == KeyCode.ENTER) {
+						if (!edIssueId.getText().isEmpty()) {
+							onShowExistingIssue();
+							tabpIssue.requestFocus();
+						}
+					}
+				}
+			});
+
+			bnShow.disableProperty().bind(Bindings.isEmpty(edIssueId.textProperty()));
+			bnShowIssueInBrowser.disableProperty().bind(Bindings.isEmpty(edIssueId.textProperty()));
+
 			edSubject.requestFocus();
 
 			IssueService srv = Globals.getIssueService();
@@ -902,7 +919,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		addOrRemoveTab(tpHistory, !isNew(), 0);
 		tabpIssue.getSelectionModel().select(isNew() ? tpDescription : tpHistory);
 
-		bnShowIssueInBrowser.setDisable(isNew());
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
 		descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
@@ -928,9 +944,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		detectIssueModifiedStart();
 	}
-	
+
 	private boolean isInjectIssueId() {
-		Boolean injectId = Boolean.valueOf(Globals.getConfigPropertyString(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, "false"));
+		Boolean injectId = Boolean
+				.valueOf(Globals.getConfigPropertyString(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, "false"));
 		return injectId == null || injectId;
 	}
 
@@ -1094,6 +1111,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	@FXML
 	public void onShowExistingIssue() {
+
 		queryDiscardChangesAsync((succ, ex) -> {
 			if (ex == null && succ) {
 

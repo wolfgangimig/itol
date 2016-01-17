@@ -59,7 +59,7 @@ public class IssueMailItemBlank implements IssueMailItem {
 
 	@Override
 	public Date getReceivedTime() {
-		return new Date();
+		return new Date(0);
 	}
 
 	@Override
