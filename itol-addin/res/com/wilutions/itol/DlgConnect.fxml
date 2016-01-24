@@ -9,7 +9,7 @@
    <children>
       <GridPane hgap="10.0" vgap="10.0" VBox.vgrow="ALWAYS">
         <columnConstraints>
-          <ColumnConstraints hgrow="NEVER" maxWidth="294.0" minWidth="10.0" prefWidth="100.0" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" minWidth="10.0" />
           <ColumnConstraints hgrow="ALWAYS" maxWidth="504.0" minWidth="10.0" prefWidth="427.0" />
         </columnConstraints>
         <rowConstraints>
