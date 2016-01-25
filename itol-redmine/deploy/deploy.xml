@@ -192,6 +192,7 @@
 			<fx:info title="${application.title}" vendor="${application.vendor}" />
 		</fx:deploy>
 
+		<antcall target="sign" />
 
 	</target>
 	
@@ -202,6 +203,7 @@
 			<arg line="/a" />
 			<arg file="${msi.file}" />
 		</exec>
+		<copy file="${msi.file}" tofile="d:/ITOL${sun.arch.data.model}.msi"/>
 	</target>	
 
 </project>
