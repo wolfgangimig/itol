@@ -12,9 +12,6 @@ Version 2.0
   This allows to edit the configuration running in Outlook 2016. 
   Split configuration for Redmine connection and Addin options over two dialogs. 
 
-- Service implementation is no more responsible for injecting and extracting issue IDs 
-  from mail subjects. This allows to detect the initial mail attached to an issue.
-  
 - #34: Fill "New Notes" with the newer part of the mail body.
 
 Version 1.5
