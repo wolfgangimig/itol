@@ -5,4 +5,4 @@ set CP=%CP%;C:\Users\Wolfgang\.gradle\caches\modules-2\files-2.1\org.hamcrest\ha
 set CP=%CP%;D:\git\itol\itol-addin\bin
 set CP=%CP%;D:\git\itol\itol-db\bin
 set CP=%CP%;D:\git\joa\java\joa\bin
-"C:\Program Files (x86)\Java\jdk1.8.0_65\jre\bin\java.exe" -classpath "%CP%" com.wilutions.itol.IssueApplication
+"C:\Program Files (x86)\Java\jdk1.8.0_71\jre\bin\java.exe" -classpath "%CP%" com.wilutions.itol.IssueApplication

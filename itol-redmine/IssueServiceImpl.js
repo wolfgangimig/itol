@@ -1854,7 +1854,7 @@ function setIssuePropertyValue(issue, propId, propValue) {
 
 function getIssueHistoryUrl(issueId) {
 	var ret = config.url + "/issues/" + issueId;
-	if (config.key) {
+	if (config.apiKey) {
 		ret += "?key=" + config.apiKey;
 	}
 	return ret;
