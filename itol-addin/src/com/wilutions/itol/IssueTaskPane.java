@@ -20,6 +20,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.sun.org.apache.xerces.internal.dom.DeferredAttrImpl;
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
@@ -1270,7 +1271,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 
 		public void setProgress(final double current) {
-			System.out.println("prg=" + current);
 			internalSetProgress(current);
 		}
 
@@ -1346,14 +1346,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			BackgTask.run(() -> {
 				try {
 
-					progressCallback.setProgress(4 * 1000);
+					// Fake an upload of 4000 bytes to 
+					// show that progress has started. 
+					progressCallback.setProgress(4 * 1000); 
 
-					boolean isNew = updateIssueChangedMembers(srv, progressCallback);
-
-					// ... save the mail with different subject
-					if (isNew) {
-						saveMailWithIssueId(progressCallback);
-					}
+					updateIssueChangedMembers(srv, progressCallback);
 
 					Platform.runLater(() -> {
 						try {
@@ -1396,20 +1393,69 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private boolean updateIssueChangedMembers(IssueService srv, final ProgressCallback progressCallback)
+	/**
+	 * Create or update an issue.
+	 * @param srv Service
+	 * @param progressCallback Callback object
+	 * @throws IOException
+	 */
+	private void updateIssueChangedMembers(IssueService srv, final ProgressCallback progressCallback)
 			throws IOException {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "updateIssueChangedMembers(");
+		
+		// If the issue ID is empty, a new issue has to be created.
 		boolean isNew = issue.getId().length() == 0;
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "isNew=" + isNew);
 
+		// Collect modified properties.
 		List<String> modifiedProperties = new ArrayList<String>();
 		issueCopy.findChangedMembers(issue, modifiedProperties);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "modifiedProperties=" + modifiedProperties);
+
+		// Enhancement #40: issue ID should be inserted into the attached mail too. 
+		// Therefore, we have to create the issue before uploading attachments.
+		List<Attachment> deferredAttachments = null;
+		if (isNew && isInjectIssueId()) {
+			String ext = Globals.getConfigPropertyString(Property.MSG_FILE_TYPE, MsgFileTypes.MSG.getId());
+			if (ext.equalsIgnoreCase(MsgFileTypes.MSG.getId())) {
+				modifiedProperties.remove(Property.ATTACHMENTS);
+				deferredAttachments = issue.getAttachments();
+				issue.setAttachments(new ArrayList<Attachment>(0));
+			}
+		}
 
 		// Create issue
 		issue = srv.updateIssue(issue, modifiedProperties, progressCallback);
-		return isNew;
+		
+		// Inject the issue ID into Outlook's mail object
+		if (isNew && isInjectIssueId()) {
+			saveMailWithIssueId(progressCallback);
+		}
+
+		// Upload deferred attachments.
+		if (deferredAttachments != null && deferredAttachments.size() != 0) {
+			modifiedProperties.clear();
+			modifiedProperties.add(Property.ATTACHMENTS);
+			
+			// Inject the issue ID into the mail attachment that is uploaded.
+			for (Attachment att : deferredAttachments) {
+				if (att instanceof AttachmentHelper.MailAtt){
+					String subject = att.getSubject();
+					subject = injectIssueIdIntoMailSubject(subject, issue);
+					att.setSubject(subject);
+					break;
+				}
+			}
+			
+			// Upload
+			issue.setAttachments(deferredAttachments);
+			issue = srv.updateIssue(issue, modifiedProperties, progressCallback);
+		}
+		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueChangedMembers");
 	}
 
 	private void saveMailWithIssueId(final ProgressCallback progressCallback) throws IOException {
-		if (isInjectIssueId()) {
 			String mailSubjectPrev = mailItem.getSubject();
 			String mailSubject = injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
 			if (!mailSubjectPrev.equals(mailSubject)) {
@@ -1417,7 +1463,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				progressCallback.setParams("Save mail as \"" + mailSubject + "\n");
 				mailItem.Save();
 			}
-		}
 	}
 
 	private String injectIssueIdIntoMailSubject(String subject, Issue issue) throws IOException {

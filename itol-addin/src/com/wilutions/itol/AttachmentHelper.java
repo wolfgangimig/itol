@@ -256,14 +256,22 @@ public class AttachmentHelper {
 			this.mailItem = mailItem;
 			this.ext = ext;
 
+			setSubject(mailItem.getSubject());
+			setContentLength(-1);
+		}
+
+		@Override
+		public void setSubject(String subject) {
+
 			OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
-			String msgFileName = MsgFileTypes.makeMsgFileName(mailItem.getSubject(), saveAsType);
+			String msgFileName = MsgFileTypes.makeMsgFileName(subject, saveAsType);
 			File msgFile = new File(getTempDir(), msgFileName);
 
-			super.setSubject(mailItem.getSubject());
+			super.setSubject(subject);
 			super.setContentType(getFileContentType(msgFileName));
 			super.setContentLength(-1);
 			super.setFileName(msgFile.getAbsolutePath());
+
 		}
 
 		@Override
@@ -361,16 +369,31 @@ public class AttachmentHelper {
 			String fileName = Globals.getIssueService().downloadAttachment(url, cb);
 			File srcFile = new File(fileName);
 			if (srcFile.exists()) {
-				File destFile = new File(getTempDir(), att.getFileName());
-				destFile.delete();
-				if (srcFile.renameTo(destFile)) {
-					fileName = destFile.getAbsolutePath();
-					url = fileName;
+				for (int retries = 0; retries < 100; retries++) {
+					File destFile = makeTempFile(att.getFileName(), retries);
+					destFile.delete();
+					if (srcFile.renameTo(destFile)) {
+						fileName = destFile.getAbsolutePath();
+						url = fileName;
+						break;
+					}
 				}
 			}
 		}
 		catch (IOException e) {
 		}
 		return url;
+	}
+
+	private File makeTempFile(String fname, int retries) {
+		if (retries != 0) {
+			String unique = Integer.toString(retries);
+			int p = fname.lastIndexOf('.');
+			if (p >= 0) {
+				fname = fname.substring(0, p) + "_" + unique + fname.substring(p);
+			}
+		}
+		File destFile = new File(getTempDir(), fname);
+		return destFile;
 	}
 }

@@ -26,11 +26,15 @@ jar {
 
 repositories {
     mavenCentral()
+    
+    flatDir {
+        dirs 'lib'
+    }
 }
 
 dependencies {
 	compile project(":itol-db")
-	compile project(":joa")
+	compile name: 'joa'
 }
 
 test {

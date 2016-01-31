@@ -1,5 +1,3 @@
-include ("joa") 
-project(":joa").projectDir = new File("$settingsDir/../../joa/java/joa")
 
 include ("itol-addin") 
 project(":itol-addin").projectDir = new File("$settingsDir/../itol-addin")

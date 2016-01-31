@@ -4,6 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+Version 2.1 
+
+- #40: Insert issue ID into uploaded mail attachment too.
+
 Version 2.0 2016-01-25
 
 - #31: Auto completion fields for project, tracker, priority, status, and assignee.
