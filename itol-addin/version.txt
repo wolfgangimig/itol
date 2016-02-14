@@ -7,6 +7,10 @@ Version History
 Version 2.1 
 
 - #40: Insert issue ID into uploaded mail attachment too.
+  New button "Reply" opens a mail inspector window to reply to an attached mail.
+  
+- Version 2.0 modified the mail item when a reply was created. 
+  This effect cannot be reproduced with version 2.1.  
 
 Version 2.0 2016-01-25
 

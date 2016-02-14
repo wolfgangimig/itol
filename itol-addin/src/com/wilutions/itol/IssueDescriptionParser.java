@@ -33,6 +33,10 @@ public class IssueDescriptionParser {
 			org = findFirstTextAfterNextEmptyLine(description, org);
 			if (org < 0) break;
 			
+			// find ---- XXXX ----
+			// This delimiter is used in a reply message above the original message body
+			if (isMaybeOriginalMessageLine(description, org, delim)) break;
+			
 			// find e.g.: On Wed, Nov 18, 2015 at 2:53 PM, WILUTIONS <wilutions@gmail.com <mailto:wilutions@gmail.com> > wrote:
 			if (isMaybeSimpleHeaderLine(description, org, delim)) break;
 
@@ -157,6 +161,25 @@ public class IssueDescriptionParser {
 		}
 
 		return n;
+	}
+	
+	/**
+	 * Check whether the line starting from pos contains text like ----XXXXX----.
+	 * @param description
+	 * @param pos
+	 * @param delim
+	 * @return
+	 */
+	private static boolean isMaybeOriginalMessageLine(String description, int pos, OultookOriginalMessageDelimiter delim) {
+		boolean ret = false;
+		int n = pos >= 0 ? description.indexOf('\n', pos) : -1;
+		if (n >= 0) {
+			String s = description.substring(pos, n);
+			if (s.startsWith("----") && s.endsWith("----")) {
+				ret = true;
+			}
+		}
+		return ret;
 	}
 
 	/**

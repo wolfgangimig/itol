@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
@@ -27,6 +29,8 @@ public class AttachmentHelper {
 	private IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
 	private File __tempDir;
+	private Logger log = Logger.getLogger("AttachmentHelper");
+	public final static String FILE_URL_PREFIX = "file:///";
 
 	public AttachmentHelper() {
 	}
@@ -133,9 +137,9 @@ public class AttachmentHelper {
 	public static String getFileUrl(File file) {
 		String url = file.getAbsolutePath();
 		url = url.replace("\\", "/");
-		return "file:///" + url;
+		return FILE_URL_PREFIX + url;
 	}
-
+	
 	public static String getFileName(String path) {
 		String fname = path;
 		if (path != null && path.length() != 0) {
@@ -356,31 +360,31 @@ public class AttachmentHelper {
 	}
 
 	public void showAttachment(Attachment att, ProgressCallback cb) throws IOException {
-		String url = att.getUrl();
-		if (!url.startsWith("file:")) {
-			url = internalDownloadAttachment(att, cb);
-		}
+		String url = downloadAttachment(att, cb);
 		IssueApplication.showDocument(url);
 	}
 
-	private String internalDownloadAttachment(Attachment att, ProgressCallback cb) {
+	public String downloadAttachment(Attachment att, ProgressCallback cb) {
 		String url = att.getUrl();
-		try {
-			String fileName = Globals.getIssueService().downloadAttachment(url, cb);
-			File srcFile = new File(fileName);
-			if (srcFile.exists()) {
-				for (int retries = 0; retries < 100; retries++) {
-					File destFile = makeTempFile(att.getFileName(), retries);
-					destFile.delete();
-					if (srcFile.renameTo(destFile)) {
-						fileName = destFile.getAbsolutePath();
-						url = fileName;
-						break;
+		if (!url.startsWith(FILE_URL_PREFIX)) {
+			try {
+				String fileName = Globals.getIssueService().downloadAttachment(url, cb);
+				File srcFile = new File(fileName);
+				if (srcFile.exists()) {
+					for (int retries = 0; retries < 100; retries++) {
+						File destFile = makeTempFile(att.getFileName(), retries);
+						destFile.delete();
+						if (srcFile.renameTo(destFile)) {
+							fileName = destFile.getAbsolutePath();
+							url = fileName;
+							break;
+						}
 					}
 				}
 			}
-		}
-		catch (IOException e) {
+			catch (Exception e) {
+				log.log(Level.INFO, "Cannot download attachment=" + url, e);
+			}
 		}
 		return url;
 	}

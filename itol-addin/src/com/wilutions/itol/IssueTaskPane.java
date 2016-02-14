@@ -20,10 +20,10 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.sun.org.apache.xerces.internal.dom.DeferredAttrImpl;
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
+import com.wilutions.com.IDispatch;
 import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.DefaultSuggest;
@@ -43,6 +43,9 @@ import com.wilutions.joa.outlook.ex.Wrapper;
 import com.wilutions.mslib.office.CustomTaskPane;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.office._CustomTaskPane;
+import com.wilutions.mslib.outlook.Application;
+import com.wilutions.mslib.outlook.MailItem;
+import com.wilutions.mslib.outlook._NameSpace;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -152,6 +155,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private TextField edIssueId;
 	@FXML
 	private ProgressBar pgProgress;
+	@FXML
+	private Button bnReply;
 
 	private AutoCompletionBinding<IdName> autoCompletionProject;
 	private AutoCompletionBinding<IdName> autoCompletionTracker;
@@ -446,6 +451,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		detectIssueModifiedStop();
 
 		attachmentHelper.releaseResources();
+		
+		inspectorOrExplorer = null;
+		mailItem = null;
 	}
 
 	@Override
@@ -819,6 +827,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 			});
 
+			bnRemoveAttachment.setDisable(true);
+			bnReply.setDisable(true);
+
 			// This selection listener disables the "Remove" button, if
 			// an already uploaded attachment is selected. Attachments
 			// cannot be deleted via Redmine API.
@@ -833,6 +844,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 						}
 					}
 					bnRemoveAttachment.setDisable(!hasId);
+
+					boolean disableReply = true;
+					if (!c.getList().isEmpty()) {
+						Attachment firstAtt = c.getList().iterator().next();
+						boolean isMsg = firstAtt.getFileName().endsWith(MsgFileTypes.MSG.getId());
+						disableReply = !isMsg;
+					}
+					bnReply.setDisable(disableReply);
 				}
 
 			});
@@ -1346,9 +1365,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			BackgTask.run(() -> {
 				try {
 
-					// Fake an upload of 4000 bytes to 
-					// show that progress has started. 
-					progressCallback.setProgress(4 * 1000); 
+					// Fake an upload of 4000 bytes to
+					// show that progress has started.
+					progressCallback.setProgress(4 * 1000);
 
 					updateIssueChangedMembers(srv, progressCallback);
 
@@ -1395,14 +1414,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	/**
 	 * Create or update an issue.
-	 * @param srv Service
-	 * @param progressCallback Callback object
+	 * 
+	 * @param srv
+	 *            Service
+	 * @param progressCallback
+	 *            Callback object
 	 * @throws IOException
 	 */
 	private void updateIssueChangedMembers(IssueService srv, final ProgressCallback progressCallback)
 			throws IOException {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "updateIssueChangedMembers(");
-		
+
 		// If the issue ID is empty, a new issue has to be created.
 		boolean isNew = issue.getId().length() == 0;
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "isNew=" + isNew);
@@ -1412,7 +1434,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		issueCopy.findChangedMembers(issue, modifiedProperties);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "modifiedProperties=" + modifiedProperties);
 
-		// Enhancement #40: issue ID should be inserted into the attached mail too. 
+		// Enhancement #40: issue ID should be inserted into the attached mail
+		// too.
 		// Therefore, we have to create the issue before uploading attachments.
 		List<Attachment> deferredAttachments = null;
 		if (isNew && isInjectIssueId()) {
@@ -1426,7 +1449,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		// Create issue
 		issue = srv.updateIssue(issue, modifiedProperties, progressCallback);
-		
+
 		// Inject the issue ID into Outlook's mail object
 		if (isNew && isInjectIssueId()) {
 			saveMailWithIssueId(progressCallback);
@@ -1436,33 +1459,33 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		if (deferredAttachments != null && deferredAttachments.size() != 0) {
 			modifiedProperties.clear();
 			modifiedProperties.add(Property.ATTACHMENTS);
-			
+
 			// Inject the issue ID into the mail attachment that is uploaded.
 			for (Attachment att : deferredAttachments) {
-				if (att instanceof AttachmentHelper.MailAtt){
+				if (att instanceof AttachmentHelper.MailAtt) {
 					String subject = att.getSubject();
 					subject = injectIssueIdIntoMailSubject(subject, issue);
 					att.setSubject(subject);
 					break;
 				}
 			}
-			
+
 			// Upload
 			issue.setAttachments(deferredAttachments);
 			issue = srv.updateIssue(issue, modifiedProperties, progressCallback);
 		}
-		
+
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueChangedMembers");
 	}
 
 	private void saveMailWithIssueId(final ProgressCallback progressCallback) throws IOException {
-			String mailSubjectPrev = mailItem.getSubject();
-			String mailSubject = injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
-			if (!mailSubjectPrev.equals(mailSubject)) {
-				mailItem.setSubject(mailSubject);
-				progressCallback.setParams("Save mail as \"" + mailSubject + "\n");
-				mailItem.Save();
-			}
+		String mailSubjectPrev = mailItem.getSubject();
+		String mailSubject = injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
+		if (!mailSubjectPrev.equals(mailSubject)) {
+			mailItem.setSubject(mailSubject);
+			progressCallback.setParams("Save mail as \"" + mailSubject + "\n");
+			mailItem.Save();
+		}
 	}
 
 	private String injectIssueIdIntoMailSubject(String subject, Issue issue) throws IOException {
@@ -1510,5 +1533,51 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		Wrapper context = inspectorOrExplorer;
 		DlgConfigure dlg = new DlgConfigure();
 		dlg.showAsync(context.getWrappedObject(), null);
+	}
+
+	@FXML
+	public void onReply() {
+		replyMail(false);
+	}
+
+	private Attachment getSelectedAttachmentMsg() {
+		Attachment ret = null;
+		Attachment att = tabAttachments.getSelectionModel().getSelectedItem();
+		if (att != null && att.getFileName().endsWith(MsgFileTypes.MSG.getId())) {
+			ret = att;
+		}
+		return ret;
+	}
+
+	private void replyMail(boolean all) {
+		Attachment att = getSelectedAttachmentMsg();
+		if (att != null) {
+			Application app = Globals.getThisAddin().getApplication();
+			_NameSpace ns = app.GetNamespace("MAPI");
+			String tempPath = attachmentHelper.downloadAttachment(att, null);
+			if (tempPath.startsWith(AttachmentHelper.FILE_URL_PREFIX)) {
+				tempPath = tempPath.substring(AttachmentHelper.FILE_URL_PREFIX.length());
+			}
+			
+			IDispatch dispItem = null;
+			try {
+//				try {
+//					dispItem = app.CreateItemFromTemplate(tempPath, Missing.Value);
+//				}
+//				catch (Exception e) {
+//					log.log(Level.INFO, "Cannot open mail=" + tempPath + ", maybe already open.", e);
+//					dispItem = ns.OpenSharedItem(tempPath);
+//				}
+				dispItem = ns.OpenSharedItem(tempPath);
+				if (dispItem.is(MailItem.class)) {
+					MailItem mailItem = dispItem.as(MailItem.class);
+					MailItem replyItem = all ? mailItem.ReplyAll() : mailItem.Reply();
+					replyItem.Display(false);
+				}
+			}
+			catch (Exception e) {
+				log.log(Level.INFO, "Cannot open mail=" + tempPath + ", maybe already open.", e);
+			}
+		}
 	}
 }

@@ -10,7 +10,6 @@ import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.ExplorerWrapper;
 import com.wilutions.joa.outlook.ex.Wrapper;
 import com.wilutions.joa.ribbon.RibbonButton;
-import com.wilutions.joa.ribbon.RibbonGroup;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.outlook.Explorer;
@@ -25,7 +24,7 @@ import javafx.util.Duration;
 
 public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 
-	final IssueTaskPane issuePane;
+	private IssueTaskPane issuePane;
 	Object lastEntryID = "";
 	private long showAtMillis = Long.MAX_VALUE;
 	private final static long SHOW_DELAY_MILLIS = 500;
@@ -37,8 +36,6 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		super(explorer);
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "MyExplorerWrapper(");
-
-		issuePane = new IssueTaskPane(this);
 
 		deferShowSelectedItem = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
 			@Override
@@ -59,7 +56,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 	}
 
 	private void initRibbonControls() {
-		
+
 		RibbonButton bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
 		bnNewIssue.setImage("Alert-icon-32.png");
 		bnNewIssue.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
@@ -144,26 +141,31 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		return ret;
 	}
 
-	public void setIssueTaskPaneVisible(boolean visible) {
-		if (issuePane != null) {
-			if (!issuePane.hasWindow() && visible) {
-				String title = Globals.getResourceBundle().getString("IssueTaskPane.title");
-				Globals.getThisAddin().createTaskPaneWindowAsync(issuePane, title, explorer, (succ, ex) -> {
-					if (ex != null) {
-						MessageBox.show(explorer, "Error", ex.getMessage(), null);
-					}
-					else {
-						internalShowSelectedItem();
-					}
-				});
-			}
+	private void ensureIssuePaneInstance() {
+		if (issuePane == null) {
+			issuePane = new IssueTaskPane(this);
+		}
+	}
 
-			issuePane.setVisible(visible, (succ, ex) -> {
-				if (succ && visible) {
+	public void setIssueTaskPaneVisible(boolean visible) {
+		ensureIssuePaneInstance();
+		if (!issuePane.hasWindow() && visible) {
+			String title = Globals.getResourceBundle().getString("IssueTaskPane.title");
+			Globals.getThisAddin().createTaskPaneWindowAsync(issuePane, title, explorer, (succ, ex) -> {
+				if (ex != null) {
+					MessageBox.show(explorer, "Error", ex.getMessage(), null);
+				}
+				else {
 					internalShowSelectedItem();
 				}
 			});
 		}
+
+		issuePane.setVisible(visible, (succ, ex) -> {
+			if (succ && visible) {
+				internalShowSelectedItem();
+			}
+		});
 	}
 
 	public boolean isIssueTaskPaneVisible() {

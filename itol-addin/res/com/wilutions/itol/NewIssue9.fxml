@@ -145,9 +145,10 @@
                                     </TableView>
                                     <VBox prefHeight="200.0" prefWidth="100.0" spacing="10.0">
                                        <children>
-                                          <Button fx:id="bnShowAttachment" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onShowAttachment" text="%bnShowAttachment.text" />
+                                          <Button fx:id="bnShowAttachment" alignment="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onShowAttachment" text="%bnShowAttachment.text" />
                                           <Button fx:id="bnAddAttachment" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onAddAttachment" text="%bnAddAttachment.text" />
                                           <Button fx:id="bnRemoveAttachment" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onRemoveAttachment" text="%bnRemoveAttachment.text" />
+                                          <Button fx:id="bnReply" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onReply" text="%bnReply.text" />
                                        </children>
                                        <padding>
                                           <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
