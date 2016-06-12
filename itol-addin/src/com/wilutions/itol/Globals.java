@@ -162,27 +162,6 @@ public class Globals {
 			}
 		}
 
-		// Set default logging options if nessesary
-		String logLevel = getConfigPropertyString(Property.LOG_LEVEL, "");
-		String logFile = getConfigPropertyString(Property.LOG_FILE, "");
-		if (logLevel.isEmpty()) {
-			Property propLogLevel = new Property(Property.LOG_LEVEL, "INFO");
-			appInfo.getConfigProps().add(propLogLevel);
-		}
-		if (logFile.isEmpty()) {
-			File flog = new File(System.getProperty("java.io.tmpdir"), "itol.log");
-			Property propLogFile = new Property(Property.LOG_FILE, flog.getAbsolutePath());
-			appInfo.getConfigProps().add(propLogFile);
-		}
-		
-		// Convert old configuration values.
-		Boolean injectId = (Boolean) getRegistry().read(Globals.REG_injectIssueIdIntoMailSubject);
-		if (injectId != null) {
-			Property propInject = new Property(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, injectId.toString());
-			appInfo.getConfigProps().add(propInject);
-			getRegistry().write(Globals.REG_injectIssueIdIntoMailSubject, null);
-		}
-		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")readData");
 	}
 
@@ -256,47 +235,13 @@ public class Globals {
 		}
 	}
 
-	public static Property getConfigProperty(String propId) {
-		Property ret = null;
-		for (Property prop : appInfo.getConfigProps()) {
-			if (prop.getId().equals(propId)) {
-				ret = prop;
-				break;
-			}
-		}
-		return ret;
-	}
-
-	public static String getConfigPropertyString(String propId, String defaultValue) {
-		Property prop = getConfigProperty(propId);
-		String ret = defaultValue;
-		if (prop != null) {
-			Object value = prop.getValue();
-			if (value != null) {
-				ret = (String)value;
-			}
-		}
-		return ret;
-	}
-
-	public static void setConfigPropertyString(String propId, String value) {
-		Property prop = getConfigProperty(propId);
-		if (prop == null) {
-			prop = new Property(propId, value);
-			appInfo.getConfigProps().add(prop);
-		}
-		else {
-			prop.setValue(value);
-		}
-	}
-
 	public static void initLogging() {
 		try {
 			ClassLoader classLoader = Globals.class.getClassLoader();
 			String logprops = OfficeAddinUtil.getResourceAsString(classLoader, "com/wilutions/itol/logging.properties");
 
-			String logLevel = getConfigPropertyString(Property.LOG_LEVEL, "INFO");
-			String logFile = getConfigPropertyString(Property.LOG_FILE, new File(System.getProperty("java.io.tmpdir"), "itol.log").getAbsolutePath());
+			String logLevel = getAppInfo().getLogLevel();
+			String logFile = getAppInfo().getLogFile();
 
 			if (logLevel != null && !logLevel.isEmpty() && logFile != null && !logFile.isEmpty()) {
 				logFile = logFile.replace('\\', '/');
@@ -318,11 +263,5 @@ public class Globals {
 		}
 
 	}
-
-	/**
-	 * Old configuration value.
-	 * Value stored in config property INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, now.
-	 */
-	private final static String REG_injectIssueIdIntoMailSubject = "injectIssueIdIntoMailSubject";
 
 }

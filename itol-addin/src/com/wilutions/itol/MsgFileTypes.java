@@ -43,6 +43,12 @@ public class MsgFileTypes {
 	 */
 	public final static IdName TEXT = new IdName(".txt", "Plain Text (.txt)");
 	
+	/**
+	 * List of all types.
+	 */
+	public final static IdName[] TYPES = new IdName[] {
+			NOTHING, MSG, MHTML, RTF, TEXT
+	};
 
 	/**
 	 * File extensions in relation to OlSaveAsType

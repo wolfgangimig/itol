@@ -972,7 +972,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private boolean isInjectIssueId() {
 		Boolean injectId = Boolean
-				.valueOf(Globals.getConfigPropertyString(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, "false"));
+				.valueOf(Globals.getAppInfo().getConfigPropertyString(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, "false"));
 		return injectId == null || injectId;
 	}
 
@@ -1439,8 +1439,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		// Therefore, we have to create the issue before uploading attachments.
 		List<Attachment> deferredAttachments = null;
 		if (isNew && isInjectIssueId()) {
-			String ext = Globals.getConfigPropertyString(Property.MSG_FILE_TYPE, MsgFileTypes.MSG.getId());
-			if (ext.equalsIgnoreCase(MsgFileTypes.MSG.getId())) {
+			IdName type = Globals.getAppInfo().getMsgFileType();
+			if (type == MsgFileTypes.MSG) {
 				modifiedProperties.remove(Property.ATTACHMENTS);
 				deferredAttachments = issue.getAttachments();
 				issue.setAttachments(new ArrayList<Attachment>(0));

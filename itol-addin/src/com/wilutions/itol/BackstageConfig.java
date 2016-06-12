@@ -93,9 +93,9 @@ public class BackstageConfig {
 			}
 
 			// Add properties for logging options
-			Property propLogFile = Globals.getConfigProperty(Property.LOG_FILE);
+			Property propLogFile = Globals.getAppInfo().getConfigProperty(Property.LOG_FILE);
 			this.configProps.add(propLogFile);
-			Property propLogLevel = Globals.getConfigProperty(Property.LOG_LEVEL);
+			Property propLogLevel = Globals.getAppInfo().getConfigProperty(Property.LOG_LEVEL);
 			this.configProps.add(propLogLevel);
 
 			ret = true;

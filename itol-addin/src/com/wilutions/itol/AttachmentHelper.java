@@ -60,7 +60,7 @@ public class AttachmentHelper {
 	private void initialUpdateNewIssueAttachments(Issue issue) throws IOException {
 
 		if (mailItem.getBody().length() != 0) {
-			String ext = getConfigMsgFileExt(MsgFileTypes.NOTHING);
+			String ext = getConfigMsgFileExt();
 
 			if (!ext.equals(MsgFileTypes.NOTHING.getId())) {
 
@@ -83,7 +83,7 @@ public class AttachmentHelper {
 	}
 
 	public Attachment makeMailAttachment(IssueMailItem mailItem) throws IOException {
-		String ext = getConfigMsgFileExt(MsgFileTypes.NOTHING);
+		String ext = getConfigMsgFileExt();
 		MailAtt mailAtt = new MailAtt(mailItem, ext);
 		return mailAtt;
 	}
@@ -354,9 +354,9 @@ public class AttachmentHelper {
 
 	}
 
-	private static String getConfigMsgFileExt(IdName defaultMsgFileExt) {
-		String ext = Globals.getConfigPropertyString(Property.MSG_FILE_TYPE, defaultMsgFileExt.getId());
-		return ext;
+	private static String getConfigMsgFileExt() {
+		IdName type = Globals.getAppInfo().getMsgFileType();
+		return type.getId();
 	}
 
 	public void showAttachment(Attachment att, ProgressCallback cb) throws IOException {
