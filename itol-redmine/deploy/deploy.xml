@@ -68,7 +68,7 @@
 		Dependencies. A semicolon separated list of all JARs this project depends on.
 		This JARs have to be also listed in the task <fx:resources>.
 	-->
-	<property name="application.classpath" value="joa-without-dlls.jar" />
+	<property name="application.classpath" value="${project.dir}/bin" />
 
 	<!--
 		Set this property "true", if the Add-in should be installed
@@ -179,9 +179,9 @@
 				<!--
 					Add dependencies from ${application.classpath} 
 				-->
+				<fx:fileset dir="${dist.dir}" includes="*.jar" />
 				<fx:fileset dir="${lib.dir}" includes="joa-without-dlls.jar" />
 				<fx:fileset dir="${dll.dir}" includes="joa${sun.arch.data.model}.dll" type="data" />
-				<fx:fileset dir="${dist.dir}" includes="*.jar" />
 				<fx:fileset dir="${project.dir}" includes="*.js" />
 				<fx:fileset dir="${project.dir}" includes="*.txt" />
 			</fx:resources>
@@ -190,6 +190,11 @@
 			<fx:preferences shortcut="false" menu="false" install="${install.all-users}" />
 
 			<fx:info title="${application.title}" vendor="${application.vendor}" />
+			
+			<fx:platform javafx="2.1+">
+			    <property name="java.net.useSystemProxies" value="true"/>
+			</fx:platform>
+				
 		</fx:deploy>
 
 		<antcall target="sign" />

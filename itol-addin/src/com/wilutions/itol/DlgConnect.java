@@ -18,6 +18,7 @@ import com.wilutions.joa.fx.ModalDialogFX;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -25,6 +26,8 @@ import javafx.fxml.JavaFXBuilderFactory;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 
@@ -48,7 +51,26 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 	TextField edPassword;
 	@FXML
 	ProgressBar pgProgress;
-
+	
+	@FXML
+	Label lbProxyServer;
+	@FXML
+	TextField edProxyServer;
+	@FXML
+	Label lbProxyPort;
+	@FXML
+	TextField edProxyPort;
+	@FXML
+	Label lbProxyUserName;
+	@FXML
+	TextField edProxyUserName;
+	@FXML
+	Label lbProxyPassword;
+	@FXML
+	TextField edProxyPassword;
+	@FXML
+	CheckBox ckProxyEnabled;
+	
 	public DlgConnect() {
 		this.resb = Globals.getResourceBundle();
 		this.configProps = Globals.getAppInfo().getConfigProps();
@@ -84,7 +106,7 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 
 		pgProgress.setProgress(0);
 		connectionInProcess.setValue(true);
-
+		
 		BackgTask.run(() -> {
 			long id = connectionProcessId.get();
 			try {
@@ -182,6 +204,12 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 				setConfigProperty(Property.USER_NAME, edUserName.getText());
 				setConfigProperty(Property.PASSWORD, PasswordEncryption.encrypt(edPassword.getText()));
 			}
+			
+			setConfigProperty(Property.PROXY_SERVER_ENABLED, Boolean.toString(ckProxyEnabled.isSelected()));
+			setConfigProperty(Property.PROXY_SERVER, edProxyServer.getText());
+			setConfigProperty(Property.PROXY_PORT, edProxyPort.getText());
+			setConfigProperty(Property.PROXY_USER_NAME, edProxyUserName.getText());
+			setConfigProperty(Property.PROXY_PASSWORD, edProxyPassword.getText());
 		}
 		else {
 			String url = getConfigProperty(Property.URL);
@@ -199,7 +227,20 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 				edUserName.setText(apiKey);
 			}
 			edPassword.setText(PasswordEncryption.decrypt(getConfigProperty(Property.PASSWORD)));
+			
+			String proxyServer = getConfigProperty(Property.PROXY_SERVER);
+			edProxyServer.setText(proxyServer);
+			String proxyPort = getConfigProperty(Property.PROXY_PORT);
+			edProxyPort.setText(proxyPort);
+			String proxyKey = getConfigProperty(Property.PROXY_USER_NAME);
+			edProxyUserName.setText(proxyKey);
+			String proxyPassword = getConfigProperty(Property.PROXY_PASSWORD);
+			edProxyPassword.setText(proxyPassword);
 
+			String proxyEnabledStr = getConfigProperty(Property.PROXY_SERVER_ENABLED);
+			ckProxyEnabled.setSelected(proxyEnabledStr.equals("true"));
+			
+			enableProxySettings();
 		}
 	}
 
@@ -227,6 +268,19 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 		if (!found) {
 			configProps.add(new Property(propId, propValue));
 		}
+	}
+	
+	private void enableProxySettings() {
+		boolean disable = !ckProxyEnabled.isSelected();
+		edProxyServer.setDisable(disable);
+		edProxyPort.setDisable(disable);
+		edProxyUserName.setDisable(disable);
+		edProxyPassword.setDisable(disable);
+	}
+	
+	@FXML
+	private void onCheckProxyEnabled(ActionEvent event) {
+		enableProxySettings();
 	}
 
 }

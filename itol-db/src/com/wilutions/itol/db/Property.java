@@ -76,6 +76,13 @@ public class Property {
 	public static final String PASSWORD = "userPwd";
 	public static final String API_KEY = "apiKey";
 	
+	public static final String PROXY_SERVER_ENABLED = "proxyServerEnabled";
+	public static final String PROXY_SERVER = "proxyServer";
+	public static final String PROXY_PORT = "proxyPort";
+	public static final String PROXY_USER_NAME = "proxyUserName";
+	public static final String PROXY_PASSWORD = "proxyUserPwd";
+
+	
 	public static final String INJECT_ISSUE_ID_INTO_MAIL_SUBJECT = "injectIssueIdIntoMailSubject";
 	public static final String ISSUE_ID_MAIL_SUBJECT_FORMAT = "issueIdMailSubjectFormat";
 	public static final String ISSUE_ID_MAIL_SUBJECT_FORMAT_DEFAULT = "[#%1]";

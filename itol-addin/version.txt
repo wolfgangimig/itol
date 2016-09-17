@@ -4,6 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+Version 2.2
+
+- #49: Can connect to Redmine via proxy server, see button "Extra - Connect...".
+
 Version 2.1 
 
 - #40: Insert issue ID into uploaded mail attachment too.

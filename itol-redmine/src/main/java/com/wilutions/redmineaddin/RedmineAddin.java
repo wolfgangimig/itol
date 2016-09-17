@@ -4,6 +4,7 @@ import java.util.ResourceBundle;
 
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.CoClass;
+import com.wilutions.itol.DlgConnect;
 import com.wilutions.itol.Globals;
 import com.wilutions.itol.ItolAddin;
 import com.wilutions.joa.DeclAddin;
@@ -27,11 +28,11 @@ public class RedmineAddin extends ItolAddin {
 		return super.GetCustomUI(ribbonId);
 	}
 	
-//	@Override
-//	protected void onConnect(Wrapper context, AsyncResult<Boolean> asyncResult) {
-//		DlgConnect dlg = new DlgConnect();
-//		Object owner = context.getWrappedObject();
-//		dlg.showAsync(owner, asyncResult);
-//	}
+	@Override
+	protected void onConnect(Wrapper context, AsyncResult<Boolean> asyncResult) {
+		DlgConnect dlg = new DlgConnect();
+		Object owner = context.getWrappedObject();
+		dlg.showAsync(owner, asyncResult);
+	}
 
 }

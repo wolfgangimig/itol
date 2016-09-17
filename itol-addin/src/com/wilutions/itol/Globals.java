@@ -13,6 +13,9 @@ package com.wilutions.itol;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.Authenticator;
+import java.net.Authenticator.RequestorType;
+import java.net.PasswordAuthentication;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Properties;
@@ -76,7 +79,7 @@ public class Globals {
 
 		if (log.isLoggable(Level.FINE))
 			log.log(Level.FINE, "readData ms=" + (t2 - t1) + ", initLogging ms=" + (t3 - t2));
-
+		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" + appDir);
 
 		try {
@@ -116,6 +119,8 @@ public class Globals {
 			Class<?> clazz = Class.forName(appInfo.getServiceFactoryClass());
 			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
 			issueService = fact.getService(appDir, appInfo.getServiceFactoryParams());
+			
+			initProxy();
 
 			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
 			issueService.setConfig(appInfo.getConfigProps());
@@ -130,6 +135,52 @@ public class Globals {
 		catch (Exception e) {
 			throw e;
 		}
+	}
+
+	private static void initProxy() {
+		String redmineUrl = appInfo.getConfigPropertyString(Property.URL, "http:").toLowerCase();
+		String httpProtocol = redmineUrl.indexOf("https") == 0 ? "https" : "http";
+		String proxyHost = appInfo.getConfigPropertyString(Property.PROXY_SERVER, "");
+		String proxyServerEnabled = appInfo.getConfigPropertyString(Property.PROXY_SERVER_ENABLED, "false"); 
+		String proxyPort = appInfo.getConfigPropertyString(Property.PROXY_PORT, "");
+		String proxyUserName = appInfo.getConfigPropertyString(Property.PROXY_USER_NAME, "");
+		String proxyPassword = appInfo.getConfigPropertyString(Property.PROXY_PASSWORD, "");
+
+		if (!proxyServerEnabled.equals("true")) {
+			proxyHost = "";
+			proxyPort = "";
+			proxyUserName = "";
+			proxyPassword = "";
+		}
+		else {
+			
+			Authenticator.setDefault(new Authenticator() {
+			    @Override
+			    protected PasswordAuthentication getPasswordAuthentication() {
+			        if (getRequestorType() == RequestorType.PROXY) {
+			            String prot = getRequestingProtocol().toLowerCase();
+			            String host = System.getProperty(prot + ".proxyHost", "");
+			            String port = System.getProperty(prot + ".proxyPort", "80");
+			            String user = System.getProperty(prot + ".proxyUser", "");
+			            String password = System.getProperty(prot + ".proxyPassword", "");
+			            if (getRequestingHost().equalsIgnoreCase(host)) {
+			                if (Integer.parseInt(port) == getRequestingPort()) {
+			                    return new PasswordAuthentication(user, password.toCharArray());
+			                }
+			            }
+			        }
+			        return null;
+			    }
+			});
+		}
+		
+		System.setProperty(httpProtocol + ".proxySet", proxyServerEnabled); 
+		System.setProperty(httpProtocol + ".proxyHost", proxyHost); 
+		System.setProperty(httpProtocol + ".proxyPort", proxyPort);
+		System.setProperty(httpProtocol + ".proxyUser", proxyUserName);
+		System.setProperty(httpProtocol + ".proxyPassword", proxyPassword);
+		
+
 	}
 
 	public static boolean isIssueServiceRunning() {
