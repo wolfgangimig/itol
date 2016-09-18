@@ -1476,6 +1476,12 @@ function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue, progress
 			else if (trackerAttachment.isDeleted()) {
 				deleteAttachment(trackerAttachment.getId());
 			}
+			else {
+				// Previous issue creation might have failed.
+				// In this case, the attachment has already been uploaded.
+				redmineAttachment = toRedmineAttachment(trackerAttachment);
+				redmineIssue.uploads.push(redmineAttachment);
+			}
 		}
 	}
 	catch (ex) {
@@ -1489,6 +1495,9 @@ function toRedmineIssue(trackerIssue, modifiedProperties, redmineIssue, progress
 			catch (ex2) {
 			}
 		}
+		
+		if (islfine) log.log(Level.FINE, "exception=", ex);
+		throw ex;
 	}
 
 	if (islfine) log.log(Level.FINE, ")toRedmineIssue=" + redmineIssue);
@@ -1697,14 +1706,12 @@ function writeAttachment(trackerAttachment, progressCallback) {
 
 	var uploadResult = httpClient.upload("/uploads.json", content, trackerAttachment.getContentLength(),
 			progressCallback);
-	ddump(uploadResult);
+	idump("uploadResult", uploadResult);
 
 	trackerAttachment.setId(uploadResult.upload.token);
 
-	var redmineAttachment = {};
-	redmineAttachment.token = uploadResult.upload.token;
-	redmineAttachment.filename = trackerAttachment.getFileName();
-	redmineAttachment.content_type = trackerAttachment.getContentType();
+	var redmineAttachment = toRedmineAttachment(trackerAttachment);
+	idump("redmineAttachment", redmineAttachment);
 
 	if (progressCallback) {
 		progressCallback.setFinished();
@@ -1713,6 +1720,14 @@ function writeAttachment(trackerAttachment, progressCallback) {
 	if (islfine) log.log(Level.FINE, ")writeAttachment=" + redmineAttachment);
 	return redmineAttachment;
 };
+
+function toRedmineAttachment(trackerAttachment) {
+	var redmineAttachment = {};
+	redmineAttachment.token = trackerAttachment.getId();
+	redmineAttachment.filename = trackerAttachment.getFileName();
+	redmineAttachment.content_type = trackerAttachment.getContentType();
+	return redmineAttachment;
+}
 
 function readIssue(issueId) {
 	if (islfine) log.log(Level.FINE, "readIssue(" + issueId);

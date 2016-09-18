@@ -6,5 +6,7 @@
 	<classpathentry kind="src" path="src/test/resources"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="con" path="org.springsource.ide.eclipse.gradle.classpathcontainer"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/itol-addin"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/itol-db"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

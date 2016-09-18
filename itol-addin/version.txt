@@ -6,6 +6,9 @@ Version History
 
 Version 2.2
 
+- #41: Attachment not added when the first try to create the issue fails (e.g. 
+  missing required field). 
+
 - #49: Can connect to Redmine via proxy server, see button "Extra - Connect...".
 
 Version 2.1 
