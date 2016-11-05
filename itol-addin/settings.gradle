@@ -1,2 +1,4 @@
 
-includeFlat "itol-db"
+include ("itol-db") 
+project(":itol-db").projectDir = new File("$settingsDir/../itol-db")
+
