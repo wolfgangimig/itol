@@ -194,6 +194,7 @@ public class HttpClient {
 				for (String header : responseHeaders) {
 					if (header.startsWith("Content-Type")) {
 						isStringContent = header.toLowerCase().contains("json");
+						if (!isStringContent) isStringContent = header.toLowerCase().contains("text/html");
 						break;
 					}
 				}
