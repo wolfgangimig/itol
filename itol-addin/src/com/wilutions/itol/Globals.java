@@ -14,7 +14,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.Authenticator;
-import java.net.Authenticator.RequestorType;
 import java.net.PasswordAuthentication;
 import java.text.MessageFormat;
 import java.util.List;
@@ -133,6 +132,7 @@ public class Globals {
 			issueServiceRunning = true;
 		}
 		catch (Exception e) {
+			log.log(Level.SEVERE, "Failed to initialize issue service", e);
 			throw e;
 		}
 	}
