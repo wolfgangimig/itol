@@ -94,6 +94,25 @@ public class ItolAddin extends OutlookAddinEx {
 		dlg.showAsync(owner, asyncResult);
 	}
 
+	protected void internalConfigure(Wrapper context, AsyncResult<Boolean> asyncResult) {
+		onConfigure(context, (succ, ex) -> {
+			if (ex != null) {
+				Object owner = context.getWrappedObject();
+				log.log(Level.SEVERE, "Configuration failed", ex);
+				MessageBox.error(owner, ex.getMessage(), null);
+			}
+			if (asyncResult != null) {
+				asyncResult.setAsyncResult(succ != null && succ && ex == null, null);
+			}
+		});
+	}
+	
+	protected void onConfigure(Wrapper context, AsyncResult<Boolean> asyncResult) {
+		DlgConfigure dlg = new DlgConfigure();
+		dlg.showAsync(context.getWrappedObject(), asyncResult);
+
+	}
+
 	@Override
 	public String GetCustomUI(String ribbonId) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "GetCustomUI(" + ribbonId);
@@ -165,4 +184,5 @@ public class ItolAddin extends OutlookAddinEx {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")getMyExplorerWrapper=" + explorerWrapper);
 		return explorerWrapper;
 	}
+
 }

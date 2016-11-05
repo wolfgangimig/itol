@@ -1530,9 +1530,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	@FXML
 	public void onConfigure() {
+		ItolAddin addin = (ItolAddin) Globals.getThisAddin();
 		Wrapper context = inspectorOrExplorer;
-		DlgConfigure dlg = new DlgConfigure();
-		dlg.showAsync(context.getWrappedObject(), null);
+		addin.internalConfigure(context, null);
 	}
 
 	@FXML
