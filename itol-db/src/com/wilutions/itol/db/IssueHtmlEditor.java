@@ -10,27 +10,14 @@
  */
 package com.wilutions.itol.db;
 
-public class IssueHtmlEditor {
+import javafx.scene.Node;
 
-	private String htmlContent;
+public interface IssueHtmlEditor {
+
+	String getText();
+	void setText(String text);
 	
-	private String elementId;
-
-	public String getHtmlContent() {
-		return htmlContent;
-	}
-
-	public void setHtmlContent(String htmlContent) {
-		this.htmlContent = htmlContent;
-	}
-
-	public String getElementId() {
-		return elementId;
-	}
-
-	public void setElementId(String elementId) {
-		this.elementId = elementId;
-	}
+	Node getNode();
 	
-	
+	void setFocus();
 }

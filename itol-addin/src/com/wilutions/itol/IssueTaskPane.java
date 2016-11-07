@@ -32,6 +32,7 @@ import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueHtmlEditor;
+import com.wilutions.itol.db.IssueHtmlEditorTextArea;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackImpl;
@@ -84,7 +85,6 @@ import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
-import netscape.javascript.JSObject;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
@@ -100,7 +100,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private HTMLEditor edDescription;
 	@FXML
-	private HBox hboxDescription;
+	private VBox boxDescription;
 	@FXML
 	private ToggleButton bnAssignSelection;
 	@FXML
@@ -123,8 +123,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private Tab tpNotes;
 	@FXML
 	private Tab tpAttachments;
-	@FXML
-	private HTMLEditor edNotes;
 	@FXML
 	private VBox boxNotes;
 	@FXML
@@ -167,11 +165,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private PropertyGridView propGridView;
 
-	private IssueHtmlEditor descriptionHtmlEditor;
-	private IssueHtmlEditor notesHtmlEditor;
+	private IssueHtmlEditor descriptionHtmlEditor = new IssueHtmlEditorTextArea();
+	private IssueHtmlEditor notesHtmlEditor = new IssueHtmlEditorTextArea();
 
-	private WebView webDescription;
-	private WebView webNotes;
 	private IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
 	private ResourceBundle resb;
@@ -763,38 +759,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void saveDescription() {
-		if (descriptionHtmlEditor != null) {
-			saveTextFromHtmlEditor(descriptionHtmlEditor, webDescription, Property.DESCRIPTION);
-		}
-		else {
-			String text = edDescription.getHtmlText().trim();
-			issue.setDescription(text);
-		}
+		String text = descriptionHtmlEditor.getText();
+		issue.setDescription(text);
 	}
 
 	private void saveNotes() {
-		if (notesHtmlEditor != null) {
-			saveTextFromHtmlEditor(notesHtmlEditor, webNotes, Property.NOTES);
-		}
-		else {
-			String text = edNotes.getHtmlText().trim();
-			issue.setPropertyString(Property.NOTES, text);
-		}
-	}
-
-	private void saveTextFromHtmlEditor(IssueHtmlEditor ed, WebView web, String propertyId) {
-		String elementId = ed.getElementId();
-		String scriptToGetDescription = "document.getElementById('" + elementId + "')";
-		try {
-			JSObject elm = (JSObject) web.getEngine().executeScript(scriptToGetDescription);
-			if (elm != null) {
-				String text = (String) elm.getMember("value");
-				issue.setPropertyString(propertyId, text);
-			}
-		}
-		catch (Throwable e) {
-			log.log(Level.WARNING, "", e);
-		}
+		String text = notesHtmlEditor.getText();
+		issue.setPropertyString(Property.NOTES, text);
 	}
 
 	private void saveSubject() {
@@ -886,24 +857,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initDescription() throws IOException {
 		if (issue != null) {
-			if (webDescription != null) {
-				descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
-				webDescription.getEngine().loadContent(descriptionHtmlEditor.getHtmlContent());
-			}
-			else {
-				edDescription.setHtmlText(issue.getDescription());
-			}
+			String text = issue.getDescription();
+			descriptionHtmlEditor.setText(text);
 		}
 	}
 
 	private void initNotes() throws IOException {
 		if (issue != null) {
-			if (webNotes != null) {
-				notesHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.NOTES);
-				webNotes.getEngine().loadContent(notesHtmlEditor.getHtmlContent());
-			}
-			else {
-				edNotes.setHtmlText(issue.getPropertyString(Property.NOTES, ""));
+			if (issue != null) {
+				String text = issue.getPropertyString(Property.NOTES, "");
+				notesHtmlEditor.setText(text);
 			}
 		}
 	}
@@ -947,21 +910,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
 		descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
-		if (descriptionHtmlEditor != null && webDescription == null) {
-			hboxDescription.getChildren().remove(edDescription);
-			webDescription = new WebView();
-			hboxDescription.getChildren().clear();
-			hboxDescription.getChildren().add(webDescription);
-			hboxDescription.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
-		}
+		VBox.setVgrow(descriptionHtmlEditor.getNode(), Priority.ALWAYS);
+		boxDescription.getChildren().clear();
+		boxDescription.getChildren().add(descriptionHtmlEditor.getNode());
+		boxDescription.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 
 		notesHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.NOTES);
-		if (notesHtmlEditor != null && webNotes == null) {
-			boxNotes.getChildren().remove(edNotes);
-			webNotes = new WebView();
-			boxNotes.getChildren().add(webNotes);
-			boxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
-		}
+		VBox.setVgrow(notesHtmlEditor.getNode(), Priority.ALWAYS);
+		boxNotes.getChildren().clear();
+		boxNotes.getChildren().add(notesHtmlEditor.getNode());
+		boxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 
 		modified = false;
 
@@ -1181,10 +1139,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		tabpIssue.getSelectionModel().select(idx);
 
 		// Determine which control should receive the focus
-		Node node = null;
+		Object node = null;
 		switch (idx) {
 		case 0: // DESCRIPTION
-			node = webDescription != null ? webDescription : edDescription;
+			node = descriptionHtmlEditor;
 			break;
 		case 1: // PROPERTIES
 			node = propGridView.getFirstControl();
@@ -1196,52 +1154,29 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			// Focus should stay on the next button
 			break;
 		case 4: // NOTES
-			node = webNotes != null ? webNotes : edNotes;
+			node = notesHtmlEditor;
 			break;
 		}
 
 		// Focus control
 		if (node != null) {
-			final Node nodeF = node;
+			final Object nodeF = node;
 			BackgTask.run(() -> {
 				try {
 					Thread.sleep(200);
-					setNodeFocusLater(nodeF);
+					Platform.runLater(() -> {
+						if (nodeF instanceof IssueHtmlEditor) {
+							((IssueHtmlEditor)nodeF).setFocus();
+						}
+						else {
+							((Node)nodeF).requestFocus();
+						}
+					});
 				}
-				catch (Throwable e) {
+				catch (InterruptedException e) {
 				}
 			});
 		}
-	}
-
-	private void setNodeFocusLater(Node node) {
-		Platform.runLater(() -> {
-			if (node == webDescription || node == webNotes) {
-				BackgTask.run(() -> {
-					try {
-						Thread.sleep(200);
-						focuseWebViewHtmlEditor((WebView) node, descriptionHtmlEditor);
-					}
-					catch (Exception e) {
-					}
-				});
-			}
-			node.requestFocus();
-			System.out.println("focus " + node);
-		});
-	}
-
-	private void focuseWebViewHtmlEditor(WebView webView, IssueHtmlEditor descriptionHtmlEditor) {
-		Platform.runLater(() -> {
-			String elementId = descriptionHtmlEditor.getElementId();
-			String scriptToFocusControl = "document.getElementById('" + elementId + "').focus()";
-			try {
-				webView.getEngine().executeScript(scriptToFocusControl);
-			}
-			catch (Throwable e) {
-				log.log(Level.WARNING, "", e);
-			}
-		});
 	}
 
 	private class ComboboxChangeListener implements ChangeListener<IdName> {

@@ -85,20 +85,16 @@
                         </Tab>
                         <Tab fx:id="tpNotes" text="%tpNotes.text">
                            <content>
-                              <VBox fx:id="boxNotes">
-                                 <children>
-                                    <HTMLEditor fx:id="edNotes" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" prefHeight="293.0" prefWidth="443.0" HBox.hgrow="NEVER" VBox.vgrow="ALWAYS" />
-                                 </children>
-                              </VBox>
+                              <VBox fx:id="boxNotes" />
                            </content>
                         </Tab>
                       <Tab text="%tpDescription.text">
                            <content>
-                              <HBox fx:id="hboxDescription">
+                              <VBox fx:id="boxDescription">
                                  <children>
-                                    <HTMLEditor fx:id="edDescription" htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" prefHeight="200.0" prefWidth="506.0" HBox.hgrow="ALWAYS" />
+                                    <TextArea maxHeight="1.7976931348623157E308" minHeight="-Infinity" VBox.vgrow="ALWAYS" />
                                  </children>
-                              </HBox>
+                              </VBox>
                            </content>
                         </Tab>
                       <Tab fx:id="tpProperties" text="%tpProperties.text">
