@@ -219,7 +219,7 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public IssueHtmlEditor getHtmlEditor(Issue issue, String propertyId) throws IOException {
+	public IssueHtmlEditor getHtmlEditor(Object ownerWindow, Issue issue, String propertyId) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

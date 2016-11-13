@@ -22,6 +22,7 @@ public class HttpResponse {
 	private File file;
 
 	public String getContent() {
+		if (content == null) content = "";
 		return content;
 	}
 
@@ -46,6 +47,7 @@ public class HttpResponse {
 	}
 
 	public String getErrorMessage() {
+		if (errorMessage == null) errorMessage = "";
 		return errorMessage;
 	}
 

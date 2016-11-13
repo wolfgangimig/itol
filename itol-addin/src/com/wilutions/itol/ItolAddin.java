@@ -61,7 +61,8 @@ public class ItolAddin extends OutlookAddinEx {
 			((MyWrapper) context).setIssueTaskPaneVisible(pressed);
 		}
 		else if (pressed) {
-			internalConnect(context, (succ, ex) -> {
+			Object owner = context.getWrappedObject(); 
+			internalConnect(owner, (succ, ex) -> {
 				if (succ) {
 					((MyWrapper) context).setIssueTaskPaneVisible(pressed);
 				}
@@ -72,11 +73,10 @@ public class ItolAddin extends OutlookAddinEx {
 	}
 
 	
-	protected void internalConnect(Wrapper context, AsyncResult<Boolean> asyncResult) {
-		onConnect(context, (succ, ex) -> {
+	protected void internalConnect(Object owner, AsyncResult<Boolean> asyncResult) {
+		onConnect(owner, (succ, ex) -> {
 			if (ex != null) {
 				ResourceBundle resb = Globals.getResourceBundle();
-				Object owner = context.getWrappedObject();
 				String msg = resb.getString("Error.NotConnected");
 				log.log(Level.SEVERE, msg, ex);
 				msg += "\n" + ex.getMessage();
@@ -88,9 +88,8 @@ public class ItolAddin extends OutlookAddinEx {
 		});
 	}
 
-	protected void onConnect(Wrapper context, AsyncResult<Boolean> asyncResult) {
+	protected void onConnect(Object owner, AsyncResult<Boolean> asyncResult) {
 		DlgConnect dlg = new DlgConnect();
-		Object owner = context.getWrappedObject();
 		dlg.showAsync(owner, asyncResult);
 	}
 

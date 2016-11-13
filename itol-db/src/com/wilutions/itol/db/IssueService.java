@@ -40,7 +40,7 @@ public interface IssueService {
 //
 //	List<IdName> getMilestones(Issue issue) throws IOException;
 
-	IssueHtmlEditor getHtmlEditor(Issue issue, String propertyId) throws IOException;
+	IssueHtmlEditor getHtmlEditor(Object parent, Issue issue, String propertyId) throws IOException;
 
 	Issue createIssue(String subject, String description, String defaultIssueAsString) throws IOException;
 

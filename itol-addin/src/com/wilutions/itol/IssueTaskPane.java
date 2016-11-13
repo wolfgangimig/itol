@@ -24,6 +24,7 @@ import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
+import com.wilutions.com.WindowHandle;
 import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.DefaultSuggest;
@@ -470,7 +471,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			scene.getStylesheets().add(getClass().getResource("TaskPane.css").toExternalForm());
 
 			// ScenicView.show(scene);
-
+			
 			return scene;
 		}
 		catch (Throwable e) {
@@ -909,13 +910,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
-		descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.DESCRIPTION);
+		descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(this, issue, Property.DESCRIPTION);
 		VBox.setVgrow(descriptionHtmlEditor.getNode(), Priority.ALWAYS);
 		boxDescription.getChildren().clear();
 		boxDescription.getChildren().add(descriptionHtmlEditor.getNode());
 		boxDescription.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 
-		notesHtmlEditor = Globals.getIssueService().getHtmlEditor(issue, Property.NOTES);
+		notesHtmlEditor = Globals.getIssueService().getHtmlEditor(this, issue, Property.NOTES);
 		VBox.setVgrow(notesHtmlEditor.getNode(), Priority.ALWAYS);
 		boxNotes.getChildren().clear();
 		boxNotes.getChildren().add(notesHtmlEditor.getNode());
@@ -1459,8 +1460,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	public void onConnect() {
 		ItolAddin addin = (ItolAddin) Globals.getThisAddin();
-		Wrapper context = inspectorOrExplorer;
-		addin.internalConnect(context, null);
+		WindowHandle owner = this;
+		addin.internalConnect(owner, null);
 	}
 
 	@FXML
