@@ -18,6 +18,7 @@ import java.net.PasswordAuthentication;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -299,6 +300,11 @@ public class Globals {
 				logprops = MessageFormat.format(logprops, logLevel, logFile);
 				ByteArrayInputStream istream = new ByteArrayInputStream(logprops.getBytes());
 				LogManager.getLogManager().readConfiguration(istream);
+
+				for (Handler handler : Logger.getLogger("").getHandlers()) {
+					handler.setFormatter(new LogFormatter());
+				}
+
 				Logger log = Logger.getLogger(Globals.class.getName());
 				log.info("Logger initialized");
 			}
