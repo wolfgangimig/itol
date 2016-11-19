@@ -22,6 +22,7 @@ public class Attachment {
 	private long contentLength;
 	private InputStream stream;
 	private String url;
+	private String thumbnailUrl;
 	private boolean deleted;
 	
 	public Attachment() {
@@ -31,6 +32,7 @@ public class Attachment {
 		fileName = "";
 		stream = new ByteArrayInputStream(new byte[0]);
 		url = "";
+		thumbnailUrl = "";
 	}
 
 	public Attachment(String id, String subject, String contentType, String fileName, InputStream stream, String url) {
@@ -41,6 +43,7 @@ public class Attachment {
 		this.fileName = fileName;
 		this.stream = stream;
 		this.url = url;
+		this.thumbnailUrl = "";
 	}
 	
 	@Override
@@ -53,6 +56,7 @@ public class Attachment {
 		copy.stream = null;
 		copy.url = url;
 		copy.deleted = deleted;
+		copy.thumbnailUrl = thumbnailUrl;
 		return copy;
 	}
 	
@@ -61,18 +65,15 @@ public class Attachment {
 		boolean ret = false;
 		if (obj instanceof Attachment) {
 			Attachment rhs = (Attachment)obj;
-			ret = id.equals(rhs.id);
+			ret = getId().equals(rhs.getId());
 			if (ret) {
-				ret = subject.equals(rhs.subject);
+				ret = getSubject().equals(rhs.getSubject());
 				if (ret) {
-					ret = contentType.equals(rhs.contentType);
+					ret = getFileName().equals(rhs.getFileName());
 					if (ret) {
-						ret = fileName.equals(rhs.fileName);
+						ret = getUrl().equals(rhs.getUrl());
 						if (ret) {
-							ret = url.equals(rhs.url);
-							if (ret) {
-								ret = deleted == rhs.deleted;
-							}
+							ret = deleted == rhs.deleted;
 						}
 					}
 				}
@@ -91,6 +92,7 @@ public class Attachment {
 	}
 
 	public String getSubject() {
+		if (subject == null) subject = "";
 		return subject;
 	}
 
@@ -99,6 +101,7 @@ public class Attachment {
 	}
 
 	public String getContentType() {
+		if (contentType == null) contentType = "";
 		return contentType;
 	}
 
@@ -123,6 +126,7 @@ public class Attachment {
 	}
 
 	public String getFileName() {
+		if (fileName == null) fileName = "";
 		return fileName;
 	}
 
@@ -131,6 +135,7 @@ public class Attachment {
 	}
 
 	public String getUrl() {
+		if (url == null) url = "";
 		return url;
 	}
 
@@ -148,6 +153,15 @@ public class Attachment {
 
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
+	}
+
+	public String getThumbnailUrl() {
+		if (thumbnailUrl == null) thumbnailUrl = "";
+		return thumbnailUrl;
+	}
+
+	public void setThumbnailUrl(String thumbnailUrl) {
+		this.thumbnailUrl = thumbnailUrl;
 	}
 
 }

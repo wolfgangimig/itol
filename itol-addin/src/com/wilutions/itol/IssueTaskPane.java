@@ -20,12 +20,6 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.events.EventListener;
-import org.w3c.dom.events.EventTarget;
-
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
@@ -64,8 +58,6 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Worker;
-import javafx.concurrent.Worker.State;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -797,54 +789,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				webEngine.loadContent(url);
 			}
 			
-			// Marker is false, if event listeners are already bound.
-			final boolean[] refAddListener = { true };
-			
-			// Bind click-handler to all anchors
-			// http://stackoverflow.com/questions/17555937/hyperlinklistener-in-javafx-webengine
-			webEngine.getLoadWorker().stateProperty().addListener(new ChangeListener<Worker.State>() {
-
-				@Override
-				public void changed(ObservableValue<? extends State> observable, State oldValue, State newValue) {
-			        if (newValue == Worker.State.SUCCEEDED) {
-
-			        	EventListener listener = new EventListener() {
-							@Override
-							public void handleEvent(org.w3c.dom.events.Event ev) {
-								EventTarget target = ev.getCurrentTarget();
-								String type = ev.getType();
-								if (type.equals("click")) {
-									ev.preventDefault();
-									
-									Platform.runLater(() -> {
-										String href = ((Element)target).getAttribute("href");
-										if (href != null && !href.isEmpty()) {
-											IssueApplication.showDocument(href);
-										}
-									});
-								}
-							}
-			            };
-	
-			            // Bind click-event listeners only once.
-			            if (refAddListener[0]) {
-			            	refAddListener[0] = false;
-				            bindClickListenersToAnchors(listener);
-			            }
-			        }
-					
-				}
-
-				private void bindClickListenersToAnchors(EventListener listener) {
-					Document doc = webHistory.getEngine().getDocument();
-					NodeList anchors = doc.getElementsByTagName("a");
-					for (int i=0; i<anchors.getLength(); i++) {
-						EventTarget elm = ((EventTarget)anchors.item(i));
-						System.out.println("bind to " + elm + ", class=" + elm.getClass());
-					    elm.addEventListener("click", listener, false);
-					}
-				}
-			});
+			WebViewHelper.addClickHandlerToWebView(webHistory);
 		}
 	}
 
@@ -1579,5 +1524,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				log.log(Level.INFO, "Cannot open mail=" + tempPath + ", maybe already open.", e);
 			}
 		}
+	}
+
+	public void setAddAttachmentListener(Attachment att) {
+		tabAttachments.getItems().add(att);
 	}
 }

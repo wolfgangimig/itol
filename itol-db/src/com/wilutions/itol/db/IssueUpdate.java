@@ -50,7 +50,12 @@ public class IssueUpdate implements Serializable {
 	}
 
 	public Property getProperty(String propertyId) {
-		return properties.getOrDefault(propertyId, new Property(propertyId, null));
+		Property property = properties.get(propertyId);
+		if (property == null) {
+			property = new Property(propertyId, null);
+			properties.put(propertyId, property);
+		}
+		return property;
 	}
 
 	public void setProperty(Property prop) {
