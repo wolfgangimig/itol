@@ -58,7 +58,7 @@ public class PropertyGridView {
 		constr0.setPercentWidth(38);
 	}
 
-	public void initProperties(Issue issue) throws IOException {
+	public void initProperties(Issue issue) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "PropertyGridView(");
 		propGrid.getChildren().clear();
 		propGrid.getRowConstraints().clear();
@@ -132,7 +132,7 @@ public class PropertyGridView {
 		return ret;
 	}
 
-	private void addProperty(Issue issue, String propertyId, int rowIndex) throws IOException {
+	private void addProperty(Issue issue, String propertyId, int rowIndex) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addProperty(" + propertyId);
 
 		IssueService srv = Globals.getIssueService();
@@ -357,7 +357,7 @@ public class PropertyGridView {
 		return firstControl;
 	}
 
-	private boolean isAutoCompletionProperty(Property prop, Issue issue) throws IOException {
+	private boolean isAutoCompletionProperty(Property prop, Issue issue) throws Exception {
 		boolean ret = prop.getId().equals(Property.ASSIGNEE);
 		if (!ret) {
 			IssueService srv = Globals.getIssueService();

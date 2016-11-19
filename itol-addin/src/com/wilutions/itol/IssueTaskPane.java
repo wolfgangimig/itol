@@ -20,6 +20,12 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.events.EventListener;
+import org.w3c.dom.events.EventTarget;
+
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
@@ -58,6 +64,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Worker;
+import javafx.concurrent.Worker.State;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -83,6 +91,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.HTMLEditor;
+import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
@@ -584,7 +593,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 						setModified(!eq);
 					}
 				}
-				catch (IOException e) {
+				catch (Exception e) {
 					log.log(Level.WARNING, "", e);
 				}
 			}
@@ -594,7 +603,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private AutoCompletionBinding<IdName> initAutoComplete(IssueService srv, ComboBox<IdName> cb, String propertyId)
-			throws IOException {
+			throws Exception {
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
 		List<IdName> allItems = pclass != null ? pclass.getSelectList() : new ArrayList<IdName>();
 
@@ -658,7 +667,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private boolean lockChangeListener;
 
-	private void updateData(boolean saveAndValidate) throws IOException {
+	private void updateData(boolean saveAndValidate) throws Exception {
 		if (lockChangeListener) return;
 		try {
 			lockChangeListener = true;
@@ -669,7 +678,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private void internalUpdateData(boolean saveAndValidate) throws IOException {
+	private void internalUpdateData(boolean saveAndValidate) throws Exception {
 		if (saveAndValidate) {
 
 			saveSubject();
@@ -776,11 +785,66 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private void initHistory() throws IOException {
+	private void initHistory() throws Exception {
 		if (issue.getId() != null && issue.getId().length() != 0) {
 			IssueService srv = Globals.getIssueService();
+			WebEngine webEngine = webHistory.getEngine();
 			String url = srv.getIssueHistoryUrl(issue.getId());
-			webHistory.getEngine().load(url);
+			if (url.toLowerCase().startsWith("http")) {
+				webEngine.load(url);
+			}
+			else {
+				webEngine.loadContent(url);
+			}
+			
+			// Marker is false, if event listeners are already bound.
+			final boolean[] refAddListener = { true };
+			
+			// Bind click-handler to all anchors
+			// http://stackoverflow.com/questions/17555937/hyperlinklistener-in-javafx-webengine
+			webEngine.getLoadWorker().stateProperty().addListener(new ChangeListener<Worker.State>() {
+
+				@Override
+				public void changed(ObservableValue<? extends State> observable, State oldValue, State newValue) {
+			        if (newValue == Worker.State.SUCCEEDED) {
+
+			        	EventListener listener = new EventListener() {
+							@Override
+							public void handleEvent(org.w3c.dom.events.Event ev) {
+								EventTarget target = ev.getCurrentTarget();
+								String type = ev.getType();
+								if (type.equals("click")) {
+									ev.preventDefault();
+									
+									Platform.runLater(() -> {
+										String href = ((Element)target).getAttribute("href");
+										if (href != null && !href.isEmpty()) {
+											IssueApplication.showDocument(href);
+										}
+									});
+								}
+							}
+			            };
+	
+			            // Bind click-event listeners only once.
+			            if (refAddListener[0]) {
+			            	refAddListener[0] = false;
+				            bindClickListenersToAnchors(listener);
+			            }
+			        }
+					
+				}
+
+				private void bindClickListenersToAnchors(EventListener listener) {
+					Document doc = webHistory.getEngine().getDocument();
+					NodeList anchors = doc.getElementsByTagName("a");
+					for (int i=0; i<anchors.getLength(); i++) {
+						EventTarget elm = ((EventTarget)anchors.item(i));
+						System.out.println("bind to " + elm + ", class=" + elm.getClass());
+					    elm.addEventListener("click", listener, false);
+					}
+				}
+			});
 		}
 	}
 
@@ -844,7 +908,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		tabAttachments.setItems(obs);
 	}
 
-	private void initProperties() throws IOException {
+	private void initProperties() throws Exception {
 		if (propGridView == null) {
 			propGridView = new PropertyGridView(propGrid);
 		}
@@ -873,7 +937,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initAutoComplete(AutoCompletionBinding<IdName> autoCompletionBinding, String propertyId)
-			throws IOException {
+			throws Exception {
 		if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "initAutoComplete " + propertyId);
 		IssueService srv = Globals.getIssueService();
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
@@ -894,7 +958,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private void initialUpdate() throws IOException {
+	private void initialUpdate() throws Exception {
 
 		tpNotes.setStyle("-fx-font-weight:normal;");
 		tpAttachments.setStyle("-fx-font-weight:normal;");
@@ -1119,7 +1183,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			String url = srv.getShowIssueUrl(issue.getId());
 			IssueApplication.showDocument(url);
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			log.log(Level.WARNING, "", e);
 		}
 	}
@@ -1358,7 +1422,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	 * @throws IOException
 	 */
 	private void updateIssueChangedMembers(IssueService srv, final ProgressCallback progressCallback)
-			throws IOException {
+			throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "updateIssueChangedMembers(");
 
 		// If the issue ID is empty, a new issue has to be created.
@@ -1414,7 +1478,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueChangedMembers");
 	}
 
-	private void saveMailWithIssueId(final ProgressCallback progressCallback) throws IOException {
+	private void saveMailWithIssueId(final ProgressCallback progressCallback) throws Exception {
 		String mailSubjectPrev = mailItem.getSubject();
 		String mailSubject = injectIssueIdIntoMailSubject(mailSubjectPrev, issue);
 		if (!mailSubjectPrev.equals(mailSubject)) {
@@ -1424,7 +1488,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private String injectIssueIdIntoMailSubject(String subject, Issue issue) throws IOException {
+	private String injectIssueIdIntoMailSubject(String subject, Issue issue) throws Exception {
 		return Globals.getIssueService().injectIssueIdIntoMailSubject(subject, issue);
 	}
 
@@ -1442,7 +1506,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			String str = Globals.getIssueService().getDefaultIssueAsString(issue);
 			Globals.getRegistry().write(Globals.REG_defaultIssueAsString, str);
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			showMessageBoxError(e.toString());
 		}
 	}

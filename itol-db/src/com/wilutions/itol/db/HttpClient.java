@@ -10,6 +10,7 @@
  */
 package com.wilutions.itol.db;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,6 +29,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,13 +38,17 @@ public class HttpClient {
 	private final static Logger log = Logger.getLogger(HttpClient.class.getName());
 
 	private static HashMap<String, String> redirections = new HashMap<>();
-
+	
 	public final static int CONNECT_TIMEOUT_SECONDS = 10;
 
 	static {
 		// see #12 "handshake alert: unrecognized_name"
 		// http://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0
 		System.setProperty("jsse.enableSNIExtension", "false");
+	}
+	
+	public static CompletableFuture<HttpResponse> sendAsync(String surl, String method, String[] headers, Object content, ProgressCallback cb) {
+		return CompletableFuture.supplyAsync(() -> send(surl, method, headers, content, cb));
 	}
 
 	public static HttpResponse send(String surl, String method, String[] headers, Object content, ProgressCallback cb) {
@@ -83,6 +89,14 @@ public class HttpClient {
 
 			long contentLength = -1;
 			String contentDisposition = "";
+			
+			// Wrap String bytes into InputStream 
+			if (content instanceof String) {
+				byte[] buf = ((String)content).getBytes("UTF-8");
+				content = new ByteArrayInputStream(buf);
+				contentLength = buf.length;
+				conn.setRequestProperty("Content-Length", Long.toString(contentLength));
+			}
 
 			for (String header : headers) {
 				int p = header.indexOf(":");
@@ -116,10 +130,7 @@ public class HttpClient {
 				}
 
 				ProgressCallback subcb = cb.createChild("upload");
-				if (content instanceof String) {
-					writeStringIntoStream(conn.getOutputStream(), ((String) content), subcb);
-				}
-				else if (content instanceof File) {
+				if (content instanceof File) {
 					writeFileIntoStream(conn.getOutputStream(), ((File) content), subcb);
 				}
 				else if (content instanceof InputStream) {
@@ -281,21 +292,6 @@ public class HttpClient {
 		return ret;
 	}
 
-	private static void writeStringIntoStream(OutputStream os, String s, ProgressCallback cb) throws IOException {
-		if (log.isLoggable(Level.FINE)) log.fine("writeStringIntoStream(length=" + s.length());
-		cb.setProgress(0);
-		cb.setTotal(s.length());
-		OutputStreamWriter wr = new OutputStreamWriter(os, "UTF-8");
-		try {
-			wr.write(s);
-		}
-		finally {
-			wr.close();
-		}
-		cb.setProgress(s.length());
-		if (log.isLoggable(Level.FINE)) log.fine(")writeStringIntoStream");
-	}
-
 	private static void writeFileIntoStream(OutputStream os, File file, ProgressCallback cb) throws IOException {
 		writeFileIntoStream(os, new FileInputStream(file), file.length(), cb);
 	}
@@ -365,12 +361,24 @@ public class HttpClient {
 		return ret;
 	}
 
+	public static CompletableFuture<HttpResponse> postAsync(String url, String[] headers, String content, ProgressCallback cb) {
+		return sendAsync(url, "POST", headers, content, cb);
+	}
+
 	public static HttpResponse post(String url, String[] headers, String content, ProgressCallback cb) {
 		return send(url, "POST", headers, content, cb);
 	}
 
+	public static CompletableFuture<HttpResponse> getAsync(String url, String[] headers, ProgressCallback cb) {
+		return sendAsync(url, "GET", headers, null, cb);
+	}
+
 	public static HttpResponse get(String url, String[] headers, ProgressCallback cb) {
 		return send(url, "GET", headers, null, cb);
+	}
+
+	public static CompletableFuture<HttpResponse> uploadAsync(String url, String[] headers, File file, ProgressCallback cb) {
+		return sendAsync(url, "POST", headers, file, cb);
 	}
 
 	public static HttpResponse upload(String url, String[] headers, File file, ProgressCallback cb) {

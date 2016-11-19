@@ -10,7 +10,6 @@
  */
 package com.wilutions.itol.db;
 
-import java.io.IOException;
 import java.util.List;
 
 public interface IssueService {
@@ -22,57 +21,58 @@ public interface IssueService {
 	
 	PropertyClasses getPropertyClasses();
 	
-	PropertyClass getPropertyClass(String propertyId, Issue iss) throws IOException;
+	PropertyClass getPropertyClass(String propertyId, Issue iss) throws Exception;
 	
 	List<String> getPropertyDisplayOrder(Issue issue);
 	
-	List<IdName> getPropertyAutoCompletion(String propertyId, Issue iss, String filter, int max) throws IOException;
+	List<IdName> getPropertyAutoCompletion(String propertyId, Issue iss, String filter, int max) throws Exception;
 	
-//	List<IdName> getIssueTypes(Issue iss) throws IOException;
+//	List<IdName> getIssueTypes(Issue iss) throws Exception;
 //
-//	List<IdName> getPriorities(Issue iss) throws IOException;
+//	List<IdName> getPriorities(Issue iss) throws Exception;
 //
-//	List<IdName> getCategories(Issue iss) throws IOException;
+//	List<IdName> getCategories(Issue iss) throws Exception;
 //
-//	List<IdName> getAssignees(Issue iss) throws IOException;
+//	List<IdName> getAssignees(Issue iss) throws Exception;
 //
-//	List<IdName> getIssueStates(Issue iss) throws IOException;
+//	List<IdName> getIssueStates(Issue iss) throws Exception;
 //
-//	List<IdName> getMilestones(Issue issue) throws IOException;
+//	List<IdName> getMilestones(Issue issue) throws Exception;
 
-	IssueHtmlEditor getHtmlEditor(Object parent, Issue issue, String propertyId) throws IOException;
+	IssueHtmlEditor getHtmlEditor(Object parent, Issue issue, String propertyId) throws Exception;
 
-	Issue createIssue(String subject, String description, String defaultIssueAsString) throws IOException;
+	Issue createIssue(String subject, String description, String defaultIssueAsString) throws Exception;
 
-	Issue validateIssue(Issue iss) throws IOException;
+	Issue validateIssue(Issue iss) throws Exception;
 
-	String extractIssueIdFromMailSubject(String subject) throws IOException;
+	String extractIssueIdFromMailSubject(String subject) throws Exception;
 
-	String injectIssueIdIntoMailSubject(String subject, Issue iss) throws IOException;
+	String injectIssueIdIntoMailSubject(String subject, Issue iss) throws Exception;
 
-	IdName getCurrentUser() throws IOException;
+	IdName getCurrentUser() throws Exception;
 
-	String getShowIssueUrl(String issueId) throws IOException;
+	String getShowIssueUrl(String issueId) throws Exception;
 
-	Issue updateIssue(Issue iss, List<String> modifiedProperties, ProgressCallback cb) throws IOException;
+	Issue updateIssue(Issue iss, List<String> modifiedProperties, ProgressCallback cb) throws Exception;
 
-	Issue readIssue(String issueId) throws IOException;
+	Issue readIssue(String issueId) throws Exception;
 	
-	String getDefaultIssueAsString(Issue iss) throws IOException;
+	String getDefaultIssueAsString(Issue iss) throws Exception;
 	
-	String getIssueHistoryUrl(String issueId) throws IOException;
+	// TODO: rename to getIssueHistory
+	String getIssueHistoryUrl(String issueId) throws Exception;
 	
-	String downloadAttachment(String url, ProgressCallback cb) throws IOException;
+	String downloadAttachment(String url, ProgressCallback cb) throws Exception;
 	
 //
-//	FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) throws IOException;
+//	FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) throws Exception;
 //
-//	FindIssuesResult findNextIssues(String searchId, int idx, int max) throws IOException;
+//	FindIssuesResult findNextIssues(String searchId, int idx, int max) throws Exception;
 //
-//	void findCloseIssues(String searchId) throws IOException;
+//	void findCloseIssues(String searchId) throws Exception;
 //
-//	Attachment readAttachment(String attachmentId) throws IOException;
+//	Attachment readAttachment(String attachmentId) throws Exception;
 //
-//	void deleteAttachment(String attachmentId) throws IOException;
+//	void deleteAttachment(String attachmentId) throws Exception;
 
 }
