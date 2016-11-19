@@ -76,7 +76,7 @@
                     <tabs>
                         <Tab fx:id="tpHistory" text="%tpHistory.text">
                            <content>
-                              <HBox spacing="10.0">
+                              <HBox spacing="10.0" style="-fx-border-width: 1; -fx-border-color: #CFCFCF;">
                                  <children>
                                     <WebView fx:id="webHistory" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
                                  </children>
