@@ -18,9 +18,6 @@ public class WebViewHelper {
 
 	public static void addClickHandlerToWebView(WebView webView) {
 		
-		// Marker is false, if event listeners are already bound.
-		final boolean[] refAddListener = { true };
-		
 		WebEngine webEngine = webView.getEngine();
 		webEngine.getLoadWorker().stateProperty().addListener(new ChangeListener<Worker.State>() {
 
@@ -45,12 +42,9 @@ public class WebViewHelper {
 							}
 						}
 		            };
-
-		            // Bind click-event listeners only once.
-		            if (refAddListener[0]) {
-		            	refAddListener[0] = false;
-			            bindClickListenersToAnchors(listener);
-		            }
+	
+			        // Bind click-event listeners only once.
+		            bindClickListenersToAnchors(listener);
 		        }
 				
 			}
