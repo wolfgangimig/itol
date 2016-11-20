@@ -259,39 +259,6 @@ public class Issue implements Serializable {
 		setPropertyValue(Property.ATTACHMENTS, atts);
 	}
 	
-	/**
-	 * Find attachment by name.
-	 * @param fileName 
-	 * @return
-	 */
-	public Optional<Attachment> findAttachment(String fileName) {
-		String fileNameLC = fileName.toLowerCase();
-		Optional<Attachment> ret = getAttachments().stream().filter(
-				(att) -> att.getFileName().toLowerCase().equals(fileNameLC)
-				).findFirst();
-		return ret;
-	}
-	
-	/**
-	 * Creates a unique file name for an attachment.
-	 * @param fileName
-	 * @return
-	 */
-	public String makeUniqueAttachmentFileName(String fileName) {
-		int retry = 0;
-		while (findAttachment(fileName).isPresent()) {
-			String name = fileName;
-			String ext = "";
-			int d = fileName.lastIndexOf('.');
-			if (d >= 0) {
-				name = fileName.substring(0,  d);
-				ext = fileName.substring(d+1);
-			}
-			fileName += name + " (" + (++retry) + ")" + ext;
-		}
-		return fileName;
-	}
-	
 	public Date getLastModified() {
 		Date ret = getLastUpdate().getCreateDate();
 		return ret;
