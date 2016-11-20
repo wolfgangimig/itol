@@ -53,6 +53,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -164,6 +165,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private AutoCompletionBinding<IdName> autoCompletionStatus;
 
 	private boolean tabAttachmentsApplyHandler = true;
+	private SimpleIntegerProperty updateBindingToAttachmentList = new SimpleIntegerProperty();
 
 	private PropertyGridView propGridView;
 
@@ -851,6 +853,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		ObservableList<Attachment> obs = FXCollections.observableList(atts);
 		tabAttachments.setItems(obs);
+		
+		fireUpdateBindingToAttachmentList();
+	}
+	
+	private void fireUpdateBindingToAttachmentList() {
+		int v = updateBindingToAttachmentList.getValue();
+		updateBindingToAttachmentList.setValue(v+1);
 	}
 
 	private void initProperties() throws Exception {
@@ -1528,5 +1537,23 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	public void setAddAttachmentListener(Attachment att) {
 		tabAttachments.getItems().add(att);
+	}
+	
+	/**
+	 * Comment editor of JIRA addin binds to this value.
+	 * If the value changes, the editor will call {@link #getObservableAttachments()}
+	 * to bind to the new list.
+	 * @return
+	 */
+	public SimpleIntegerProperty getUpdateBindingToAttachmentList() {
+		return updateBindingToAttachmentList;
+	}
+
+	/**
+	 * Comment editor of JIRA addin binds to the list of attachments.
+	 * @return
+	 */
+	public ObservableList<Attachment> getObservableAttachments() {
+		return tabAttachments.getItems();
 	}
 }
