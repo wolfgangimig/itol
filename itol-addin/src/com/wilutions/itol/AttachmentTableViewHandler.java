@@ -77,10 +77,12 @@ public class AttachmentTableViewHandler {
 						super.updateItem(fileName, empty);
 						if (fileName != null) {
 							Attachment att = (Attachment) getTableRow().getItem();
-							String style = att.getId().isEmpty() ? "-fx-font-weight: bold;" : "fx-font-weight: normal;";
-							setStyle(style);
-							String str = AttachmentHelper.getFileName(fileName);
-							setText(str);
+							if (att != null) { // att is null when table.getItems() is modified in IssueHtmlEditor - why?
+								String style = att.getId().isEmpty() ? "-fx-font-weight: bold;" : "fx-font-weight: normal;";
+								setStyle(style);
+								String str = AttachmentHelper.getFileName(fileName);
+								setText(str);
+							}
 						}
 					}
 				};
@@ -183,8 +185,8 @@ public class AttachmentTableViewHandler {
 			@Override
 			public void handle(DragEvent event) {
 				Dragboard db = event.getDragboard();
-				System.out.println("clipboard: image=" + db.hasImage() + ", files=" + db.hasFiles() + ", html="
-						+ db.hasHtml() + ", rtf=" + db.hasRtf() + ", string=" + db.hasString());
+//				System.out.println("clipboard: image=" + db.hasImage() + ", files=" + db.hasFiles() + ", html="
+//						+ db.hasHtml() + ", rtf=" + db.hasRtf() + ", string=" + db.hasString());
 				if (db.hasImage()) {
 
 				}
