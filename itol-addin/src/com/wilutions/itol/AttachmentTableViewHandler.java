@@ -1,12 +1,21 @@
 package com.wilutions.itol;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.wilutions.com.IDispatch;
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.Selection;
 import com.wilutions.mslib.outlook._Explorer;
@@ -26,8 +35,12 @@ import javafx.scene.input.TransferMode;
 import javafx.util.Callback;
 
 public class AttachmentTableViewHandler {
+	
+	private final static Logger log = Logger.getLogger("AttachmentTableViewHandler");
+	
+	public static void apply(MailAttachmentHelper attachmentHelper, TableView<Attachment> table, Attachments observableAttachments) {
 
-	public static void apply(AttachmentHelper attachmentHelper, TableView<Attachment> table) {
+		table.setItems(observableAttachments.getObservableList());
 
 		ResourceBundle resb = Globals.getResourceBundle();
 
@@ -61,7 +74,7 @@ public class AttachmentTableViewHandler {
 		iconColumn.setComparator(new Comparator<String>() {
 			@Override
 			public int compare(String o1, String o2) {
-				return AttachmentHelper.getFileExt(o1).compareToIgnoreCase(AttachmentHelper.getFileExt(o2));
+				return MailAttachmentHelper.getFileExt(o1).compareToIgnoreCase(MailAttachmentHelper.getFileExt(o2));
 			}
 		});
 
@@ -80,7 +93,7 @@ public class AttachmentTableViewHandler {
 							if (att != null) { // att is null when table.getItems() is modified in IssueHtmlEditor - why?
 								String style = att.getId().isEmpty() ? "-fx-font-weight: bold;" : "fx-font-weight: normal;";
 								setStyle(style);
-								String str = AttachmentHelper.getFileName(fileName);
+								String str = MailAttachmentHelper.getFileName(fileName);
 								setText(str);
 							}
 						}
@@ -93,7 +106,7 @@ public class AttachmentTableViewHandler {
 		fileNameColumn.setComparator(new Comparator<String>() {
 			@Override
 			public int compare(String o1, String o2) {
-				return AttachmentHelper.getFileName(o1).compareToIgnoreCase(AttachmentHelper.getFileName(o2));
+				return MailAttachmentHelper.getFileName(o1).compareToIgnoreCase(MailAttachmentHelper.getFileName(o2));
 			}
 		});
 
@@ -112,7 +125,7 @@ public class AttachmentTableViewHandler {
 					protected void updateItem(Long contentLength, boolean empty) {
 						super.updateItem(contentLength, empty);
 						if (contentLength != null) {
-							String str = AttachmentHelper.makeAttachmentSizeString(contentLength);
+							String str = MailAttachmentHelper.makeAttachmentSizeString(contentLength);
 							setText(str);
 						}
 					}
@@ -209,13 +222,11 @@ public class AttachmentTableViewHandler {
 			public void handle(DragEvent event) {
 				Dragboard db = event.getDragboard();
 				boolean success = false;
-				Object src = event.getGestureSource();
-				System.out.println("src=" + src);
 				if (db.hasFiles()) {
 					success = true;
 					List<File> files = db.getFiles();
 					for (File file : files) {
-						Attachment att = AttachmentHelper.createFromFile(file);
+						Attachment att = MailAttachmentHelper.createFromFile(file);
 						table.getItems().add(att);
 					}
 				}
@@ -251,7 +262,59 @@ public class AttachmentTableViewHandler {
 			}
 
 		});
-
+		
 	}
+
+	public static void paste(TableView<Attachment> table, Attachments attachments) {
+		if (log.isLoggable(Level.FINE)) log.fine("paste(");
+		Transferable transferable = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
+		boolean isImage = transferable != null && transferable.isDataFlavorSupported(DataFlavor.imageFlavor);
+		boolean isFiles = transferable != null && transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
+		if (isImage || isFiles) {
+			attachments.addAttachmentsFromClipboard();
+		}
+		if (log.isLoggable(Level.FINE)) log.fine(")paste");
+	}
+
+	public static void copy(TableView<Attachment> table, MailAttachmentHelper attachmentHelper, ProgressCallback cb) {
+		if (log.isLoggable(Level.FINE)) log.fine("copy(");
+		// http://stackoverflow.com/questions/31798646/can-java-system-clipboard-copy-a-file
+		final String FILE_URL_PREFIX = MailAttachmentHelper.FILE_URL_PREFIX;
+		List<File> files = new ArrayList<File>();
+		for (Attachment att : table.getSelectionModel().getSelectedItems()) {
+			String fileName = attachmentHelper.downloadAttachment(att, cb);
+			if (fileName.isEmpty()) continue;
+			if (fileName.startsWith(FILE_URL_PREFIX)) fileName = fileName.substring(FILE_URL_PREFIX.length());
+			files.add(new File(fileName));
+		}
+		FileTransferable ft = new FileTransferable(files);
+		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ft, null);
+		if (log.isLoggable(Level.FINE)) log.fine(")copy");
+	}
+	
+	private static class FileTransferable implements Transferable {
+
+        private List<File> listOfFiles;
+
+        public FileTransferable(List<File> listOfFiles) {
+            this.listOfFiles = listOfFiles;
+        }
+
+        @Override
+        public DataFlavor[] getTransferDataFlavors() {
+            return new DataFlavor[]{DataFlavor.javaFileListFlavor};
+        }
+
+        @Override
+        public boolean isDataFlavorSupported(DataFlavor flavor) {
+            return DataFlavor.javaFileListFlavor.equals(flavor);
+        }
+
+        @Override
+        public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+            return listOfFiles;
+        }
+    }
+
 
 }

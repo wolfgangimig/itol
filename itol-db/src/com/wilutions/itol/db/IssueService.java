@@ -17,7 +17,7 @@ public interface IssueService {
 	List<Property> getConfig();
 	void setConfig(List<Property> configProps);
 	
-	void initialize();
+	void initialize() throws Exception;
 	
 	PropertyClasses getPropertyClasses();
 	

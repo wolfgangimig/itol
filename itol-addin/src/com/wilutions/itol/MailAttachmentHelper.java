@@ -1,18 +1,15 @@
 package com.wilutions.itol;
 
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.imageio.ImageIO;
 
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.IdName;
@@ -21,18 +18,15 @@ import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
 import com.wilutions.mslib.outlook.OlSaveAsType;
 
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.Image;
-
-public class AttachmentHelper {
+public class MailAttachmentHelper {
 
 	private IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
 	private File __tempDir;
-	private Logger log = Logger.getLogger("AttachmentHelper");
-	public final static String FILE_URL_PREFIX = "file:///";
+	private final static Logger log = Logger.getLogger("MailAttachmentHelper");
+	public final static String FILE_URL_PREFIX = "file:/";
 
-	public AttachmentHelper() {
+	public MailAttachmentHelper() {
 	}
 
 	public void initialUpdate(IssueMailItem mailItem, Issue issue) throws IOException {
@@ -106,34 +100,6 @@ public class AttachmentHelper {
 		return new FileAtt(file);
 	}
 
-	public Attachment createFromImage(Image image, String optionalFileName) {
-		String fileName = optionalFileName;
-		if (fileName == null || fileName.isEmpty()) {
-			String name = mailItem.getSubject() + "-" + image.getWidth() + "x" + image.getHeight();
-			fileName = MsgFileTypes.makeValidFileName(name) + ".jpg";
-		}
-		File file = new File(getTempDir(), fileName);
-		try {
-			file.delete();
-			BufferedImage bimage = SwingFXUtils.fromFXImage(image, null); // Get
-																			// buffered
-																			// image.
-			BufferedImage imageRGB = new BufferedImage(bimage.getWidth(), bimage.getHeight(), BufferedImage.OPAQUE); // Remove
-																														// alpha-channel
-																														// from
-																														// buffered
-																														// image.
-			Graphics2D graphics = imageRGB.createGraphics();
-			graphics.drawImage(bimage, 0, 0, null);
-			ImageIO.write(imageRGB, "jpg", file);
-			graphics.dispose();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-		return new FileAtt(file);
-	}
-
 	public static String getFileUrl(File file) {
 		String url = file.getAbsolutePath();
 		url = url.replace("\\", "/");
@@ -173,13 +139,22 @@ public class AttachmentHelper {
 		return ext;
 	}
 
-	public static String getFileContentType(String fname) {
-		String ext = ".";
-		int p = fname.lastIndexOf('.');
-		if (p >= 0) {
-			ext = fname.substring(p);
+	public static String getFileContentType(File file) {
+		String contentType = "";
+		try {
+			contentType = Files.probeContentType(file.toPath());
+		} catch (IOException ignore) {}
+			
+		if (contentType == null || contentType.isEmpty()) {
+			String fname = file.getName();
+			String ext = ".";
+			int p = fname.lastIndexOf('.');
+			if (p >= 0) {
+				ext = fname.substring(p);
+			}
+			contentType = ContentTypes.getContentType(ext.toLowerCase());
 		}
-		return ContentTypes.getContentType(ext.toLowerCase());
+		return contentType;
 	}
 
 	public static String makeAttachmentSizeString(long contentLength) {
@@ -212,7 +187,7 @@ public class AttachmentHelper {
 			this.matt = matt;
 			File mattFile = new File(getTempDir(), matt.getFileName());
 			super.setSubject(matt.getFileName());
-			super.setContentType(getFileContentType(mattFile.getName()));
+			super.setContentType(getFileContentType(mattFile));
 			super.setContentLength(matt.getSize());
 			super.setFileName(mattFile.getAbsolutePath());
 		}
@@ -272,7 +247,7 @@ public class AttachmentHelper {
 			File msgFile = new File(getTempDir(), msgFileName);
 
 			super.setSubject(subject);
-			super.setContentType(getFileContentType(msgFileName));
+			super.setContentType(getFileContentType(msgFile));
 			super.setContentLength(-1);
 			super.setFileName(msgFile.getAbsolutePath());
 
@@ -334,10 +309,14 @@ public class AttachmentHelper {
 
 		private FileAtt(File file) {
 			this.file = file;
-			super.setFileName(AttachmentHelper.getFileName(file.getAbsolutePath()));
+			super.setSubject(file.getName());
+			super.setFileName(MailAttachmentHelper.getFileName(file.getAbsolutePath()));
+			super.setUrl(file.toURI().toString());
 			super.setContentLength(file.length());
-			String url = getFileUrl(file);
-			super.setUrl(url);
+			super.setContentType(getFileContentType(file));
+			File thumbnailFile = ThumbnailHelper.makeThumbnail(file);
+			String thurl = thumbnailFile != null ? thumbnailFile.toURI().toString() : "";
+			super.setThumbnailUrl(thurl);
 		}
 
 		@Override
@@ -400,4 +379,6 @@ public class AttachmentHelper {
 		File destFile = new File(getTempDir(), fname);
 		return destFile;
 	}
+	
+
 }

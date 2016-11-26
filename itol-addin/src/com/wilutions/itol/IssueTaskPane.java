@@ -10,6 +10,7 @@
  */
 package com.wilutions.itol;
 
+import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -58,7 +59,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -79,6 +79,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -166,6 +167,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private boolean tabAttachmentsApplyHandler = true;
 	private SimpleIntegerProperty updateBindingToAttachmentList = new SimpleIntegerProperty();
+	private Attachments observableAttachments = new Attachments();
 
 	private PropertyGridView propGridView;
 
@@ -177,8 +179,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private ResourceBundle resb;
 	private Timeline detectIssueModifiedTimer;
 	private boolean modified;
-	private AttachmentHelper attachmentHelper = new AttachmentHelper();
+	private MailAttachmentHelper attachmentHelper = new MailAttachmentHelper();
 	private MyWrapper inspectorOrExplorer;
+	private StandardContextMenu standardContextMenu = new StandardContextMenu();
 	private Logger log = Logger.getLogger("IssueTaskPane");
 
 	/**
@@ -728,8 +731,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void saveAttachments() {
-		ArrayList<Attachment> atts = new ArrayList<Attachment>(tabAttachments.getItems());
-		issue.setAttachments(atts);
+		issue.setAttachments(observableAttachments.getObservableList());
 	}
 
 	private void initModified() {
@@ -797,7 +799,18 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initAttachments() {
 		if (tabAttachmentsApplyHandler) {
-			AttachmentTableViewHandler.apply(attachmentHelper, tabAttachments);
+
+			// Copy attachments to backing list.
+			List<Attachment> atts = new ArrayList<Attachment>(issue.getAttachments().size());
+			for (Attachment att : issue.getAttachments()) {
+				if (!att.isDeleted()) { // obsolete: cannot delete attachments via
+										// Redmine API
+					atts.add(att);
+				}
+			}
+			observableAttachments = new Attachments(FXCollections.observableList(atts));
+
+			AttachmentTableViewHandler.apply(attachmentHelper, tabAttachments, observableAttachments);
 
 			tabAttachments.setOnMouseClicked((click) -> {
 				if (click.getClickCount() == 2) {
@@ -809,6 +822,37 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					showSelectedIssueAttachment();
 				}
 			});
+			
+			tabAttachments.setOnMouseClicked((click) -> {
+				if (click.getClickCount() == 2) {
+					showSelectedIssueAttachment();
+				}
+				else if (click.getButton() == MouseButton.SECONDARY) {
+					showTabAttachmentsContextMenu(click.getScreenX(), click.getScreenY());
+				}
+			});
+			
+			tabAttachments.setOnKeyPressed((keyEvent) -> {
+				if (keyEvent.getCode() == KeyCode.ENTER) {
+					showSelectedIssueAttachment();
+				}
+				else if (keyEvent.getCode() == KeyCode.CONTEXT_MENU) {
+					showTabAttachmentsContextMenu(-1, -1);
+				}
+				// CTRL-V -> paste from Clipboard
+				else if (keyEvent.getCode() == KeyCode.V) {
+					if (keyEvent.isControlDown()) {
+						AttachmentTableViewHandler.paste(tabAttachments, observableAttachments);
+					}
+				}
+				// CTRL-C -> copy to Clipboard
+				else if (keyEvent.getCode() == KeyCode.C) {
+					if (keyEvent.isControlDown()) {
+						AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, new MyProgressCallback());
+					}
+				}
+			});
+
 
 			bnRemoveAttachment.setDisable(true);
 			bnReply.setDisable(true);
@@ -842,19 +886,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			tabAttachmentsApplyHandler = false;
 		}
 
-		// Copy attachments to backing list.
-		List<Attachment> atts = new ArrayList<Attachment>(issue.getAttachments().size());
-		for (Attachment att : issue.getAttachments()) {
-			if (!att.isDeleted()) { // obsolete: cannot delete attachments via
-									// Redmine API
-				atts.add(att);
-			}
-		}
-
-		ObservableList<Attachment> obs = FXCollections.observableList(atts);
-		tabAttachments.setItems(obs);
-		
 		fireUpdateBindingToAttachmentList();
+	}
+	
+	private void showTabAttachmentsContextMenu(double screenX, double screenY) {
+		standardContextMenu
+		.acceptedClipboardDataFlavors(DataFlavor.imageFlavor, DataFlavor.javaFileListFlavor)
+		.showCut(false).showCopy(!observableAttachments.isEmpty())
+		.onCopy((event) -> AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, new MyProgressCallback()))
+		.onPaste((event) -> AttachmentTableViewHandler.paste(tabAttachments, observableAttachments))
+		.show(tabAttachments, screenX, screenY);
+		
 	}
 	
 	private void fireUpdateBindingToAttachmentList() {
@@ -994,7 +1036,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
 			if (selectedFiles != null) {
 				for (File file : selectedFiles) {
-					Attachment att = AttachmentHelper.createFromFile(file);
+					Attachment att = MailAttachmentHelper.createFromFile(file);
 					tabAttachments.getItems().add(att);
 				}
 			}
@@ -1416,7 +1458,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			// Inject the issue ID into the mail attachment that is uploaded.
 			for (Attachment att : deferredAttachments) {
-				if (att instanceof AttachmentHelper.MailAtt) {
+				if (att instanceof MailAttachmentHelper.MailAtt) {
 					String subject = att.getSubject();
 					subject = injectIssueIdIntoMailSubject(subject, issue);
 					att.setSubject(subject);
@@ -1509,8 +1551,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			Application app = Globals.getThisAddin().getApplication();
 			_NameSpace ns = app.GetNamespace("MAPI");
 			String tempPath = attachmentHelper.downloadAttachment(att, null);
-			if (tempPath.startsWith(AttachmentHelper.FILE_URL_PREFIX)) {
-				tempPath = tempPath.substring(AttachmentHelper.FILE_URL_PREFIX.length());
+			if (tempPath.startsWith(MailAttachmentHelper.FILE_URL_PREFIX)) {
+				tempPath = tempPath.substring(MailAttachmentHelper.FILE_URL_PREFIX.length());
 			}
 			
 			IDispatch dispItem = null;
@@ -1535,10 +1577,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	public void setAddAttachmentListener(Attachment att) {
-		tabAttachments.getItems().add(att);
-	}
-	
 	/**
 	 * Comment editor of JIRA addin binds to this value.
 	 * If the value changes, the editor will call {@link #getObservableAttachments()}
@@ -1553,7 +1591,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	 * Comment editor of JIRA addin binds to the list of attachments.
 	 * @return
 	 */
-	public ObservableList<Attachment> getObservableAttachments() {
-		return tabAttachments.getItems();
+	public Attachments getObservableAttachments() {
+		return observableAttachments; 
 	}
 }

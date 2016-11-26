@@ -14,7 +14,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 
 public class Issue implements Serializable {
@@ -263,6 +262,5 @@ public class Issue implements Serializable {
 		Date ret = getLastUpdate().getCreateDate();
 		return ret;
 	}
-
 
 }

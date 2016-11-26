@@ -1,5 +1,7 @@
 package com.wilutions.itol;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -58,8 +60,18 @@ public class LogFormatter extends Formatter {
 		if (p >= 0) sourceClass = sourceClass.substring(p+1);
 		
 		String message = record.getMessage();
+		String msg = MessageFormat.format(messageFormat, iso, threadName, level, sourceClass, lineNumber, message);
+
+		Throwable ex = record.getThrown();
+		if (ex != null) {
+			StringWriter sw = new StringWriter();
+			PrintWriter pr = new PrintWriter(sw);
+			ex.printStackTrace(pr);
+			pr.close();
+			msg += sw.toString();
+		}
 		
-		return MessageFormat.format(messageFormat, iso, threadName, level, sourceClass, lineNumber, message);
+		return msg;
 	}
 
     private boolean isLoggerImplFrame(String cname) {
