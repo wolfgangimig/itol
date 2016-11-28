@@ -89,4 +89,9 @@ public class IssueHtmlEditorWebView implements IssueHtmlEditor {
 		}
 	}
 
+	@Override
+	public void updateData(boolean save) {
+		
+	}
+
 }

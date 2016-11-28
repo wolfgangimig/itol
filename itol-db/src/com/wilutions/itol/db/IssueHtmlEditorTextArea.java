@@ -31,4 +31,8 @@ public class IssueHtmlEditorTextArea implements IssueHtmlEditor {
 		textArea.requestFocus();
 	}
 
+	@Override
+	public void updateData(boolean save) {
+		
+	}
 }

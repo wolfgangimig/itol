@@ -20,4 +20,6 @@ public interface IssueHtmlEditor {
 	Node getNode();
 	
 	void setFocus();
+	
+	void updateData(boolean save);
 }
