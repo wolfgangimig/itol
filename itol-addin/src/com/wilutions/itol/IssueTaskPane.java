@@ -249,7 +249,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 							initialUpdate();
 						}
 						catch (Exception e) {
-							log.log(Level.SEVERE, "initialUpdate failed", e);
+							log.log(Level.WARNING, "initialUpdate failed", e);
 						}
 					});
 				}
@@ -541,6 +541,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			autoCompletionPriority = initAutoComplete(srv, cbPriority, Property.PRIORITY);
 			autoCompletionStatus = initAutoComplete(srv, cbStatus, Property.STATUS);
 
+			WebViewHelper.addClickHandlerToWebView(webHistory);
+
 			initDetectIssueModified();
 
 			// Press Assign button when called from inspector.
@@ -601,9 +603,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private AutoCompletionBinding<IdName> initAutoComplete(IssueService srv, ComboBox<IdName> cb, String propertyId)
 			throws Exception {
-		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
-		List<IdName> allItems = pclass != null ? pclass.getSelectList() : new ArrayList<IdName>();
-
+		List<IdName> allItems = new ArrayList<IdName>();
+		
 		ArrayList<IdName> recentItems = null;
 		if (propertyId.equals(Property.PROJECT)) {
 			recentItems = new ArrayList<IdName>();
@@ -709,13 +710,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initNotes();
 
-			initAutoComplete(autoCompletionProject, Property.PROJECT);
+			initComboBox(autoCompletionProject, cbProject, Property.PROJECT);
 
-			initAutoComplete(autoCompletionTracker, Property.ISSUE_TYPE);
+			initComboBox(autoCompletionTracker, cbTracker, Property.ISSUE_TYPE);
 
-			initAutoComplete(autoCompletionPriority, Property.PRIORITY);
+			initComboBox(autoCompletionPriority, cbPriority, Property.PRIORITY);
 
-			initAutoComplete(autoCompletionStatus, Property.STATUS);
+			initComboBox(autoCompletionStatus, cbStatus, Property.STATUS);
 
 			initProperties();
 
@@ -765,13 +766,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void saveDescription() {
-		String text = descriptionHtmlEditor.getText();
-		issue.setDescription(text);
+		descriptionHtmlEditor.updateData(true);
+//		String text = descriptionHtmlEditor.getText();
+//		issue.setDescription(text);
 	}
 
 	private void saveNotes() {
-		String text = notesHtmlEditor.getText();
-		issue.setPropertyString(Property.NOTES, text);
+		notesHtmlEditor.updateData(true);
+//		String text = notesHtmlEditor.getText();
+//		issue.setPropertyString(Property.NOTES, text);
 	}
 
 	private void saveSubject() {
@@ -792,8 +795,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			else {
 				webEngine.loadContent(url);
 			}
-			
-			WebViewHelper.addClickHandlerToWebView(webHistory);
 		}
 	}
 
@@ -918,29 +919,33 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initDescription() throws IOException {
 		if (issue != null) {
-			String text = issue.getDescription();
-			descriptionHtmlEditor.setText(text);
+//			String text = issue.getDescription();
+//			descriptionHtmlEditor.setText(text);
+			descriptionHtmlEditor.updateData(false);
 		}
 	}
 
 	private void initNotes() throws IOException {
 		if (issue != null) {
-			if (issue != null) {
-				String text = issue.getPropertyString(Property.NOTES, "");
-				notesHtmlEditor.setText(text);
-			}
+//			String text = issue.getPropertyString(Property.NOTES, "");
+//			notesHtmlEditor.setText(text);
+			notesHtmlEditor.updateData(false);
 		}
 	}
 
-	private void initAutoComplete(AutoCompletionBinding<IdName> autoCompletionBinding, String propertyId)
+	private void initComboBox(AutoCompletionBinding<IdName> autoCompletionBinding, ComboBox<IdName> cb, String propertyId)
 			throws Exception {
 		if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "initAutoComplete " + propertyId);
 		IssueService srv = Globals.getIssueService();
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
-		if (pclass != null) {
-			List<IdName> items = pclass.getSelectList();
-			autoCompletionBinding.setSuggest(new DefaultSuggest<IdName>(items));
+		List<IdName> items = pclass != null ? pclass.getSelectList() : new ArrayList<IdName>(0);
+		
+		cb.setVisible(!items.isEmpty());
 
+		if (!items.isEmpty()) {
+		
+			autoCompletionBinding.setSuggest(new DefaultSuggest<IdName>(items));
+	
 			Property prop = issue.getCurrentUpdate().getProperty(propertyId);
 			if (prop != null) {
 				String id = (String) prop.getValue();
@@ -952,6 +957,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 			}
 		}
+		
 	}
 
 	private void initialUpdate() throws Exception {
@@ -966,7 +972,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		// Show/Hide History and Notes
 		addOrRemoveTab(tpNotes, !isNew(), 0);
 		addOrRemoveTab(tpHistory, !isNew(), 0);
-		tabpIssue.getSelectionModel().select(isNew() ? tpDescription : tpHistory);
+		
+		boolean hasHistory = !Globals.getIssueService().getIssueHistoryUrl(issue.getId()).isEmpty();
+		tabpIssue.getSelectionModel().select(hasHistory ? tpHistory : tpDescription);
 
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
@@ -1160,14 +1168,23 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			if (ex == null && succ) {
 
 				bnAssignSelection.setSelected(false);
-
-				final String issueId = edIssueId.getText();
-				IssueMailItem mitem = new IssueMailItemBlank() {
-					public String getSubject() {
-						return "[R-" + issueId + "]";
-					}
-				};
-				internalSetMailItem(mitem);
+				
+				try {
+					String issueId = edIssueId.getText();
+					IssueService srv = Globals.getIssueService();
+					Issue issue = srv.readIssue(issueId);
+					String subject = srv.injectIssueIdIntoMailSubject("", issue);
+					
+					IssueMailItem mitem = new IssueMailItemBlank() {
+						public String getSubject() {
+							return subject;
+						}
+					};
+					internalSetMailItem(mitem);
+				}
+				catch (Exception e) {
+					showMessageBoxError(e.toString());
+				}
 			}
 		});
 	}
