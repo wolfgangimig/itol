@@ -70,6 +70,12 @@ public class Property {
 	 */
 	public static final String NOTES = "IssueProperty.Notes";
 	
+	/**
+	 * Jira: visibility of comment.
+	 * Select list contains project roles.
+	 */
+	public static final String NOTES_VISIBILITY = "IssueProperty.NotesVisibility";
+	
 	
 	public static final String URL = "url";
 	public static final String USER_NAME = "userName";
