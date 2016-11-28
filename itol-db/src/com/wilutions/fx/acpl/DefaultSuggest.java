@@ -46,42 +46,40 @@ public class DefaultSuggest<T> implements Suggest<T> {
 	 * @return Collection of items.
 	 */
 	public Collection<T> find(String text, int max) {
-		ArrayList<T> matches = new ArrayList<T>(allItems);
+		Collection<T> ret = allItems;
 		String textLC = text.toLowerCase();
-
-		Collections.sort(matches, new Comparator<T>() {
-			public int compare(T o1, T o2) {
-				String s1 = o1.toString().toLowerCase();
-				String s2 = o2.toString().toLowerCase();
-				int cmp = 0;
-				if (!textLC.isEmpty()) {
+		
+		if (!textLC.isEmpty()) {
+			ArrayList<T> matches = new ArrayList<T>(allItems);
+			
+			Collections.sort(matches, new Comparator<T>() {
+				public int compare(T o1, T o2) {
+					String s1 = o1.toString().toLowerCase();
+					String s2 = o2.toString().toLowerCase();
 					int p1 = s1.indexOf(textLC);
 					int p2 = s2.indexOf(textLC);
 					p1 = makeCompareFromPosition(p1);
 					p2 = makeCompareFromPosition(p2);
-					cmp = p1 - p2;
+					int cmp = p1 - p2;
+					return cmp;
 				}
-				if (cmp == 0) {
-					cmp = s1.compareTo(s2);
+			});
+			
+			// Return only items that contain the text.
+			// Therefore, find the first item that does not contain the text.
+			int endIdx = 0;
+			for (; endIdx < matches.size(); endIdx++) {
+				T item = matches.get(endIdx);
+				if (item.toString().toLowerCase().indexOf(textLC) < 0) {
+					break;
 				}
-				return cmp;
 			}
-		});
 
-		// Return only items that contain the text.
-		// Therefore, find the first item that does not contain the text.
-		int endIdx = 0;
-		for (; endIdx < matches.size(); endIdx++) {
-			T item = matches.get(endIdx);
-			if (item.toString().toLowerCase().indexOf(textLC) < 0) {
-				break;
-			}
+			endIdx = Math.min(endIdx, max);
+
+			// Cut the list at the item that does not contain the text.
+			ret = matches.subList(0, endIdx);
 		}
-
-		endIdx = Math.min(endIdx, max);
-
-		// Cut the list at the item that does not contain the text.
-		Collection<T> ret = matches.subList(0, endIdx);
 
 		return ret;
 	}
