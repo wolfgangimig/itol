@@ -88,7 +88,7 @@
                               <VBox fx:id="boxNotes" />
                            </content>
                         </Tab>
-                      <Tab text="%tpDescription.text">
+                      <Tab fx:id="tpDescription" text="%tpDescription.text">
                            <content>
                               <VBox fx:id="boxDescription">
                                  <children>
