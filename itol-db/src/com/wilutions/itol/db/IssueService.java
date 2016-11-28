@@ -59,7 +59,7 @@ public interface IssueService {
 	
 	String getDefaultIssueAsString(Issue iss) throws Exception;
 	
-	// TODO: rename to getIssueHistory
+	// TODO: rename to getHistory
 	String getIssueHistoryUrl(String issueId) throws Exception;
 	
 	String downloadAttachment(String url, ProgressCallback cb) throws Exception;
