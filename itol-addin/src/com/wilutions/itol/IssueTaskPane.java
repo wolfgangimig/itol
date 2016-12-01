@@ -28,9 +28,9 @@ import com.wilutions.com.IDispatch;
 import com.wilutions.com.WindowHandle;
 import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
-import com.wilutions.fx.acpl.DefaultSuggest;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.DefaultSuggest;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueHtmlEditor;
@@ -944,7 +944,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		if (!items.isEmpty()) {
 		
-			autoCompletionBinding.setSuggest(new DefaultSuggest<IdName>(items));
+			autoCompletionBinding.setSuggest(pclass.getAutoCompletionSuggest());
 	
 			Property prop = issue.getCurrentUpdate().getProperty(propertyId);
 			if (prop != null) {

@@ -10,7 +10,10 @@
  */
 package com.wilutions.itol.db;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+
 
 public class PropertyClass {
 
@@ -26,23 +29,47 @@ public class PropertyClass {
 	private String name;
 	private Object defaultValue;
 	private int type;
+	
+	/**
+	 * List of acceptable values.
+	 */
 	private List<IdName> selectList;
+	
+	/**
+	 * Suggestion class.
+	 */
+	private Suggest<IdName> autoCompletionSuggest;
 
-	public PropertyClass(int type, String id, String name, Object defaultValue, List<IdName> selectList) {
+	@SuppressWarnings("unchecked")
+	public PropertyClass(int type, String id, String name, Object defaultValue, Collection<? extends IdName> selectList) {
 		super();
 		this.type = type;
 		this.id = id;
 		this.name = name;
 		this.defaultValue = defaultValue;
-		this.selectList = selectList;
+		if (selectList != null) {
+			this.selectList = selectList instanceof List ? (List<IdName>)selectList : new ArrayList<IdName>(selectList);
+			this.autoCompletionSuggest = new DefaultSuggest<>(this.selectList);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public PropertyClass(int type, String id, String name, Object defaultValue, Suggest<? extends IdName> suggest) {
+		super();
+		this.type = type;
+		this.id = id;
+		this.name = name;
+		this.defaultValue = defaultValue;
+		this.selectList = new ArrayList<IdName>(0);
+		this.autoCompletionSuggest = suggest != null ? (Suggest<IdName>)suggest : new DefaultSuggest<IdName>(selectList);
 	}
 
 	public PropertyClass(int type, String id, String name, Object defaultValue) {
-		this(type, id, name, defaultValue, null);
+		this(type, id, name, defaultValue, new ArrayList<IdName>(0));
 	}
 
 	public PropertyClass(int type, String id, String name) {
-		this(type, id, name, null, null);
+		this(type, id, name, null);
 	}
 	
 	public PropertyClass(PropertyClass rhs) {
@@ -51,6 +78,7 @@ public class PropertyClass {
 		this.name = rhs.name;
 		this.defaultValue = rhs.defaultValue;
 		this.selectList = rhs.selectList;
+		this.autoCompletionSuggest = rhs.autoCompletionSuggest;
 	}
 
 	public String getId() {
@@ -104,6 +132,14 @@ public class PropertyClass {
 //		case TYPE_INTEGER: stype = "TYPE_INTEGER"; break;
 		}
 		return "PropertyClass [type=" + stype + ", id=" + id + ", name=" + name + "]";
+	}
+
+	public Suggest<IdName> getAutoCompletionSuggest() {
+		return autoCompletionSuggest;
+	}
+
+	public void setAutoCompletionSuggest(Suggest<IdName> autoCompletionSuggest) {
+		this.autoCompletionSuggest = autoCompletionSuggest;
 	}
 
 	

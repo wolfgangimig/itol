@@ -11,13 +11,12 @@ import java.util.logging.Logger;
 
 import com.wilutions.fx.acpl.AutoCompletionComboBox;
 import com.wilutions.fx.acpl.AutoCompletions;
-import com.wilutions.fx.acpl.DefaultSuggest;
-import com.wilutions.fx.acpl.Suggest;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
+import com.wilutions.itol.db.Suggest;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -146,7 +145,8 @@ public class PropertyGridView {
 
 		Node ctrl = null;
 		List<IdName> selectList = pclass.getSelectList();
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList);
+		Suggest<IdName> suggest = pclass.getAutoCompletionSuggest();
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList + ", suggest=" + suggest);
 
 		Property prop = issue.getCurrentUpdate().getProperty(propertyId);
 		if (prop != null && prop.getValue() == null) {
@@ -172,8 +172,8 @@ public class PropertyGridView {
 		// ctrl = makeFloatFieldForProperty(prop);
 		// break;
 		default: {
-			if (isAutoCompletionProperty(prop, issue)) {
-				ctrl = makeAutoCompletionNode(prop, issue, selectList);
+			if (suggest != null || isAutoCompletionProperty(prop, issue)) {
+				ctrl = makeAutoCompletionNode(prop, issue, pclass);
 			}
 			else if (selectList != null && selectList.size() != 0) {
 				ctrl = makeChoiceBoxForProperty(prop, selectList);
@@ -287,18 +287,18 @@ public class PropertyGridView {
 		return cb;
 	}
 
-	private Node makeAutoCompletionNode(final Property prop, final Issue issue, List<IdName> selectList)
+	private Node makeAutoCompletionNode(final Property prop, final Issue issue, PropertyClass pclass)
 			throws IOException {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeAutoCompletionNode(" + prop.getId());
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
 		ArrayList<IdName> recentItems = new ArrayList<IdName>();
-		Suggest<IdName> suggest = new DefaultSuggest<IdName>(selectList);
 
 		AutoCompletionComboBox<IdName> comboBox = AutoCompletions.createAutoCompletionNode(null, recentCaption,
-				suggestionsCaption, recentItems, suggest);
+				suggestionsCaption, recentItems, pclass.getAutoCompletionSuggest());
 
 		if (prop.getValue() != null) {
+			List<IdName> selectList = pclass.getSelectList();
 			for (IdName item : selectList) {
 				if (item.getId().equals(prop.getValue())) {
 					comboBox.setValue(item);

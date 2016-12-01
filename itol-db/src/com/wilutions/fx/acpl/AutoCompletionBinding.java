@@ -2,6 +2,8 @@ package com.wilutions.fx.acpl;
 
 import java.util.ArrayList;
 
+import com.wilutions.itol.db.Suggest;
+
 import javafx.scene.Node;
 
 public class AutoCompletionBinding<T> {
