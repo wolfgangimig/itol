@@ -60,8 +60,13 @@ public class IdName implements Serializable {
 	public String toString() {
 		return this.name;
 	}
-
+	
+	public boolean isNull() {
+		return this == NULL;
+	}
+	
 	public String getId() {
+		if (id == null) return "";
 		return id;
 	}
 

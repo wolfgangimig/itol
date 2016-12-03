@@ -130,10 +130,6 @@ public class IssueServiceImpl implements IssueService {
 		Issue ret = iss;
 		if (iss.getType().equals(String.valueOf(TYPE_DOCUMENTATION))) {
 
-			int userId = Integer.parseInt(iss.getAssignee());
-			if (!ASSIGNEES_FOR_DOCUMENTATION.contains(userId)) {
-				iss.setAssignee(null);
-			}
 
 		}
 		return ret;

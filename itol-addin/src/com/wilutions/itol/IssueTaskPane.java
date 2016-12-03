@@ -752,7 +752,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void saveComboBox(ComboBox<IdName> cb, String propertyId) {
 		IdName idn = cb.getValue();
 		if (idn != null && !idn.equals(IdName.NULL)) {
-			Property prop = new Property(propertyId, idn.getId());
+			Property prop = new Property(propertyId, idn);
 			issue.getCurrentUpdate().setProperty(prop);
 		}
 		else {
@@ -941,16 +941,18 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		
 			autoCompletionBinding.setSuggest(pclass.getAutoCompletionSuggest());
 	
-			Property prop = issue.getCurrentUpdate().getProperty(propertyId);
-			if (prop != null) {
-				String id = (String) prop.getValue();
-				for (IdName idn : items) {
-					if (idn.getId().equals(id)) {
-						autoCompletionBinding.select(idn);
-						break;
-					}
-				}
-			}
+			IdName idn = issue.getPropertyIdName(propertyId, IdName.NULL);
+			autoCompletionBinding.select(idn);
+			
+//			if (prop != null) {
+//				String id = (String) prop.getValue();
+//				for (IdName idn : items) {
+//					if (idn.getId().equals(id)) {
+//						autoCompletionBinding.select(idn);
+//						break;
+//					}
+//				}
+//			}
 		}
 		
 	}

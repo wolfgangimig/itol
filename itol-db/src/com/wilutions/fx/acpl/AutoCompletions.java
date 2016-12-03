@@ -85,7 +85,8 @@ public class AutoCompletions {
 			ArrayList<T> recentItems, 
 			 Suggest<T> suggest) {
 		AutoCompletionComboBox<T> cbox = new AutoCompletionComboBox<T>();
-		bindAutoCompletion(extractImage, cbox, recentCaption, suggestionsCaption, recentItems, suggest);
+		AutoCompletionBinding<T> binding = bindAutoCompletion(extractImage, cbox, recentCaption, suggestionsCaption, recentItems, suggest);
+		cbox.setBinding(binding);
 		return cbox;
 	}
 	

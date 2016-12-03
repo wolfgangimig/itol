@@ -298,14 +298,9 @@ public class PropertyGridView {
 		AutoCompletionComboBox<IdName> comboBox = AutoCompletions.createAutoCompletionNode(extractImage, recentCaption,
 				suggestionsCaption, recentItems, pclass.getAutoCompletionSuggest());
 
-		if (prop.getValue() != null) {
-			List<IdName> selectList = pclass.getSelectList();
-			for (IdName item : selectList) {
-				if (item.getId().equals(prop.getValue())) {
-					comboBox.setValue(item);
-					break;
-				}
-			}
+		IdName item = (IdName)prop.getValue();
+		if (item != null) {
+			comboBox.getBinding().select(item);
 		}
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeAutoCompletionNode");

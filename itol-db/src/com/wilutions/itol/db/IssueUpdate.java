@@ -63,6 +63,10 @@ public class IssueUpdate implements Serializable {
 			properties.remove(prop.getId());
 		}
 		else {
+			if (prop.getId().equals(Property.PROJECT) && ! (prop.getValue() instanceof IdName)) {
+				throw new IllegalStateException("Property.PROJECT wrong type");
+			}
+
 			properties.put(prop.getId(), prop);
 		}
 	}

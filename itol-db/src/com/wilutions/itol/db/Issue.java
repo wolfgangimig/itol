@@ -170,6 +170,15 @@ public class Issue implements Serializable {
 		setPropertyValue(propertyId, value);
 	}
 	
+	public IdName getPropertyIdName(String propertyId, IdName defaultValue) {
+		return (IdName)getPropertyValue(propertyId, defaultValue);
+	}
+	
+	public void setPropertyIdName(String propertyId, IdName value) {
+		setPropertyValue(propertyId, value);
+	}
+	
+
 	public Boolean getPropertyBoolean(String propertyId, Boolean defaultValue) {
 		return (Boolean)getPropertyValue(propertyId, defaultValue);
 	}
@@ -187,44 +196,43 @@ public class Issue implements Serializable {
 		setPropertyValue(propertyId, value);
 	}
 	
-	public String getType() {
-		return (String)getPropertyValue(Property.ISSUE_TYPE, "");
+	public IdName getType() {
+		return (IdName)getPropertyValue(Property.ISSUE_TYPE, IdName.NULL);
 	}
 	
-	public void setType(String value) {
+	public void setType(IdName value) {
 		setPropertyValue(Property.ISSUE_TYPE, value);
 	}
 	
-	public String getAssignee() {
-		return (String)getPropertyValue(Property.ASSIGNEE, "");
+	public IdName getAssignee() {
+		return (IdName)getPropertyValue(Property.ASSIGNEE, IdName.NULL);
 	}
 	
-	public void setAssignee(String value) {
+	public void setAssignee(IdName value) {
 		setPropertyValue(Property.ASSIGNEE, value);
 	}
 	
-	public String getStatus() {
-		return (String)getPropertyValue(Property.STATUS, "");
+	public IdName getStatus() {
+		return (IdName)getPropertyValue(Property.STATUS, IdName.NULL);
 	}
 	
-	public void setStatus(String value) {
+	public void setStatus(IdName value) {
 		setPropertyValue(Property.STATUS, value);
 	}
 	
-	public String getProject() {
-		String ret = (String)getPropertyValue(Property.PROJECT, "");
-		return ret;
+	public IdName getProject() {
+		return (IdName)getPropertyValue(Property.PROJECT, IdName.NULL);
 	}
 	
-	public void setProject(String value) {
+	public void setProject(IdName value) {
 		setPropertyValue(Property.PROJECT, value);
 	}
 	
-	public String getPriority() {
-		return (String)getPropertyValue(Property.PRIORITY, "");
+	public IdName getPriority() {
+		return (IdName)getPropertyValue(Property.PRIORITY, IdName.NULL);
 	}
 	
-	public void setPriority(String value) {
+	public void setPriority(IdName value) {
 		setPropertyValue(Property.PRIORITY, value);
 	}
 
