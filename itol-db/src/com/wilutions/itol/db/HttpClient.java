@@ -62,6 +62,7 @@ public class HttpClient {
 			cb = new ProgressCallbackImpl("HttpClient.send");
 		}
 
+		long startTime = System.currentTimeMillis();
 		HttpURLConnection conn = null;
 		HttpResponse ret = new HttpResponse();
 
@@ -211,14 +212,18 @@ public class HttpClient {
 				}
 
 				if (log.isLoggable(Level.FINE)) log.fine("read from input...");
+				long responseContentLength = 0;
 				if (isStringContent) {
 					ret.setContent(readStringFromStream(conn.getInputStream(), contentLength, subcbDownload));
-					log.info(ret.getStatus() + " #" + ret.getContent().length());
+					responseContentLength = ret.getContent().length();
 				}
 				else {
 					ret.setFile(readFileFromStream(conn.getInputStream(), contentLength, subcbDownload));
-					log.info(ret.getStatus() + " #" + ret.getFile().length());
+					responseContentLength = ret.getFile().length();
 				}
+				
+				long endTime = System.currentTimeMillis();
+				log.info("[" + (endTime-startTime) + "] " + ret.getStatus() + " #" + responseContentLength);
 
 			}
 			catch (IOException e) {

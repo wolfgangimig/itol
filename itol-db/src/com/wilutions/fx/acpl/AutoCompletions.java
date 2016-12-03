@@ -23,6 +23,7 @@ import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.Skin;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -474,7 +475,13 @@ public class AutoCompletions {
 				}
 				else {
 					cbox.getSelectionModel().select(-1);
-					((TextFieldSkinWithImage) ed.getSkin()).setImageView(null);
+					Skin<?> tfs = ed.getSkin();
+					if (tfs != null) {
+						if (tfs instanceof TextFieldSkinWithImage) {
+							TextFieldSkinWithImage tfswi = ((TextFieldSkinWithImage) ed.getSkin());
+							tfswi.setImageView(null);
+						}
+					}
 					ed.setText("");
 				}
 			}

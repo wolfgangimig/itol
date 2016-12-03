@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import com.wilutions.fx.acpl.AutoCompletionComboBox;
 import com.wilutions.fx.acpl.AutoCompletions;
+import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueService;
@@ -26,6 +27,7 @@ import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Control;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -73,7 +75,7 @@ public class PropertyGridView {
 				PropertyClass propClass = srv.getPropertyClass(propertyId, issue);
 				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "propClass=" + propClass);
 				if (propClass != null) {
-					addProperty(issue, propertyId, rowIndex++);
+					addProperty(issue, propClass, rowIndex++);
 				}
 			}
 		}
@@ -131,24 +133,20 @@ public class PropertyGridView {
 		return ret;
 	}
 
-	private void addProperty(Issue issue, String propertyId, int rowIndex) throws Exception {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addProperty(" + propertyId);
+	private void addProperty(Issue issue, PropertyClass pclass, int rowIndex) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addProperty(" + pclass);
 
 		IssueService srv = Globals.getIssueService();
-		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
-		if (pclass == null) {
-			return;
-		}
 
 		Label label = new Label(pclass.getName());
 		propGrid.add(label, 0, rowIndex);
 
-		Node ctrl = null;
+		Control ctrl = null;
 		List<IdName> selectList = pclass.getSelectList();
 		Suggest<IdName> suggest = pclass.getAutoCompletionSuggest();
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList + ", suggest=" + suggest);
 
-		Property prop = issue.getCurrentUpdate().getProperty(propertyId);
+		Property prop = issue.getCurrentUpdate().getProperty(pclass.getId());
 		if (prop != null && prop.getValue() == null) {
 			Object defaultValue = pclass.getDefaultValue();
 			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "defaultValue=" + defaultValue);
@@ -184,6 +182,8 @@ public class PropertyGridView {
 		}
 		}
 
+		ctrl.setMaxWidth(Double.MAX_VALUE);
+		ctrl.setPrefWidth(Double.MAX_VALUE);
 		propGrid.add(ctrl, 1, rowIndex);
 
 		if (rowIndex == 0) {
@@ -192,7 +192,7 @@ public class PropertyGridView {
 
 		// Save propertId with node to simplify access in saveProperties()
 		PropertyNode propNode = new PropertyNode();
-		propNode.propertyId = propertyId;
+		propNode.propertyId = pclass.getId();
 		propNode.node = ctrl;
 		propNodes.add(propNode);
 
@@ -214,7 +214,7 @@ public class PropertyGridView {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Node makeMultiListBoxForProperty(Property prop, List<IdName> selectList) {
+	private Control makeMultiListBoxForProperty(Property prop, List<IdName> selectList) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
 		Object propValue = prop != null ? prop.getValue() : null;
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + propValue);
@@ -254,7 +254,7 @@ public class PropertyGridView {
 		return lb;
 	}
 
-	private Node makeTextFieldForProperty(Property prop) {
+	private Control makeTextFieldForProperty(Property prop) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
 		TextField ed = new TextField();
 		if (prop != null) {
@@ -265,7 +265,7 @@ public class PropertyGridView {
 		return ed;
 	}
 
-	private Node makeChoiceBoxForProperty(Property prop, List<IdName> selectList) {
+	private Control makeChoiceBoxForProperty(Property prop, List<IdName> selectList) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
 		ChoiceBox<IdName> cb = new ChoiceBox<IdName>();
 		cb.setItems(FXCollections.observableArrayList(selectList));
@@ -287,14 +287,15 @@ public class PropertyGridView {
 		return cb;
 	}
 
-	private Node makeAutoCompletionNode(final Property prop, final Issue issue, PropertyClass pclass)
+	private Control makeAutoCompletionNode(final Property prop, final Issue issue, PropertyClass pclass)
 			throws IOException {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeAutoCompletionNode(" + prop.getId());
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
 		ArrayList<IdName> recentItems = new ArrayList<IdName>();
+		ExtractImage<IdName> extractImage = (item) -> item.getImage();
 
-		AutoCompletionComboBox<IdName> comboBox = AutoCompletions.createAutoCompletionNode(null, recentCaption,
+		AutoCompletionComboBox<IdName> comboBox = AutoCompletions.createAutoCompletionNode(extractImage, recentCaption,
 				suggestionsCaption, recentItems, pclass.getAutoCompletionSuggest());
 
 		if (prop.getValue() != null) {
@@ -333,9 +334,9 @@ public class PropertyGridView {
 		return cb;
 	}
 
-	private Node makeDatePickerForProperty(Property prop) {
+	private Control makeDatePickerForProperty(Property prop) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeDatePickerForProperty(");
-		Node ctrl;
+		Control ctrl;
 		DatePicker dpick = new DatePicker();
 		if (prop != null) {
 			String iso = (String) prop.getValue();

@@ -30,7 +30,6 @@ import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.Attachment;
-import com.wilutions.itol.db.DefaultSuggest;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssueHtmlEditor;
@@ -76,7 +75,6 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -612,12 +610,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
+		ExtractImage<IdName> extractImage = (item) -> item.getImage();
 
-		AutoCompletionBinding<IdName> ret = AutoCompletions.bindAutoCompletion(new ExtractImage<IdName>() {
-			public Image getImage(IdName item) {
-				return item.getImage();
-			}
-		}, cb, recentCaption, suggestionsCaption, recentItems, allItems);
+		AutoCompletionBinding<IdName> ret = AutoCompletions.bindAutoCompletion(extractImage, cb, recentCaption, suggestionsCaption, recentItems, allItems);
 
 		cb.valueProperty().addListener(new ComboboxChangeListener(propertyId));
 

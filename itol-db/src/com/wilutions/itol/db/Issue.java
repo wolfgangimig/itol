@@ -93,7 +93,7 @@ public class Issue implements Serializable {
 		}
 	}
 	
-	public boolean isNull() {
+	public boolean isNew() {
 		return this.id.isEmpty();
 	}
 	
