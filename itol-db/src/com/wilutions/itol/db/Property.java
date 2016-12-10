@@ -87,6 +87,13 @@ public class Property {
 	public static final String PROXY_PORT = "proxyPort";
 	public static final String PROXY_USER_NAME = "proxyUserName";
 	public static final String PROXY_PASSWORD = "proxyUserPwd";
+	
+	/**
+	 * JIRA rest API returns web links to user images.
+	 * User images are requested from- to www.gravatar.com.
+	 * If this option is true, user images will not be queried from gravatar.
+	 */
+	public static final String DISALLOW_IMAGES_FROM_GRAVATAR = "disallowImagesFromGravatar";
 
 	
 	public static final String INJECT_ISSUE_ID_INTO_MAIL_SUBJECT = "injectIssueIdIntoMailSubject";

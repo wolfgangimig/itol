@@ -63,14 +63,14 @@ public class PropertyClasses {
 	}
 
 	private PropertyClasses init() {
-		add(PropertyClass.TYPE_STRING, Property.ISSUE_TYPE, "Type");
-		add(PropertyClass.TYPE_STRING, Property.PROJECT, "Category");
+		add(PropertyClass.TYPE_ID_NAME, Property.ISSUE_TYPE, "Type");
+		add(PropertyClass.TYPE_ID_NAME, Property.PROJECT, "Category");
 		add(PropertyClass.TYPE_STRING, Property.SUBJECT, "Subject");
 		add(PropertyClass.TYPE_STRING, Property.DESCRIPTION, "Description");
-		add(PropertyClass.TYPE_STRING, Property.ASSIGNEE, "Assigned to");
-		add(PropertyClass.TYPE_STRING_LIST, Property.ATTACHMENTS, "Attachments");
-		add(PropertyClass.TYPE_STRING, Property.PRIORITY, "Priority");
-		add(PropertyClass.TYPE_STRING, Property.STATUS, "Status");
+		add(PropertyClass.TYPE_ID_NAME, Property.ASSIGNEE, "Assigned to");
+		add(PropertyClass.TYPE_ID_NAME|PropertyClass.TYPE_ARRAY, Property.ATTACHMENTS, "Attachments");
+		add(PropertyClass.TYPE_ID_NAME, Property.PRIORITY, "Priority");
+		add(PropertyClass.TYPE_ID_NAME, Property.STATUS, "Status");
 		add(PropertyClass.TYPE_STRING, Property.LOG_FILE, "Log file");
 		add(PropertyClass.TYPE_STRING, Property.LOG_LEVEL, "Log level", "INFO", Arrays.asList(
 				new IdName("FINE", "DEBUG"), new IdName("INFO"), new IdName("WARNING"), new IdName("SEVERE", "ERROR")));

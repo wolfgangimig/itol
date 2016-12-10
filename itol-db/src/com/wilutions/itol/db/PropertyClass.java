@@ -20,11 +20,12 @@ public class PropertyClass {
 	public final static int TYPE_STRING = 1;
 	public final static int TYPE_BOOL = 2;
 	public final static int TYPE_PASSWORD = 3;
-	public final static int TYPE_STRING_LIST = 4;
 	public final static int TYPE_ISO_DATE = 5;
 	public final static int TYPE_ID_NAME = 6;
 //	public final static int TYPE_INTEGER = 6;
 //	public final static int TYPE_FLOAT = 7;
+	
+	public final static int TYPE_ARRAY = 0x1000;
 	
 	private String id;
 	private String name;
@@ -61,12 +62,16 @@ public class PropertyClass {
 		this.id = id;
 		this.name = name;
 		this.defaultValue = defaultValue;
-		this.selectList = new ArrayList<IdName>(0);
+		this.selectList = null;
 		this.autoCompletionSuggest = suggest != null ? (Suggest<IdName>)suggest : new DefaultSuggest<IdName>(selectList);
 	}
 
 	public PropertyClass(int type, String id, String name, Object defaultValue) {
-		this(type, id, name, defaultValue, new ArrayList<IdName>(0));
+		super();
+		this.type = type;
+		this.id = id;
+		this.name = name;
+		this.defaultValue = defaultValue;
 	}
 
 	public PropertyClass(int type, String id, String name) {
@@ -107,11 +112,28 @@ public class PropertyClass {
 	}
 
 	public int getType() {
+		return type & ~TYPE_ARRAY;
+	}
+	
+	public int getRawType() {
 		return type;
 	}
 
 	public void setType(int type) {
 		this.type = type;
+	}
+	
+	public boolean isArray() {
+		return (type & TYPE_ARRAY) != 0;
+	}
+	
+	public void setArray(boolean b) {
+		if (b) {
+			type |= TYPE_ARRAY;
+		}
+		else {
+			type &= ~TYPE_ARRAY;
+		}
 	}
 
 	public List<IdName> getSelectList() {
@@ -125,13 +147,15 @@ public class PropertyClass {
 	@Override
 	public String toString() {
 		String stype = "UNKNOWN_TYPE";
-		switch(type) {
+		switch(getType()) {
 		case TYPE_STRING: stype = "TYPE_STRING"; break;
-		case TYPE_STRING_LIST: stype = "TYPE_STRING_LIST"; break;
 		case TYPE_ISO_DATE: stype = "TYPE_ISO_DATE"; break;
 		case TYPE_BOOL: stype = "TYPE_BOOL"; break;
 		case TYPE_ID_NAME: stype = "TYPE_ID_NAME"; break;
 //		case TYPE_INTEGER: stype = "TYPE_INTEGER"; break;
+		}
+		if (isArray()) {
+			stype += "[]";
 		}
 		return "PropertyClass [type=" + stype + ", id=" + id + ", name=" + name + "]";
 	}

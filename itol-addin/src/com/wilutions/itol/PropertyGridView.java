@@ -9,6 +9,8 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.controlsfx.control.CheckComboBox;
+
 import com.wilutions.fx.acpl.AutoCompletionComboBox;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
@@ -23,7 +25,11 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
@@ -37,6 +43,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
 public class PropertyGridView {
@@ -57,6 +67,7 @@ public class PropertyGridView {
 		this.propGrid = propGrid;
 		ColumnConstraints constr0 = propGrid.getColumnConstraints().get(0);
 		constr0.setPercentWidth(38);
+		propGrid.setVgap(8);
 	}
 
 	public void initProperties(Issue issue) throws Exception {
@@ -105,13 +116,13 @@ public class PropertyGridView {
 				@SuppressWarnings("unchecked")
 				ChoiceBox<IdName> cb = (ChoiceBox<IdName>) node;
 				IdName idn = cb.getSelectionModel().getSelectedItem();
-				issue.setPropertyString(propertyId, idn != null ? idn.getId() : null);
+				issue.setPropertyIdName(propertyId, idn);
 			}
 			else if (node instanceof ComboBox) {
 				@SuppressWarnings("unchecked")
 				ComboBox<IdName> cb = (ComboBox<IdName>) node;
 				IdName idn = cb.getSelectionModel().getSelectedItem();
-				issue.setPropertyString(propertyId, idn != null ? idn.getId() : null);
+				issue.setPropertyIdName(propertyId, idn);
 			}
 			else if (node instanceof ListView) {
 				List<String> ids = new ArrayList<String>();
@@ -136,12 +147,11 @@ public class PropertyGridView {
 	private void addProperty(Issue issue, PropertyClass pclass, int rowIndex) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addProperty(" + pclass);
 
-		IssueService srv = Globals.getIssueService();
-
 		Label label = new Label(pclass.getName());
 		propGrid.add(label, 0, rowIndex);
+		GridPane.setValignment(label, VPos.TOP);
 
-		Control ctrl = null;
+		Region ctrl = null;
 		List<IdName> selectList = pclass.getSelectList();
 		Suggest<IdName> suggest = pclass.getAutoCompletionSuggest();
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList + ", suggest=" + suggest);
@@ -160,9 +170,6 @@ public class PropertyGridView {
 		case PropertyClass.TYPE_BOOL:
 			ctrl = makeCheckBoxForProperty(prop);
 			break;
-		case PropertyClass.TYPE_STRING_LIST:
-			ctrl = makeMultiListBoxForProperty(prop, selectList);
-			break;
 		// case PropertyClass.TYPE_INTEGER:
 		// ctrl = makeIntFieldForProperty(prop);
 		// break;
@@ -170,11 +177,26 @@ public class PropertyGridView {
 		// ctrl = makeFloatFieldForProperty(prop);
 		// break;
 		default: {
-			if (suggest != null || isAutoCompletionProperty(prop, issue)) {
-				ctrl = makeAutoCompletionNode(prop, issue, pclass);
+			if (selectList != null) {
+				if (pclass.isArray()) {
+					if (selectList.size() > 3) {
+						ctrl = makeChoiceBoxForPropertyArray(prop, issue, pclass);
+					}
+					else {
+						ctrl = makeMultiListBoxForProperty(prop, issue, pclass);
+					}
+				}
+				else {
+					ctrl = makeChoiceBoxForProperty(prop, issue, pclass);
+				}
 			}
-			else if (selectList != null && selectList.size() != 0) {
-				ctrl = makeChoiceBoxForProperty(prop, selectList);
+			else if (suggest != null) {
+				if (pclass.isArray()) {
+					ctrl = makeAutoCompletionNodeArray(prop, issue, pclass);
+				}
+				else {
+					ctrl = makeAutoCompletionNode(prop, issue, pclass);
+				}
 			}
 			else {
 				ctrl = makeTextFieldForProperty(prop);
@@ -199,6 +221,94 @@ public class PropertyGridView {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")addProperty");
 	}
 
+	private class AutoCompletionNodeArray_FirstButton extends Button {
+		
+		AutoCompletionNodeArray_FirstButton(VBox vbox, Property prop, Issue issue, PropertyClass pclass) {
+			super("+");
+			this.setMaxWidth(25);
+			this.setOnAction(new AutoCompletionNodeArray_onAdd(vbox, prop, issue, pclass) {
+				@Override
+				public void handle(ActionEvent event) {
+					vbox.getChildren().remove(0);
+					super.handle(event);
+				}
+			});
+
+		}
+	}
+	
+	private class AutoCompletionNodeArray_onAdd implements EventHandler<ActionEvent> {
+		VBox vbox;
+		Property prop;
+		Issue issue;
+		PropertyClass pclass;
+		
+		AutoCompletionNodeArray_onAdd(VBox vbox, Property prop, Issue issue, PropertyClass pclass) {
+			this.vbox = vbox;
+			this.prop = prop;
+			this.issue = issue;
+			this.pclass = pclass;
+		}
+
+		@Override
+		public void handle(ActionEvent event) {
+			final HBox thisHBox = new HBox();
+			thisHBox.setSpacing(4);
+			Button bnDelete = new Button("x");
+			bnDelete.setMaxWidth(25);
+			bnDelete.setPrefWidth(25);
+//			bnDelete.setStyle("-fx-background-color: white");
+//			Image imageDelete = new Image(getClass().getResourceAsStream("delete.png"));
+//			bnDelete.setGraphic(new ImageView(imageDelete));
+			bnDelete.setOnAction((_ignored) -> {
+				List<Node> vchildren = vbox.getChildren();
+				vchildren.remove(thisHBox);
+				if (vchildren.isEmpty()) {
+					vchildren.clear();
+					Button firstButton = new AutoCompletionNodeArray_FirstButton(vbox, prop, issue, pclass);
+					vchildren.add(firstButton);
+					firstButton.requestFocus();
+				}
+				else {
+					HBox lastRow = (HBox)vchildren.get(vchildren.size()-1);
+					Button bnAdd_1 = (Button)lastRow.getChildren().get(1);
+					bnAdd_1.setDisable(false);
+				}
+			});
+			
+			Control ed = makeAutoCompletionNode(prop, issue, pclass);
+			ed.setMaxWidth(Double.MAX_VALUE);
+			HBox.setHgrow(ed, Priority.ALWAYS);
+			Button bnAdd2 = new Button("+");
+			bnAdd2.setPrefWidth(25);
+			bnAdd2.setMaxWidth(25);
+//			bnAdd2.setStyle("-fx-background-color: white");
+			bnAdd2.setOnAction(new AutoCompletionNodeArray_onAdd(vbox, prop, issue, pclass));
+			
+			List<Node> children = vbox.getChildren();
+			if (!children.isEmpty()) {
+				HBox hbox_1 = (HBox)children.get(children.size()-1);
+				Button bnAdd_1 = (Button)hbox_1.getChildren().get(1);
+				bnAdd_1.setDisable(true);
+			}
+			
+			thisHBox.getChildren().addAll(ed, bnAdd2, bnDelete);
+			children.add(thisHBox);
+			
+			ed.requestFocus();
+		}
+	};
+
+	private VBox makeAutoCompletionNodeArray(Property prop, Issue issue, PropertyClass pclass) {
+		VBox vbox = new VBox();
+		vbox.setSpacing(4);
+		
+		Button bnAdd = new AutoCompletionNodeArray_FirstButton(vbox, prop, issue, pclass);
+		vbox.getChildren().add(bnAdd);
+		
+		return vbox;
+	}
+
 	private static class CheckedIdName extends IdName {
 		private static final long serialVersionUID = -5331330727211218988L;
 		private final SimpleBooleanProperty checked = new SimpleBooleanProperty(false);
@@ -214,8 +324,9 @@ public class PropertyGridView {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Control makeMultiListBoxForProperty(Property prop, List<IdName> selectList) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
+	private Control makeMultiListBoxForProperty(Property prop, Issue issue, PropertyClass pclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeMultiListBoxForProperty(");
+		List<IdName> selectList = pclass.getSelectList();
 		Object propValue = prop != null ? prop.getValue() : null;
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + propValue);
 
@@ -250,24 +361,25 @@ public class PropertyGridView {
 		lb.setPrefHeight(25 * items.size());
 		lb.setMaxHeight(25 * 6);
 
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeChoiceBoxForProperty");
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeMultiListBoxForProperty");
 		return lb;
 	}
 
 	private Control makeTextFieldForProperty(Property prop) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeTextFieldForProperty(");
 		TextField ed = new TextField();
 		if (prop != null) {
 			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + prop.getValue());
 			ed.setText((String) prop.getValue());
 		}
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeChoiceBoxForProperty");
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeTextFieldForProperty");
 		return ed;
 	}
 
-	private Control makeChoiceBoxForProperty(Property prop, List<IdName> selectList) {
+	private Control makeChoiceBoxForProperty(Property prop, Issue issue, PropertyClass pclass) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
-		ChoiceBox<IdName> cb = new ChoiceBox<IdName>();
+		ComboBox<IdName> cb = new ComboBox<IdName>();
+		List<IdName> selectList = pclass.getSelectList();
 		cb.setItems(FXCollections.observableArrayList(selectList));
 		if (prop != null) {
 			Object propValue = prop.getValue();
@@ -287,12 +399,57 @@ public class PropertyGridView {
 		return cb;
 	}
 
-	private Control makeAutoCompletionNode(final Property prop, final Issue issue, PropertyClass pclass)
-			throws IOException {
+	@SuppressWarnings("rawtypes")
+	private Control makeChoiceBoxForPropertyArray(Property prop, Issue issue, PropertyClass pclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
+		List<IdName> selectList = pclass.getSelectList();
+		CheckComboBox<IdName> cb = new CheckComboBox<IdName>(FXCollections.observableArrayList(selectList));
+		
+		if (prop != null) {
+			Object propValue = prop.getValue();
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + propValue);
+			
+			for (IdName idn : selectList) {
+				boolean checked = false;
+				if (propValue != null) {
+					if (propValue instanceof List) {
+						switch(pclass.getType()) {
+						case PropertyClass.TYPE_STRING:
+							checked = ((List)propValue).contains(idn.getId());
+							break;
+						case PropertyClass.TYPE_ID_NAME:
+							checked = ((List)propValue).contains(idn);
+							break;
+						}
+					}
+					else if (propValue instanceof String) {
+						switch(pclass.getType()) {
+						case PropertyClass.TYPE_STRING:
+							checked = propValue.equals(idn.getId());
+							break;
+						case PropertyClass.TYPE_ID_NAME:
+							checked = propValue.equals(idn);
+							break;
+						}
+					}
+				}
+				
+				if (checked) {
+					cb.getCheckModel().getCheckedItems().add(idn);
+				}
+			}
+			
+		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeChoiceBoxForProperty");
+		return cb;
+	}
+
+	private Control makeAutoCompletionNode(final Property prop, final Issue issue, PropertyClass pclass) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeAutoCompletionNode(" + prop.getId());
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
-		ArrayList<IdName> recentItems = new ArrayList<IdName>();
+		List<IdName> recentItems = pclass.getSelectList();
+		if (recentItems == null) recentItems = new ArrayList<IdName>();
 		ExtractImage<IdName> extractImage = (item) -> item.getImage();
 
 		AutoCompletionComboBox<IdName> comboBox = AutoCompletions.createAutoCompletionNode(extractImage, recentCaption,
@@ -353,12 +510,4 @@ public class PropertyGridView {
 		return firstControl;
 	}
 
-	private boolean isAutoCompletionProperty(Property prop, Issue issue) throws Exception {
-		boolean ret = prop.getId().equals(Property.ASSIGNEE);
-		if (!ret) {
-			IssueService srv = Globals.getIssueService();
-			ret = srv.getPropertyAutoCompletion(prop.getId(), issue, "", 0) != null;
-		}
-		return ret;
-	}
 }

@@ -1,6 +1,6 @@
 package com.wilutions.fx.acpl;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import com.wilutions.itol.db.Suggest;
 
@@ -10,7 +10,7 @@ public class AutoCompletionBinding<T> {
 	private AutoCompletionControl<T> control;
 	private String recentCaption;
 	private String suggestionsCaption;
-	private ArrayList<T> recentItems;
+	private List<T> recentItems;
 	private Suggest<T> suggest;
 	private ExtractImage<T> extractImage;
 	private boolean lockChangeEvent;
@@ -27,10 +27,10 @@ public class AutoCompletionBinding<T> {
 	public void setSuggestionsCaption(String suggestionsCaption) {
 		this.suggestionsCaption = suggestionsCaption;
 	}
-	public ArrayList<T> getRecentItems() {
+	public List<T> getRecentItems() {
 		return recentItems;
 	}
-	public void setRecentItems(ArrayList<T> recentItems) {
+	public void setRecentItems(List<T> recentItems) {
 		this.recentItems = recentItems;
 	}
 	public Suggest<T> getSuggest() {

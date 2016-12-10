@@ -38,7 +38,7 @@ public class AutoCompletions {
 	/**
 	 * Display at most 10 suggestions.
 	 */
-	public final static int NB_OF_SUGGESTIONS = 10;
+	public final static int NB_OF_SUGGESTIONS = 5;
 
 	/**
 	 * Display at most 3 recent items.
@@ -57,13 +57,13 @@ public class AutoCompletions {
 	 * @return AutoCompletionBinding
 	 */
 	public static <T> AutoCompletionBinding<T> bindAutoCompletion(ExtractImage<T> extractImage, ComboBox<T> cbox,
-			String recentCaption, String suggestionsCaption, ArrayList<T> recentItems, Collection<T> allItems) {
+			String recentCaption, String suggestionsCaption, List<T> recentItems, Collection<T> allItems) {
 		return bindAutoCompletion(extractImage, cbox, recentCaption, suggestionsCaption, recentItems,
 				new DefaultSuggest<T>(allItems));
 	}
 
 	public static <T> AutoCompletionBinding<T> bindAutoCompletion(ExtractImage<T> extractImage, ComboBox<T> cbox,
-			String recentCaption, String suggestionsCaption, final ArrayList<T> recentItems, final Suggest<T> suggest) {
+			String recentCaption, String suggestionsCaption, final List<T> recentItems, final Suggest<T> suggest) {
 
 		AutoCompletionControl<T> control = createAutoCompletionControl(cbox, extractImage);
 		AutoCompletionBinding<T> binding = createAutoCompletionBinding(extractImage, recentCaption, suggestionsCaption,
@@ -82,7 +82,7 @@ public class AutoCompletions {
 			ExtractImage<T> extractImage, 
 			String recentCaption, 
 			String suggestionsCaption, 
-			ArrayList<T> recentItems, 
+			List<T> recentItems, 
 			 Suggest<T> suggest) {
 		AutoCompletionComboBox<T> cbox = new AutoCompletionComboBox<T>();
 		AutoCompletionBinding<T> binding = bindAutoCompletion(extractImage, cbox, recentCaption, suggestionsCaption, recentItems, suggest);
@@ -138,7 +138,7 @@ public class AutoCompletions {
 	}
 
 	private static <T> AutoCompletionBinding<T> createAutoCompletionBinding(ExtractImage<T> extractImage,
-			String recentCaption, String suggestionsCaption, final ArrayList<T> recentItems, final Suggest<T> suggest,
+			String recentCaption, String suggestionsCaption, final List<T> recentItems, final Suggest<T> suggest,
 			AutoCompletionControl<T> control) {
 		AutoCompletionBinding<T> binding = new AutoCompletionBinding<T>();
 		binding.setControl(control);
@@ -282,7 +282,7 @@ public class AutoCompletions {
 							}
 
 							// No suggestion fits, take a recently used item.
-							ArrayList<T> recentItems = binding.getRecentItems();
+							List<T> recentItems = binding.getRecentItems();
 							if (item == null && recentItems != null && recentItems.size() != 0) {
 								item = recentItems.get(0);
 							}
@@ -317,7 +317,7 @@ public class AutoCompletions {
 		AutoCompletionControl<T> control = binding.getControl();
 		String recentCaption = binding.getRecentCaption();
 		String suggestionsCaption = binding.getSuggestionsCaption();
-		ArrayList<T> recentItems = binding.getRecentItems();
+		List<T> recentItems = binding.getRecentItems();
 		Suggest<T> suggest = binding.getSuggest();
 
 		if ((ctrl & DISABLE_EDIT_ON_SELECT) == 0) {
@@ -418,7 +418,7 @@ public class AutoCompletions {
 		AutoCompletionControl<T> control = binding.getControl();
 		control.select(item);
 
-		// Disable TextField for 2 seconds.
+		// Disable TextField for 1 second
 		if ((ctrl & DISABLE_EDIT_ON_SELECT) != 0) {
 
 			control.setEditable(false);
@@ -428,7 +428,7 @@ public class AutoCompletions {
 		}
 
 		// Add item to recent list
-		ArrayList<T> recentItems = binding.getRecentItems();
+		List<T> recentItems = binding.getRecentItems();
 		if (recentItems != null && !recentItems.contains(item)) {
 			if (recentItems.size() >= NB_OF_RECENT_ITEMS) {
 				recentItems.remove(recentItems.size() - 1);
@@ -457,6 +457,10 @@ public class AutoCompletions {
 				+ node.getBoundsInLocal().getHeight();
 		// + node.getBoundsInParent().getHeight();
 		popup.show(window, x, y);
+		double ht = popup.getHeight();
+		double wd = popup.getWidth();
+		System.out.println("popup.height=" + ht + ", width=" + wd + ", #items=" + popup.getItems().size());
+
 	}
 
 	private static <T> AutoCompletionControl<T> createAutoCompletionControl(final ComboBox<T> cbox,
