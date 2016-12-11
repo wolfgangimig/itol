@@ -12,6 +12,7 @@ package com.wilutions.itol.db;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -39,10 +40,6 @@ public class IssueUpdate implements Serializable {
 		this.createDate = createDate != null ? createDate : new Date(System.currentTimeMillis());
 		this.createdBy = createdBy;
 		this.properties = props;
-	}
-
-	public Map<String, Property> getProperties() {
-		return properties;
 	}
 
 	public Date getCreateDate() {
@@ -103,7 +100,30 @@ public class IssueUpdate implements Serializable {
 			if (ret) {
 				ret = createdBy.equals(isu.createdBy);
 				if (ret) {
-					ret = properties.equals(isu.properties);
+					//ret = properties.equals(isu.properties);
+					ArrayList<String> missingKeys = new ArrayList<String>();
+					for (String key : properties.keySet()) {
+						if (isu.properties.get(key) == null) {
+							missingKeys.add(key);
+						}
+					}
+					ArrayList<String> obsoleteKeys = new ArrayList<String>();
+					for (String key : isu.properties.keySet()) {
+						if (properties.get(key) == null) {
+							obsoleteKeys.add(key);
+						}
+					}
+					ArrayList<Property> differentValues = new ArrayList<Property>();
+					for (String key : properties.keySet()) {
+						Property propLhs = properties.get(key);
+						Property propRhs = isu.properties.get(key);
+						if (propRhs != null) {
+							if (!propLhs.equals(propRhs)) {
+								differentValues.add(propRhs);
+							}
+						}
+					}
+					ret = (missingKeys.size() + obsoleteKeys.size() + differentValues.size()) == 0; 
 				}
 			}
 		}

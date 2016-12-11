@@ -100,7 +100,7 @@ public class IdName implements Serializable {
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (!(obj instanceof IdName))
 			return false;
 		IdName other = (IdName) obj;
 		if (id == null) {

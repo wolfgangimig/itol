@@ -114,7 +114,7 @@ public class Property {
 
 	public Property() {
 		id = "";
-		value = "";
+		value = null;
 	}
 
 	public Property(String id, Object value) {

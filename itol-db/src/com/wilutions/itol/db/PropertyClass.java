@@ -157,7 +157,7 @@ public class PropertyClass {
 		if (isArray()) {
 			stype += "[]";
 		}
-		return "PropertyClass [type=" + stype + ", id=" + id + ", name=" + name + "]";
+		return "[type=" + stype + ", id=" + id + ", name=" + name + "]";
 	}
 
 	public Suggest<IdName> getAutoCompletionSuggest() {
