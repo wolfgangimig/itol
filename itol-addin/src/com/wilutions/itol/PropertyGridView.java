@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.controlsfx.control.CheckComboBox;
 
@@ -124,16 +125,19 @@ public class PropertyGridView {
 				IdName idn = cb.getSelectionModel().getSelectedItem();
 				issue.setPropertyIdName(propertyId, idn);
 			}
+			else if (node instanceof CheckComboBox) {
+				@SuppressWarnings("unchecked")
+				CheckComboBox<IdName> cb = (CheckComboBox<IdName>) node;
+				List<IdName> idns = new ArrayList<IdName>(cb.getCheckModel().getCheckedItems());
+				issue.setPropertyValue(propertyId, idns);
+			}
 			else if (node instanceof ListView) {
-				List<String> ids = new ArrayList<String>();
 				@SuppressWarnings("unchecked")
 				ListView<CheckedIdName> lb = (ListView<CheckedIdName>) node;
-				for (CheckedIdName idn : lb.getItems()) {
-					if (idn.checked.get()) {
-						ids.add(idn.getId());
-					}
-				}
-				issue.setPropertyStringList(propertyId, ids);
+				List<IdName> idns = lb.getItems().stream()
+						.filter(item -> item.checked.get())
+						.collect(Collectors.toList());
+				issue.setPropertyValue(propertyId, idns);
 			}
 		}
 	}
@@ -323,7 +327,7 @@ public class PropertyGridView {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "rawtypes" })
 	private Control makeMultiListBoxForProperty(Property prop, Issue issue, PropertyClass pclass) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeMultiListBoxForProperty(");
 		List<IdName> selectList = pclass.getSelectList();
@@ -335,10 +339,24 @@ public class PropertyGridView {
 			boolean checked = false;
 			if (propValue != null) {
 				if (propValue instanceof List) {
-					checked = ((List<String>) propValue).contains(idn.getId());
+					switch(pclass.getType()) {
+					case PropertyClass.TYPE_STRING:
+						checked = ((List)propValue).contains(idn.getId());
+						break;
+					case PropertyClass.TYPE_ID_NAME:
+						checked = ((List)propValue).contains(idn);
+						break;
+					}
 				}
 				else if (propValue instanceof String) {
-					checked = ((String) propValue).equals(idn.getId());
+					switch(pclass.getType()) {
+					case PropertyClass.TYPE_STRING:
+						checked = propValue.equals(idn.getId());
+						break;
+					case PropertyClass.TYPE_ID_NAME:
+						checked = propValue.equals(idn);
+						break;
+					}
 				}
 			}
 			items.add(new CheckedIdName(idn, checked));
@@ -435,7 +453,7 @@ public class PropertyGridView {
 				}
 				
 				if (checked) {
-					cb.getCheckModel().getCheckedItems().add(idn);
+					cb.getCheckModel().check(idn);
 				}
 			}
 			
