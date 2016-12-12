@@ -22,6 +22,17 @@ public class PropertyClass {
 	public final static int TYPE_PASSWORD = 3;
 	public final static int TYPE_ISO_DATE = 5;
 	public final static int TYPE_ID_NAME = 6;
+	
+	/**
+	 * Multiline text field.
+	 */
+	public final static int TYPE_TEXT= 7;
+	
+	/**
+	 * Date and time.
+	 */
+	public static final int TYPE_ISO_DATE_TIME = 8;
+	
 //	public final static int TYPE_INTEGER = 6;
 //	public final static int TYPE_FLOAT = 7;
 	
@@ -149,7 +160,9 @@ public class PropertyClass {
 		String stype = "UNKNOWN_TYPE";
 		switch(getType()) {
 		case TYPE_STRING: stype = "TYPE_STRING"; break;
+		case TYPE_TEXT: stype = "TYPE_TEXT"; break;
 		case TYPE_ISO_DATE: stype = "TYPE_ISO_DATE"; break;
+		case TYPE_ISO_DATE_TIME: stype = "TYPE_ISO_DATE_TIME"; break;
 		case TYPE_BOOL: stype = "TYPE_BOOL"; break;
 		case TYPE_ID_NAME: stype = "TYPE_ID_NAME"; break;
 //		case TYPE_INTEGER: stype = "TYPE_INTEGER"; break;

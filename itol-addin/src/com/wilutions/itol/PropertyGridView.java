@@ -17,6 +17,7 @@ import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
+import com.wilutions.itol.db.IssueHtmlEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
@@ -32,7 +33,6 @@ import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Control;
 import javafx.scene.control.DatePicker;
@@ -52,19 +52,16 @@ import javafx.util.Callback;
 
 public class PropertyGridView {
 
+	private final IssueTaskPane issueTaskPane;
 	private final GridPane propGrid;
 	private final ResourceBundle resb = Globals.getResourceBundle();
 	private Node firstControl;
 	private Logger log = Logger.getLogger("PropertyGridView");
 
-	private static class PropertyNode {
-		String propertyId;
-		Node node;
-	}
-
 	private final List<PropertyNode> propNodes = new ArrayList<>();
 
-	public PropertyGridView(GridPane propGrid) throws IOException {
+	public PropertyGridView(IssueTaskPane issueTaskPane, GridPane propGrid) throws IOException {
+		this.issueTaskPane = issueTaskPane;
 		this.propGrid = propGrid;
 		ColumnConstraints constr0 = propGrid.getColumnConstraints().get(0);
 		constr0.setPercentWidth(38);
@@ -94,51 +91,9 @@ public class PropertyGridView {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")PropertyGridView");
 	}
 
-	public void saveProperties(Issue issue) {
+	public void updateData(boolean save) {
 		for (PropertyNode propNode : propNodes) {
-			String propertyId = propNode.propertyId;
-			Node node = propNode.node;
-			if (node instanceof TextField) {
-				issue.setPropertyString(propertyId, ((TextField) node).getText());
-			}
-			else if (node instanceof DatePicker) {
-				LocalDate ldate = ((DatePicker) node).getValue();
-				String iso = "";
-				if (ldate != null) {
-					iso = ldate.format(DateTimeFormatter.ISO_LOCAL_DATE);
-				}
-				issue.setPropertyString(propertyId, iso);
-			}
-			else if (node instanceof CheckBox) {
-				boolean value = ((CheckBox) node).isSelected();
-				issue.setPropertyBoolean(propertyId, value);
-			}
-			else if (node instanceof ChoiceBox) {
-				@SuppressWarnings("unchecked")
-				ChoiceBox<IdName> cb = (ChoiceBox<IdName>) node;
-				IdName idn = cb.getSelectionModel().getSelectedItem();
-				issue.setPropertyIdName(propertyId, idn);
-			}
-			else if (node instanceof ComboBox) {
-				@SuppressWarnings("unchecked")
-				ComboBox<IdName> cb = (ComboBox<IdName>) node;
-				IdName idn = cb.getSelectionModel().getSelectedItem();
-				issue.setPropertyIdName(propertyId, idn);
-			}
-			else if (node instanceof CheckComboBox) {
-				@SuppressWarnings("unchecked")
-				CheckComboBox<IdName> cb = (CheckComboBox<IdName>) node;
-				List<IdName> idns = new ArrayList<IdName>(cb.getCheckModel().getCheckedItems());
-				issue.setPropertyValue(propertyId, idns);
-			}
-			else if (node instanceof ListView) {
-				@SuppressWarnings("unchecked")
-				ListView<CheckedIdName> lb = (ListView<CheckedIdName>) node;
-				List<IdName> idns = lb.getItems().stream()
-						.filter(item -> item.checked.get())
-						.collect(Collectors.toList());
-				issue.setPropertyValue(propertyId, idns);
-			}
+			propNode.updateData(save);
 		}
 	}
 
@@ -155,7 +110,6 @@ public class PropertyGridView {
 		propGrid.add(label, 0, rowIndex);
 		GridPane.setValignment(label, VPos.TOP);
 
-		Region ctrl = null;
 		List<IdName> selectList = pclass.getSelectList();
 		Suggest<IdName> suggest = pclass.getAutoCompletionSuggest();
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList + ", suggest=" + suggest);
@@ -167,12 +121,16 @@ public class PropertyGridView {
 			prop.setValue(defaultValue);
 		}
 
+		PropertyNode propNode = null;
 		switch (pclass.getType()) {
-		case PropertyClass.TYPE_ISO_DATE:
-			ctrl = makeDatePickerForProperty(prop);
+		case PropertyClass.TYPE_ISO_DATE: case PropertyClass.TYPE_ISO_DATE_TIME:
+			propNode = makeDatePickerForProperty(issue, pclass);
 			break;
 		case PropertyClass.TYPE_BOOL:
-			ctrl = makeCheckBoxForProperty(prop);
+			propNode = makeCheckBoxForProperty(issue, pclass);
+			break;
+		case PropertyClass.TYPE_TEXT:
+			propNode = makeTextAreaForProperty(issue, pclass);
 			break;
 		// case PropertyClass.TYPE_INTEGER:
 		// ctrl = makeIntFieldForProperty(prop);
@@ -183,31 +141,32 @@ public class PropertyGridView {
 		default: {
 			if (selectList != null) {
 				if (pclass.isArray()) {
-					if (selectList.size() > 3) {
-						ctrl = makeChoiceBoxForPropertyArray(prop, issue, pclass);
-					}
-					else {
-						ctrl = makeMultiListBoxForProperty(prop, issue, pclass);
-					}
+					propNode = makeChoiceBoxForPropertyArray(issue, pclass);
+//					if (selectList.size() > 3) {
+//					}
+//					else {
+//						ctrl = makeMultiListBoxForProperty(prop, issue, pclass);
+//					}
 				}
 				else {
-					ctrl = makeChoiceBoxForProperty(prop, issue, pclass);
+					propNode = makeChoiceBoxForProperty(issue, pclass);
 				}
 			}
 			else if (suggest != null) {
 				if (pclass.isArray()) {
-					ctrl = makeAutoCompletionNodeArray(prop, issue, pclass);
+					propNode = makeAutoCompletionNodeArray(issue, pclass);
 				}
 				else {
-					ctrl = makeAutoCompletionNode(prop, issue, pclass);
+					propNode = makeAutoCompletionNode(issue, pclass);
 				}
 			}
 			else {
-				ctrl = makeTextFieldForProperty(prop);
+				propNode = makeTextFieldForProperty(issue, pclass);
 			}
 		}
 		}
 
+		Region ctrl = propNode.getNode();
 		ctrl.setMaxWidth(Double.MAX_VALUE);
 		ctrl.setPrefWidth(Double.MAX_VALUE);
 		propGrid.add(ctrl, 1, rowIndex);
@@ -216,10 +175,6 @@ public class PropertyGridView {
 			firstControl = ctrl;
 		}
 
-		// Save propertId with node to simplify access in saveProperties()
-		PropertyNode propNode = new PropertyNode();
-		propNode.propertyId = pclass.getId();
-		propNode.node = ctrl;
 		propNodes.add(propNode);
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")addProperty");
@@ -280,7 +235,7 @@ public class PropertyGridView {
 				}
 			});
 			
-			Control ed = makeAutoCompletionNode(prop, issue, pclass);
+			Region ed = makeAutoCompletionNode(issue, pclass).getNode();
 			ed.setMaxWidth(Double.MAX_VALUE);
 			HBox.setHgrow(ed, Priority.ALWAYS);
 			Button bnAdd2 = new Button("+");
@@ -303,14 +258,27 @@ public class PropertyGridView {
 		}
 	};
 
-	private VBox makeAutoCompletionNodeArray(Property prop, Issue issue, PropertyClass pclass) {
+	private PropertyNode makeAutoCompletionNodeArray(Issue issue, PropertyClass pclass) {
 		VBox vbox = new VBox();
 		vbox.setSpacing(4);
 		
+		Property prop = issue.getCurrentUpdate().getProperty(pclass.getId());
 		Button bnAdd = new AutoCompletionNodeArray_FirstButton(vbox, prop, issue, pclass);
 		vbox.getChildren().add(bnAdd);
 		
-		return vbox;
+		PropertyNode propNode = new PropertyNode(issue, pclass, vbox) {
+			@Override
+			public void updateData(boolean save) {
+				if (save) {
+					
+				}
+				else {
+					
+				}
+			}
+		};
+		
+		return propNode;
 	}
 
 	private static class CheckedIdName extends IdName {
@@ -327,8 +295,8 @@ public class PropertyGridView {
 		}
 	}
 
-	@SuppressWarnings({ "rawtypes" })
-	private Control makeMultiListBoxForProperty(Property prop, Issue issue, PropertyClass pclass) {
+	@SuppressWarnings({ "rawtypes", "unused" })
+	private Region makeMultiListBoxForProperty(Property prop, Issue issue, PropertyClass pclass) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeMultiListBoxForProperty(");
 		List<IdName> selectList = pclass.getSelectList();
 		Object propValue = prop != null ? prop.getValue() : null;
@@ -383,87 +351,154 @@ public class PropertyGridView {
 		return lb;
 	}
 
-	private Control makeTextFieldForProperty(Property prop) {
+	private PropertyNode makeTextFieldForProperty(Issue issue, PropertyClass pclass) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeTextFieldForProperty(");
 		TextField ed = new TextField();
-		if (prop != null) {
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + prop.getValue());
-			ed.setText((String) prop.getValue());
-		}
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeTextFieldForProperty");
-		return ed;
-	}
-
-	private Control makeChoiceBoxForProperty(Property prop, Issue issue, PropertyClass pclass) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
-		ComboBox<IdName> cb = new ComboBox<IdName>();
-		List<IdName> selectList = pclass.getSelectList();
-		cb.setItems(FXCollections.observableArrayList(selectList));
-		if (prop != null) {
-			Object propValue = prop.getValue();
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + propValue);
-			String value = "";
-			if (propValue instanceof String) {
-				value = (String) propValue;
-			}
-			for (IdName item : selectList) {
-				if (item.getId().equals(value)) {
-					cb.setValue(item);
-					break;
+		PropertyNode propNode = new PropertyNode(issue, pclass, ed) {
+			@Override
+			public void updateData(boolean save) {
+				if (save) {
+					issue.setPropertyString(pclass.getId(), ed.getText());
+				}
+				else {
+					String value = issue.getPropertyString(pclass.getId(), "");
+					ed.setText(value);
 				}
 			}
+		};
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeTextFieldForProperty");
+		return propNode;
+	}
+
+	private PropertyNode makeTextAreaForProperty(Issue issue, PropertyClass pclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeTextAreaForProperty(");
+		PropertyNode ret = null;
+		try {
+			IssueService srv = Globals.getIssueService();
+			IssueHtmlEditor editor = srv.getHtmlEditor(issueTaskPane, issue, pclass.getId());
+			
+			Control editorControl = (Control)editor.getNode();
+
+			VBox.setVgrow(editorControl, Priority.ALWAYS);
+			
+			VBox vbox = new VBox();
+			vbox.setMinHeight(100);
+			vbox.setMaxHeight(Double.MAX_VALUE);
+			vbox.setPrefHeight(100);
+			vbox.getChildren().clear();
+			vbox.getChildren().add(editorControl);
+			vbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+
+			ret = new PropertyNode(issue, pclass, vbox) {
+				@Override
+				public void updateData(boolean save) {
+					editor.updateData(save);
+				}
+			};
+			
+		} catch (Exception e) {
+			log.log(Level.WARNING, "Failed to create text area for property=" + pclass);
 		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeTextAreaForProperty");
+		return ret;
+	}
+
+	private PropertyNode makeChoiceBoxForProperty(Issue issue, PropertyClass pclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
+		ComboBox<IdName> ctrl = new ComboBox<IdName>();
+		PropertyNode propNode = new PropertyNode(issue, pclass, ctrl) {
+			@Override
+			public void updateData(boolean save) {
+				if (save) {
+					IdName idn = ctrl.getSelectionModel().getSelectedItem();
+					issue.setPropertyIdName(pclass.getId(), idn);
+				}
+				else {
+					List<IdName> selectList = pclass.getSelectList();
+					ctrl.setItems(FXCollections.observableArrayList(selectList));
+					Object value = issue.getPropertyValue(pclass.getId(), null);
+					for (IdName item : selectList) {
+						if (item.equals(value) || item.getId().equals(value)) {
+							ctrl.setValue(item);
+							break;
+						}
+					}
+				}
+			}
+		};
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeChoiceBoxForProperty");
-		return cb;
+		return propNode;
 	}
 
 	@SuppressWarnings("rawtypes")
-	private Control makeChoiceBoxForPropertyArray(Property prop, Issue issue, PropertyClass pclass) {
+	private PropertyNode makeChoiceBoxForPropertyArray(Issue issue, PropertyClass pclass) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeChoiceBoxForProperty(");
 		List<IdName> selectList = pclass.getSelectList();
-		CheckComboBox<IdName> cb = new CheckComboBox<IdName>(FXCollections.observableArrayList(selectList));
-		
-		if (prop != null) {
-			Object propValue = prop.getValue();
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + propValue);
-			
-			for (IdName idn : selectList) {
-				boolean checked = false;
-				if (propValue != null) {
-					if (propValue instanceof List) {
-						switch(pclass.getType()) {
-						case PropertyClass.TYPE_STRING:
-							checked = ((List)propValue).contains(idn.getId());
-							break;
-						case PropertyClass.TYPE_ID_NAME:
-							checked = ((List)propValue).contains(idn);
-							break;
+		CheckComboBox<IdName> ctrl = new CheckComboBox<IdName>(FXCollections.observableArrayList(selectList));
+		PropertyNode propNode = new PropertyNode(issue, pclass, ctrl) {
+			@Override
+			public void updateData(boolean save) {
+				if (save) {
+					List<IdName> idns = new ArrayList<IdName>(ctrl.getCheckModel().getCheckedItems());
+					Object value = null;
+					switch(pclass.getType()) {
+					case PropertyClass.TYPE_STRING: 
+						value = idns.stream().map((idn) -> idn.getId()).collect(Collectors.toList());
+						break;
+					case PropertyClass.TYPE_ID_NAME:
+						value = idns;
+						break;
+					}
+					if (!pclass.isArray()) {
+						if (value != null) {
+							List list = (List)value;
+							if (!list.isEmpty()) {
+								value = list.get(0);
+							}
 						}
 					}
-					else if (propValue instanceof String) {
-						switch(pclass.getType()) {
-						case PropertyClass.TYPE_STRING:
-							checked = propValue.equals(idn.getId());
-							break;
-						case PropertyClass.TYPE_ID_NAME:
-							checked = propValue.equals(idn);
-							break;
-						}
-					}
+					issue.setPropertyValue(pclass.getId(), value);
 				}
-				
-				if (checked) {
-					cb.getCheckModel().check(idn);
+				else {
+					Object propValue = issue.getPropertyValue(pclass.getId(), null);
+					if (propValue != null) {
+						for (IdName idn : selectList) {
+							boolean checked = false;
+							if (propValue instanceof List) {
+								switch(pclass.getType()) {
+								case PropertyClass.TYPE_STRING:
+									checked = ((List)propValue).contains(idn.getId());
+									break;
+								case PropertyClass.TYPE_ID_NAME:
+									checked = ((List)propValue).contains(idn);
+									break;
+								}
+							}
+							else if (propValue instanceof String) {
+								switch(pclass.getType()) {
+								case PropertyClass.TYPE_STRING:
+									checked = propValue.equals(idn.getId());
+									break;
+								case PropertyClass.TYPE_ID_NAME:
+									checked = propValue.equals(idn);
+									break;
+								}
+							}
+							
+							if (checked) {
+								ctrl.getCheckModel().check(idn);
+							}
+						}
+					}
 				}
 			}
-			
-		}
+		};
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeChoiceBoxForProperty");
-		return cb;
+		return propNode;
 	}
 
-	private Control makeAutoCompletionNode(final Property prop, final Issue issue, PropertyClass pclass) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeAutoCompletionNode(" + prop.getId());
+	private PropertyNode makeAutoCompletionNode(Issue issue, PropertyClass pclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeAutoCompletionNode(" + pclass.getId());
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
 		List<IdName> recentItems = pclass.getSelectList();
@@ -473,55 +508,75 @@ public class PropertyGridView {
 		AutoCompletionComboBox<IdName> comboBox = AutoCompletions.createAutoCompletionNode(extractImage, recentCaption,
 				suggestionsCaption, recentItems, pclass.getAutoCompletionSuggest());
 
-		IdName item = (IdName)prop.getValue();
-		if (item != null) {
-			comboBox.getBinding().select(item);
-		}
-
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeAutoCompletionNode");
-		return comboBox;
-	}
-
-	private CheckBox makeCheckBoxForProperty(Property prop) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeCheckBoxForProperty(");
-		CheckBox cb = new CheckBox();
-		boolean bValue = false;
-		if (prop != null) {
-			Object propValue = prop.getValue();
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + propValue);
-			if (propValue != null) {
-				if (propValue instanceof Boolean) {
-					bValue = (Boolean) propValue;
+		PropertyNode propNode = new PropertyNode(issue, pclass, comboBox) {
+			@Override
+			public void updateData(boolean save) {
+				if (save) {
+					IdName idn = comboBox.getBinding().getSelectedItem();
+					issue.setPropertyValue(pclass.getId(), idn);
 				}
 				else {
-					String str = propValue.toString().toLowerCase();
-					bValue = str.equals("1") || str.equals("yes") || str.equals("true");
+					IdName item = (IdName)issue.getPropertyValue(pclass.getId(), null);
+					if (item != null) {
+						comboBox.getBinding().select(item);
+					}
 				}
 			}
-		}
-		cb.setSelected(bValue);
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeCheckBoxForProperty");
-		return cb;
+		};
+
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeAutoCompletionNode");
+		return propNode;
 	}
 
-	private Control makeDatePickerForProperty(Property prop) {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeDatePickerForProperty(");
-		Control ctrl;
-		DatePicker dpick = new DatePicker();
-		if (prop != null) {
-			String iso = (String) prop.getValue();
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "value=" + iso);
-			if (iso != null && iso.length() != 0) {
-				if (iso.length() > 10) {
-					iso = iso.substring(0, 10);
+	private PropertyNode makeCheckBoxForProperty(Issue issue, PropertyClass pclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeCheckBoxForProperty(");
+		CheckBox ctrl = new CheckBox();
+		PropertyNode propNode = new PropertyNode(issue, pclass, ctrl) {
+			@Override
+			public void updateData(boolean save) {
+				if (save) {
+					boolean value = ctrl.isSelected();
+					issue.setPropertyBoolean(pclass.getId(), value);
 				}
-				LocalDate ldate = LocalDate.parse(iso);
-				dpick.setValue(ldate);
+				else {
+					boolean value = issue.getPropertyBoolean(pclass.getId(), Boolean.FALSE);
+					ctrl.setSelected(value);
+				}
 			}
-		}
-		ctrl = dpick;
+		};
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeCheckBoxForProperty");
+		return propNode;
+	}
+
+	private PropertyNode makeDatePickerForProperty(Issue issue, PropertyClass pclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeDatePickerForProperty(");
+		DatePicker ctrl = new DatePicker();
+		PropertyNode propNode = new PropertyNode(issue, pclass, ctrl) {
+			@Override
+			public void updateData(boolean save) {
+				if (save) {
+					LocalDate ldate = ctrl.getValue();
+					String iso = "";
+					if (ldate != null) {
+						iso = ldate.format(DateTimeFormatter.ISO_LOCAL_DATE);
+					}
+					issue.setPropertyString(pclass.getId(), iso);
+				}
+				else {
+					String iso = issue.getPropertyString(pclass.getId(), "");
+					if (iso != null && iso.length() != 0) {
+						if (iso.length() > 10) {
+							iso = iso.substring(0, 10);
+						}
+						LocalDate ldate = LocalDate.parse(iso);
+						ctrl.setValue(ldate);
+					}
+				}
+			}
+		};
+		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeDatePickerForProperty");
-		return ctrl;
+		return propNode;
 	}
 
 	public Node getFirstControl() {

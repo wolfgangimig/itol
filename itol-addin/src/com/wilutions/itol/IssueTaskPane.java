@@ -745,7 +745,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void saveProperties() {
 		if (propGridView != null) {
-			propGridView.saveProperties(issue);
+			propGridView.updateData(true);
 		}
 	}
 
@@ -902,9 +902,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initProperties() throws Exception {
 		if (propGridView == null) {
-			propGridView = new PropertyGridView(propGrid);
+			propGridView = new PropertyGridView(this, propGrid);
 		}
 		propGridView.initProperties(issue);
+		propGridView.updateData(false);
 	}
 
 	private void initSubject() {

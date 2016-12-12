@@ -43,12 +43,6 @@ public class Property {
 	public final static String DESCRIPTION = "IssueProperty.Description";
 
 	/**
-	 * Issue assignee. Value is of type String and holds the ID of the user to
-	 * which the issue is assigned.
-	 */
-	public final static String ASSIGNEE = "IssueProperty.Assignee";
-
-	/**
 	 * Array of attachments. Value is of type List<Attachment>.
 	 */
 	public final static String ATTACHMENTS = "IssueProperty.Attachments";

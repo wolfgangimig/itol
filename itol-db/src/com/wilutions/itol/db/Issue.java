@@ -204,14 +204,6 @@ public class Issue implements Serializable {
 		setPropertyValue(Property.ISSUE_TYPE, value);
 	}
 	
-	public IdName getAssignee() {
-		return (IdName)getPropertyValue(Property.ASSIGNEE, IdName.NULL);
-	}
-	
-	public void setAssignee(IdName value) {
-		setPropertyValue(Property.ASSIGNEE, value);
-	}
-	
 	public IdName getStatus() {
 		return (IdName)getPropertyValue(Property.STATUS, IdName.NULL);
 	}
