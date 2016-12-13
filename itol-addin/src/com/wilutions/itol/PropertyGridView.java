@@ -17,7 +17,7 @@ import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
-import com.wilutions.itol.db.IssueHtmlEditor;
+import com.wilutions.itol.db.IssuePropertyEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
@@ -102,7 +102,7 @@ public class PropertyGridView {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "isPropertyForGrid=" + ret);
 		return ret;
 	}
-
+	
 	private void addProperty(Issue issue, PropertyClass pclass, int rowIndex) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addProperty(" + pclass);
 
@@ -110,62 +110,66 @@ public class PropertyGridView {
 		propGrid.add(label, 0, rowIndex);
 		GridPane.setValignment(label, VPos.TOP);
 
-		List<IdName> selectList = pclass.getSelectList();
-		Suggest<IdName> suggest = pclass.getAutoCompletionSuggest();
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList + ", suggest=" + suggest);
 
-		Property prop = issue.getCurrentUpdate().getProperty(pclass.getId());
-		if (prop != null && prop.getValue() == null) {
-			Object defaultValue = pclass.getDefaultValue();
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "defaultValue=" + defaultValue);
-			prop.setValue(defaultValue);
-		}
-
-		PropertyNode propNode = null;
-		switch (pclass.getType()) {
-		case PropertyClass.TYPE_ISO_DATE: case PropertyClass.TYPE_ISO_DATE_TIME:
-			propNode = makeDatePickerForProperty(issue, pclass);
-			break;
-		case PropertyClass.TYPE_BOOL:
-			propNode = makeCheckBoxForProperty(issue, pclass);
-			break;
-		case PropertyClass.TYPE_TEXT:
-			propNode = makeTextAreaForProperty(issue, pclass);
-			break;
-		// case PropertyClass.TYPE_INTEGER:
-		// ctrl = makeIntFieldForProperty(prop);
-		// break;
-		// case PropertyClass.TYPE_FLOAT:
-		// ctrl = makeFloatFieldForProperty(prop);
-		// break;
-		default: {
-			if (selectList != null) {
-				if (pclass.isArray()) {
-					propNode = makeChoiceBoxForPropertyArray(issue, pclass);
-//					if (selectList.size() > 3) {
-//					}
-//					else {
-//						ctrl = makeMultiListBoxForProperty(prop, issue, pclass);
-//					}
+		PropertyNode propNode = makeIssuePropertyEditor(issue, pclass);
+		if (propNode == null) {
+			
+			List<IdName> selectList = pclass.getSelectList();
+			Suggest<IdName> suggest = pclass.getAutoCompletionSuggest();
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList + ", suggest=" + suggest);
+	
+			Property prop = issue.getCurrentUpdate().getProperty(pclass.getId());
+			if (prop != null && prop.getValue() == null) {
+				Object defaultValue = pclass.getDefaultValue();
+				if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "defaultValue=" + defaultValue);
+				prop.setValue(defaultValue);
+			}
+	
+			switch (pclass.getType()) {
+			case PropertyClass.TYPE_ISO_DATE: case PropertyClass.TYPE_ISO_DATE_TIME:
+				propNode = makeDatePickerForProperty(issue, pclass);
+				break;
+			case PropertyClass.TYPE_BOOL:
+				propNode = makeCheckBoxForProperty(issue, pclass);
+				break;
+			case PropertyClass.TYPE_TEXT:
+				propNode = makeTextAreaForProperty(issue, pclass);
+				break;
+			// case PropertyClass.TYPE_INTEGER:
+			// ctrl = makeIntFieldForProperty(prop);
+			// break;
+			// case PropertyClass.TYPE_FLOAT:
+			// ctrl = makeFloatFieldForProperty(prop);
+			// break;
+			default: {
+				if (selectList != null) {
+					if (pclass.isArray()) {
+						propNode = makeChoiceBoxForPropertyArray(issue, pclass);
+	//					if (selectList.size() > 3) {
+	//					}
+	//					else {
+	//						ctrl = makeMultiListBoxForProperty(prop, issue, pclass);
+	//					}
+					}
+					else {
+						propNode = makeChoiceBoxForProperty(issue, pclass);
+					}
+				}
+				else if (suggest != null) {
+					if (pclass.isArray()) {
+						propNode = makeAutoCompletionNodeArray(issue, pclass);
+					}
+					else {
+						propNode = makeAutoCompletionNode(issue, pclass);
+					}
 				}
 				else {
-					propNode = makeChoiceBoxForProperty(issue, pclass);
+					propNode = makeTextFieldForProperty(issue, pclass);
 				}
 			}
-			else if (suggest != null) {
-				if (pclass.isArray()) {
-					propNode = makeAutoCompletionNodeArray(issue, pclass);
-				}
-				else {
-					propNode = makeAutoCompletionNode(issue, pclass);
-				}
-			}
-			else {
-				propNode = makeTextFieldForProperty(issue, pclass);
 			}
 		}
-		}
-
+		
 		Region ctrl = propNode.getNode();
 		ctrl.setMaxWidth(Double.MAX_VALUE);
 		ctrl.setPrefWidth(Double.MAX_VALUE);
@@ -375,7 +379,7 @@ public class PropertyGridView {
 		PropertyNode ret = null;
 		try {
 			IssueService srv = Globals.getIssueService();
-			IssueHtmlEditor editor = srv.getHtmlEditor(issueTaskPane, issue, pclass.getId());
+			IssuePropertyEditor editor = srv.getPropertyEditor(issueTaskPane, issue, pclass.getId());
 			
 			Control editorControl = (Control)editor.getNode();
 
@@ -576,6 +580,22 @@ public class PropertyGridView {
 		};
 		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeDatePickerForProperty");
+		return propNode;
+	}
+
+	private PropertyNode makeIssuePropertyEditor(Issue issue, PropertyClass pclass) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeIssuePropertyEditor(");
+		PropertyNode propNode = null;
+		final IssuePropertyEditor propEdit = Globals.getIssueService().getPropertyEditor(issueTaskPane, issue, pclass.getId());
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "propEdit=" + propEdit);
+		if (propEdit != null) {
+			propNode = new PropertyNode(issue, pclass, (Region)propEdit.getNode()) {
+				public void updateData(boolean save) {
+					propEdit.updateData(save);
+				}
+			};
+		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeIssuePropertyEditor");
 		return propNode;
 	}
 

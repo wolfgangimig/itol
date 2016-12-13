@@ -3,22 +3,12 @@ package com.wilutions.itol.db;
 import javafx.scene.Node;
 import javafx.scene.control.TextArea;
 
-public class IssueHtmlEditorTextArea implements IssueHtmlEditor {
+public class IssueEditorTextArea implements IssuePropertyEditor {
 	
 	private TextArea textArea = new TextArea();
 	
-	public IssueHtmlEditorTextArea() {
+	public IssueEditorTextArea() {
 		textArea.setMaxHeight(Double.MAX_VALUE);
-	}
-
-	@Override
-	public String getText() {
-		return textArea.getText();
-	}
-
-	@Override
-	public void setText(String text) {
-		textArea.setText(text);
 	}
 
 	@Override
@@ -34,5 +24,9 @@ public class IssueHtmlEditorTextArea implements IssueHtmlEditor {
 	@Override
 	public void updateData(boolean save) {
 		
+	}
+
+	@Override
+	public void setIssue(Issue issue) {
 	}
 }

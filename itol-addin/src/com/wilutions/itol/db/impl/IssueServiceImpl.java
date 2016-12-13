@@ -29,7 +29,7 @@ import com.wilutions.itol.db.FindIssuesInfo;
 import com.wilutions.itol.db.FindIssuesResult;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
-import com.wilutions.itol.db.IssueHtmlEditor;
+import com.wilutions.itol.db.IssuePropertyEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
@@ -215,7 +215,7 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public IssueHtmlEditor getHtmlEditor(Object ownerWindow, Issue issue, String propertyId) throws IOException {
+	public IssuePropertyEditor getPropertyEditor(Object ownerWindow, Issue issue, String propertyId) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -39,7 +39,7 @@ public interface IssueService {
 //
 //	List<IdName> getMilestones(Issue issue) throws Exception;
 
-	IssueHtmlEditor getHtmlEditor(Object parent, Issue issue, String propertyId) throws Exception;
+	IssuePropertyEditor getPropertyEditor(Object parent, Issue issue, String propertyId) throws Exception;
 
 	Issue createIssue(String subject, String description, String defaultIssueAsString) throws Exception;
 

@@ -12,14 +12,13 @@ package com.wilutions.itol.db;
 
 import javafx.scene.Node;
 
-public interface IssueHtmlEditor {
+public interface IssuePropertyEditor {
 
-	String getText();
-	void setText(String text);
-	
 	Node getNode();
 	
 	void setFocus();
 	
 	void updateData(boolean save);
+	
+	void setIssue(Issue issue);
 }

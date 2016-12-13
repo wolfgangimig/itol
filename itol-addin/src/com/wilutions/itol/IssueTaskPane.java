@@ -32,8 +32,7 @@ import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
-import com.wilutions.itol.db.IssueHtmlEditor;
-import com.wilutions.itol.db.IssueHtmlEditorTextArea;
+import com.wilutions.itol.db.IssuePropertyEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackImpl;
@@ -168,9 +167,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private Attachments observableAttachments = new Attachments();
 
 	private PropertyGridView propGridView;
-
-	private IssueHtmlEditor descriptionHtmlEditor = new IssueHtmlEditorTextArea();
-	private IssueHtmlEditor notesHtmlEditor = new IssueHtmlEditorTextArea();
 
 	private IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
@@ -760,16 +756,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private void saveDescription() {
-		descriptionHtmlEditor.updateData(true);
-//		String text = descriptionHtmlEditor.getText();
-//		issue.setDescription(text);
+	private void saveDescription() throws Exception {
+		IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
+		editor.updateData(true);
 	}
 
-	private void saveNotes() {
-		notesHtmlEditor.updateData(true);
-//		String text = notesHtmlEditor.getText();
-//		issue.setPropertyString(Property.NOTES, text);
+	private void saveNotes() throws Exception {
+		IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
+		editor.updateData(true);
 	}
 
 	private void saveSubject() {
@@ -913,19 +907,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		edSubject.setText(text);
 	}
 
-	private void initDescription() throws IOException {
+	private void initDescription() throws Exception {
 		if (issue != null) {
-//			String text = issue.getDescription();
-//			descriptionHtmlEditor.setText(text);
-			descriptionHtmlEditor.updateData(false);
+			IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
+			editor.updateData(false);
 		}
 	}
 
-	private void initNotes() throws IOException {
+	private void initNotes() throws Exception {
 		if (issue != null) {
-//			String text = issue.getPropertyString(Property.NOTES, "");
-//			notesHtmlEditor.setText(text);
-			notesHtmlEditor.updateData(false);
+			IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
+			editor.updateData(false);
 		}
 	}
 
@@ -976,13 +968,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
-		descriptionHtmlEditor = Globals.getIssueService().getHtmlEditor(this, issue, Property.DESCRIPTION);
+		IssuePropertyEditor descriptionHtmlEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
 		VBox.setVgrow(descriptionHtmlEditor.getNode(), Priority.ALWAYS);
 		boxDescription.getChildren().clear();
 		boxDescription.getChildren().add(descriptionHtmlEditor.getNode());
 		boxDescription.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 
-		notesHtmlEditor = Globals.getIssueService().getHtmlEditor(this, issue, Property.NOTES);
+		IssuePropertyEditor notesHtmlEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
 		VBox.setVgrow(notesHtmlEditor.getNode(), Priority.ALWAYS);
 		boxNotes.getChildren().clear();
 		boxNotes.getChildren().add(notesHtmlEditor.getNode());
@@ -1215,43 +1207,55 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		tabpIssue.getSelectionModel().select(idx);
 
 		// Determine which control should receive the focus
-		Object node = null;
-		switch (idx) {
-		case 0: // DESCRIPTION
-			node = descriptionHtmlEditor;
-			break;
-		case 1: // PROPERTIES
-			node = propGridView.getFirstControl();
-			break;
-		case 2: // ATTACHMENTS
-			node = bnAddAttachment;
-			break;
-		case 3: // HISTORY
-			// Focus should stay on the next button
-			break;
-		case 4: // NOTES
-			node = notesHtmlEditor;
-			break;
+		try {
+			Node node = null;
+			switch (idx) {
+			case 0: // DESCRIPTION
+			{
+				IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
+				node = editor.getNode();
+				break;
+			}
+			case 1: // PROPERTIES
+				node = propGridView.getFirstControl();
+				break;
+			case 2: // ATTACHMENTS
+				node = bnAddAttachment;
+				break;
+			case 3: // HISTORY
+				// Focus should stay on the next button
+				break;
+			case 4: // NOTES
+			{
+				IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
+				node = editor.getNode();
+				break;
+			}
+			}
+		
+			// Focus control
+			if (node != null) {
+				final Object nodeF = node;
+				BackgTask.run(() -> {
+					try {
+						Thread.sleep(200);
+						Platform.runLater(() -> {
+							if (nodeF instanceof IssuePropertyEditor) {
+								((IssuePropertyEditor)nodeF).setFocus();
+							}
+							else {
+								((Node)nodeF).requestFocus();
+							}
+						});
+					}
+					catch (InterruptedException e) {
+					}
+				});
+			}
+			
 		}
-
-		// Focus control
-		if (node != null) {
-			final Object nodeF = node;
-			BackgTask.run(() -> {
-				try {
-					Thread.sleep(200);
-					Platform.runLater(() -> {
-						if (nodeF instanceof IssueHtmlEditor) {
-							((IssueHtmlEditor)nodeF).setFocus();
-						}
-						else {
-							((Node)nodeF).requestFocus();
-						}
-					});
-				}
-				catch (InterruptedException e) {
-				}
-			});
+		catch (Exception e) {
+			log.log(Level.WARNING, "Failed to set focus", e);
 		}
 	}
 

@@ -8,7 +8,7 @@ import javafx.scene.Node;
 import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
 
-public class IssueHtmlEditorWebView implements IssueHtmlEditor {
+public class IssueEditorWebView implements IssuePropertyEditor {
 	
 	private Logger log = Logger.getLogger("IssueHtmlEditorWebView");
 	
@@ -48,24 +48,6 @@ public class IssueHtmlEditorWebView implements IssueHtmlEditor {
 	}
 
 	@Override
-	public String getText() {
-		String text = "";
-		JSObject elm = getTextarea();
-		if (elm != null) {
-			text = (String) elm.getMember("value");
-		}
-		return text;
-	}
-
-	@Override
-	public void setText(String text) {
-		JSObject elm = getTextarea();
-		if (elm != null) {
-			elm.setMember("value", text);
-		}
-	}
-
-	@Override
 	public Node getNode() {
 		return webView;
 	}
@@ -92,6 +74,10 @@ public class IssueHtmlEditorWebView implements IssueHtmlEditor {
 	@Override
 	public void updateData(boolean save) {
 		
+	}
+
+	@Override
+	public void setIssue(Issue issue) {
 	}
 
 }
