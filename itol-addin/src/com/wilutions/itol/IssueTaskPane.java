@@ -643,8 +643,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void detectIssueModifiedStart() {
+		firstModifiedCheck = true;
+		detectIssueModifiedContinue();
+	}
+
+	private void detectIssueModifiedContinue() {
 		if (detectIssueModifiedTimer != null) {
-			firstModifiedCheck = true;
 			detectIssueModifiedTimer.play();
 		}
 	}
@@ -929,23 +933,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		List<IdName> items = pclass != null ? pclass.getSelectList() : new ArrayList<IdName>(0);
 		
 		cb.setVisible(!items.isEmpty());
-
+		
 		if (!items.isEmpty()) {
 		
 			autoCompletionBinding.setSuggest(pclass.getAutoCompletionSuggest());
 	
 			IdName idn = issue.getPropertyIdName(propertyId, IdName.NULL);
 			autoCompletionBinding.select(idn);
-			
-//			if (prop != null) {
-//				String id = (String) prop.getValue();
-//				for (IdName idn : items) {
-//					if (idn.getId().equals(id)) {
-//						autoCompletionBinding.select(idn);
-//						break;
-//					}
-//				}
-//			}
 		}
 		
 	}
@@ -1096,7 +1090,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		Object owner = getDialogOwner();
 		com.wilutions.joa.fx.MessageBox.create(owner).title(title).text(text).button(1, ok).bdefault()
 				.show((btn, ex) -> {
-					detectIssueModifiedStart();
+					detectIssueModifiedContinue();
 				});
 	}
 
@@ -1405,11 +1399,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 						log.log(Level.SEVERE, "Failed to update issue", e);
 
 						String text = resb.getString("Error.FailedToUpdateIssue");
-						text += " " + e.toString();
+						String msg = e.getMessage();
+						if (msg.isEmpty()) msg = e.toString();
+						text += " " + msg;
 						showMessageBoxError(text);
 
 						progressCallback.setFinished();
-						detectIssueModifiedStart();
+						detectIssueModifiedContinue();
 					}
 				}
 			});
@@ -1419,11 +1415,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			log.log(Level.SEVERE, "Failed to update issue", e);
 
 			String text = resb.getString("Error.FailedToUpdateIssue");
-			text += " " + e.toString();
+			String msg = e.getMessage();
+			if (msg.isEmpty()) msg = e.toString();
+			text += " " + msg;
 			showMessageBoxError(text);
 
 			progressCallback.setFinished();
-			detectIssueModifiedStart();
+			detectIssueModifiedContinue();
 		}
 	}
 
