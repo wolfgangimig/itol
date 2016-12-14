@@ -170,9 +170,12 @@ public class PropertyGridView {
 			}
 		}
 		
-		Region ctrl = propNode.getNode();
-		ctrl.setMaxWidth(Double.MAX_VALUE);
-		ctrl.setPrefWidth(Double.MAX_VALUE);
+		Node ctrl = propNode.getNode();
+		if (ctrl instanceof Region) {
+			Region region = (Region)ctrl;
+			region.setMaxWidth(Double.MAX_VALUE);
+			region.setPrefWidth(Double.MAX_VALUE);
+		}
 		propGrid.add(ctrl, 1, rowIndex);
 
 		if (rowIndex == 0) {
@@ -239,8 +242,11 @@ public class PropertyGridView {
 				}
 			});
 			
-			Region ed = makeAutoCompletionNode(issue, pclass).getNode();
-			ed.setMaxWidth(Double.MAX_VALUE);
+			Node ed = makeAutoCompletionNode(issue, pclass).getNode();
+			if (ed instanceof Region) {
+				((Region)ed).setMaxWidth(Double.MAX_VALUE);
+			}
+			
 			HBox.setHgrow(ed, Priority.ALWAYS);
 			Button bnAdd2 = new Button("+");
 			bnAdd2.setPrefWidth(25);
@@ -589,7 +595,21 @@ public class PropertyGridView {
 		final IssuePropertyEditor propEdit = Globals.getIssueService().getPropertyEditor(issueTaskPane, issue, pclass.getId());
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "propEdit=" + propEdit);
 		if (propEdit != null) {
-			propNode = new PropertyNode(issue, pclass, (Region)propEdit.getNode()) {
+
+			Node control = propEdit.getNode();
+			if (pclass.getType() == PropertyClass.TYPE_TEXT) {
+				VBox.setVgrow(control, Priority.ALWAYS);
+				VBox vbox = new VBox();
+				vbox.setMinHeight(100);
+				vbox.setMaxHeight(Double.MAX_VALUE);
+				vbox.setPrefHeight(100);
+				vbox.getChildren().clear();
+				vbox.getChildren().add(control);
+				vbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+				control = vbox;
+			}
+			
+			propNode = new PropertyNode(issue, pclass, control) {
 				public void updateData(boolean save) {
 					propEdit.updateData(save);
 				}

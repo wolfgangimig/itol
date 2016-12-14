@@ -3,7 +3,7 @@ package com.wilutions.itol;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.PropertyClass;
 
-import javafx.scene.layout.Region;
+import javafx.scene.Node;
 
 /**
  * Item in PropertyGridView
@@ -13,9 +13,9 @@ public abstract class PropertyNode {
 	
 	private Issue issue;
 	private PropertyClass pclass;
-	private Region node;
+	private Node node;
 
-	public PropertyNode(Issue issue, PropertyClass pclass, Region node) {
+	public PropertyNode(Issue issue, PropertyClass pclass, Node node) {
 		this.issue = issue;
 		this.pclass = pclass;
 		this.node = node;
@@ -31,7 +31,7 @@ public abstract class PropertyNode {
 		return pclass;
 	}
 
-	public Region getNode() {
+	public Node getNode() {
 		return node;
 	}
 
