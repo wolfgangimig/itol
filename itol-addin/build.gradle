@@ -34,7 +34,7 @@ repositories {
 
 dependencies {
 	compile project(":itol-db")
-	compile name: 'joa'
+	compile project(":joa")
 	
 	// UI controls http://fxexperience.com/controlsfx/
 	compile group: 'org.controlsfx', name: 'controlsfx', version: '8.40.12'

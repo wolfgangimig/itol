@@ -2,3 +2,7 @@
 include ("itol-db") 
 project(":itol-db").projectDir = new File("$settingsDir/../itol-db")
 
+
+include ("joa") 
+project(":joa").projectDir = new File("$settingsDir/../../joa")
+
