@@ -900,10 +900,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initProperties() throws Exception {
 		if (propGridView == null) {
-			propGridView = new PropertyGridView(this, propGrid);
+			propGridView = new PropertyGridView(this, tpProperties, propGrid);
 		}
 		propGridView.initProperties(issue);
 		propGridView.updateData(false);
+	}
+
+	public PropertyGridView getPropGridView() {
+		return propGridView;
 	}
 
 	private void initSubject() {
@@ -966,13 +970,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		VBox.setVgrow(descriptionHtmlEditor.getNode(), Priority.ALWAYS);
 		boxDescription.getChildren().clear();
 		boxDescription.getChildren().add(descriptionHtmlEditor.getNode());
-		boxDescription.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+		//boxDescription.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 
 		IssuePropertyEditor notesHtmlEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
 		VBox.setVgrow(notesHtmlEditor.getNode(), Priority.ALWAYS);
 		boxNotes.getChildren().clear();
 		boxNotes.getChildren().add(notesHtmlEditor.getNode());
-		boxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+		//boxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
 
 		modified = false;
 
@@ -1611,4 +1615,5 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public Attachments getObservableAttachments() {
 		return observableAttachments; 
 	}
+	
 }

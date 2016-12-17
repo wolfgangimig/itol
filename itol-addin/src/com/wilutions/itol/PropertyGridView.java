@@ -29,6 +29,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -40,6 +42,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.ColumnConstraints;
@@ -54,18 +57,42 @@ public class PropertyGridView {
 
 	private final IssueTaskPane issueTaskPane;
 	private final GridPane propGrid;
+	private final Tab tabProperties;
+	private Node scrollPane;
 	private final ResourceBundle resb = Globals.getResourceBundle();
 	private Node firstControl;
 	private Logger log = Logger.getLogger("PropertyGridView");
 
 	private final List<PropertyNode> propNodes = new ArrayList<>();
 
-	public PropertyGridView(IssueTaskPane issueTaskPane, GridPane propGrid) throws IOException {
+	public PropertyGridView(IssueTaskPane issueTaskPane, Tab tabProperties, GridPane propGrid) throws IOException {
 		this.issueTaskPane = issueTaskPane;
 		this.propGrid = propGrid;
+		this.tabProperties = tabProperties;
+		this.scrollPane = tabProperties.getContent();
 		ColumnConstraints constr0 = propGrid.getColumnConstraints().get(0);
 		constr0.setPercentWidth(38);
 		propGrid.setVgap(8);
+	}
+	
+	public void pushPropertyGrid(Node replaceBy, String title) {
+		VBox vbox = new VBox();
+		vbox.setPadding(new Insets(8));
+		
+		VBox.setVgrow(replaceBy, Priority.ALWAYS);
+		vbox.getChildren().addAll(replaceBy);
+		
+		vbox.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
+		vbox.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+		vbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+
+		VBox.setVgrow(vbox, Priority.ALWAYS);
+		
+		tabProperties.setContent(vbox);
+	}
+	
+	public void popPropertyGrid() {
+		tabProperties.setContent(scrollPane);
 	}
 
 	public void initProperties(Issue issue) throws Exception {

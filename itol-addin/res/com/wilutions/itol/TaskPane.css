@@ -50,3 +50,11 @@
     -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.5) , 10, 0.0 , 0 , 3 );
     -fx-font-size: 1.0em;
 }
+
+.deleteImageButton {
+  -fx-background-color:transparent;
+}
+
+.deleteImageButton:hover {
+  -fx-background-color:#dae7f3;
+}
