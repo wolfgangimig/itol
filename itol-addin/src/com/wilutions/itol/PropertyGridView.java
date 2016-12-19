@@ -593,7 +593,7 @@ public class PropertyGridView {
 			public void updateData(boolean save) {
 				if (save) {
 					LocalDate ldate = ctrl.getValue();
-					String iso = "";
+					String iso = null;
 					if (ldate != null) {
 						iso = ldate.format(DateTimeFormatter.ISO_LOCAL_DATE);
 					}
