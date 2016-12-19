@@ -30,6 +30,7 @@ public class MailAttachmentHelper {
 	}
 
 	public void initialUpdate(IssueMailItem mailItem, Issue issue) throws IOException {
+		if (log.isLoggable(Level.FINE)) log.fine("initialUpdate(mailItem=" + mailItem + ", issue=" + issue);
 		releaseResources();
 
 		this.mailItem = mailItem;
@@ -41,6 +42,7 @@ public class MailAttachmentHelper {
 				initialUpdateNewIssueAttachments(issue);
 			}
 		}
+		if (log.isLoggable(Level.FINE)) log.fine(")initialUpdate");
 	}
 
 	private File getTempDir() {
@@ -182,14 +184,14 @@ public class MailAttachmentHelper {
 	public class MailAttAtt extends Attachment {
 
 		private final com.wilutions.mslib.outlook.Attachment matt;
+		private final File dir = getTempDir();
 
 		private MailAttAtt(com.wilutions.mslib.outlook.Attachment matt) {
 			this.matt = matt;
-			File mattFile = new File(getTempDir(), matt.getFileName());
 			super.setSubject(matt.getFileName());
-			super.setContentType(getFileContentType(mattFile));
+			super.setContentType(getFileContentType(new File(getTempDir(), matt.getFileName())));
 			super.setContentLength(matt.getSize());
-			super.setFileName(mattFile.getAbsolutePath());
+			super.setFileName(matt.getFileName());
 		}
 
 		@Override
@@ -210,7 +212,7 @@ public class MailAttachmentHelper {
 		}
 
 		private File save() {
-			final File mattFile = new File(getFileName());
+			final File mattFile = new File(dir, getFileName());
 			if (!mattFile.exists()) {
 				resourcesToRelease.add(() -> mattFile.delete());
 				System.out.println("save attachment to " + mattFile);
@@ -230,6 +232,7 @@ public class MailAttachmentHelper {
 
 		private final IssueMailItem mailItem;
 		private final String ext;
+		private final File dir = getTempDir();
 
 		private MailAtt(IssueMailItem mailItem, String ext) {
 			this.mailItem = mailItem;
@@ -244,12 +247,11 @@ public class MailAttachmentHelper {
 
 			OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
 			String msgFileName = MsgFileTypes.makeMsgFileName(subject, saveAsType);
-			File msgFile = new File(getTempDir(), msgFileName);
 
 			super.setSubject(subject);
-			super.setContentType(getFileContentType(msgFile));
+			super.setContentType(getFileContentType(new File(dir, msgFileName)));
 			super.setContentLength(-1);
-			super.setFileName(msgFile.getAbsolutePath());
+			super.setFileName(msgFileName);
 
 		}
 
@@ -277,7 +279,7 @@ public class MailAttachmentHelper {
 
 		private File save() {
 
-			final File msgFile = new File(getFileName());
+			final File msgFile = new File(dir, getFileName());
 			try {
 
 				if (getContentLength() < 0) {
@@ -286,8 +288,10 @@ public class MailAttachmentHelper {
 
 					resourcesToRelease.add(() -> msgFile.delete());
 
-					System.out.println("save mail to " + msgFile);
+					long t1 = System.currentTimeMillis();
 					mailItem.SaveAs(msgFile.getAbsolutePath(), saveAsType);
+					long t2 = System.currentTimeMillis();
+					log.info("[" + (t2-t1) + "] Save mail to " + msgFile);
 
 					super.setContentLength(msgFile.length());
 					super.setUrl(getFileUrl(msgFile));
@@ -310,7 +314,7 @@ public class MailAttachmentHelper {
 		private FileAtt(File file) {
 			this.file = file;
 			super.setSubject(file.getName());
-			super.setFileName(MailAttachmentHelper.getFileName(file.getAbsolutePath()));
+			super.setFileName(file.getName());
 			super.setUrl(file.toURI().toString());
 			super.setContentLength(file.length());
 			super.setContentType(getFileContentType(file));
@@ -338,33 +342,29 @@ public class MailAttachmentHelper {
 		return type.getId();
 	}
 
-	public void showAttachment(Attachment att, ProgressCallback cb) throws IOException {
+	public void showAttachment(Attachment att, ProgressCallback cb) throws Exception {
 		String url = downloadAttachment(att, cb);
 		IssueApplication.showDocument(url);
 	}
 
-	public String downloadAttachment(Attachment att, ProgressCallback cb) {
+	public String downloadAttachment(Attachment att, ProgressCallback cb) throws Exception {
 		String url = att.getUrl();
 		if (!url.startsWith(FILE_URL_PREFIX)) {
-			try {
-				String fileName = Globals.getIssueService().downloadAttachment(url, cb);
-				File srcFile = new File(fileName);
-				if (srcFile.exists()) {
-					for (int retries = 0; retries < 100; retries++) {
-						File destFile = makeTempFile(att.getFileName(), retries);
-						destFile.delete();
-						if (srcFile.renameTo(destFile)) {
-							fileName = destFile.getAbsolutePath();
-							url = fileName;
-							break;
-						}
+			String fileName = Globals.getIssueService().downloadAttachment(url, cb);
+			File srcFile = new File(fileName);
+			if (srcFile.exists()) {
+				for (int retries = 0; retries < 100; retries++) {
+					File destFile = makeTempFile(att.getFileName(), retries);
+					destFile.delete();
+					if (srcFile.renameTo(destFile)) {
+						fileName = destFile.getAbsolutePath();
+						url = FILE_URL_PREFIX + fileName;
+						break;
 					}
 				}
 			}
-			catch (Exception e) {
-				log.log(Level.INFO, "Cannot download attachment=" + url, e);
-			}
 		}
+		if (cb != null) cb.setFinished();
 		return url;
 	}
 
