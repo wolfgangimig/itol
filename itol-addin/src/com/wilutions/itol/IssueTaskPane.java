@@ -166,6 +166,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private SimpleIntegerProperty updateBindingToAttachmentList = new SimpleIntegerProperty();
 	private Attachments observableAttachments = new Attachments();
 
+	private IssuePropertyEditor descriptionEditor;
+	private IssuePropertyEditor notesEditor;
 	private PropertyGridView propGridView;
 
 	private IssueMailItem mailItem;
@@ -481,32 +483,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	@Override
 	public void showAsync(final CustomTaskPane taskPane, AsyncResult<Boolean> asyncResult) throws ComException {
-		try {
-
-			super.showAsync(taskPane, (succ, ex) -> {
-				if (succ) {
-					try {
-						initDescription();
-						initNotes();
-					}
-					catch (Throwable e) {
-						log.log(Level.WARNING, "", e);
-						ex = e;
-					}
-				}
-
-				if (asyncResult != null) {
-					asyncResult.setAsyncResult(succ, ex);
-				}
-			});
-
-		}
-		catch (Throwable e) {
-			log.log(Level.WARNING, "", e);
-			if (asyncResult != null) {
-				asyncResult.setAsyncResult(Boolean.FALSE, e);
-			}
-		}
+		super.showAsync(taskPane, asyncResult);
 	}
 
 	@Override
@@ -764,13 +741,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void saveDescription() throws Exception {
-		IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
-		editor.updateData(true);
+		descriptionEditor.updateData(true);
 	}
 
 	private void saveNotes() throws Exception {
-		IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
-		editor.updateData(true);
+		notesEditor.updateData(true);
 	}
 
 	private void saveSubject() {
@@ -933,8 +908,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void initDescription() throws Exception {
 		long t1 = System.currentTimeMillis();
 		if (issue != null) {
-			IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
-			editor.updateData(false);
+			descriptionEditor.updateData(false);
 		}
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] initDescription()");
@@ -943,8 +917,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void initNotes() throws Exception {
 		long t1 = System.currentTimeMillis();
 		if (issue != null) {
-			IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
-			editor.updateData(false);
+			notesEditor.updateData(false);
 		}
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] initNotes()");
@@ -974,6 +947,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void initialUpdate() throws Exception {
 		long t1 = System.currentTimeMillis();
 		
+		// Create a new binding for attachment modifications.
+		// This avoids too many listeners for attachment modifications, since
+		// listeners were never removed.
 		updateBindingToAttachmentList = new SimpleIntegerProperty();
 		
 		tpNotes.setStyle("-fx-font-weight:normal;");
@@ -992,17 +968,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 
-		IssuePropertyEditor descriptionHtmlEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
-		VBox.setVgrow(descriptionHtmlEditor.getNode(), Priority.ALWAYS);
+		descriptionEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
+		VBox.setVgrow(descriptionEditor.getNode(), Priority.ALWAYS);
 		boxDescription.getChildren().clear();
-		boxDescription.getChildren().add(descriptionHtmlEditor.getNode());
-		//boxDescription.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+		boxDescription.getChildren().add(descriptionEditor.getNode());
 
-		IssuePropertyEditor notesHtmlEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
-		VBox.setVgrow(notesHtmlEditor.getNode(), Priority.ALWAYS);
+		notesEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
+		VBox.setVgrow(notesEditor.getNode(), Priority.ALWAYS);
 		boxNotes.getChildren().clear();
-		boxNotes.getChildren().add(notesHtmlEditor.getNode());
-		//boxNotes.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+		boxNotes.getChildren().add(notesEditor.getNode());
 
 		modified = false;
 
@@ -1040,10 +1014,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			BackgTask.run(() -> {
 				try {
 					attachmentHelper.showAttachment(att, cb);
-					cb.setFinished();
 				}
 				catch (Exception e) {
 					showMessageBoxError(e.toString());
+				}
+				finally {
+					cb.setFinished();
 				}
 			});
 		}

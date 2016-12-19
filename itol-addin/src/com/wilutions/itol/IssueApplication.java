@@ -10,8 +10,10 @@
  */
 package com.wilutions.itol;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -101,7 +103,6 @@ public class IssueApplication extends AddinApplication {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "start(");
-		instance = this;
 		super.start(primaryStage);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")start");
 	}
@@ -109,7 +110,6 @@ public class IssueApplication extends AddinApplication {
 	@Override
 	protected void register(boolean userNotMachine, String execPath) {
 		try {
-			instance = this;
 			super.register(userNotMachine, execPath);
 
 			String linkName = registerAutostart(true);
@@ -128,8 +128,6 @@ public class IssueApplication extends AddinApplication {
 	@Override
 	protected void unregister(boolean userNotMachine) {
 		try {
-			instance = this;
-
 			String linkName = registerAutostart(false);
 
 			if (linkName != null && linkName.length() != 0) {
@@ -144,10 +142,19 @@ public class IssueApplication extends AddinApplication {
 		}
 	}
 
-	private static volatile IssueApplication instance;
-
 	public static void showDocument(String url) {
-		instance.getHostServices().showDocument(url);
+		try {
+			if (url.startsWith("file:/")) {
+				// AWT opens the 
+				String filePath = url.substring(6);
+					Desktop.getDesktop().open(new File(filePath));
+			}
+			else {
+				Desktop.getDesktop().browse(new URI(url));
+			}
+		} catch (Exception e) {
+			log.warning("Failed to opent document=" + url);
+		}
 	}
 
 	private String registerAutostart(boolean registerNotUnregister) {
