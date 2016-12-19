@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 public class HttpClient {
 
@@ -99,6 +100,8 @@ public class HttpClient {
 				conn.setRequestProperty("Content-Length", Long.toString(contentLength));
 			}
 
+			conn.addRequestProperty("Accept-Encoding", "gzip");
+			
 			for (String header : headers) {
 				int p = header.indexOf(":");
 				String key = header.trim();
@@ -117,7 +120,7 @@ public class HttpClient {
 					}
 				}
 			}
-
+			
 			log.info(method + " " + url + " #" + contentLength);
 
 			if (content != null) {
@@ -202,23 +205,24 @@ public class HttpClient {
 			}
 
 			try {
-				boolean isStringContent = false;
-				for (String header : responseHeaders) {
-					if (header.startsWith("Content-Type")) {
-						isStringContent = header.toLowerCase().contains("json");
-						if (!isStringContent) isStringContent = header.toLowerCase().contains("text/html");
-						break;
-					}
+				String contentType = Default.value(conn.getHeaderField("Content-Type")).toLowerCase();
+				boolean isStringContent = contentType.contains("json") || contentType.contains("text/html");
+				
+				InputStream istream = conn.getInputStream();
+				String contentEncoding = conn.getHeaderField("Content-Encoding");
+				boolean isGZIP = Default.value(contentEncoding).toLowerCase().contains("gzip");
+				if (isGZIP) {
+					istream = new GZIPInputStream(istream, 10 * 1000); 
 				}
 
 				if (log.isLoggable(Level.FINE)) log.fine("read from input...");
 				long responseContentLength = 0;
 				if (isStringContent) {
-					ret.setContent(readStringFromStream(conn.getInputStream(), contentLength, subcbDownload));
+					ret.setContent(readStringFromStream(istream, contentLength, subcbDownload));
 					responseContentLength = ret.getContent().length();
 				}
 				else {
-					ret.setFile(readFileFromStream(conn.getInputStream(), contentLength, subcbDownload));
+					ret.setFile(readFileFromStream(istream, contentLength, subcbDownload));
 					responseContentLength = ret.getFile().length();
 				}
 				
