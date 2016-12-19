@@ -71,10 +71,7 @@ public class Attachment {
 				if (ret) {
 					ret = getFileName().equals(rhs.getFileName());
 					if (ret) {
-						ret = getUrl().equals(rhs.getUrl());
-						if (ret) {
-							ret = deleted == rhs.deleted;
-						}
+						ret = deleted == rhs.deleted;
 					}
 				}
 			}
