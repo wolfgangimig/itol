@@ -55,7 +55,7 @@ public interface IssueService {
 
 	Issue updateIssue(Issue iss, List<String> modifiedProperties, ProgressCallback cb) throws Exception;
 
-	Issue readIssue(String issueId) throws Exception;
+	Issue readIssue(String issueId, ProgressCallback cb) throws Exception;
 	
 	String getDefaultIssueAsString(Issue iss) throws Exception;
 	

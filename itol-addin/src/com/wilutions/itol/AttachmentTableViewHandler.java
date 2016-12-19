@@ -39,7 +39,7 @@ public class AttachmentTableViewHandler {
 	private final static Logger log = Logger.getLogger("AttachmentTableViewHandler");
 	
 	public static void apply(MailAttachmentHelper attachmentHelper, TableView<Attachment> table, Attachments observableAttachments) {
-
+		long t1 = System.currentTimeMillis();
 		table.setItems(observableAttachments.getObservableList());
 
 		ResourceBundle resb = Globals.getResourceBundle();
@@ -263,6 +263,8 @@ public class AttachmentTableViewHandler {
 
 		});
 		
+		long t2 = System.currentTimeMillis();
+		log.info("[" + (t2-t1) + "] apply(observableAttachments=" + observableAttachments + ")");
 	}
 
 	public static void paste(TableView<Attachment> table, Attachments attachments) {
@@ -276,7 +278,7 @@ public class AttachmentTableViewHandler {
 		if (log.isLoggable(Level.FINE)) log.fine(")paste");
 	}
 
-	public static void copy(TableView<Attachment> table, MailAttachmentHelper attachmentHelper, ProgressCallback cb) {
+	public static void copy(TableView<Attachment> table, MailAttachmentHelper attachmentHelper, ProgressCallback cb) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("copy(");
 		// http://stackoverflow.com/questions/31798646/can-java-system-clipboard-copy-a-file
 		final String FILE_URL_PREFIX = MailAttachmentHelper.FILE_URL_PREFIX;

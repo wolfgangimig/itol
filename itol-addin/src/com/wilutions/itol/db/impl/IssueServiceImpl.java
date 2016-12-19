@@ -149,7 +149,7 @@ public class IssueServiceImpl implements IssueService {
 		// TODO Auto-generated method stub
 	}
 
-	public Issue readIssue(String issueId) {
+	public Issue readIssue(String issueId, ProgressCallback cb) {
 		return issues.get(issueId);
 	}
 

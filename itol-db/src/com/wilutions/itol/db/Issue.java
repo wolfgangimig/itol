@@ -263,4 +263,10 @@ public class Issue implements Serializable {
 		return ret;
 	}
 
+	@Override
+	public String toString() {
+		return "[id=" + id + ", subject=" + getSubject() + "]";
+	}
+
+	
 }

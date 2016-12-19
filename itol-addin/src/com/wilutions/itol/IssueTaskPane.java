@@ -367,7 +367,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		Issue ret = null;
 
 		try {
-			final Issue issue = srv.readIssue(issueId);
+			final Issue issue = srv.readIssue(issueId, new MyProgressCallback());
 
 			Date lastModified = issue.getLastModified();
 
@@ -694,6 +694,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		}
 		else {
+			long t1 = System.currentTimeMillis();
 
 			initIssueId();
 
@@ -719,6 +720,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initHistory();
 
+			long t2 = System.currentTimeMillis();
+			log.info("[" + (t2-t1) + "] innternalUpdateData(saveAndValidate=" + saveAndValidate + ")");
 		}
 	}
 
@@ -792,6 +795,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initAttachments() {
+		long t1 = System.currentTimeMillis();
 		if (tabAttachmentsApplyHandler) {
 
 			// Copy attachments to backing list.
@@ -827,23 +831,24 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			});
 			
 			tabAttachments.setOnKeyPressed((keyEvent) -> {
-				if (keyEvent.getCode() == KeyCode.ENTER) {
+				switch (keyEvent.getCode()) {
+				case ENTER:
 					showSelectedIssueAttachment();
-				}
-				else if (keyEvent.getCode() == KeyCode.CONTEXT_MENU) {
+					break;
+				case CONTEXT_MENU:
 					showTabAttachmentsContextMenu(-1, -1);
-				}
-				// CTRL-V -> paste from Clipboard
-				else if (keyEvent.getCode() == KeyCode.V) {
+					break;
+				case V:
 					if (keyEvent.isControlDown()) {
 						AttachmentTableViewHandler.paste(tabAttachments, observableAttachments);
 					}
-				}
-				// CTRL-C -> copy to Clipboard
-				else if (keyEvent.getCode() == KeyCode.C) {
+					break;
+				case C:
 					if (keyEvent.isControlDown()) {
-						AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, new MyProgressCallback());
+						copySelectedAttachmentsToClipboard();
 					}
+					break;
+				default:
 				}
 			});
 
@@ -881,16 +886,26 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 
 		fireUpdateBindingToAttachmentList();
+		long t2 = System.currentTimeMillis();
+		log.info("[" + (t2-t1) + "] initAttachments()");
+	}
+	
+	private void copySelectedAttachmentsToClipboard() {
+		try {
+			AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, new MyProgressCallback());
+		} catch (Exception e) {
+			log.log(Level.WARNING, "Failed to copy attachments.", e);
+			showMessageBoxError("Failed to copy attachments. " + e);
+		}
 	}
 	
 	private void showTabAttachmentsContextMenu(double screenX, double screenY) {
 		standardContextMenu
 		.acceptedClipboardDataFlavors(DataFlavor.imageFlavor, DataFlavor.javaFileListFlavor)
 		.showCut(false).showCopy(!observableAttachments.isEmpty())
-		.onCopy((event) -> AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, new MyProgressCallback()))
+		.onCopy((event) -> copySelectedAttachmentsToClipboard())
 		.onPaste((event) -> AttachmentTableViewHandler.paste(tabAttachments, observableAttachments))
 		.show(tabAttachments, screenX, screenY);
-		
 	}
 	
 	private void fireUpdateBindingToAttachmentList() {
@@ -916,22 +931,28 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initDescription() throws Exception {
+		long t1 = System.currentTimeMillis();
 		if (issue != null) {
 			IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
 			editor.updateData(false);
 		}
+		long t2 = System.currentTimeMillis();
+		log.info("[" + (t2-t1) + "] initDescription()");
 	}
 
 	private void initNotes() throws Exception {
+		long t1 = System.currentTimeMillis();
 		if (issue != null) {
 			IssuePropertyEditor editor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
 			editor.updateData(false);
 		}
+		long t2 = System.currentTimeMillis();
+		log.info("[" + (t2-t1) + "] initNotes()");
 	}
 
 	private void initComboBox(AutoCompletionBinding<IdName> autoCompletionBinding, ComboBox<IdName> cb, String propertyId)
 			throws Exception {
-		if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "initAutoComplete " + propertyId);
+		long t1 = System.currentTimeMillis();
 		IssueService srv = Globals.getIssueService();
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
 		List<IdName> items = pclass != null ? pclass.getSelectList() : new ArrayList<IdName>(0);
@@ -946,10 +967,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			autoCompletionBinding.select(idn);
 		}
 		
+		long t2 = System.currentTimeMillis();
+		log.info("[" + (t2-t1) + "] initComboBox(propertyId=" + propertyId + ")");
 	}
 
 	private void initialUpdate() throws Exception {
-
+		long t1 = System.currentTimeMillis();
+		
+		updateBindingToAttachmentList = new SimpleIntegerProperty();
+		
 		tpNotes.setStyle("-fx-font-weight:normal;");
 		tpAttachments.setStyle("-fx-font-weight:normal;");
 
@@ -983,6 +1009,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		updateData(false);
 
 		detectIssueModifiedStart();
+		
+		long t2 = System.currentTimeMillis();
+		log.info("[" + (t2-t1) + "] initialUpdate()");
 	}
 
 	private boolean isInjectIssueId() {
@@ -1011,8 +1040,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			BackgTask.run(() -> {
 				try {
 					attachmentHelper.showAttachment(att, cb);
+					cb.setFinished();
 				}
-				catch (IOException e) {
+				catch (Exception e) {
 					showMessageBoxError(e.toString());
 				}
 			});
@@ -1063,6 +1093,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void initalUpdateAttachmentView() {
+		long t1 = System.currentTimeMillis();
+		
 		// The TableView does not refresh it's items on getItems().remove(...)
 		// Other devs had this problem with JavaFX 2.1
 		// http://stackoverflow.com/questions/11065140/javafx-2-1-tableview-refresh-items
@@ -1075,6 +1107,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		initAttachments();
 		hboxAttachments.getChildren().add(0, tabAttachments);
 		HBox.setHgrow(tabAttachments, Priority.ALWAYS);
+		
+		long t2 = System.currentTimeMillis();
+		log.info("[" + (t2-t1) + "] initialUpdateAttachmentView()");
 	}
 
 	/**
@@ -1160,7 +1195,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				try {
 					String issueId = edIssueId.getText();
 					IssueService srv = Globals.getIssueService();
-					Issue issue = srv.readIssue(issueId);
+					Issue issue = srv.readIssue(issueId, new MyProgressCallback());
 					String subject = srv.injectIssueIdIntoMailSubject("", issue);
 					
 					IssueMailItem mitem = new IssueMailItemBlank() {
@@ -1569,15 +1604,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void replyMail(boolean all) {
 		Attachment att = getSelectedAttachmentMsg();
 		if (att != null) {
-			Application app = Globals.getThisAddin().getApplication();
-			_NameSpace ns = app.GetNamespace("MAPI");
-			String tempPath = attachmentHelper.downloadAttachment(att, null);
-			if (tempPath.startsWith(MailAttachmentHelper.FILE_URL_PREFIX)) {
-				tempPath = tempPath.substring(MailAttachmentHelper.FILE_URL_PREFIX.length());
-			}
-			
 			IDispatch dispItem = null;
 			try {
+				Application app = Globals.getThisAddin().getApplication();
+				_NameSpace ns = app.GetNamespace("MAPI");
+				String tempPath = attachmentHelper.downloadAttachment(att, null);
+				if (tempPath.startsWith(MailAttachmentHelper.FILE_URL_PREFIX)) {
+					tempPath = tempPath.substring(MailAttachmentHelper.FILE_URL_PREFIX.length());
+				}
+			
 //				try {
 //					dispItem = app.CreateItemFromTemplate(tempPath, Missing.Value);
 //				}
@@ -1593,7 +1628,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				}
 			}
 			catch (Exception e) {
-				log.log(Level.INFO, "Cannot open mail=" + tempPath + ", maybe already open.", e);
+				log.log(Level.INFO, "Cannot open mail attachment.", e);
+				showMessageBoxError("Cannot open mail attachment. " + e);
 			}
 		}
 	}
