@@ -5,7 +5,6 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Image;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
@@ -21,39 +20,25 @@ import javax.imageio.ImageIO;
 public class ThumbnailHelper {
 	
 	private static Logger log = Logger.getLogger("ThumbnailHelper");
-	
+	public final static double THUMBNAIL_WIDTH = 200;
+	public final static double THUMBNAIL_HEIGHT = 145;
+
 	public static File makeThumbnail(File file) {
 		if (log.isLoggable(Level.FINE)) log.fine("makeThumbnail(" + file);
 		File thumbnailFile = null;
 		String type = getImageFileType(file);
 		if (type.isEmpty()) return thumbnailFile;
 		
-		final double THUMBNAIL_WIDTH = 200;
-		final double THUMBNAIL_HEIGHT = 145;
-		
 		try {
-			Image image = ImageIO.read(file);
-			double wd = image.getWidth(null);
-			double ht = image.getHeight(null);
-			if (log.isLoggable(Level.FINE)) log.fine("image width=" + wd + ", height=" + ht);
+			BufferedImage image = ImageIO.read(file);
+			BufferedImage thumbnailImage = makeThumbnailImage(image, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
 			
-			// Compute scale width and height
-			if (wd <= THUMBNAIL_WIDTH && ht <= THUMBNAIL_HEIGHT) {
+			if (image == thumbnailImage) {
 				thumbnailFile = file;
 			}
 			else {
-				double ratioX = THUMBNAIL_WIDTH/wd;
-				double ratioY = THUMBNAIL_HEIGHT/ht;
-				double ratio  = ratioX;
-				if (ratioY < ratio) {
-					ratio = ratioY;
-				}
-				
-				if (log.isLoggable(Level.FINE)) log.fine("scale image ratio=" + ratio);
-				BufferedImage thumbnail = scale((BufferedImage)image, ratio);
-				
 				thumbnailFile = makeThumbnailFileName(file);
-				ImageIO.write(thumbnail, "png", thumbnailFile);
+				ImageIO.write(thumbnailImage, "png", thumbnailFile);
 			}
 			
 		} catch (IOException e) {
@@ -63,6 +48,35 @@ public class ThumbnailHelper {
 		
 		if (log.isLoggable(Level.FINE)) log.fine(")makeThumbnail=" + thumbnailFile);
 		return thumbnailFile;
+	}
+	
+	public static BufferedImage makeThumbnailImage(java.awt.Image image) {
+		return makeThumbnailImage(image, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+	}
+	
+	public static BufferedImage makeThumbnailImage(java.awt.Image image, double maxWidth, double maxHeight) {
+		
+		BufferedImage thumbnailImage = toBufferedImage(image);
+		
+		double wd = image.getWidth(null);
+		double ht = image.getHeight(null);
+		if (log.isLoggable(Level.FINE)) log.fine("image width=" + wd + ", height=" + ht);
+		
+		// Compute scale width and height
+		if (wd > maxWidth || ht > maxHeight) {
+			
+			double ratioX = maxWidth/wd;
+			double ratioY = maxHeight/ht;
+			double ratio  = ratioX;
+			if (ratioY < ratio) {
+				ratio = ratioY;
+			}
+			
+			if (log.isLoggable(Level.FINE)) log.fine("scale image ratio=" + ratio);
+			thumbnailImage = scale((BufferedImage)image, ratio);
+		}
+		
+		return thumbnailImage;
 	}
 	
 	/**
@@ -149,4 +163,22 @@ public class ThumbnailHelper {
 		return new javafx.scene.image.Image(in);
 	}
 
+	public static BufferedImage toBufferedImage(java.awt.Image img)
+	{
+	    if (img instanceof BufferedImage)
+	    {
+	        return (BufferedImage) img;
+	    }
+
+	    // Create a buffered image with transparency
+	    BufferedImage bimage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+
+	    // Draw the image on to the buffered image
+	    Graphics2D bGr = bimage.createGraphics();
+	    bGr.drawImage(img, 0, 0, null);
+	    bGr.dispose();
+
+	    // Return the buffered image
+	    return bimage;
+	}
 }
