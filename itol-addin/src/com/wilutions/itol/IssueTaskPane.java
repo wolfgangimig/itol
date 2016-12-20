@@ -10,14 +10,9 @@
  */
 package com.wilutions.itol;
 
-import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,7 +28,6 @@ import com.wilutions.com.WindowHandle;
 import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
-import com.wilutions.fx.util.WindowsRecentFolder;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
@@ -62,7 +56,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -74,17 +67,13 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.CustomMenuItem;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.MenuButton;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -92,11 +81,9 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
-import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
@@ -155,7 +142,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private Button bnShowAttachment;
 	@FXML
-	private SplitMenuButton bnAddAttachment;
+	private MenuButton bnAddAttachment;
 	@FXML
 	private Button bnRemoveAttachment;
 	@FXML
@@ -177,6 +164,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private boolean tabAttachmentsApplyHandler = true;
 	private SimpleIntegerProperty updateBindingToAttachmentList = new SimpleIntegerProperty();
 	private Attachments observableAttachments = new Attachments();
+	private AddAttachmentMenu addAttachmentMenu;
 
 	private IssuePropertyEditor descriptionEditor;
 	private IssuePropertyEditor notesEditor;
@@ -190,8 +178,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private MailAttachmentHelper attachmentHelper = new MailAttachmentHelper();
 	private MyWrapper inspectorOrExplorer;
 	private StandardContextMenu standardContextMenu = new StandardContextMenu();
-	private WindowsRecentFolder windowsRecentFolder = new WindowsRecentFolder();
-	private Logger log = Logger.getLogger("IssueTaskPane");
+	private static Logger log = Logger.getLogger("IssueTaskPane");
 
 	/**
 	 * Backup issue copy used to check for modifications. The
@@ -834,7 +821,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					break;
 				case V:
 					if (keyEvent.isControlDown()) {
-						AttachmentTableViewHandler.paste(tabAttachments, observableAttachments);
+						AttachmentTableViewHandler.paste(observableAttachments);
 					}
 					break;
 				case C:
@@ -876,6 +863,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			});
 
+			addAttachmentMenu = new AddAttachmentMenu(observableAttachments);
+
 			tabAttachmentsApplyHandler = false;
 		}
 
@@ -898,7 +887,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		.acceptedClipboardDataFlavors(DataFlavor.imageFlavor, DataFlavor.javaFileListFlavor)
 		.showCut(false).showCopy(!observableAttachments.isEmpty())
 		.onCopy((event) -> copySelectedAttachmentsToClipboard())
-		.onPaste((event) -> AttachmentTableViewHandler.paste(tabAttachments, observableAttachments))
+		.onPaste((event) -> AttachmentTableViewHandler.paste(observableAttachments))
 		.show(tabAttachments, screenX, screenY);
 	}
 	
@@ -1051,20 +1040,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	@FXML
 	public void onAddAttachment() {
-		try {
-			FileChooser fileChooser = new FileChooser();
-			fileChooser.setTitle("Open Resource File");
-			List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
-			if (selectedFiles != null) {
-				for (File file : selectedFiles) {
-					Attachment att = MailAttachmentHelper.createFromFile(file);
-					tabAttachments.getItems().add(att);
-				}
-			}
-		}
-		catch (Throwable e) {
-			log.log(Level.WARNING, "", e);
-		}
 	}
 
 	@FXML
@@ -1647,110 +1622,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		return observableAttachments; 
 	}
 
-	
-	@SuppressWarnings("unchecked")
 	private void updateBnAddAttachmentMenuItems() {
 		// http://stackoverflow.com/questions/26895534/javafx-split-menu-button-arrow-trigger-event
 		bnAddAttachment.getItems().clear();
-		makeBnAddAttachmentClipboardFiles();
-		makeBnAddAttachmentRecentFiles();
-	}
-
-	@SuppressWarnings("unchecked")
-	private void makeBnAddAttachmentClipboardFiles() {
-		try {
-			Transferable transferable = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
-			if (transferable != null) {
-				
-				java.awt.Image clipboardImage = null;
-				if (transferable != null && transferable.isDataFlavorSupported(DataFlavor.imageFlavor)) {
-					clipboardImage = (java.awt.Image) transferable.getTransferData(DataFlavor.imageFlavor);
-				}
-
-				List<File> clipboardFiles = null;
-				if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-					clipboardFiles = (List<File>)transferable.getTransferData(DataFlavor.javaFileListFlavor);
-				}
-				
-				if (clipboardImage != null || !clipboardFiles.isEmpty()) {
-					
-					CustomMenuItem miSeparatorCliboard = makeBnAddMenuSeparator("bnAddAttachment.menu.clipboard");
-					bnAddAttachment.getItems().add(miSeparatorCliboard);
-
-					if (clipboardImage != null) {
-						BufferedImage thumbnailImage = ThumbnailHelper.makeThumbnailImage(clipboardImage);
-						Image image = SwingFXUtils.toFXImage((BufferedImage)thumbnailImage, null);
-						CustomMenuItem miImage = new CustomMenuItem(new ImageView(image));
-						miImage.setOnAction((e) -> {
-							AttachmentTableViewHandler.paste(tabAttachments, observableAttachments);
-						});
-						bnAddAttachment.getItems().add(miImage);
-					}
-
-					if (clipboardFiles != null) {
-						int nbOfFiles = clipboardFiles.size();
-						if (nbOfFiles == 1) {
-							makeBnAddAttachmentMenuItemsFiles(clipboardFiles);
-						}
-						else {
-							MenuItem mi = new MenuItem();
-							String miText;
-							try {
-								miText = MessageFormat.format(resb.getString("bnAddAttachment.menu.pasteNbOfFiles"), nbOfFiles);
-							}
-							catch (Exception e) {
-								// Resource file corrupt
-								miText = "Paste " + nbOfFiles + " files";
-							}
-							mi.setText(miText);
-							mi.setOnAction((e) -> {
-								AttachmentTableViewHandler.paste(tabAttachments, observableAttachments);
-							});
-							bnAddAttachment.getItems().add(mi);
-						}
-					}
-				}
-				
-			}
-		}
-		catch (Exception e) {
-			log.log(Level.WARNING, "Failed to access clipboard.", e);
-		}
-	}
-
-	private void makeBnAddAttachmentRecentFiles() {
-		CustomMenuItem miSeparatorRecent = makeBnAddMenuSeparator("bnAddAttachment.menu.recentFiles");
-		bnAddAttachment.getItems().add(miSeparatorRecent);
-		
-		List<File> recentFiles = windowsRecentFolder.getFiles(10, WindowsRecentFolder.FILES);
-		makeBnAddAttachmentMenuItemsFiles(recentFiles);
-	}
-
-	private void makeBnAddAttachmentMenuItemsFiles(List<File> recentFiles) {
-		for (File file : recentFiles) {
-			MenuItem mi = makeBnAddAttachmentMenuItemFile(file);
-			bnAddAttachment.getItems().add(mi);
-		}
-	}
-
-	private MenuItem makeBnAddAttachmentMenuItemFile(File file) {
-		Image fxImage = FileIconCache.getFileIcon(file);
-		MenuItem mi = new MenuItem();
-		mi.setGraphic(new ImageView(fxImage));
-		mi.setText(file.getName());
-		mi.setOnAction((e) -> {
-			Attachment att = MailAttachmentHelper.createFromFile(file);
-			tabAttachments.getItems().add(att);
-		});
-		return mi;
-	}
-
-	private CustomMenuItem makeBnAddMenuSeparator(String resId) {
-		Text text = new Text(resb.getString(resId));
-		text.setStyle("-fx-font-style: italic; -fx-font-weight: bold;");
-		CustomMenuItem miSeparatorRecent = new CustomMenuItem(text);
-		miSeparatorRecent.setHideOnClick(false);
-		return miSeparatorRecent;
+		bnAddAttachment.getItems().addAll(addAttachmentMenu.create());
 	}
 
 }

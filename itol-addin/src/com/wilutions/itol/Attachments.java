@@ -42,57 +42,62 @@ public class Attachments implements Iterable<Attachment> {
 		this.attachments = attachments;
 	}
 	
-	public CompletableFuture<List<File>> addAttachmentsFromClipboard() {
-		CompletableFuture<List<File>> files = new CompletableFuture<List<File>>();
+	public CompletableFuture<List<Attachment>> addAttachmentsFromClipboard() {
+		CompletableFuture<List<Attachment>> attachments = new CompletableFuture<List<Attachment>>();
 		try {
 			java.awt.Image image = getImageFromClipboard();
 			if (image != null) {
 				try {
-					File file = makeAttachmentFromImage(image);
-					files.complete(Arrays.asList(file));
+					Attachment attachment = makeAttachmentFromImage(image);
+					attachments.complete(Arrays.asList(attachment));
 				}
 				catch (Exception e) {
 					log.log(Level.WARNING, "Failed to paste data from clipboard.", e);
-					files.completeExceptionally(e);
+					attachments.completeExceptionally(e);
 				}
 			}
 			
 			List<File> clipFiles = getFilesFromClipboard();
 			if (clipFiles != null) {
-				files = dropFiles(clipFiles);
-			} 
+				attachments = dropFiles(clipFiles);
+			}
+		
+			if (!attachments.isDone()) {
+				attachments.complete(new ArrayList<Attachment>(0));
+			}
 		}
 		catch (Exception ex) {
-			files.completeExceptionally(ex);
+			attachments.completeExceptionally(ex);
 		}
-		return files;
+		
+		return attachments;
 	}
 	
-	private File makeAttachmentFromImage(java.awt.Image image) throws Exception {
+	private Attachment makeAttachmentFromImage(java.awt.Image image) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("dropImage(" + image);
 		// Save clipboard image to temp file
 		String iso = DATEFORMAT.format(new Date());
 		String fileName = makeUniqueAttachmentFileName(attachments, "image-" + iso + ".png");
 		File file = new File(Globals.getTempDir(), fileName);
 		writeImageToFile(image, file);
-		addFileAsAttachment(file);
-		if (log.isLoggable(Level.FINE)) log.fine(")dropImage=" + file);
-		return file;
+		Attachment attachment = addFileAsAttachment(file);
+		if (log.isLoggable(Level.FINE)) log.fine(")dropImage=" + attachment);
+		return attachment;
 	}
 
-	public CompletableFuture<List<File>> dropFiles(List<File> files) {
+	public CompletableFuture<List<Attachment>> dropFiles(List<File> files) {
 		if (log.isLoggable(Level.FINE)) log.fine("dropFiles(" + files);
 		
-		CompletableFuture<List<File>> fcopies = CompletableFuture.supplyAsync(() -> {
-			ArrayList<File> copies = new ArrayList<File>();
+		CompletableFuture<List<Attachment>> fcopies = CompletableFuture.supplyAsync(() -> {
+			ArrayList<Attachment> copies = new ArrayList<Attachment>();
 			for (File src : files) {
 				try {
 					String fileName = makeUniqueAttachmentFileName(attachments, src.getName());
 					File target = new File(Globals.getTempDir(), fileName);
 					if (log.isLoggable(Level.FINE)) log.fine("copy source=" + src + ", target=" + target);
 					Files.copy(src.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
-					addFileAsAttachment(target);
-					copies.add(target);
+					Attachment attachment = addFileAsAttachment(target);
+					copies.add(attachment);
 				}
 				catch (Exception e) {
 					throw new IllegalStateException(e);
@@ -105,12 +110,13 @@ public class Attachments implements Iterable<Attachment> {
 		return fcopies;
 	}
 
-	private void addFileAsAttachment(File file) throws Exception {
+	private Attachment addFileAsAttachment(File file) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("addFileAsAttachment(" + file);
 		Attachment att = MailAttachmentHelper.createFromFile(file);
 		attachments.add(att);
 		if (log.isLoggable(Level.INFO)) log.info("add attachment=" + att);
 		if (log.isLoggable(Level.FINE)) log.fine(")addFileAsAttachment");
+		return att;
 	}
 	
 	public static boolean isImageFile(String fileName) {

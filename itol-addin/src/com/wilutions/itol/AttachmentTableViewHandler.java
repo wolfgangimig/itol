@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -267,15 +268,17 @@ public class AttachmentTableViewHandler {
 		log.info("[" + (t2-t1) + "] apply(observableAttachments=" + observableAttachments + ")");
 	}
 
-	public static void paste(TableView<Attachment> table, Attachments attachments) {
+	public static List<Attachment> paste(Attachments attachments) {
 		if (log.isLoggable(Level.FINE)) log.fine("paste(");
-		Transferable transferable = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
-		boolean isImage = transferable != null && transferable.isDataFlavorSupported(DataFlavor.imageFlavor);
-		boolean isFiles = transferable != null && transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
-		if (isImage || isFiles) {
-			attachments.addAttachmentsFromClipboard();
+		List<Attachment> ret = new ArrayList<Attachment>(0);
+		try {
+			ret = attachments.addAttachmentsFromClipboard().get();
+		}
+		catch (Exception ex) {
+			log.log(Level.WARNING, "Add attachments from clipboard failed.", ex);
 		}
 		if (log.isLoggable(Level.FINE)) log.fine(")paste");
+		return ret;
 	}
 
 	public static void copy(TableView<Attachment> table, MailAttachmentHelper attachmentHelper, ProgressCallback cb) throws Exception {

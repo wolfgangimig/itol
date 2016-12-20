@@ -142,11 +142,8 @@
                                     <VBox prefHeight="200.0" prefWidth="100.0" spacing="10.0">
                                        <children>
                                           <Button fx:id="bnShowAttachment" alignment="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onShowAttachment" text="%bnShowAttachment.text" />
-                                          <SplitMenuButton fx:id="bnAddAttachment" alignment="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onAddAttachment" text="%bnAddAttachment.text">
-                                            <items>
-                                              <MenuItem mnemonicParsing="false" text="Action 2" />
-                                            </items>
-                                          </SplitMenuButton>
+                                          <MenuButton fx:id="bnAddAttachment" alignment="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onAddAttachment" text="%bnAddAttachment.text">
+                                           </MenuButton>
                                           <Button fx:id="bnRemoveAttachment" alignment="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onRemoveAttachment" text="%bnRemoveAttachment.text" />
                                           <Button fx:id="bnReply" alignment="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onReply" text="%bnReply.text" />
                                        </children>
