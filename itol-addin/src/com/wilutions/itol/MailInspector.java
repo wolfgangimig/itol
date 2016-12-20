@@ -19,6 +19,7 @@ import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.outlook.ex.Wrapper;
 import com.wilutions.joa.ribbon.RibbonButton;
+import com.wilutions.joa.ribbon.RibbonGroup;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.outlook.Inspector;
 import com.wilutions.mslib.outlook.MailItem;
@@ -35,9 +36,11 @@ public class MailInspector extends InspectorWrapper implements MyWrapper {
 	}
 
 	private void initRibbonControls() {
+		
+		@SuppressWarnings("unused")
+		RibbonGroup grpIssue = getRibbonControls().group("grpIssue", resb.getString("Ribbon.grpIssue"));
 
-		RibbonButton bnNewIssue = new RibbonButton();
-		bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
+		RibbonButton bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
 		bnNewIssue.setImage("Alert-icon-32.png");
 		bnNewIssue.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
 			ItolAddin addin = (ItolAddin) Globals.getThisAddin();
