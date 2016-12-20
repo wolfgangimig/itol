@@ -13,11 +13,9 @@ import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
@@ -69,11 +67,11 @@ public class WindowsRecentFolder implements Closeable {
 						((filesOrFolders & FOLDERS) != 0 && file.isDirectory());
 					if (add) {
 						ret.add(file);
-						if (log.isLoggable(Level.INFO)) {
-							SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-							String lastModifiedIso = sdf.format(new Date(link.lastModified()));
-							System.out.println("Recent file=" + link + ", lastModified=" + lastModifiedIso);
-						}
+//						if (log.isLoggable(Level.INFO)) {
+//							SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+//							String lastModifiedIso = sdf.format(new Date(link.lastModified()));
+//							System.out.println("Recent file=" + link + ", lastModified=" + lastModifiedIso);
+//						}
 						if (ret.size() >= maxFiles) break;
 					}
 				}					
