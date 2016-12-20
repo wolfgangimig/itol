@@ -71,7 +71,7 @@ public class PropertyGridView {
 		this.tabProperties = tabProperties;
 		this.scrollPane = tabProperties.getContent();
 		ColumnConstraints constr0 = propGrid.getColumnConstraints().get(0);
-		constr0.setPercentWidth(38);
+		constr0.setPercentWidth(25);
 		propGrid.setVgap(8);
 	}
 	
