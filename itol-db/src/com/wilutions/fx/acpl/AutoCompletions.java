@@ -457,10 +457,9 @@ public class AutoCompletions {
 				+ node.getBoundsInLocal().getHeight();
 		// + node.getBoundsInParent().getHeight();
 		popup.show(window, x, y);
-		double ht = popup.getHeight();
-		double wd = popup.getWidth();
-		System.out.println("popup.height=" + ht + ", width=" + wd + ", #items=" + popup.getItems().size());
-
+//		double ht = popup.getHeight();
+//		double wd = popup.getWidth();
+//		System.out.println("popup.height=" + ht + ", width=" + wd + ", #items=" + popup.getItems().size());
 	}
 
 	private static <T> AutoCompletionControl<T> createAutoCompletionControl(final ComboBox<T> cbox,
