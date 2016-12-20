@@ -13,9 +13,11 @@ import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
@@ -30,7 +32,7 @@ public class WindowsRecentFolder implements Closeable {
 	
 	private final File recentFolder;
 	private final int watchMaxFiles;
-	private final TreeSet<File> recentFiles;
+	private final TreeSet<File> recentFiles = new TreeSet<File>(CompareFileByLastModifiedDecending.instance);
 	private WatchThread watchThread;
 	private static Logger log = Logger.getLogger("WindowsRecentFolder");
 	
@@ -45,7 +47,6 @@ public class WindowsRecentFolder implements Closeable {
 	public WindowsRecentFolder(int watchMaxFiles) {
 		this.watchMaxFiles = watchMaxFiles;
 		recentFolder = getRecentFolderPath();
-		recentFiles = getInitialRecentFiles();
 		watchThread = new WatchThread();
 		watchThread.start();
 	}
@@ -68,12 +69,19 @@ public class WindowsRecentFolder implements Closeable {
 						((filesOrFolders & FOLDERS) != 0 && file.isDirectory());
 					if (add) {
 						ret.add(file);
+						if (log.isLoggable(Level.INFO)) {
+							SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+							String lastModifiedIso = sdf.format(new Date(link.lastModified()));
+							System.out.println("Recent file=" + link + ", lastModified=" + lastModifiedIso);
+						}
 						if (ret.size() >= maxFiles) break;
 					}
 				}					
 			} catch (Exception e) {
 			}
 		}
+		
+		
 		return ret;
 	}
 
@@ -92,16 +100,6 @@ public class WindowsRecentFolder implements Closeable {
 		}
 	}
 
-	private TreeSet<File> getInitialRecentFiles() {
-		TreeSet<File> files = null;
-		if (recentFolder != null) {
-			files = new TreeSet<File>(CompareFileByLastModifiedDecending.instance);
-			files.addAll(Arrays.asList(recentFolder.listFiles()));
-			unsync_shrinkFileListToMax(files);
-		}
-		return files;
-	}
-	
 	private void unsync_shrinkFileListToMax(TreeSet<File> files) {
 		int index = 0;
 		Iterator<File> it = files.iterator();
@@ -143,6 +141,13 @@ public class WindowsRecentFolder implements Closeable {
 		public void run() {
 			
 			try {
+				
+				// Initial file list
+				synchronized(recentFiles) {
+					recentFiles.addAll(Arrays.asList(recentFolder.listFiles()));
+					unsync_shrinkFileListToMax(recentFiles);
+				}
+				
 			    recentFolder.toPath().register(watcher, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
 			    
 			    while (!Thread.currentThread().isInterrupted()) {
@@ -159,7 +164,7 @@ public class WindowsRecentFolder implements Closeable {
 			     
 				            @SuppressWarnings("unchecked")
 				            WatchEvent<Path> ev = (WatchEvent<Path>) event;
-				            File file = ev.context().toFile();
+				            File file = new File(recentFolder, ev.context().toFile().getName());
 
 				            if (kind == ENTRY_DELETE) {
 				            	deletedFiles.add(file);
@@ -171,11 +176,15 @@ public class WindowsRecentFolder implements Closeable {
 			    		
 			        }
 			    	
+			    	
 			    	synchronized(recentFiles) {
 			    		recentFiles.removeAll(deletedFiles);
+			    		recentFiles.removeAll(modifiedFiles);
 			    		recentFiles.addAll(modifiedFiles);
 			    		unsync_shrinkFileListToMax(recentFiles);
 			    	}
+
+			    	if (!key.reset()) break;
 			    }
 			}
 			catch (InterruptedException e) {
