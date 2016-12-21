@@ -51,10 +51,10 @@
     -fx-font-size: 1.0em;
 }
 
-.deleteImageButton {
+.smallImageButton {
   -fx-background-color:transparent;
 }
 
-.deleteImageButton:hover {
+.smallImageButton:hover {
   -fx-background-color:#dae7f3;
 }
