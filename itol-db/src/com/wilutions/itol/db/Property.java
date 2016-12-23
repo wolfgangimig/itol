@@ -10,6 +10,7 @@
  */
 package com.wilutions.itol.db;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -160,8 +161,12 @@ public class Property {
 				List listCopy = new ArrayList(list.size());
 				for (Object elm : list) {
 					Object elmCopy = elm;
-					if (elm instanceof Attachment) {
-						elmCopy = ((Attachment)elm).clone();
+					if (elm instanceof Cloneable) {
+						try {
+							Method cloneMethod = elm.getClass().getMethod("clone");
+							elmCopy = cloneMethod.invoke(elm);
+						}
+						catch (Exception e) {}
 					}
 					listCopy.add(elmCopy);
 				}

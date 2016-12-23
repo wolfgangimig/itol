@@ -13,7 +13,7 @@ package com.wilutions.itol.db;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-public class Attachment {
+public class Attachment implements Cloneable {
 
 	private String id;
 	private String subject;
