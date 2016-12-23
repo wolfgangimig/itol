@@ -204,17 +204,18 @@ public class HttpClient {
 				subcbDownload.setParams(contentDisposition);
 			}
 
+			String contentType = Default.value(conn.getHeaderField("Content-Type")).toLowerCase();
+			boolean isStringContent = contentType.contains("json") || contentType.contains("text/html");
+			
+			String contentEncoding = conn.getHeaderField("Content-Encoding");
+			boolean isGZIP = Default.value(contentEncoding).toLowerCase().contains("gzip");
+
 			try {
-				String contentType = Default.value(conn.getHeaderField("Content-Type")).toLowerCase();
-				boolean isStringContent = contentType.contains("json") || contentType.contains("text/html");
-				
 				InputStream istream = conn.getInputStream();
-				String contentEncoding = conn.getHeaderField("Content-Encoding");
-				boolean isGZIP = Default.value(contentEncoding).toLowerCase().contains("gzip");
 				if (isGZIP) {
 					istream = new GZIPInputStream(istream, 10 * 1000); 
 				}
-
+				
 				if (log.isLoggable(Level.FINE)) log.fine("read from input...");
 				long responseContentLength = 0;
 				if (isStringContent) {
@@ -234,7 +235,11 @@ public class HttpClient {
 				log.info("send failed, exception=" + e);
 				ret.setErrorMessage(e.getMessage());
 				if (log.isLoggable(Level.FINE)) log.fine("read from error...");
-				ret.setContent(readStringFromStream(conn.getErrorStream(), contentLength, subcbDownload));
+				InputStream istream = conn.getErrorStream();
+				if (isGZIP) {
+					istream = new GZIPInputStream(istream, 10 * 1000); 
+				}
+				ret.setContent(readStringFromStream(istream, contentLength, subcbDownload));
 			}
 			finally {
 				subcbDownload.setFinished();
