@@ -369,7 +369,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		Issue ret = null;
 
 		try {
-			final Issue issue = srv.readIssue(issueId, new MyProgressCallback());
+			final Issue issue = srv.readIssue(issueId, createProgressCallback());
 
 			Date lastModified = issue.getLastModified();
 
@@ -875,7 +875,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	
 	private void copySelectedAttachmentsToClipboard() {
 		try {
-			AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, new MyProgressCallback());
+			AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, createProgressCallback());
 		} catch (Exception e) {
 			log.log(Level.WARNING, "Failed to copy attachments.", e);
 			showMessageBoxError("Failed to copy attachments. " + e);
@@ -1018,7 +1018,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void showSelectedIssueAttachment() {
 		Attachment att = tabAttachments.getSelectionModel().getSelectedItem();
 		if (att != null) {
-			MyProgressCallback cb = new MyProgressCallback();
+			ProgressCallback cb = createProgressCallback();
 			BackgTask.run(() -> {
 				try {
 					attachmentHelper.showAttachment(att, cb);
@@ -1092,7 +1092,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		return this;
 	}
 
-	private void showMessageBoxError(String text) {
+	/**
+	 * Display a message box with an error message.
+	 * @param text
+	 */
+	public void showMessageBoxError(String text) {
 		detectIssueModifiedStop();
 		String title = resb.getString("MessageBox.title.error");
 		String ok = resb.getString("Button.OK");
@@ -1165,7 +1169,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				try {
 					String issueId = edIssueId.getText();
 					IssueService srv = Globals.getIssueService();
-					Issue issue = srv.readIssue(issueId, new MyProgressCallback());
+					Issue issue = srv.readIssue(issueId, createProgressCallback());
 					String subject = srv.injectIssueIdIntoMailSubject("", issue);
 					
 					IssueMailItem mitem = new IssueMailItemBlank() {
@@ -1352,7 +1356,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	public void onUpdate() {
 
-		final ProgressCallback progressCallback = isNew() ? new MyProgressCallback() : new MyFakeProgressCallback();
+		final ProgressCallback progressCallback = isNew() ? createProgressCallback() : new MyFakeProgressCallback();
 		detectIssueModifiedStop();
 
 		try {
@@ -1628,4 +1632,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		bnAddAttachment.getItems().addAll(addAttachmentMenu.create());
 	}
 
+	/**
+	 * Create a callback object that displays the state in the progress bar.
+	 * @return ProgressCallback object
+	 */
+	public ProgressCallback createProgressCallback() {
+		return new MyProgressCallback();
+	}
 }
