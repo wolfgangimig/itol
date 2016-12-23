@@ -19,8 +19,6 @@ public interface IssueService {
 	
 	void initialize() throws Exception;
 	
-	PropertyClasses getPropertyClasses();
-	
 	PropertyClass getPropertyClass(String propertyId, Issue iss) throws Exception;
 	
 	List<String> getPropertyDisplayOrder(Issue issue);

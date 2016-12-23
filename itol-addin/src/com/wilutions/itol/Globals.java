@@ -269,7 +269,7 @@ public class Globals {
 	public static String getVersion() {
 		String ret = "";
 		try {
-			byte[] buf = OfficeAddinUtil.getResourceAsBytes(BackstageConfig.class, "version.properties");
+			byte[] buf = OfficeAddinUtil.getResourceAsBytes(IssueTaskPane.class, "version.properties");
 			Properties props = new Properties();
 			props.load(new ByteArrayInputStream(buf));
 			ret = props.getProperty("Version");

@@ -210,11 +210,6 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public PropertyClasses getPropertyClasses() {
-		return PropertyClasses.getDefault();
-	}
-
-	@Override
 	public IssuePropertyEditor getPropertyEditor(Object ownerWindow, Issue issue, String propertyId) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
