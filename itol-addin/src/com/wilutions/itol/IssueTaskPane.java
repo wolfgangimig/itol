@@ -507,10 +507,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			edSubject.requestFocus();
 
 			IssueService srv = Globals.getIssueService();
-			autoCompletionProject = initAutoComplete(srv, cbProject, Property.PROJECT);
-			autoCompletionTracker = initAutoComplete(srv, cbTracker, Property.ISSUE_TYPE);
-			autoCompletionPriority = initAutoComplete(srv, cbPriority, Property.PRIORITY);
-			autoCompletionStatus = initAutoComplete(srv, cbStatus, Property.STATUS);
+			autoCompletionProject = initAutoComplete(srv, cbProject, Property.PROJECT, true);
+			autoCompletionTracker = initAutoComplete(srv, cbTracker, Property.ISSUE_TYPE, true);
+			autoCompletionPriority = initAutoComplete(srv, cbPriority, Property.PRIORITY, false);
+			autoCompletionStatus = initAutoComplete(srv, cbStatus, Property.STATUS, false);
 
 			WebViewHelper.addClickHandlerToWebView(webHistory);
 
@@ -578,7 +578,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		detectIssueModifiedStart();
 	}
 
-	private AutoCompletionBinding<IdName> initAutoComplete(IssueService srv, ComboBox<IdName> cb, String propertyId)
+	private AutoCompletionBinding<IdName> initAutoComplete(IssueService srv, ComboBox<IdName> cb, String propertyId, boolean validateIssueOnChange)
 			throws Exception {
 		List<IdName> allItems = new ArrayList<IdName>();
 		
@@ -593,28 +593,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		AutoCompletionBinding<IdName> ret = AutoCompletions.bindAutoCompletion(extractImage, cb, recentCaption, suggestionsCaption, recentItems, allItems);
 
-		cb.valueProperty().addListener(new ComboboxChangeListener(propertyId));
-
-		// AutoCompletionBinding<IdName> ret =
-		// AutoCompletions.createAutoCompletionBinding(new
-		// ExtractImage<IdName>() {
-		// public Image getImage(IdName item) {
-		// return item.getImage();
-		// }
-		// }, recentCaption, suggestionsCaption, recentItems, new
-		// DefaultSuggest<IdName>(allItems));
-		//
-		// GridPane grid = (GridPane)cb.getParent();
-		// List<Node> children = grid.getChildren();
-		// int idx = children.indexOf(cb);
-		// Integer col = GridPane.getColumnIndex(cb);
-		// Integer row = GridPane.getRowIndex(cb);
-		// children.remove(idx);
-		//
-		// Node autoField = ret.getControl().getNode();
-		// children.add(idx, autoField);
-		// GridPane.setColumnIndex(autoField, col);
-		// GridPane.setRowIndex(autoField, row);
+		if (validateIssueOnChange) {
+			cb.valueProperty().addListener(new ComboboxChangeListener(propertyId));
+		}
 
 		return ret;
 	}
