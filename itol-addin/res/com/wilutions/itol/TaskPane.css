@@ -58,3 +58,16 @@
 .smallImageButton:hover {
   -fx-background-color:#dae7f3;
 }
+
+/* http://stackoverflow.com/questions/37789184/increasing-scrollbar-width-does-not-increase-hitbox-of-the-increment-and-decreme
+Does not work nice for short scroll bars. 
+.scroll-bar > .increment-button, 
+.scroll-bar > .decrement-button {
+    -fx-padding: 6;
+}
+.scroll-bar .increment-arrow, 
+.scroll-bar .decrement-arrow {
+    -fx-pref-height: 8;
+    -fx-pref-width: 8;
+}
+*/
