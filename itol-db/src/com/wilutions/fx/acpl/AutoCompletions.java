@@ -38,7 +38,7 @@ public class AutoCompletions {
 	/**
 	 * Display at most 10 suggestions.
 	 */
-	public final static int NB_OF_SUGGESTIONS = 5;
+	public final static int NB_OF_SUGGESTIONS = 10;
 
 	/**
 	 * Display at most 3 recent items.

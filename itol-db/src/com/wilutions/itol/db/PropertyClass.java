@@ -42,7 +42,9 @@ public class PropertyClass {
 	private String name;
 	private Object defaultValue;
 	private int type;
-	
+	private boolean required = false;
+	private boolean readOnly = false;
+
 	/**
 	 * List of acceptable values.
 	 */
@@ -181,5 +183,21 @@ public class PropertyClass {
 		this.autoCompletionSuggest = autoCompletionSuggest;
 	}
 
-	
+	public boolean isRequired() {
+		return required;
+	}
+
+	public void setRequired(boolean required) {
+		this.required = required;
+	}
+
+	public boolean isReadOnly() {
+		return readOnly;
+	}
+
+	public void setReadOnly(boolean readOnly) {
+		this.readOnly = readOnly;
+	}
+
+
 }
