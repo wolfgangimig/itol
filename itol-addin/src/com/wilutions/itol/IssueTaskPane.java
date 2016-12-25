@@ -14,6 +14,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -29,6 +30,7 @@ import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.DefaultSuggest;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssuePropertyEditor;
@@ -37,6 +39,7 @@ import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackImpl;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
+import com.wilutions.itol.db.Suggest;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.outlook.ex.Wrapper;
@@ -728,11 +731,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private void saveDescription() throws Exception {
-		descriptionEditor.updateData(true);
+		if (descriptionEditor != null) descriptionEditor.updateData(true);
 	}
 
 	private void saveNotes() throws Exception {
-		notesEditor.updateData(true);
+		if (notesEditor != null) notesEditor.updateData(true);
 	}
 
 	private void saveSubject() {
@@ -920,13 +923,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		List<IdName> items = pclass != null ? pclass.getSelectList() : new ArrayList<IdName>(0);
 		
 		cb.setVisible(!items.isEmpty());
-		
 		if (!items.isEmpty()) {
-		
-			autoCompletionBinding.setSuggest(pclass.getAutoCompletionSuggest());
-	
 			IdName idn = issue.getPropertyIdName(propertyId, IdName.NULL);
 			autoCompletionBinding.select(idn);
+			
+			if (pclass.isReadOnly()) {
+				items = Arrays.asList(idn);
+			}
+			
+			Suggest<IdName> suggest = new DefaultSuggest<IdName>(items);
+			autoCompletionBinding.setSuggest(suggest);
 		}
 		
 		long t2 = System.currentTimeMillis();
