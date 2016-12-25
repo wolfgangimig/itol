@@ -12,7 +12,7 @@
 
 .scroll-pane > .viewport  { 
 	-fx-background-color: WHITE;
-	-fx-border-color: LIGHTGREY;
+	-fx-border-color: TRANSPARENT;
 }
 
 .tab-pane {
@@ -53,6 +53,7 @@
 
 .smallImageButton {
   -fx-background-color:transparent;
+  -fx-padding: 0;
 }
 
 .smallImageButton:hover {
