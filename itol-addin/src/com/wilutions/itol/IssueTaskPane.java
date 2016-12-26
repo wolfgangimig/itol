@@ -1106,7 +1106,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					.bdefault().show((btn, ex) -> {
 						Boolean succ = btn != null && btn != 0;
 						asyncResult.setAsyncResult(succ, ex);
-						detectIssueModifiedStart();
+						detectIssueModifiedContinue();
 					});
 		}
 		else {
