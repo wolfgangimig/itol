@@ -216,6 +216,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public IssueTaskPane(MyWrapper inspectorOrExplorer) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "IssueTaskPane(");
 		this.inspectorOrExplorer = inspectorOrExplorer;
+		
+		super.setDefaultWidth(550);
 
 		this.mailItem = inspectorOrExplorer.getSelectedItem();
 

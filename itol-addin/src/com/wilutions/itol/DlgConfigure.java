@@ -140,6 +140,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			cbLogLevel.getSelectionModel().select(new IdName(getConfigProperty(Property.LOG_LEVEL), ""));
 
 			String fileTypeId = getConfigProperty(Property.MSG_FILE_TYPE);
+			if (fileTypeId == null || fileTypeId.isEmpty()) fileTypeId = MsgFileTypes.RTF.getId();
 			for (IdName item : msgFileTypes) {
 				if (item.getId().equals(fileTypeId)) {
 					autoCompletionAttachMailAs.select(item);
