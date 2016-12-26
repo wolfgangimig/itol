@@ -1,9 +1,15 @@
 package com.wilutions.itol;
 
 import java.io.IOException;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -15,6 +21,7 @@ import org.controlsfx.control.CheckComboBox;
 import com.wilutions.fx.acpl.AutoCompletionComboBox;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
+import com.wilutions.fx.util.DateTimePicker;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssuePropertyEditor;
@@ -29,7 +36,6 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -44,6 +50,7 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -156,14 +163,20 @@ public class PropertyGridView {
 			}
 	
 			switch (pclass.getType()) {
-			case PropertyClass.TYPE_ISO_DATE: case PropertyClass.TYPE_ISO_DATE_TIME:
+			case PropertyClass.TYPE_ISO_DATE: 
 				propNode = makeDatePickerForProperty(issue, pclass);
+				break;
+			case PropertyClass.TYPE_ISO_DATE_TIME:
+				propNode = makeDateTimePickerForProperty(issue, pclass);
 				break;
 			case PropertyClass.TYPE_BOOL:
 				propNode = makeCheckBoxForProperty(issue, pclass);
 				break;
 			case PropertyClass.TYPE_TEXT:
 				propNode = makeTextAreaForProperty(issue, pclass);
+				break;
+			case PropertyClass.TYPE_FLOAT:
+				propNode = makeNumericFieldForProperty(issue, pclass);
 				break;
 			// case PropertyClass.TYPE_INTEGER:
 			// ctrl = makeIntFieldForProperty(prop);
@@ -410,6 +423,44 @@ public class PropertyGridView {
 		return propNode;
 	}
 
+	private PropertyNode makeNumericFieldForProperty(Issue issue, PropertyClass pclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeNumericFieldForProperty(");
+		TextField ed = new TextField();
+		
+		ed.addEventFilter(KeyEvent.KEY_TYPED, (keyEvent) -> {
+	        if (!"0123456789.,-".contains(keyEvent.getCharacter())) {
+	        	keyEvent.consume();
+	        }
+		});
+		 
+		PropertyNode propNode = new PropertyNode(issue, pclass, ed) {
+			@Override
+			public void updateData(boolean save) {
+				if (save) {
+					
+					// Hint: only 3 fraction digits are saved by JIRA 
+					
+					try {
+						Number n = NumberFormat.getInstance().parse(ed.getText());
+						issue.setPropertyValue(pclass.getId(), n);
+					}
+					catch (ParseException e) {
+					}
+				}
+				else {
+					Number n = (Number)issue.getPropertyValue(pclass.getId(), null);
+					String value = "";
+					if (n != null) {
+						value = NumberFormat.getInstance().format(n);
+					}
+					ed.setText(value);
+				}
+			}
+		};
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeNumericFieldForProperty");
+		return propNode;
+	}
+
 	private PropertyNode makeTextAreaForProperty(Issue issue, PropertyClass pclass) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeTextAreaForProperty(");
 		PropertyNode ret = null;
@@ -616,6 +667,41 @@ public class PropertyGridView {
 		};
 		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeDatePickerForProperty");
+		return propNode;
+	}
+
+	private PropertyNode makeDateTimePickerForProperty(Issue issue, PropertyClass pclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeDateTimePickerForProperty(");
+		DateTimePicker ctrl = new DateTimePicker();
+		SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+		PropertyNode propNode = new PropertyNode(issue, pclass, ctrl) {
+			@Override
+			public void updateData(boolean save) {
+				if (save) {
+					LocalDateTime ldate = ctrl.getDateTimeValue();
+					String iso = null;
+					if (ldate != null) {
+						Date date = Date.from(ldate.atZone(ZoneId.systemDefault()).toInstant());
+						iso = dateTimeFormat.format(date);
+					}
+					issue.setPropertyString(pclass.getId(), iso);
+				}
+				else {
+					String iso = issue.getPropertyString(pclass.getId(), "");
+					if (iso != null && iso.length() != 0) {
+						try {
+							Date date = dateTimeFormat.parse(iso);
+							LocalDateTime ldate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+							ctrl.setDateTimeValue(ldate);
+						} catch (ParseException e) {
+							log.log(Level.WARNING, "Failed to parse ISO date provided by JIRA for property " + pclass.getId() + "=" + iso, e);
+						}
+					}
+				}
+			}
+		};
+		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeDateTimePickerForProperty");
 		return propNode;
 	}
 

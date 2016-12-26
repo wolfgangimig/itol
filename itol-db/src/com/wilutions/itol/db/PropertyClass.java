@@ -17,6 +17,7 @@ import java.util.List;
 
 public class PropertyClass {
 
+	public final static int TYPE_UNSUPPORTED = 0;
 	public final static int TYPE_STRING = 1;
 	public final static int TYPE_BOOL = 2;
 	public final static int TYPE_PASSWORD = 3;
@@ -32,6 +33,11 @@ public class PropertyClass {
 	 * Date and time.
 	 */
 	public static final int TYPE_ISO_DATE_TIME = 8;
+	
+	/**
+	 * Floating point number.
+	 */
+	public static final int TYPE_FLOAT = 9; 
 	
 //	public final static int TYPE_INTEGER = 6;
 //	public final static int TYPE_FLOAT = 7;
@@ -159,7 +165,7 @@ public class PropertyClass {
 
 	@Override
 	public String toString() {
-		String stype = "UNKNOWN_TYPE";
+		String stype = "TYPE_UNKNOWN";
 		switch(getType()) {
 		case TYPE_STRING: stype = "TYPE_STRING"; break;
 		case TYPE_TEXT: stype = "TYPE_TEXT"; break;
@@ -167,6 +173,7 @@ public class PropertyClass {
 		case TYPE_ISO_DATE_TIME: stype = "TYPE_ISO_DATE_TIME"; break;
 		case TYPE_BOOL: stype = "TYPE_BOOL"; break;
 		case TYPE_ID_NAME: stype = "TYPE_ID_NAME"; break;
+		case TYPE_FLOAT: stype = "TYPE_FLOAT"; break;
 //		case TYPE_INTEGER: stype = "TYPE_INTEGER"; break;
 		}
 		if (isArray()) {
