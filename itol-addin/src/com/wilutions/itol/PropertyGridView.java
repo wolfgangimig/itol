@@ -130,7 +130,13 @@ public class PropertyGridView {
 	private void addProperty(Issue issue, PropertyClass pclass, int rowIndex) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addProperty(" + pclass);
 
-		Label label = new Label(pclass.getName());
+		Label label = new Label();
+		String labelText = pclass.getName();
+		if (pclass.isRequired()) {
+			labelText += " *";
+			//label.setStyle("-fx-font-weight: bold");
+		}
+		label.setText(labelText);
 		propGrid.add(label, 0, rowIndex);
 		GridPane.setValignment(label, VPos.TOP);
 

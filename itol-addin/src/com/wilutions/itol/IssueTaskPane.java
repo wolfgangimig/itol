@@ -1400,13 +1400,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 						String text = resb.getString("Error.FailedToUpdateIssue");
 						String msg = e.getMessage();
-						if (msg.isEmpty()) msg = e.toString();
+						if (msg == null || msg.isEmpty()) msg = e.toString();
 						text += " " + msg;
 						showMessageBoxError(text);
 
-						progressCallback.setFinished();
 						detectIssueModifiedContinue();
 					}
+				}
+				finally {
+					progressCallback.setFinished();
 				}
 			});
 
