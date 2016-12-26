@@ -105,7 +105,7 @@ public class DateTimePicker extends DatePicker {
 		}
 
 		public LocalDate fromString(String value) {
-			if (value == null) {
+			if (value == null || value.isEmpty()) {
 				dateTimeValue.set(null);
 				return null;
 			}
