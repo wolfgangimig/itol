@@ -64,7 +64,7 @@ public class PopupForSuggestions<T> extends Popup {
 	}
 
 	public void updateSuggestions(String filter) {
-		Collection<T> suggestions = suggest.find(filter, 10);
+		Collection<T> suggestions = suggest.find(filter, 10, null);
 		lvSuggestions.setItems(FXCollections.observableArrayList(suggestions));
 		if (suggestions.isEmpty()) {
 			if (isShowing()) hide();

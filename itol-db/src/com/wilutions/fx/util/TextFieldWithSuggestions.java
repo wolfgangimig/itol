@@ -8,7 +8,6 @@ import java.util.StringTokenizer;
 import com.wilutions.itol.db.Suggest;
 
 import javafx.application.Platform;
-import javafx.scene.control.IndexRange;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 
@@ -116,11 +115,11 @@ public class TextFieldWithSuggestions<T> extends TextField {
 		}
 
 		@Override
-		public Collection<S> find(String text, int max) {
+		public Collection<S> find(String text, int max, Collection<S> ignored) {
 			HashSet<String> terms = new HashSet<>();
 			StringTokenizer stok = new StringTokenizer(getText(), DELIMS);
 			while (stok.hasMoreTokens()) terms.add(stok.nextToken());
-			Collection<S> innerItems = innerSuggest.find(text, max + terms.size());
+			Collection<S> innerItems = innerSuggest.find(text, max + terms.size(), null);
 			ArrayList<S> outerItems = new ArrayList<>(max);
 			for (S item : innerItems) {
 				if (terms.contains(item.toString())) continue;

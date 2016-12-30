@@ -275,7 +275,7 @@ public class AutoCompletions {
 
 							// Try to select the first suggested item
 							if (editText.length() != 0) {
-								Collection<T> suggestedItems = suggest.find(textField.getText(), NB_OF_SUGGESTIONS);
+								Collection<T> suggestedItems = suggest.find(textField.getText(), NB_OF_SUGGESTIONS, null);
 								if (suggestedItems.size() > 0) {
 									item = suggestedItems.iterator().next();
 								}
@@ -328,7 +328,7 @@ public class AutoCompletions {
 		String editText = showAlways ? "" : control.getEditText();
 
 		// find suggestions
-		Collection<T> suggestedItems = suggest.find(editText, NB_OF_SUGGESTIONS);
+		Collection<T> suggestedItems = suggest.find(editText, NB_OF_SUGGESTIONS, null);
 
 		// if only one suggestion is found...
 		if (!showAlways && suggestedItems.size() == 1) {

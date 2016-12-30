@@ -16,7 +16,9 @@ public interface Suggest<T> {
 	 *            Text
 	 * @param max
 	 *            Maximum number of items to return.
+	 * @param ignoreHits 
+	 * 			  Return only items that do not exist in this collection. Can be null.         
 	 * @return Collection of suggestions to be displayed in the list view.
 	 */
-	public Collection<T> find(String text, int max);
+	public Collection<T> find(String text, int max, Collection<T> ignoreHits);
 }

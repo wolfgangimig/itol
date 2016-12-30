@@ -64,12 +64,21 @@ public class DefaultSuggest<T> implements Suggest<T> {
 	 *            Maximum number of items to return.
 	 * @return Collection of items.
 	 */
-	public Collection<T> find(String text, int max) {
+	public Collection<T> find(String text, int max, Collection<T> ignoreHits) {
 		Collection<T> ret = allItems;
 		String textLC = text.toLowerCase();
 		
 		if (!textLC.isEmpty()) {
-			ArrayList<T> matches = new ArrayList<T>(allItems);
+			ArrayList<T> matches = new ArrayList<T>();
+			if (ignoreHits != null) {
+				for (T t : allItems) {
+					if (ignoreHits.contains(t)) continue;
+					matches.add(t);
+				}
+			}
+			else {
+				matches.addAll(allItems);
+			}
 			
 			Collections.sort(matches, new Comparator<T>() {
 				public int compare(T o1, T o2) {
