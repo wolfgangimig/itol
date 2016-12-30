@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ import com.wilutions.fx.acpl.AutoCompletionComboBox;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.fx.util.DateTimePicker;
+import com.wilutions.fx.util.TextFieldWithSuggestions;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssuePropertyEditor;
@@ -181,18 +183,11 @@ public class PropertyGridView {
 			// case PropertyClass.TYPE_INTEGER:
 			// ctrl = makeIntFieldForProperty(prop);
 			// break;
-			// case PropertyClass.TYPE_FLOAT:
-			// ctrl = makeFloatFieldForProperty(prop);
-			// break;
-			default: {
+			case PropertyClass.TYPE_ID_NAME:
+			{
 				if (selectList != null) {
 					if (pclass.isArray()) {
 						propNode = makeChoiceBoxForPropertyArray(issue, pclass);
-	//					if (selectList.size() > 3) {
-	//					}
-	//					else {
-	//						ctrl = makeMultiListBoxForProperty(prop, issue, pclass);
-	//					}
 					}
 					else {
 						propNode = makeChoiceBoxForProperty(issue, pclass);
@@ -207,8 +202,16 @@ public class PropertyGridView {
 					}
 				}
 				else {
-					propNode = makeTextFieldForProperty(issue, pclass);
+					// IdName field without selection list - unsupported
+					log.warning("Unsupported property class " + pclass + ".");
 				}
+			}
+			break;
+			default:
+			{
+				propNode = (pclass.getAutoCompletionSuggest() != null) ?
+						makeTextFieldWithSuggestions(issue, pclass):
+						makeTextFieldForProperty(issue, pclass);
 			}
 			}
 		}
@@ -407,6 +410,7 @@ public class PropertyGridView {
 	private PropertyNode makeTextFieldForProperty(Issue issue, PropertyClass pclass) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeTextFieldForProperty(");
 		TextField ed = new TextField();
+
 		PropertyNode propNode = new PropertyNode(issue, pclass, ed) {
 			@Override
 			public void updateData(boolean save) {
@@ -415,6 +419,53 @@ public class PropertyGridView {
 				}
 				else {
 					String value = issue.getPropertyString(pclass.getId(), "");
+					ed.setText(value);
+				}
+			}
+		};
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")makeTextFieldForProperty");
+		return propNode;
+	}
+
+	private PropertyNode makeTextFieldWithSuggestions(Issue issue, PropertyClass pclass) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeTextFieldForProperty(");
+		TextField ed =  new TextFieldWithSuggestions<IdName>(pclass.getAutoCompletionSuggest());
+
+		PropertyNode propNode = new PropertyNode(issue, pclass, ed) {
+			@SuppressWarnings("unchecked")
+			@Override
+			public void updateData(boolean save) {
+				if (save) {
+					String text = ed.getText();
+					if (pclass.isArray()) {
+						ArrayList<String> list = new ArrayList<String>();
+						StringTokenizer stok = new StringTokenizer(text, TextFieldWithSuggestions.DELIMS);
+						while (stok.hasMoreTokens()) {
+							String tok = stok.nextToken();
+							list.add(tok);
+						}
+						issue.setPropertyValue(pclass.getId(), list);
+					}
+					else {
+						issue.setPropertyValue(pclass.getId(), text);
+					}
+				}
+				else {
+					String value = "";
+					if (pclass.isArray()) {
+						// Handling for JIRA property type "Label"
+						StringBuilder sbuf = new StringBuilder();
+						List<String> values = (List<String>)issue.getPropertyValue(pclass.getId(), new ArrayList<String>());
+						for (int i = 0; i < values.size(); i++) {
+							String value_i = values.get(i);
+							if (i != 0) sbuf.append(" ");
+							sbuf.append(value_i);
+						}
+						value = sbuf.toString();
+					}
+					else {
+						value = issue.getPropertyIdName(pclass.getId(), IdName.NULL).toString();
+					}
 					ed.setText(value);
 				}
 			}
