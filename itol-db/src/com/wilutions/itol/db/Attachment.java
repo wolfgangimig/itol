@@ -11,6 +11,7 @@
 package com.wilutions.itol.db;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 
 public class Attachment implements Cloneable {
@@ -24,6 +25,11 @@ public class Attachment implements Cloneable {
 	private String url;
 	private String thumbnailUrl;
 	private boolean deleted;
+	
+	/**
+	 * This member is set if the attachment was downloaded into a local file.
+	 */
+	private File localFile;
 	
 	public Attachment() {
 		id = "";
@@ -57,6 +63,7 @@ public class Attachment implements Cloneable {
 		copy.url = url;
 		copy.deleted = deleted;
 		copy.thumbnailUrl = thumbnailUrl;
+		copy.localFile = localFile;
 		return copy;
 	}
 	
@@ -159,6 +166,14 @@ public class Attachment implements Cloneable {
 
 	public void setThumbnailUrl(String thumbnailUrl) {
 		this.thumbnailUrl = thumbnailUrl;
+	}
+
+	public File getLocalFile() {
+		return localFile;
+	}
+
+	public void setLocalFile(File localFile) {
+		this.localFile = localFile;
 	}
 
 }

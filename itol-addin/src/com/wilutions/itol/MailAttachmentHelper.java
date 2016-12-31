@@ -3,8 +3,10 @@ package com.wilutions.itol;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -309,13 +311,12 @@ public class MailAttachmentHelper {
 	 * Issue attachment for arbitrary file.
 	 */
 	public static class FileAtt extends Attachment {
-		private File file;
 
 		private FileAtt(File file) {
-			this.file = file;
 			super.setSubject(file.getName());
 			super.setFileName(file.getName());
 			super.setUrl(file.toURI().toString());
+			super.setLocalFile(file);
 			super.setContentLength(file.length());
 			super.setContentType(getFileContentType(file));
 			File thumbnailFile = ThumbnailHelper.makeThumbnail(file);
@@ -327,7 +328,7 @@ public class MailAttachmentHelper {
 		public InputStream getStream() {
 			InputStream ret = null;
 			try {
-				ret = new FileInputStream(file);
+				ret = new FileInputStream(getLocalFile());
 			}
 			catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -349,17 +350,28 @@ public class MailAttachmentHelper {
 
 	public String downloadAttachment(Attachment att, ProgressCallback cb) throws Exception {
 		String url = att.getUrl();
-		if (!url.startsWith(FILE_URL_PREFIX)) {
-			String fileName = Globals.getIssueService().downloadAttachment(url, cb);
-			File srcFile = new File(fileName);
-			if (srcFile.exists()) {
-				for (int retries = 0; retries < 100; retries++) {
-					File destFile = makeTempFile(att.getFileName(), retries);
-					destFile.delete();
-					if (srcFile.renameTo(destFile)) {
-						fileName = destFile.getAbsolutePath();
-						url = FILE_URL_PREFIX + fileName;
-						break;
+		// Local file added from file system (new file, not uploaded)
+		if (url.startsWith(FILE_URL_PREFIX)) {
+			//;
+		}
+		else {
+			// Already downloaded attachment?
+			if (att.getLocalFile() != null && att.getLocalFile().exists()) {
+				url = att.getLocalFile().toURI().toString();
+			}
+			else {
+				String fileName = Globals.getIssueService().downloadAttachment(url, cb);
+				File srcFile = new File(fileName);
+				if (srcFile.exists()) {
+					for (int retries = 0; retries < 100; retries++) {
+						File destFile = makeTempFile(getTempDir(), att.getFileName(), retries);
+						destFile.delete();
+						if (srcFile.renameTo(destFile)) {
+							att.setLocalFile(destFile);
+							fileName = destFile.getAbsolutePath();
+							url = destFile.toURI().toString();
+							break;
+						}
 					}
 				}
 			}
@@ -368,7 +380,23 @@ public class MailAttachmentHelper {
 		return url;
 	}
 
-	private File makeTempFile(String fname, int retries) {
+	public String exportAttachment(File dir, Attachment att, ProgressCallback cb) throws Exception {
+		String url = "";
+		try {
+			url = downloadAttachment(att, cb);
+			File attFile = new File(new URI(url));
+			File destFile = new File(dir, attFile.getName());
+			if (!destFile.exists()) {
+				Files.copy(attFile.toPath(), destFile.toPath());
+			}
+		}
+		finally {
+			if (cb != null) cb.setFinished();
+		}
+		return url;
+	}
+	
+	private File makeTempFile(File tempDir, String fname, int retries) {
 		if (retries != 0) {
 			String unique = Integer.toString(retries);
 			int p = fname.lastIndexOf('.');
@@ -376,7 +404,7 @@ public class MailAttachmentHelper {
 				fname = fname.substring(0, p) + "_" + unique + fname.substring(p);
 			}
 		}
-		File destFile = new File(getTempDir(), fname);
+		File destFile = new File(tempDir, fname);
 		return destFile;
 	}
 	

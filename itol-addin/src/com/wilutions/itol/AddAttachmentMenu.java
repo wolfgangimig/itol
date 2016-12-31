@@ -69,7 +69,6 @@ public class AddAttachmentMenu {
 		menuItem.setOnAction((e) -> {
 			try {
 				FileChooser fileChooser = new FileChooser();
-				fileChooser.setTitle("Open Resource File");
 				List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
 				if (selectedFiles != null) {
 					for (File file : selectedFiles) {

@@ -103,6 +103,11 @@ public class Property {
 	
 	public static final String LOG_LEVEL = "Log.level";
 
+	/**
+	 * Directory to save attachments when button "Export" is clicked.
+	 */
+	public static final String EXPORT_ATTACHMENTS_DIRECTORY = "exportAttachmentsDirectory";
+
 	private String id;
 
 	private Object value;

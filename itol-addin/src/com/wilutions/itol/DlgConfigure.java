@@ -27,6 +27,7 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
+import javafx.stage.DirectoryChooser;
 
 public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializable {
 
@@ -40,6 +41,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	Button bnCancel;
 	@FXML
 	ComboBox<IdName> cbAttachMailAs;
+	@FXML
+	TextField edExportAttachmentsDirectory;
 	@FXML
 	TextField edLogFile;
 	@FXML
@@ -130,6 +133,18 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			
 			boolean injectIssueId = ckInsertIssueId.isSelected();
 			setConfigProperty(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, Boolean.toString(injectIssueId));
+			
+			String exportAttachmentDir = edExportAttachmentsDirectory.getText();
+			File dir = new File(exportAttachmentDir);
+			dir.mkdirs();
+			if (dir.exists() && dir.isDirectory()) {
+				setConfigProperty(Property.EXPORT_ATTACHMENTS_DIRECTORY, exportAttachmentDir);
+			}
+			else {
+				// Causes Outlook to crash:
+				// MessageBox.error(this, "Invalid directory " + dir, (succ, ex) -> {});
+				// This is most likely a JOA bug.
+			}
 		}
 		else {
 			String logFile = getConfigProperty(Property.LOG_FILE);
@@ -151,6 +166,9 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			String insertIssueIdStr = getConfigProperty(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT);
 			Boolean insertIssueId = (insertIssueIdStr.isEmpty()) ? Boolean.FALSE : Boolean.valueOf(insertIssueIdStr);
 			ckInsertIssueId.setSelected(insertIssueId);
+			
+			String exportAttachmentDir = getConfigProperty(Property.EXPORT_ATTACHMENTS_DIRECTORY);
+			edExportAttachmentsDirectory.setText(exportAttachmentDir);
 		}
 	}
 
@@ -180,4 +198,19 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 		}
 	}
 
+	@FXML
+	public void onChooseExportAttachmentsDirectory() {
+		final DirectoryChooser directoryChooser = new DirectoryChooser();
+		directoryChooser.setTitle(resb.getString("bnAddAttachment.menu.fileChooser"));
+		String dir = edExportAttachmentsDirectory.getText();
+		if (!dir.isEmpty()) {
+			File fdir = new File(dir);
+			while (!fdir.exists()) fdir = fdir.getParentFile();
+			directoryChooser.setInitialDirectory(fdir);
+		}
+        final File selectedDirectory = directoryChooser.showDialog(null);
+        if (selectedDirectory != null) {
+            edExportAttachmentsDirectory.setText(selectedDirectory.getAbsolutePath());
+        }
+	}
 }

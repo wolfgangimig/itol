@@ -11,6 +11,7 @@
 package com.wilutions.itol;
 
 import java.awt.datatransfer.DataFlavor;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
@@ -149,6 +151,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private MenuButton bnAddAttachment;
 	@FXML
 	private Button bnRemoveAttachment;
+	@FXML
+	private Button bnExportAttachments;
 	@FXML
 	private HBox hboxAttachments;
 	@FXML
@@ -532,12 +536,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				internalSetMailItem(new IssueMailItemBlank());
 			}
 			
+			// Update menu items for "Add Attachment" button
 			bnAddAttachment.showingProperty().addListener((obs, wasShowing, isNowShowing) -> {
 	            if (isNowShowing) {
 	            	updateBnAddAttachmentMenuItems();
 	            }
 	        });
-
+			
 		}
 		catch (Throwable e) {
 			log.log(Level.WARNING, "", e);
@@ -852,6 +857,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			addAttachmentMenu = new AddAttachmentMenu(observableAttachments);
 
+			// Bind buttons "Open Attachment", "Export Attachments" to attachment table selection
+			bnShowAttachment.disableProperty().unbind();
+			bnShowAttachment.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
+			bnExportAttachments.disableProperty().unbind();
+			if (issue.isNew()) {
+				bnExportAttachments.setDisable(true);
+			}
+			else {
+				bnExportAttachments.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
+			}
+			
 			tabAttachmentsApplyHandler = false;
 		}
 
@@ -1031,7 +1047,44 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	public void onAddAttachment() {
 	}
+	
+	@FXML
+	public void onExportAttachments() {
+		
+		if (issue.isNew()) return;
+		
+		BackgTask.run(() -> {
+			
+			File exportDirectory = null;
+			{
+				String exportDirectoryName = Globals.getAppInfo().getConfigPropertyString(Property.EXPORT_ATTACHMENTS_DIRECTORY, System.getProperty("java.io.tmpdir"));
+				String subdir = issue.getId();
+				exportDirectory = new File(new File(exportDirectoryName), subdir);
+				exportDirectory.mkdirs();
+			}
 
+			List<Attachment> selectedItems = tabAttachments.getSelectionModel().getSelectedItems();
+			long totalBytes = selectedItems.stream().collect(Collectors.summingLong((att) -> att.getContentLength())).longValue();
+			ProgressCallback cb = createProgressCallback();
+			long currentProgress = 0;
+			cb.setTotal(totalBytes);
+			for (Attachment att : selectedItems) {
+				try {
+					attachmentHelper.exportAttachment(exportDirectory, att, null);
+				} catch (Exception e) {
+					log.log(Level.WARNING, "Attachment could not be exported.", e);
+				}
+				finally {
+					cb.setProgress(currentProgress += att.getContentLength());
+				}
+			}
+			cb.setFinished();
+			
+			String url = exportDirectory.toURI().toString();
+			IssueApplication.showDocument(url);
+		});
+	}
+	
 	@FXML
 	public void onRemoveAttachment() {
 		List<Attachment> selectedItems = tabAttachments.getSelectionModel().getSelectedItems();

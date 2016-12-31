@@ -53,6 +53,7 @@ public class AppInfo {
 	public void setConfigProps(List<Property> configProps) {
 		this.configProps = configProps;
 		initIssueIdMailSubjectFormat();
+		initExportAttachmentsDirectory();
 	}
 	
 	public Property getConfigProperty(String propId) {
@@ -151,5 +152,11 @@ public class AppInfo {
 		if (ret.isEmpty() && injectIssueId) {
 			getConfigProps().add(new Property(Property.ISSUE_ID_MAIL_SUBJECT_FORMAT, Property.ISSUE_ID_MAIL_SUBJECT_FORMAT_DEFAULT));
 		}
+	}
+	
+	private void initExportAttachmentsDirectory() {
+		String tempDir = System.getProperty("java.io.tmpdir");
+		File dir = new File(new File(tempDir), "issues");
+		getConfigProps().add(new Property(Property.EXPORT_ATTACHMENTS_DIRECTORY, dir.getAbsolutePath()));
 	}
 }

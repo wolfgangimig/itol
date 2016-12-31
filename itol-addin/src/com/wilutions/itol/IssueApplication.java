@@ -145,15 +145,15 @@ public class IssueApplication extends AddinApplication {
 	public static void showDocument(String url) {
 		try {
 			if (url.startsWith("file:/")) {
-				// AWT opens the 
-				String filePath = url.substring(6);
-					Desktop.getDesktop().open(new File(filePath));
+				// AWT opens the file more reliably
+				File file = new File(new URI(url));
+				Desktop.getDesktop().open(file);
 			}
 			else {
 				Desktop.getDesktop().browse(new URI(url));
 			}
 		} catch (Exception e) {
-			log.warning("Failed to opent document=" + url);
+			log.log(Level.WARNING, "Failed to opent document=" + url, e);
 		}
 	}
 
