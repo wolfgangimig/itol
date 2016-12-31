@@ -1,12 +1,11 @@
 package com.wilutions.itol;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.MissingResourceException;
-import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 public class ResourceBundleNoThrow extends ResourceBundle {
@@ -20,16 +19,18 @@ public class ResourceBundleNoThrow extends ResourceBundle {
 		this.innerBundles.add(0,b);
 	}
 	
-	public void addBundle(String resourceId) {
-		ClassLoader classLoader = ResourceBundleNoThrow.class.getClassLoader();
-		InputStream inputStream = classLoader.getResourceAsStream(resourceId);
-		try {
-			ResourceBundle resb = new PropertyResourceBundle(inputStream);
-			addBundle(resb);
-		}
-		catch (Exception e) {
-			throw new IllegalStateException(e);
-		}
+	public void addBundle(String resourceId, ClassLoader classLoader) {
+		ResourceBundle resb = ResourceBundle.getBundle(resourceId, Locale.getDefault(), classLoader);
+		addBundle(resb);
+//		ClassLoader classLoader = ResourceBundleNoThrow.class.getClassLoader();
+//		InputStream inputStream = classLoader.getResourceAsStream(resourceId);
+//		try {
+//			ResourceBundle resb = new PropertyResourceBundle(inputStream);
+//			addBundle(resb);
+//		}
+//		catch (Exception e) {
+//			throw new IllegalStateException(e);
+//		}
 	}
 
 	@Override

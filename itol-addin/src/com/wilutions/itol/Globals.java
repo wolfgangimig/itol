@@ -247,7 +247,7 @@ public class Globals {
 	public static ResourceBundleNoThrow getResourceBundle() {
 		if (resb == null) {
 			resb = new ResourceBundleNoThrow();
-			resb.addBundle("com/wilutions/itol/res_en.properties");
+			resb.addBundle("com.wilutions.itol.res", Globals.class.getClassLoader());
 		}
 		return resb;
 	}
