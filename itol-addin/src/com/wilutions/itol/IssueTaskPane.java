@@ -16,6 +16,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -1035,6 +1036,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public void onRemoveAttachment() {
 		List<Attachment> selectedItems = tabAttachments.getSelectionModel().getSelectedItems();
 
+		// ITJ-1: Copy issue attachment list since the original list is an observable list
+		// That is also attached to the table view.
+		List<Attachment> issueAttachments = new ArrayList<>(issue.getAttachments());
+		
 		for (int i = 0; i < selectedItems.size(); i++) {
 			Attachment att = selectedItems.get(i);
 			if (att.getId() != null && att.getId().length() != 0) {
@@ -1044,9 +1049,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				// att.setDeleted(true);
 			}
 			else {
-				issue.getAttachments().remove(att);
+				for (Iterator<Attachment> it = issueAttachments.iterator(); it.hasNext(); ) {
+					Attachment issueAttachment = it.next();
+					if (issueAttachment == att) {
+						it.remove();
+						break;
+					}
+				}
 			}
 		}
+		
+		issue.setAttachments(issueAttachments);
 
 		initalUpdateAttachmentView();
 	}
