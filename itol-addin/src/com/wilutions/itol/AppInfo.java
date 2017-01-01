@@ -159,4 +159,12 @@ public class AppInfo {
 		File dir = new File(new File(tempDir), "issues");
 		getConfigProps().add(new Property(Property.EXPORT_ATTACHMENTS_DIRECTORY, dir.getAbsolutePath()));
 	}
+	
+	public void setNbOfSuggestions(int nb) {
+		setConfigPropertyString(Property.NB_OF_SUGGESTIONS, Integer.toString(nb));
+	}
+	
+	public int getNbOfSuggestions() {
+		return Integer.parseInt(getConfigPropertyString(Property.NB_OF_SUGGESTIONS, "20"));
+	}
 }
