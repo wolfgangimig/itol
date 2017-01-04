@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -216,20 +217,22 @@ public class PropertyGridView {
 			}
 		}
 		
-		Node ctrl = propNode.getNode();
-		if (ctrl instanceof Region) {
-			Region region = (Region)ctrl;
-			region.setMaxWidth(Double.MAX_VALUE);
-			region.setPrefWidth(Double.MAX_VALUE);
+		if (propNode != null) {
+			Node ctrl = propNode.getNode();
+			if (ctrl instanceof Region) {
+				Region region = (Region)ctrl;
+				region.setMaxWidth(Double.MAX_VALUE);
+				region.setPrefWidth(Double.MAX_VALUE);
+			}
+			propGrid.add(ctrl, 1, rowIndex);
+	
+			if (rowIndex == 0) {
+				firstControl = ctrl;
+			}
+	
+			propNodes.add(propNode);
 		}
-		propGrid.add(ctrl, 1, rowIndex);
-
-		if (rowIndex == 0) {
-			firstControl = ctrl;
-		}
-
-		propNodes.add(propNode);
-
+		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")addProperty");
 	}
 
@@ -415,11 +418,34 @@ public class PropertyGridView {
 			@Override
 			public void updateData(boolean save) {
 				if (save) {
-					issue.setPropertyString(pclass.getId(), ed.getText());
+					String text = ed.getText();
+					Object value = null;
+					if (pclass.isArray()) {
+						List<String> list = Arrays.asList(text.split(" "));
+						value = list;
+					}
+					else {
+						value = text;
+					}
+					issue.setPropertyValue(pclass.getId(), value);
 				}
 				else {
-					String value = issue.getPropertyString(pclass.getId(), "");
-					ed.setText(value);
+					Object value = issue.getPropertyValue(pclass.getId(), null);
+					String text = "";
+					if (value != null) {
+						if (pclass.isArray()) {
+							List list = (List)value;
+							StringBuilder sbuf = new StringBuilder();
+							for (Object elm : list) {
+								if (sbuf.length() != 0) sbuf.append(" ");
+								sbuf.append(elm);
+							}
+						}
+						else {
+							text = value.toString();
+						}
+					}
+					ed.setText(text);
 				}
 			}
 		};
