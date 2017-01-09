@@ -28,7 +28,6 @@ import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
-import com.wilutions.com.WindowHandle;
 import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
@@ -45,7 +44,6 @@ import com.wilutions.itol.db.PropertyClass;
 import com.wilutions.itol.db.Suggest;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
-import com.wilutions.joa.outlook.ex.Wrapper;
 import com.wilutions.mslib.office.CustomTaskPane;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.office._CustomTaskPane;
@@ -90,6 +88,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.web.HTMLEditor;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import javafx.stage.Window;
 import javafx.util.Duration;
 
 public class IssueTaskPane extends TaskPaneFX implements Initializable {
@@ -855,7 +854,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			});
 
-			addAttachmentMenu = new AddAttachmentMenu(observableAttachments);
+			addAttachmentMenu = new AddAttachmentMenu(this.getWindow(), observableAttachments);
 
 			// Bind buttons "Open Attachment", "Export Attachments" to attachment table selection
 			bnShowAttachment.disableProperty().unbind();
@@ -1155,7 +1154,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		detectIssueModifiedStop();
 		String title = resb.getString("MessageBox.title.error");
 		String ok = resb.getString("Button.OK");
-		Object owner = getDialogOwner();
+		Window owner = this.getWindow();
 		com.wilutions.joa.fx.MessageBox.create(owner).title(title).text(text).button(1, ok).bdefault()
 				.show((btn, ex) -> {
 					detectIssueModifiedContinue();
@@ -1169,7 +1168,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			String text = resb.getString("MessageBox.queryDiscardChanges.text");
 			String yes = resb.getString("Button.Yes");
 			String no = resb.getString("Button.No");
-			Object owner = getDialogOwner();
+			Object owner = this.getDialogOwner();
 			com.wilutions.joa.fx.MessageBox.create(owner).title(title).text(text).button(1, yes).button(0, no)
 					.bdefault().show((btn, ex) -> {
 						Boolean succ = btn != null && btn != 0;
@@ -1607,15 +1606,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	public void onConnect() {
 		ItolAddin addin = (ItolAddin) Globals.getThisAddin();
-		WindowHandle owner = this;
+		Window owner = this.getWindow();
 		addin.internalConnect(owner, null);
 	}
 
 	@FXML
 	public void onConfigure() {
 		ItolAddin addin = (ItolAddin) Globals.getThisAddin();
-		Wrapper context = inspectorOrExplorer;
-		addin.internalConfigure(context, null);
+		Window owner = this.getWindow();
+		addin.internalConfigure(owner, null);
 	}
 
 	@FXML
