@@ -93,10 +93,9 @@ public class ItolAddin extends OutlookAddinEx {
 		dlg.showAsync(owner, asyncResult);
 	}
 
-	protected void internalConfigure(Wrapper context, AsyncResult<Boolean> asyncResult) {
-		onConfigure(context, (succ, ex) -> {
+	protected void internalConfigure(Object owner, AsyncResult<Boolean> asyncResult) {
+		onConfigure(owner, (succ, ex) -> {
 			if (ex != null) {
-				Object owner = context.getWrappedObject();
 				log.log(Level.SEVERE, "Configuration failed", ex);
 				MessageBox.error(owner, ex.getMessage(), null);
 			}
@@ -106,9 +105,9 @@ public class ItolAddin extends OutlookAddinEx {
 		});
 	}
 	
-	protected void onConfigure(Wrapper context, AsyncResult<Boolean> asyncResult) {
+	protected void onConfigure(Object owner, AsyncResult<Boolean> asyncResult) {
 		DlgConfigure dlg = new DlgConfigure();
-		dlg.showAsync(context.getWrappedObject(), asyncResult);
+		dlg.showAsync(owner, asyncResult);
 
 	}
 

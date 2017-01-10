@@ -13,6 +13,7 @@ import javafx.stage.Popup;
 
 public class PopupForSuggestions<T> extends Popup {
 
+	public final static int NB_OF_SUGGESTIONS = 10;
 	private ListView<T> lvSuggestions = new ListView<T>();
 	private Suggest<T> suggest;
 	private ItemSelected<T> itemSelected;
@@ -64,7 +65,7 @@ public class PopupForSuggestions<T> extends Popup {
 	}
 
 	public void updateSuggestions(String filter) {
-		Collection<T> suggestions = suggest.find(filter, 10, null);
+		Collection<T> suggestions = suggest.find(filter, NB_OF_SUGGESTIONS, null);
 		lvSuggestions.setItems(FXCollections.observableArrayList(suggestions));
 		if (suggestions.isEmpty()) {
 			if (isShowing()) hide();

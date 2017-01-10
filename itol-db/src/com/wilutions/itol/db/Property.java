@@ -108,6 +108,11 @@ public class Property {
 	 */
 	public static final String EXPORT_ATTACHMENTS_DIRECTORY = "exportAttachmentsDirectory";
 
+	/**
+	 * Number of suggestions for labels, issues etc.
+	 */
+	public static final String NB_OF_SUGGESTIONS = "nbOfSuggestions";
+
 	private String id;
 
 	private Object value;

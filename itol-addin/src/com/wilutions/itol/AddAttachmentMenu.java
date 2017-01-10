@@ -24,6 +24,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import javafx.stage.Window;
 
 /**
  * Creates the menu items for adding attachments. 
@@ -31,17 +32,19 @@ import javafx.stage.FileChooser;
  */
 public class AddAttachmentMenu {
 	
+	private Window stage;
 	private Attachments observableAttachments;
 	private Function<Attachment, Void> onAddAttachment;
 	private ResourceBundle resb = Globals.getResourceBundle();
 	private static WindowsRecentFolder windowsRecentFolder = new WindowsRecentFolder();
 	private static Logger log = Logger.getLogger("AddAttachmentMenu");
 
-	public AddAttachmentMenu(Attachments observableAttachments) {
-		this(observableAttachments, (attachtment) -> null);
+	public AddAttachmentMenu(Window stage, Attachments observableAttachments) {
+		this(stage, observableAttachments, (attachtment) -> null);
 	}
 	
-	public AddAttachmentMenu(Attachments observableAttachments, Function<Attachment, Void> onAddAttachment) {
+	public AddAttachmentMenu(Window stage, Attachments observableAttachments, Function<Attachment, Void> onAddAttachment) {
+		this.stage = stage;
 		this.observableAttachments = observableAttachments;
 		this.onAddAttachment = onAddAttachment;
 	}
@@ -69,7 +72,7 @@ public class AddAttachmentMenu {
 		menuItem.setOnAction((e) -> {
 			try {
 				FileChooser fileChooser = new FileChooser();
-				List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
+				List<File> selectedFiles = fileChooser.showOpenMultipleDialog(stage);
 				if (selectedFiles != null) {
 					for (File file : selectedFiles) {
 						Attachment att = MailAttachmentHelper.createFromFile(file);
