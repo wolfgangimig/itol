@@ -104,12 +104,6 @@ public class MailAttachmentHelper {
 		return new FileAtt(file);
 	}
 
-	public static String getFileUrl(File file) {
-		String url = file.getAbsolutePath();
-		url = url.replace("\\", "/");
-		return FILE_URL_PREFIX + url;
-	}
-	
 	public static String getFileName(String path) {
 		String fname = path;
 		if (path != null && path.length() != 0) {
@@ -220,7 +214,7 @@ public class MailAttachmentHelper {
 				System.out.println("save attachment to " + mattFile);
 				matt.SaveAsFile(mattFile.getAbsolutePath());
 				super.setContentLength(mattFile.length());
-				super.setUrl(getFileUrl(mattFile));
+				super.setUrl(mattFile.toURI().toString());
 			}
 			return mattFile;
 		}
@@ -296,7 +290,7 @@ public class MailAttachmentHelper {
 					log.info("[" + (t2-t1) + "] Save mail to " + msgFile);
 
 					super.setContentLength(msgFile.length());
-					super.setUrl(getFileUrl(msgFile));
+					super.setUrl(msgFile.toURI().toString());
 				}
 			}
 			catch (Exception e) {
