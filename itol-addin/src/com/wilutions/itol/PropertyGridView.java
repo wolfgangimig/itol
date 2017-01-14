@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import org.controlsfx.control.CheckComboBox;
 
+import com.sun.javafx.scene.control.skin.TextAreaSkin;
 import com.wilutions.fx.acpl.AutoCompletionComboBox;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
@@ -51,8 +52,10 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -542,25 +545,59 @@ public class PropertyGridView {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeTextAreaForProperty(");
 		PropertyNode ret = null;
 		try {
-			IssueService srv = Globals.getIssueService();
-			IssuePropertyEditor editor = srv.getPropertyEditor(issueTaskPane, issue, pclass.getId());
+			final IssueService srv = Globals.getIssueService();
+			final IssuePropertyEditor editor = srv.getPropertyEditor(issueTaskPane, issue, pclass.getId());
 			
-			Control editorControl = (Control)editor.getNode();
-
-			VBox.setVgrow(editorControl, Priority.ALWAYS);
+			// Create a standard TextArea if no special property editor is provided.
+			final TextArea textArea = editor != null ? null : new TextArea();
+			if (textArea != null) {
+				// Forward to next control on TAB
+				textArea.addEventFilter(KeyEvent.KEY_PRESSED, (e) -> {
+					if (e.getCode().equals(KeyCode.TAB)) {
+						TextAreaSkin skin = (TextAreaSkin)textArea.getSkin();
+			            if (e.isShiftDown()) {
+			                skin.getBehavior().traversePrevious();
+			            }
+			            else {
+			                skin.getBehavior().traverseNext();
+			            }
+			            e.consume();
+					}
+				});
+				textArea.setWrapText(true);
+			}
 			
-			VBox vbox = new VBox();
-			vbox.setMinHeight(100);
-			vbox.setMaxHeight(Double.MAX_VALUE);
-			vbox.setPrefHeight(100);
-			vbox.getChildren().clear();
-			vbox.getChildren().add(editorControl);
-			vbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
-
-			ret = new PropertyNode(issue, pclass, vbox) {
+			VBox vboxEditor = null;
+			if (editor != null) {
+				final Control editorControl = (Control)editor.getNode();
+				VBox.setVgrow(editorControl, Priority.ALWAYS);
+				vboxEditor = new VBox();
+				vboxEditor.getChildren().clear();
+				vboxEditor.getChildren().add(editorControl);
+				vboxEditor.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+			}
+			
+			Region nodeRegion = textArea != null ? textArea : vboxEditor;
+			nodeRegion.setMinHeight(100);
+			nodeRegion.setMaxHeight(Double.MAX_VALUE);
+			nodeRegion.setPrefHeight(100);
+			
+			ret = new PropertyNode(issue, pclass, nodeRegion) {
 				@Override
 				public void updateData(boolean save) {
-					editor.updateData(save);
+					if (editor != null) {
+						editor.updateData(save);
+					}
+					else {
+						if (save) {
+							String text = textArea.getText();
+							issue.setPropertyString(pclass.getId(), text);
+						}
+						else {
+							String text = issue.getPropertyString(pclass.getId(), "");
+							textArea.setText(text);
+						}
+					}
 				}
 			};
 			
@@ -584,7 +621,7 @@ public class PropertyGridView {
 				else {
 					List<IdName> selectList = pclass.getSelectList();
 					ctrl.setItems(FXCollections.observableArrayList(selectList));
-					Object value = issue.getPropertyValue(pclass.getId(), null);
+					Object value = issue.getPropertyValue(pclass.getId(), pclass.getDefaultValue());
 					for (IdName item : selectList) {
 						if (item.equals(value) || item.getId().equals(value)) {
 							ctrl.setValue(item);

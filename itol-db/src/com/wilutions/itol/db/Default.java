@@ -9,4 +9,8 @@ public class Default {
 	public static boolean isEmpty(String s) {
 		return value(s).isEmpty();
 	}
+
+	public static boolean value(Boolean v) {
+		return v != null && v.booleanValue();
+	}
 }

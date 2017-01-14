@@ -171,7 +171,8 @@ public class Issue implements Serializable {
 	}
 	
 	public IdName getPropertyIdName(String propertyId, IdName defaultValue) {
-		return (IdName)getPropertyValue(propertyId, defaultValue);
+		Object value = getPropertyValue(propertyId, defaultValue);
+		return (IdName)value;
 	}
 	
 	public void setPropertyIdName(String propertyId, IdName value) {
