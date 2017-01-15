@@ -12,6 +12,7 @@ package com.wilutions.itol.db;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -141,7 +142,6 @@ public class Issue implements Serializable {
 		return ret;
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Object getPropertyValue(String propertyId, Object defaultValue) {
 		IssueUpdate update = getCurrentUpdate();
 		Property property = update.getProperty(propertyId);
@@ -150,6 +150,7 @@ public class Issue implements Serializable {
 			ret = defaultValue;
 			setPropertyValue(propertyId, ret);
 		}
+		
 		return ret;
 	}
 	
@@ -158,16 +159,15 @@ public class Issue implements Serializable {
 		if (value != null) {
 			
 			if (value instanceof List) {
-				
-				// Make sure that we have a modifiable list 
-				// in our property value.
+				// Make sure that we store an unmodifiable list.
+				// The consumer has to call setPropertyValue even if only one element should change.
 				List list = (List)value;
 				try {
 					list.add(null);
 					list.remove(list.size()-1);
+					value = Collections.unmodifiableList(list);
 				}
 				catch (Exception unmodifiableException) {
-					value = new ArrayList(list);
 				}
 			}
 			
