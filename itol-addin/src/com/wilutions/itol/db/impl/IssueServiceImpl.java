@@ -34,7 +34,6 @@ import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
-import com.wilutions.itol.db.PropertyClasses;
 
 public class IssueServiceImpl implements IssueService {
 

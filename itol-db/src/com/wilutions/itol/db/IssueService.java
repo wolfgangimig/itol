@@ -41,6 +41,14 @@ public interface IssueService {
 
 	Issue createIssue(String subject, String description, String defaultIssueAsString) throws Exception;
 
+	/**
+	 * Validate properties in given issue and set default values for invalid properties.
+	 * This function is called when the project or issue type has been changed.
+	 * @param iss
+	 * @param modifiedProperties
+	 * @return Issue
+	 * @throws Exception
+	 */
 	Issue validateIssue(Issue iss) throws Exception;
 
 	String extractIssueIdFromMailSubject(String subject) throws Exception;
