@@ -141,6 +141,7 @@ public class Issue implements Serializable {
 		return ret;
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Object getPropertyValue(String propertyId, Object defaultValue) {
 		IssueUpdate update = getCurrentUpdate();
 		Property property = update.getProperty(propertyId);
@@ -152,8 +153,24 @@ public class Issue implements Serializable {
 		return ret;
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void setPropertyValue(String propertyId, Object value) {
 		if (value != null) {
+			
+			if (value instanceof List) {
+				
+				// Make sure that we have a modifiable list 
+				// in our property value.
+				List list = (List)value;
+				try {
+					list.add(null);
+					list.remove(list.size()-1);
+				}
+				catch (Exception unmodifiableException) {
+					value = new ArrayList(list);
+				}
+			}
+			
 			Property prop = new Property(propertyId, value);
 			getCurrentUpdate().setProperty(prop);
 		}
