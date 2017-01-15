@@ -22,15 +22,6 @@ public class ResourceBundleNoThrow extends ResourceBundle {
 	public void addBundle(String resourceId, ClassLoader classLoader) {
 		ResourceBundle resb = ResourceBundle.getBundle(resourceId, Locale.getDefault(), classLoader);
 		addBundle(resb);
-//		ClassLoader classLoader = ResourceBundleNoThrow.class.getClassLoader();
-//		InputStream inputStream = classLoader.getResourceAsStream(resourceId);
-//		try {
-//			ResourceBundle resb = new PropertyResourceBundle(inputStream);
-//			addBundle(resb);
-//		}
-//		catch (Exception e) {
-//			throw new IllegalStateException(e);
-//		}
 	}
 
 	@Override

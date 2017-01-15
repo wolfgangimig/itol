@@ -275,9 +275,6 @@ public class PropertyGridView {
 			Button bnDelete = new Button("x");
 			bnDelete.setMaxWidth(25);
 			bnDelete.setPrefWidth(25);
-//			bnDelete.setStyle("-fx-background-color: white");
-//			Image imageDelete = new Image(getClass().getResourceAsStream("delete.png"));
-//			bnDelete.setGraphic(new ImageView(imageDelete));
 			bnDelete.setOnAction((_ignored) -> {
 				List<Node> vchildren = vbox.getChildren();
 				vchildren.remove(thisHBox);
@@ -437,6 +434,7 @@ public class PropertyGridView {
 					String text = "";
 					if (value != null) {
 						if (pclass.isArray()) {
+							@SuppressWarnings("rawtypes")
 							List list = (List)value;
 							StringBuilder sbuf = new StringBuilder();
 							for (Object elm : list) {
