@@ -60,6 +60,15 @@
   -fx-background-color:#dae7f3;
 }
 
+
+.scroll-bar .increment-button {
+	-fx-padding: 6px;
+}
+
+.scroll-bar .decrement-button {
+	-fx-padding: 6px;
+}
+
 /* http://stackoverflow.com/questions/37789184/increasing-scrollbar-width-does-not-increase-hitbox-of-the-increment-and-decreme
 Does not work nice for short scroll bars. 
 .scroll-bar > .increment-button, 
