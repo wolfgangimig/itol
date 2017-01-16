@@ -563,6 +563,9 @@ public class PropertyGridView {
 					}
 				});
 				textArea.setWrapText(true);
+				textArea.setMinHeight(60);
+				textArea.setMaxHeight(Double.MAX_VALUE);
+				textArea.setPrefHeight(60);
 			}
 			
 			VBox vboxEditor = null;
@@ -573,12 +576,12 @@ public class PropertyGridView {
 				vboxEditor.getChildren().clear();
 				vboxEditor.getChildren().add(editorControl);
 				vboxEditor.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
+				vboxEditor.setMinHeight(100);
+				vboxEditor.setMaxHeight(Double.MAX_VALUE);
+				vboxEditor.setPrefHeight(100);
 			}
 			
 			Region nodeRegion = textArea != null ? textArea : vboxEditor;
-			nodeRegion.setMinHeight(100);
-			nodeRegion.setMaxHeight(Double.MAX_VALUE);
-			nodeRegion.setPrefHeight(100);
 			
 			ret = new PropertyNode(issue, pclass, nodeRegion) {
 				@Override
