@@ -61,9 +61,11 @@ public class MailAttachmentHelper {
 			String ext = getConfigMsgFileExt();
 
 			if (!ext.equals(MsgFileTypes.NOTHING.getId())) {
+				
+				List<Attachment> attachments = new ArrayList<Attachment>();
 
 				MailAtt mailAtt = new MailAtt(mailItem, ext);
-				issue.getAttachments().add(mailAtt);
+				attachments.add(mailAtt);
 
 				OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
 
@@ -73,9 +75,11 @@ public class MailAttachmentHelper {
 					for (int i = 1; i <= n; i++) {
 						com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
 						MailAttAtt attatt = new MailAttAtt(matt);
-						issue.getAttachments().add(attatt);
+						attachments.add(attatt);
 					}
 				}
+				
+				issue.setAttachments(attachments);
 			}
 		}
 	}
