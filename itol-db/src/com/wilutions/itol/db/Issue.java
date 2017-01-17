@@ -16,6 +16,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import javafx.collections.ObservableList;
+
 
 public class Issue implements Serializable {
 
@@ -162,12 +164,17 @@ public class Issue implements Serializable {
 				// Make sure that we store an unmodifiable list.
 				// The consumer has to call setPropertyValue even if only one element should change.
 				List list = (List)value;
-				try {
-					list.add(null);
-					list.remove(list.size()-1);
+				if (list instanceof ObservableList) {
 					value = Collections.unmodifiableList(list);
 				}
-				catch (Exception unmodifiableException) {
+				else {
+					try {
+						list.add(null);
+						list.remove(list.size()-1);
+						value = Collections.unmodifiableList(list);
+					}
+					catch (Exception unmodifiableException) {
+					}
 				}
 			}
 			

@@ -36,10 +36,12 @@ public class Attachments implements Iterable<Attachment> {
 
 	public Attachments() {
 		this.attachments = FXCollections.observableArrayList();
+		debugInitListener();
 	}
 	
 	public Attachments(ObservableList<Attachment> attachments) {
 		this.attachments = attachments;
+		debugInitListener();
 	}
 	
 	public CompletableFuture<List<Attachment>> addAttachmentsFromClipboard() {
@@ -235,5 +237,13 @@ public class Attachments implements Iterable<Attachment> {
 
 	public void addListener(ListChangeListener<Attachment> listChangeListener) {
 		getObservableList().addListener(listChangeListener);
+	}
+	
+	private void debugInitListener() {
+		getObservableList().addListener(new ListChangeListener<Attachment>() {
+			public void onChanged(javafx.collections.ListChangeListener.Change<? extends Attachment> att) {
+				log.fine("Attachment changed: " + att);
+			}
+		});
 	}
 }
