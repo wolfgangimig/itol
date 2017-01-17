@@ -14,6 +14,8 @@ import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -857,12 +859,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			bnShowAttachment.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
 			bnExportAttachments.disableProperty().unbind();
 			bnExportAttachments.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
-			if (issue.isNew()) {
-				bnExportAttachments.setDisable(true);
-			}
-			else {
-				bnExportAttachments.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
-			}
+			bnExportAttachments.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
 			
 			tabAttachmentsApplyHandler = false;
 		}
@@ -1055,14 +1052,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	public void onExportAttachments() {
 		
-		if (issue.isNew()) return;
-		
 		BackgTask.run(() -> {
 			
 			File exportDirectory = null;
 			{
 				String exportDirectoryName = Globals.getAppInfo().getConfigPropertyString(Property.EXPORT_ATTACHMENTS_DIRECTORY, System.getProperty("java.io.tmpdir"));
 				String subdir = issue.getId();
+				if (subdir.isEmpty()) {
+					DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+					subdir = issue.getProject().getId() + "-NEW-" + dateFormat.format(new Date());
+				}
 				exportDirectory = new File(new File(exportDirectoryName), subdir);
 				exportDirectory.mkdirs();
 			}
