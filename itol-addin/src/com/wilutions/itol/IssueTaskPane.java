@@ -591,15 +591,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private AutoCompletionBinding<IdName> initAutoComplete(IssueService srv, ComboBox<IdName> cb, String propertyId, boolean validateIssueOnChange)
 			throws Exception {
 		List<IdName> allItems = new ArrayList<IdName>();
-		
-		ArrayList<IdName> recentItems = null;
-		if (propertyId.equals(Property.PROJECT)) {
-			recentItems = new ArrayList<IdName>();
-		}
 
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
 		ExtractImage<IdName> extractImage = (item) -> item.getImage();
+		List<IdName> recentItems = new ArrayList<IdName>();
 
 		AutoCompletionBinding<IdName> ret = AutoCompletions.bindAutoCompletion(extractImage, cb, recentCaption, suggestionsCaption, recentItems, allItems);
 
@@ -860,6 +856,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			bnShowAttachment.disableProperty().unbind();
 			bnShowAttachment.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
 			bnExportAttachments.disableProperty().unbind();
+			bnExportAttachments.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
 			if (issue.isNew()) {
 				bnExportAttachments.setDisable(true);
 			}
@@ -939,7 +936,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		IssueService srv = Globals.getIssueService();
 		PropertyClass pclass = srv.getPropertyClass(propertyId, issue);
 		List<IdName> items = pclass != null ? pclass.getSelectList() : new ArrayList<IdName>(0);
-		
+
+		if (pclass.isReadOnly()) {
+			autoCompletionBinding.disableRecentItems();
+		}
+		else {
+			List<IdName> recentItems = pclass.getRecentItems();
+			autoCompletionBinding.setRecentItems(recentItems);
+		}
+
 		cb.setVisible(!items.isEmpty());
 		if (!items.isEmpty()) {
 			IdName idn = issue.getPropertyIdName(propertyId, IdName.NULL);

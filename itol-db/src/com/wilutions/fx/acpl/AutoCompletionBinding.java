@@ -1,5 +1,6 @@
 package com.wilutions.fx.acpl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.wilutions.itol.db.Suggest;
@@ -7,6 +8,7 @@ import com.wilutions.itol.db.Suggest;
 import javafx.scene.Node;
 
 public class AutoCompletionBinding<T> {
+	
 	private AutoCompletionControl<T> control;
 	private String recentCaption;
 	private String suggestionsCaption;
@@ -30,9 +32,22 @@ public class AutoCompletionBinding<T> {
 	public List<T> getRecentItems() {
 		return recentItems;
 	}
+
+	/**
+	 * Set list of recent items.
+	 * @param recentItems
+	 */
 	public void setRecentItems(List<T> recentItems) {
 		this.recentItems = recentItems;
 	}
+	
+	/**
+	 * Do not show recent items.
+	 */
+	public void disableRecentItems() {
+		this.recentItems = null;
+	}
+	
 	public Suggest<T> getSuggest() {
 		return suggest;
 	}

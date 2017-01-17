@@ -60,6 +60,11 @@ public class PropertyClass {
 	 * Suggestion class.
 	 */
 	private Suggest<IdName> autoCompletionSuggest;
+	
+	/**
+	 * List to store recently used items.
+	 */
+	private List<IdName> recentItems = new ArrayList<IdName>(0);
 
 	@SuppressWarnings("unchecked")
 	public PropertyClass(int type, String id, String name, Object defaultValue, Collection<? extends IdName> selectList) {
@@ -206,5 +211,12 @@ public class PropertyClass {
 		this.readOnly = readOnly;
 	}
 
+	public List<IdName> getRecentItems() {
+		return this.recentItems;
+	}
+	
+	public void setRecentItems(List<IdName> list) {
+		this.recentItems = list;
+	}
 
 }
