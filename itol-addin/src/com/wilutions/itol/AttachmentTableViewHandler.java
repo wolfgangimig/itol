@@ -6,11 +6,12 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,6 +40,7 @@ public class AttachmentTableViewHandler {
 	
 	private final static Logger log = Logger.getLogger("AttachmentTableViewHandler");
 	
+	@SuppressWarnings("unchecked")
 	public static void apply(MailAttachmentHelper attachmentHelper, TableView<Attachment> table, Attachments observableAttachments) {
 		long t1 = System.currentTimeMillis();
 		table.setItems(observableAttachments.getObservableList());
@@ -141,16 +143,42 @@ public class AttachmentTableViewHandler {
 		// contentLengthColumn.setMaxWidth(contentLengthColumnWidth);
 		// contentLengthColumn.setMinWidth(contentLengthColumnWidth);
 
-		fileNameColumn.prefWidthProperty()
-				.bind(table.widthProperty().subtract(iconColumnWidth + contentLengthColumnWidth));
 
+		TableColumn<Attachment, Date> lastModifiedColumn = new TableColumn<>("Date");
+		lastModifiedColumn.setCellValueFactory(new PropertyValueFactory<Attachment, Date>("lastModified"));
+		lastModifiedColumn.setCellFactory(new Callback<TableColumn<Attachment, Date>, TableCell<Attachment, Date>>() {
+
+			@Override
+			public TableCell<Attachment, Date> call(TableColumn<Attachment, Date> item) {
+				TableCell<Attachment, Date> cell = new TableCell<Attachment, Date>() {
+					@Override
+					protected void updateItem(Date lastModified, boolean empty) {
+						super.updateItem(lastModified, empty);
+						if (lastModified != null) {
+							String str = DateFormat.getDateTimeInstance().format(lastModified);
+							setText(str);
+						}
+					}
+				};
+				cell.setStyle("-fx-alignment: CENTER-RIGHT;");
+				return cell;
+			}
+
+		});
+		final int lastModifiedColumnWidth = 120;
+		lastModifiedColumn.setPrefWidth(lastModifiedColumnWidth);
+		
+		fileNameColumn.prefWidthProperty()
+				.bind(table.widthProperty().subtract(iconColumnWidth + contentLengthColumnWidth + lastModifiedColumnWidth + 2));
+		
 		table.getColumns().clear();
-		table.getColumns().add(iconColumn);
-		table.getColumns().add(fileNameColumn);
-		table.getColumns().add(contentLengthColumn);
+		table.getColumns().addAll(iconColumn, fileNameColumn, lastModifiedColumn, contentLengthColumn);
 
 		table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 		table.setPlaceholder(new Label(resb.getString("tabAttachments.emptyMessage")));
+		
+		lastModifiedColumn.setSortType(TableColumn.SortType.DESCENDING);
+		table.getSortOrder().add(lastModifiedColumn);
 
 		// table.setOnKeyPressed(new EventHandler<KeyEvent>() {
 		// @Override

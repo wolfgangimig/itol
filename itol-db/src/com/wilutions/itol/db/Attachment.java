@@ -13,6 +13,7 @@ package com.wilutions.itol.db;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.Date;
 
 public class Attachment implements Cloneable {
 
@@ -25,6 +26,7 @@ public class Attachment implements Cloneable {
 	private String url;
 	private String thumbnailUrl;
 	private boolean deleted;
+	private Date lastModified;
 	
 	/**
 	 * This member is set if the attachment was downloaded into a local file.
@@ -176,4 +178,13 @@ public class Attachment implements Cloneable {
 		this.localFile = localFile;
 	}
 
+	public Date getLastModified() {
+		return lastModified;
+	}
+
+	public void setLastModified(Date lastModified) {
+		this.lastModified = lastModified;
+	}
+
+	
 }

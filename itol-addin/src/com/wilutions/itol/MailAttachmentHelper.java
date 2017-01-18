@@ -3,12 +3,12 @@ package com.wilutions.itol;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,6 +75,7 @@ public class MailAttachmentHelper {
 					for (int i = 1; i <= n; i++) {
 						com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
 						MailAttAtt attatt = new MailAttAtt(matt);
+						attatt.setLastModified(mailItem.getReceivedTime());
 						attachments.add(attatt);
 					}
 				}
@@ -192,6 +193,7 @@ public class MailAttachmentHelper {
 			super.setContentType(getFileContentType(new File(getTempDir(), matt.getFileName())));
 			super.setContentLength(matt.getSize());
 			super.setFileName(matt.getFileName());
+			super.setLastModified(new Date());
 		}
 
 		@Override
@@ -240,6 +242,7 @@ public class MailAttachmentHelper {
 
 			setSubject(mailItem.getSubject());
 			setContentLength(-1);
+			setLastModified(mailItem.getReceivedTime());
 		}
 
 		@Override
@@ -306,7 +309,7 @@ public class MailAttachmentHelper {
 	}
 
 	/**
-	 * Issue attachment for arbitrary file.
+	 * Issue attachment for file from filesystem.
 	 */
 	public static class FileAtt extends Attachment {
 
@@ -320,6 +323,7 @@ public class MailAttachmentHelper {
 			File thumbnailFile = ThumbnailHelper.makeThumbnail(file);
 			String thurl = thumbnailFile != null ? thumbnailFile.toURI().toString() : "";
 			super.setThumbnailUrl(thurl);
+			super.setLastModified(new Date(file.lastModified()));
 		}
 
 		@Override
