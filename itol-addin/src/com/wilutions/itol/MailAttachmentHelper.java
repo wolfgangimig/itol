@@ -215,7 +215,7 @@ public class MailAttachmentHelper {
 			final File mattFile = new File(dir, getFileName());
 			if (!mattFile.exists()) {
 				resourcesToRelease.add(() -> mattFile.delete());
-				System.out.println("save attachment to " + mattFile);
+				log.info("Save attachment to " + mattFile);
 				matt.SaveAsFile(mattFile.getAbsolutePath());
 				super.setContentLength(mattFile.length());
 				super.setUrl(mattFile.toURI().toString());
