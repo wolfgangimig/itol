@@ -35,7 +35,7 @@
                      <tooltip>
                         <Tooltip text="%bnClear.tooltip" />
                      </tooltip></Button>
-                  <TextField fx:id="edIssueId" prefWidth="70.0" promptText="%edIssueId.prompt">
+                  <TextField fx:id="edIssueId" prefWidth="70.0" promptText="%edIssueId.prompt" HBox.hgrow="ALWAYS">
                      <opaqueInsets>
                         <Insets />
                      </opaqueInsets>
@@ -55,7 +55,7 @@
                         <Insets left="10.0" />
                      </HBox.margin>
                   </MenuButton>
-                  <ProgressBar fx:id="pgProgress" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" progress="0.0" HBox.hgrow="ALWAYS">
+                  <ProgressBar fx:id="pgProgress" maxHeight="1.7976931348623157E308" maxWidth="200" progress="0.0" HBox.hgrow="SOMETIMES">
                      <HBox.margin>
                         <Insets left="10.0" />
                      </HBox.margin>
