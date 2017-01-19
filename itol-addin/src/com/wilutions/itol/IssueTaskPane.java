@@ -854,12 +854,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			addAttachmentMenu = new AddAttachmentMenu(this.getWindow(), observableAttachments);
 
-			// Bind buttons "Open Attachment", "Export Attachments" to attachment table selection
+			// Bind button "Open Attachment" table selection
 			bnShowAttachment.disableProperty().unbind();
 			bnShowAttachment.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
+			
+			// Bind button "Export" to table content 
 			bnExportAttachments.disableProperty().unbind();
-			bnExportAttachments.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
-			bnExportAttachments.disableProperty().bind(Bindings.size(tabAttachments.getSelectionModel().getSelectedIndices()).isEqualTo(0));
+			bnExportAttachments.disableProperty().bind(Bindings.size(tabAttachments.getItems()).isEqualTo(0));
 			
 			tabAttachmentsApplyHandler = false;
 		}
@@ -1054,23 +1055,32 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		
 		BackgTask.run(() -> {
 			
+			// Get destination directory
 			File exportDirectory = null;
 			{
 				String exportDirectoryName = Globals.getAppInfo().getConfigPropertyString(Property.EXPORT_ATTACHMENTS_DIRECTORY, System.getProperty("java.io.tmpdir"));
+				
+				// Build sub-directory: issue ID or NEW-<now>
 				String subdir = issue.getId();
 				if (subdir.isEmpty()) {
 					DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 					subdir = issue.getProject().getId() + "-NEW-" + dateFormat.format(new Date());
 				}
+
 				exportDirectory = new File(new File(exportDirectoryName), subdir);
 				exportDirectory.mkdirs();
 			}
 
+			// Selected items or all items
 			List<Attachment> selectedItems = tabAttachments.getSelectionModel().getSelectedItems();
+			if (selectedItems.isEmpty()) selectedItems = tabAttachments.getItems();
+			
+			// Prepare progress object: compute total number of bytes to export.
 			long totalBytes = selectedItems.stream().collect(Collectors.summingLong((att) -> att.getContentLength())).longValue();
 			ProgressCallback cb = createProgressCallback();
 			long currentProgress = 0;
 			cb.setTotal(totalBytes);
+			
 			for (Attachment att : selectedItems) {
 				try {
 					attachmentHelper.exportAttachment(exportDirectory, att, null);
