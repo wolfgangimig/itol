@@ -112,12 +112,12 @@ public class IssueApplication extends AddinApplication {
 		try {
 			super.register(userNotMachine, execPath);
 
-			String linkName = registerAutostart(true);
+			String linkName = registerAutostart(true, execPath);
 
-			if (linkName != null && linkName.length() != 0) {
-				showDocument(linkName);
-				showDocument("http://www.wilutions.com/joa/itol/installed.html");
-			}
+//			if (linkName != null && linkName.length() != 0) {
+//				showDocument(linkName);
+//				showDocument("http://www.wilutions.com/joa/itol/installed.html");
+//			}
 
 		}
 		catch (Throwable e) {
@@ -126,15 +126,15 @@ public class IssueApplication extends AddinApplication {
 	}
 
 	@Override
-	protected void unregister(boolean userNotMachine) {
+	protected void unregister(boolean userNotMachine, String exePath) {
 		try {
-			String linkName = registerAutostart(false);
+			String linkName = registerAutostart(false, exePath);
 
-			if (linkName != null && linkName.length() != 0) {
-				showDocument("http://www.wilutions.com/joa/itol/uninstalled.html");
-			}
+//			if (linkName != null && linkName.length() != 0) {
+//				showDocument("http://www.wilutions.com/joa/itol/uninstalled.html");
+//			}
 
-			super.unregister(userNotMachine);
+			super.unregister(userNotMachine, exePath);
 
 		}
 		catch (Throwable e) {
@@ -157,67 +157,4 @@ public class IssueApplication extends AddinApplication {
 		}
 	}
 
-	private String registerAutostart(boolean registerNotUnregister) {
-		String exe = RegUtil.getExecPath(IssueApplication.class);
-		if (exe.startsWith("\"")) exe = exe.substring(1);
-		if (exe.endsWith("\"")) exe = exe.substring(0, exe.length() - 1);
-		String linkName = makeValidPath(AUTOSTART_FOLDER + "\\" + (new File(exe)).getName() + ".lnk");
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "linkName=" + linkName);
-
-		// Im Autostart-Ordner ablegen
-		if (registerNotUnregister) {
-			try {
-				String targetName = exe;
-				String description = "";
-				if (log.isLoggable(Level.INFO))
-					log.log(Level.INFO, "Create shortcut=" + linkName + " to " + targetName);
-
-				JoaDll.nativeCreateShortcut(linkName, targetName, description);
-			}
-			catch (Throwable e) {
-				log.log(Level.SEVERE, "Failed to create shortcut=" + linkName, e);
-			}
-		}
-
-		// Im Autostart-Ordner löschen.
-		else {
-			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Delete lnk=" + linkName);
-			new File(linkName).delete();
-		}
-
-		// pushd "%APPDATA%\..\Local\Issue Tracker for Microsoft Outlook 32bit"
-		// REG add
-		// "HKCU\Software\Microsoft\Office\Outlook\Addins\ItolAddin.Class" /f /v
-		// "LoadBehavior" /t REG_DWORD /d 3
-		// START "" "Issue Tracker for Microsoft Outlook 32bit.exe"
-		// popd
-
-		return exe.toLowerCase().endsWith("exe") ? linkName : null;
-	}
-
-	/**
-	 * Make valid path.
-	 * 
-	 * @param path
-	 *            File system path that might contain environment variables.
-	 * @return File system path with replaced variables.
-	 */
-	public static String makeValidPath(String path) {
-
-		int p = path.indexOf('%');
-		while (p >= 0) {
-
-			int e = path.indexOf('%', p + 1);
-			String variableName = path.substring(p + 1, e);
-			String variableValue = System.getenv(variableName);
-			if (variableValue == null) variableValue = "";
-			path = path.replace(path.substring(p, e + 1), variableValue);
-
-			p = path.indexOf('%');
-		}
-
-		return path;
-	}
-
-	private final static String AUTOSTART_FOLDER = "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup";
 }
