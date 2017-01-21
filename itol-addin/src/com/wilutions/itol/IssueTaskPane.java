@@ -1250,16 +1250,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				
 				try {
 					String issueId = edIssueId.getText();
-					
-					IssueService srv = Globals.getIssueService();
-					Collection<Issue> issues = srv.findIssues(issueId, Globals.getAppInfo().getNbOfSuggestions());
-					
-					if (issues.size() == 1) {
-						internalShowIssue(issues.iterator().next().getId());
-					}
-					else {
-						
-					}
+					internalShowIssue(issueId);
 				}
 				catch (Exception e) {
 					showMessageBoxError(e.toString());
