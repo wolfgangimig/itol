@@ -18,6 +18,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -1225,6 +1226,19 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			});
 		}
 	}
+	
+	private void internalShowIssue(String issueId) throws Exception {
+		IssueService srv = Globals.getIssueService();
+		Issue issue = srv.readIssue(issueId, createProgressCallback());
+		String subject = srv.injectIssueIdIntoMailSubject("", issue);
+		
+		IssueMailItem mitem = new IssueMailItemBlank() {
+			public String getSubject() {
+				return subject;
+			}
+		};
+		internalSetMailItem(mitem);
+	}
 
 	@FXML
 	public void onShowExistingIssue() {
@@ -1236,16 +1250,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				
 				try {
 					String issueId = edIssueId.getText();
-					IssueService srv = Globals.getIssueService();
-					Issue issue = srv.readIssue(issueId, createProgressCallback());
-					String subject = srv.injectIssueIdIntoMailSubject("", issue);
 					
-					IssueMailItem mitem = new IssueMailItemBlank() {
-						public String getSubject() {
-							return subject;
-						}
-					};
-					internalSetMailItem(mitem);
+					IssueService srv = Globals.getIssueService();
+					Collection<Issue> issues = srv.findIssues(issueId, Globals.getAppInfo().getNbOfSuggestions());
+					
+					if (issues.size() == 1) {
+						internalShowIssue(issues.iterator().next().getId());
+					}
+					else {
+						
+					}
 				}
 				catch (Exception e) {
 					showMessageBoxError(e.toString());

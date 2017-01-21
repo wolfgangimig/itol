@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -132,20 +133,6 @@ public class IssueServiceImpl implements IssueService {
 
 		}
 		return ret;
-	}
-
-	public FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public FindIssuesResult findNextIssues(String searchId, int idx, int max) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public void findCloseIssues(String searchId) {
-		// TODO Auto-generated method stub
 	}
 
 	public Issue readIssue(String issueId, ProgressCallback cb) {
@@ -281,6 +268,12 @@ public class IssueServiceImpl implements IssueService {
 
 	@Override
 	public String downloadAttachment(String url, ProgressCallback cb) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Collection<Issue> findIssues(String query, int maxResults) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}

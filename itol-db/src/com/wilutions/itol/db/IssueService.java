@@ -10,6 +10,7 @@
  */
 package com.wilutions.itol.db;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface IssueService {
@@ -62,6 +63,8 @@ public interface IssueService {
 	Issue updateIssue(Issue iss, List<String> modifiedProperties, ProgressCallback cb) throws Exception;
 
 	Issue readIssue(String issueId, ProgressCallback cb) throws Exception;
+	
+	Collection<Issue> findIssues(String query, int maxResults) throws Exception;
 	
 	String getDefaultIssueAsString(Issue iss) throws Exception;
 	
