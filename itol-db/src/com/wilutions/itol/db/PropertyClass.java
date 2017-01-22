@@ -165,7 +165,13 @@ public class PropertyClass {
 	}
 
 	public void setSelectList(List<IdName> selectList) {
-		this.selectList = selectList;
+		if (selectList != null) {
+			this.selectList = selectList instanceof List ? (List<IdName>)selectList : new ArrayList<IdName>(selectList);
+			this.autoCompletionSuggest = new DefaultSuggest<>(this.selectList);
+		}
+		else {
+			this.selectList = null;
+		}
 	}
 
 	@Override
