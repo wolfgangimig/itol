@@ -222,11 +222,17 @@ public class PropertyGridView {
 		
 		if (propNode != null) {
 			Node ctrl = propNode.getNode();
+			
+			// Set node read-only
+			ctrl.setDisable(pclass.isReadOnly());
+
+			// Node shall occupy the entire width.
 			if (ctrl instanceof Region) {
 				Region region = (Region)ctrl;
 				region.setMaxWidth(Double.MAX_VALUE);
 				region.setPrefWidth(Double.MAX_VALUE);
 			}
+			
 			propGrid.add(ctrl, 1, rowIndex);
 	
 			if (rowIndex == 0) {
