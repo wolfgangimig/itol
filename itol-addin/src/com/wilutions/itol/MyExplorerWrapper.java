@@ -4,6 +4,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
 import com.wilutions.joa.fx.MessageBox;
@@ -19,6 +20,7 @@ import com.wilutions.mslib.outlook.Selection;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.util.Duration;
@@ -182,16 +184,21 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 
 	public void showSelectedItem() {
 		if (issuePane != null) {
-			if (issuePane.hasWindow() && issuePane.isVisible()) {
-				IDispatch mailItem = getSelectedExplorerItem();
-				if (mailItem != null) {
-					Object mailId = mailItem._get("EntryID");
-					if (!mailId.equals(lastEntryID)) {
-						issuePane.setMailItem(new IssueMailItemImpl(mailItem.as(MailItem.class)));
-						lastEntryID = mailId;
+			BackgTask.run(() -> {
+				if (issuePane.hasWindow() && issuePane.isVisible()) {
+					IDispatch mailItem = getSelectedExplorerItem();
+					if (mailItem != null) {
+						Object mailId = mailItem._get("EntryID");
+						if (!mailId.equals(lastEntryID)) {
+							IssueMailItemImpl mailItemImpl = new IssueMailItemImpl(mailItem.as(MailItem.class));
+							lastEntryID = mailId;
+							Platform.runLater(() -> {
+								issuePane.setMailItem(mailItemImpl);
+							});
+						}
 					}
 				}
-			}
+			});
 		}
 	}
 
