@@ -834,18 +834,6 @@ public class PropertyGridView {
 		if (propEdit != null) {
 
 			Node control = propEdit.getNode();
-			if (pclass.getType() == PropertyClass.TYPE_TEXT) {
-				VBox.setVgrow(control, Priority.ALWAYS);
-				VBox vbox = new VBox();
-				vbox.setMinHeight(100);
-				vbox.setMaxHeight(Double.MAX_VALUE);
-				vbox.setPrefHeight(100);
-				vbox.getChildren().clear();
-				vbox.getChildren().add(control);
-				vbox.setStyle("-fx-border-color: LIGHTGREY;-fx-border-width: 1px;");
-				control = vbox;
-			}
-			
 			propNode = new PropertyNode(issue, pclass, control) {
 				public void updateData(boolean save) {
 					propEdit.updateData(save);
