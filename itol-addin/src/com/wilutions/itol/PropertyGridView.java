@@ -40,6 +40,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -71,6 +72,7 @@ public class PropertyGridView {
 	private final IssueTaskPane issueTaskPane;
 	private final GridPane propGrid;
 	private final Tab tabProperties;
+	public final static Insets DEFAULT_PADDING = new Insets(8);
 	private final ResourceBundle resb = Globals.getResourceBundle();
 	private Node firstControl;
 	private Logger log = Logger.getLogger("PropertyGridView");
@@ -85,9 +87,9 @@ public class PropertyGridView {
 		constr0.setPercentWidth(25);
 	}
 	
-	public void pushPropertyGrid(Node replaceBy, String title) {
+	public void pushPropertyGrid(Node replaceBy, String title, Insets padding) {
 		Pane tabVBox = (Pane)tabProperties.getContent();
-		
+		tabVBox.setPadding(padding);
 		HBox.setHgrow(replaceBy, Priority.ALWAYS);
 
 		tabVBox.getChildren().add(replaceBy);
@@ -99,6 +101,7 @@ public class PropertyGridView {
 	
 	public void popPropertyGrid() {
 		Pane tabVBox = (Pane)tabProperties.getContent();
+		tabVBox.setPadding(DEFAULT_PADDING);
 		Node scrollPane = tabVBox.getChildren().get(0);
 		scrollPane.setVisible(true);
 		scrollPane.setManaged(true);
