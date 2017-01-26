@@ -24,7 +24,6 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
-import com.wilutions.com.reg.Registry;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
 import com.wilutions.itol.db.Property;
@@ -41,26 +40,24 @@ public class Globals {
 	private static ResourceBundleNoThrow resb;
 	private static volatile IssueService issueService;
 	private static volatile boolean issueServiceRunning;
-	private static Registry registry;
 	private static File appDir;
 	private static File __tempDir;
 	private static Logger log = Logger.getLogger("Globals");
 
 	private static AppInfo appInfo = new AppInfo();
+	private static UserProfile userProfile;
 
 	public static AppInfo getAppInfo() {
 		return appInfo;
 	}
 
-	protected static void setThisAddin(OutlookAddinEx addin) {
-		Globals.addin = addin;
+	public static void setAppInfo(AppInfo config) {
+		appInfo = config;
+		getRegistry();
 	}
 
-	public static Registry getRegistry() {
-		if (registry == null) {
-			registry = new Registry(appInfo.getManufacturerName(), appInfo.getAppName());
-		}
-		return registry;
+	protected static void setThisAddin(OutlookAddinEx addin) {
+		Globals.addin = addin;
 	}
 
 	public static void initIssueService(File appDir, boolean async) throws Exception {
@@ -188,37 +185,20 @@ public class Globals {
 		return issueServiceRunning;
 	}
 
-	private static void readData() {
+	private static void readData() throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "readData(");
-
-		AppInfo newConfig = (AppInfo) getRegistry().read(REG_CONFIG);
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "newConfig=" + newConfig);
-
-		if (newConfig != null) {
-
-			if (log.isLoggable(Level.FINE))
-				log.log(Level.FINE, "newConfig.getServiceFactoryClass()=" + newConfig.getServiceFactoryClass());
-			if (newConfig.getServiceFactoryClass() != null) {
-				appInfo.setServiceFactoryClass(newConfig.getServiceFactoryClass());
-			}
-
-			if (log.isLoggable(Level.FINE))
-				log.log(Level.FINE, "newConfig.serviceFactoryParams=" + newConfig.getServiceFactoryParams());
-			if (newConfig.getServiceFactoryParams() != null) {
-				appInfo.setServiceFactoryParams(newConfig.getServiceFactoryParams());
-			}
-
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "newConfig.configProps=" + newConfig.getConfigProps());
-			if (newConfig.getConfigProps() != null) {
-				appInfo.setConfigProps(newConfig.getConfigProps());
-			}
-		}
-
+		AppInfo config = AppInfo.readFromAppData("WILUTIONS", "Issue Tracker for Microsoft Outlook and JIRA");
+		setAppInfo(config);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")readData");
 	}
 
 	public static void writeData() {
-		getRegistry().write(REG_CONFIG, appInfo);
+		try {
+			appInfo.writeIntoAppData();
+		}
+		catch (Exception e) {
+			log.log(Level.SEVERE, "Failed to write configuration file.", e);
+		}
 	}
 
 	public static void setConfig(List<Property> configProps) throws Exception {
@@ -319,6 +299,13 @@ public class Globals {
 		finally {
 		}
 
+	}
+
+	public static UserProfile getRegistry() {
+		if (userProfile == null) {
+			userProfile = UserProfile.readFromAppData(appInfo.getManufacturerName(), appInfo.getAppName());
+		}
+		return userProfile;
 	}
 
 }

@@ -11,10 +11,15 @@
 package com.wilutions.itol;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Property;
 
@@ -167,4 +172,105 @@ public class AppInfo {
 	public int getNbOfSuggestions() {
 		return Integer.parseInt(getConfigPropertyString(Property.NB_OF_SUGGESTIONS, "20"));
 	}
+
+	public static AppInfo readFromAppData(String manufacturerName, String appName) {
+		AppInfo ret = null;
+		try {
+			File configFile = getConfigFile(manufacturerName, appName);
+			System.out.println("Load config from " + configFile);
+			ret = read(configFile);
+		}
+		catch(Exception e) {
+			System.out.println("File not found.");
+			ret = new AppInfo();
+			ret.setManufacturerName(manufacturerName);
+			ret.setAppName(appName);
+		}
+		return ret;
+	}
+	
+	public void writeIntoAppData() throws Exception {
+		File configFile = getConfigFile(manufacturerName, appName);
+		System.out.println("Write config into " + configFile);
+		write(configFile);
+	}
+	
+	private static File getConfigFile(String manufacturerName, String appName) {
+		String appData = System.getenv("APPDATA");
+		if (Default.value(appData).isEmpty()) {
+			appData = ".";
+		}
+		File dataDir = new File(new File(new File(appData), manufacturerName), appName).getAbsoluteFile();
+		dataDir.mkdirs();
+		File configFile = new File(dataDir, "application.json");
+		return configFile;
+	}
+	
+	private static AppInfo read(File configFile) throws Exception {
+		String json = new String(Files.readAllBytes(configFile.toPath()), "UTF-8");
+		GsonBuilder builder = new GsonBuilder();
+        Gson gson = builder.create();
+        return gson.fromJson(json, AppInfo.class);
+	}
+	
+//	private void fromJSON(JSONObject jsAppInfo) {
+//		this.serviceFactoryClass = jsAppInfo.getString("serviceFactoryClass");
+//		this.appName = jsAppInfo.getString("appName");
+//		this.manufacturerName = jsAppInfo.getString("manufacturerName");
+//		
+//		GsonBuilder builder = new GsonBuilder();
+//        Gson gson = builder.create();
+//        
+//		
+//		this.serviceFactoryParams = new ArrayList<String>();
+//		{
+//			JSONArray jsServiceFactoryParams = (JSONArray)jsAppInfo.get("serviceFactoryParams");
+//			int n = jsServiceFactoryParams.length();
+//			for (int i = 0; i < n; i++) {
+//				String s = jsServiceFactoryParams.getString(i);
+//				this.serviceFactoryParams.add(s);
+//			}
+//		}		
+//		
+//		this.configProps = new ArrayList<Property>();
+//		{
+//			JSONArray jsConfigProps = (JSONArray)jsAppInfo.get("configProps");
+//			int n = jsConfigProps.length();
+//			for (int i = 0; i < n; i++) {
+//				JSONObject jsProperty = jsConfigProps.getJSONObject(i);
+//				Property prop = null;
+//				String propId = jsProperty.getString("id");
+//				Object propValue = jsProperty.get("value");
+//				if (propId.isEmpty() || propValue == null) {
+//					prop = Property.NULL;
+//				}
+//				else if (propValue instanceof JSONArray) {
+//					List<Object> values = new ArrayList<>();
+//					JSONArray jsValues = (JSONArray)propValue;
+//					int nv = jsValues.length();
+//					for (int iv = 0; iv < nv; iv++) {
+//						Object elm = jsValues.get(iv);
+//						values.add(elm);
+//					}
+//					propValue = values;
+//					prop = new Property(propId, propValue);
+//				}
+//				else {
+//					prop = new Property(propId, propValue);
+//				}
+//				this.configProps.add(prop);
+//			}
+//			
+//		}
+//	}
+	
+	private void write(File configFile) throws Exception {
+		GsonBuilder builder = new GsonBuilder();
+		builder.setPrettyPrinting();
+        Gson gson = builder.create();
+        String json = gson.toJson(this);
+        Files.write(configFile.toPath(), json.getBytes("UTF-8"), StandardOpenOption.CREATE);
+	}
+	
+	
 }
