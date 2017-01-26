@@ -173,12 +173,15 @@ public class AppInfo {
 		return Integer.parseInt(getConfigPropertyString(Property.NB_OF_SUGGESTIONS, "20"));
 	}
 
-	public static AppInfo readFromAppData(String manufacturerName, String appName) {
+	public AppInfo readFromAppData() {
 		AppInfo ret = null;
 		try {
 			File configFile = getConfigFile(manufacturerName, appName);
 			System.out.println("Load config from " + configFile);
 			ret = read(configFile);
+			ret.setManufacturerName(manufacturerName);
+			ret.setAppName(appName);
+			ret.setServiceFactoryClass(serviceFactoryClass);
 		}
 		catch(Exception e) {
 			System.out.println("File not found.");

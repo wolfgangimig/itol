@@ -187,7 +187,7 @@ public class Globals {
 
 	private static void readData() throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "readData(");
-		AppInfo config = AppInfo.readFromAppData("WILUTIONS", "Issue Tracker for Microsoft Outlook and JIRA");
+		AppInfo config = appInfo.readFromAppData();
 		setAppInfo(config);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")readData");
 	}

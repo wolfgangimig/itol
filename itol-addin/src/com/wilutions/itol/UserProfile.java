@@ -25,8 +25,6 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.wilutions.com.ComEnum;
 import com.wilutions.com.ComException;
 import com.wilutions.com.reg.DeclRegistryValue;
@@ -42,7 +40,7 @@ public class UserProfile {
 
 	private String appName;
 	private String manufacturerName;
-	private JSONObject root;
+	private JSONObject root = new JSONObject();
 	
 	/**
 	 * Initialize the registry destination path.
@@ -61,8 +59,8 @@ public class UserProfile {
 		UserProfile ret = null;
 		try {
 			File configFile = getConfigFile(manufacturerName, appName);
-			System.out.println("Load config from " + configFile);
-			ret = read(configFile);
+			System.out.println("Load user profile from " + configFile);
+			ret = read(configFile, manufacturerName, appName);
 		}
 		catch(Exception e) {
 			System.out.println("File not found.");
@@ -75,6 +73,7 @@ public class UserProfile {
 		try {
 			writeIntoAppData();
 		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -84,18 +83,15 @@ public class UserProfile {
 		write(configFile);
 	}
 
-	private static UserProfile read(File configFile) throws Exception {
+	private static UserProfile read(File configFile, String manufacturerName, String appName) throws Exception {
 		String json = new String(Files.readAllBytes(configFile.toPath()), "UTF-8");
-		GsonBuilder builder = new GsonBuilder();
-        Gson gson = builder.create();
-        return gson.fromJson(json, UserProfile.class);
+		UserProfile userProfile = new UserProfile(manufacturerName, appName);
+		userProfile.root = new JSONObject(json);
+		return userProfile;
 	}
 	
 	private void write(File configFile) throws Exception {
-		GsonBuilder builder = new GsonBuilder();
-		builder.setPrettyPrinting();
-        Gson gson = builder.create();
-        String json = gson.toJson(this);
+        String json = root.toString(2);
         Files.write(configFile.toPath(), json.getBytes("UTF-8"), StandardOpenOption.CREATE);
 	}
 
@@ -214,7 +210,8 @@ public class UserProfile {
 			readFields(key, ret, OPT_ALL_FIELDS);
 
 		}
-		catch (Throwable ignored) {
+		catch (Throwable e) {
+			e.printStackTrace();
 		}
 
 		return ret;
@@ -538,6 +535,10 @@ public class UserProfile {
 			this.id = id;
 			this.value = value;
 		};
+		
+		@SuppressWarnings("unused")
+		Property() {
+		};
 
 		public String toString() {
 			return "[" + id + "," + value + "," + type + "]";
@@ -567,45 +568,77 @@ public class UserProfile {
 	private void deleteObject(String key) {
 		RegUtil_purgeRegistryKey(key);
 	}
+	
+	private JSONObject getAtPath(String key) {
+		String[] keys = new String[0];
+		try {
+			keys = key.split("\\\\");
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		JSONObject jsobj = root;
+		for (int i = 0; i < keys.length; i++) {
+			JSONObject elm = null;
+			if (jsobj.has(keys[i])) {
+				elm = jsobj.getJSONObject(keys[i]);
+			}
+			else {
+				elm = new JSONObject();
+				jsobj.put(keys[i], elm);
+			}
+			jsobj = elm;
+		}
+		return jsobj;
+	}
 
 	private void RegUtil_deleteRegistryValue(String key, String valueName) {
 		valueName = makeValueName(valueName);
-		Map<String, Object> child = properties.get(key);
-		if (child != null) {
-			child.remove(valueName);
-		}
+		JSONObject jsobj = getAtPath(key);
+		jsobj.remove(valueName);
 	}
 
 	private void RegUtil_purgeRegistryKey(String key) {
-		properties.remove(key);
+		String[] keys = key.split("\\\\");
+		JSONObject jsobj = root;
+		for (int i = 0; i < keys.length-1; i++) {
+			JSONObject elm = null;
+			if (jsobj.has(keys[i])) {
+				elm = jsobj.getJSONObject(keys[i]);
+			}
+			else {
+				elm = new JSONObject();
+				jsobj.put(keys[i], elm);
+			}
+			jsobj = elm;
+		}
+		
+		String keyToRemove = keys[keys.length-1];
+		if (jsobj.has(keyToRemove)) {
+			jsobj.remove(keyToRemove);
+		}		
 	}
 
-	private Object RegUtil_getRegistryValue(String keyName, String valueName, Object defaultValue) {
-		valueName = makeValueName(valueName);
+	private Object RegUtil_getRegistryValue(String key, String valueName, Object defaultValue) {
 		Object ret = defaultValue;
-		Map<String, Object> child = properties.get(keyName);
-		if (child != null) {
-			Object value = child.get(valueName);
-			if (value != null) {
-				ret = value;
-			}
+		valueName = makeValueName(valueName);
+		JSONObject jsobj = getAtPath(key);
+		if (jsobj.has(valueName)) {
+			ret = jsobj.get(valueName);
 		}
 		return ret;
 	}
 
-	private void RegUtil_setRegistryValue(String keyName, String valueName, Object value) {
+	private void RegUtil_setRegistryValue(String key, String valueName, Object value) {
 		valueName = makeValueName(valueName);
-		Map<String,Object> child = properties.get(keyName);
-		if (child == null) {
-			child = new HashMap<String, Object>();
-			properties.put(keyName, child);
-		}
-		child.put(valueName, value);
+		JSONObject jsobj = getAtPath(key);
+		jsobj.put(valueName, value);
 	}
 	
 	private String makeValueName(String valueName) {
 		if (Default.value(valueName).isEmpty()) {
-			valueName = "(default)"; 
+			valueName = "(_type)"; 
 		}
 		return valueName;
 	}
