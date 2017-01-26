@@ -179,16 +179,14 @@ public class AppInfo {
 			File configFile = getConfigFile(manufacturerName, appName);
 			System.out.println("Load config from " + configFile);
 			ret = read(configFile);
-			ret.setManufacturerName(manufacturerName);
-			ret.setAppName(appName);
-			ret.setServiceFactoryClass(serviceFactoryClass);
 		}
 		catch(Exception e) {
 			System.out.println("File not found.");
 			ret = new AppInfo();
-			ret.setManufacturerName(manufacturerName);
-			ret.setAppName(appName);
 		}
+		ret.setManufacturerName(manufacturerName);
+		ret.setAppName(appName);
+		ret.setServiceFactoryClass(serviceFactoryClass);
 		return ret;
 	}
 	
