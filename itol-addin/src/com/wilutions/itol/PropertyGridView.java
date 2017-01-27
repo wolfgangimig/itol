@@ -72,17 +72,19 @@ public class PropertyGridView {
 	private final IssueTaskPane issueTaskPane;
 	private final GridPane propGrid;
 	private final Tab tabProperties;
+	private final String tabPropertiesTitle;
 	public final static Insets DEFAULT_PADDING = new Insets(8);
 	private final ResourceBundle resb = Globals.getResourceBundle();
 	private Node firstControl;
 	private Logger log = Logger.getLogger("PropertyGridView");
-
+	
 	private final List<PropertyNode> propNodes = new ArrayList<>();
 
 	public PropertyGridView(IssueTaskPane issueTaskPane, Tab tabProperties, GridPane propGrid) throws IOException {
 		this.issueTaskPane = issueTaskPane;
 		this.propGrid = propGrid;
 		this.tabProperties = tabProperties;
+		this.tabPropertiesTitle = tabProperties.getText();
 		ColumnConstraints constr0 = propGrid.getColumnConstraints().get(0);
 		constr0.setPercentWidth(25);
 	}
@@ -97,6 +99,8 @@ public class PropertyGridView {
 		Region scrollPane = (Region)tabVBox.getChildren().get(0);
 		scrollPane.setVisible(false);
 		scrollPane.setManaged(false);
+		
+		tabProperties.setText(title + " (" + tabPropertiesTitle + ")");
 	}
 	
 	public void popPropertyGrid() {
@@ -106,6 +110,7 @@ public class PropertyGridView {
 		scrollPane.setVisible(true);
 		scrollPane.setManaged(true);
 		tabVBox.getChildren().remove(1);
+		tabProperties.setText(tabPropertiesTitle);
 	}
 
 	public void initProperties(Issue issue) throws Exception {
