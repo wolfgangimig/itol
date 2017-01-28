@@ -404,12 +404,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					Platform.runLater(() -> {
 
 						tabpIssue.getSelectionModel().select(tpNotes);
-						tpNotes.setStyle("-fx-font-weight:bold;");
 
 						try {
 							attachmentHelper.initialUpdate(mailItem, issue);
 							initalUpdateAttachmentView();
-							tpAttachments.setStyle("-fx-font-weight:bold");
 						}
 						catch (Exception e) {
 							log.log(Level.SEVERE, "Failed to update mail attachments.", e);
