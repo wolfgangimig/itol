@@ -22,7 +22,6 @@ import com.wilutions.mslib.outlook.OlSaveAsType;
 
 public class MailAttachmentHelper {
 
-	private IssueMailItem mailItem;
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
 	private File __tempDir;
 	private final static Logger log = Logger.getLogger("MailAttachmentHelper");
@@ -35,13 +34,11 @@ public class MailAttachmentHelper {
 		if (log.isLoggable(Level.FINE)) log.fine("initialUpdate(mailItem=" + mailItem + ", issue=" + issue);
 		releaseResources();
 
-		this.mailItem = mailItem;
-
 		if (issue != null) {
 			boolean isNew = issue.getId().isEmpty();
 			String newNotes = issue.getPropertyString(Property.NOTES, "");
 			if (isNew || newNotes.length() != 0) {
-				initialUpdateNewIssueAttachments(issue);
+				initialUpdateNewIssueAttachments(mailItem, issue);
 			}
 		}
 		if (log.isLoggable(Level.FINE)) log.fine(")initialUpdate");
@@ -55,7 +52,7 @@ public class MailAttachmentHelper {
 		return __tempDir;
 	}
 
-	private void initialUpdateNewIssueAttachments(Issue issue) throws IOException {
+	private void initialUpdateNewIssueAttachments(IssueMailItem mailItem, Issue issue) throws IOException {
 
 		if (mailItem.getBody().length() != 0) {
 			String ext = getConfigMsgFileExt();
