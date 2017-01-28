@@ -112,7 +112,7 @@ public class AppInfo {
 	}
 
 	public IdName getMsgFileType() {
-		IdName ret = MsgFileTypes.NOTHING;
+		IdName ret = MsgFileTypes.DEFAULT;
 		String s = getConfigPropertyString(Property.MSG_FILE_TYPE, MsgFileTypes.NOTHING.getId());
 		for (IdName t : MsgFileTypes.TYPES) {
 			if (t.getId().equals(s)) {

@@ -42,12 +42,16 @@ public class MsgFileTypes {
 	 * Attach mail as plain text.
 	 */
 	public final static IdName TEXT = new IdName(".txt", "Plain Text (.txt)");
+	/**
+	 * Default format.
+	 */
+	public final static IdName DEFAULT = new IdName(RTF);
 	
 	/**
 	 * List of all types.
 	 */
 	public final static IdName[] TYPES = new IdName[] {
-			NOTHING, MSG, MHTML, RTF, TEXT
+			NOTHING, DEFAULT, MSG, MHTML, RTF, TEXT
 	};
 
 	/**
