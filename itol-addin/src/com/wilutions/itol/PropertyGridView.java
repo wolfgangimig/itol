@@ -53,6 +53,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxListCell;
@@ -71,18 +72,20 @@ public class PropertyGridView {
 
 	private final IssueTaskPane issueTaskPane;
 	private final GridPane propGrid;
+	private final TabPane tabpIssue;
 	private final Tab tabProperties;
 	private final String tabPropertiesTitle;
 	public final static Insets DEFAULT_PADDING = new Insets(8);
 	private final ResourceBundle resb = Globals.getResourceBundle();
 	private Node firstControl;
 	private Logger log = Logger.getLogger("PropertyGridView");
-	
+
 	private final List<PropertyNode> propNodes = new ArrayList<>();
 
-	public PropertyGridView(IssueTaskPane issueTaskPane, Tab tabProperties, GridPane propGrid) throws IOException {
+	public PropertyGridView(IssueTaskPane issueTaskPane, TabPane tabpIssue, Tab tabProperties, GridPane propGrid) throws IOException {
 		this.issueTaskPane = issueTaskPane;
 		this.propGrid = propGrid;
+		this.tabpIssue = tabpIssue;
 		this.tabProperties = tabProperties;
 		this.tabPropertiesTitle = tabProperties.getText();
 		ColumnConstraints constr0 = propGrid.getColumnConstraints().get(0);
@@ -101,6 +104,8 @@ public class PropertyGridView {
 		scrollPane.setManaged(false);
 		
 		tabProperties.setText(title + " (" + tabPropertiesTitle + ")");
+		
+		tabpIssue.getStyleClass().add("sub-prop-tab");
 	}
 	
 	public void popPropertyGrid() {
@@ -111,6 +116,7 @@ public class PropertyGridView {
 		scrollPane.setManaged(true);
 		tabVBox.getChildren().remove(1);
 		tabProperties.setText(tabPropertiesTitle);
+		tabpIssue.getStyleClass().remove("sub-prop-tab");
 	}
 
 	public void initProperties(Issue issue) throws Exception {

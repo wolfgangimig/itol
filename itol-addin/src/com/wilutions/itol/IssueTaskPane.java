@@ -896,7 +896,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initProperties() throws Exception {
 		if (propGridView == null) {
-			propGridView = new PropertyGridView(this, tpProperties, propGrid);
+			propGridView = new PropertyGridView(this, tabpIssue, tpProperties, propGrid);
 		}
 		propGridView.initProperties(issue);
 		propGridView.updateData(false);

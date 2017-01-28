@@ -27,7 +27,6 @@
     -fx-background-color: WHITE;
 }
 
-
 .tab-pane .tab:selected .tab-label
 {
     -fx-text-fill: BLUE;
@@ -81,3 +80,19 @@ Does not work nice for short scroll bars.
     -fx-pref-width: 8;
 }
 */
+
+/**
+ * Used for tabs when sub-entries of properties are edited.
+ */
+.sub-prop-tab .tab:selected .tab-label {
+	-fx-text-fill: CORAL;
+	-fx-font-weight: bold;
+}
+
+/**
+ * Buttons that finish editing sub-entries of properties. 
+ */
+.sub-prop-back {
+	-fx-font-weight: bold; 
+	-fx-text-fill: CORAL;
+}
