@@ -26,18 +26,20 @@ public class IssueUpdate implements Serializable {
 
 	private Date createDate;
 
+	private Date lastModified;
+
 	private String createdBy;
 
 	private Map<String, Property> properties;
 
 	public IssueUpdate() {
-		createDate = new Date(System.currentTimeMillis());
+		createDate = lastModified = new Date(System.currentTimeMillis());
 		properties = new HashMap<String, Property>();
 		createdBy = "";
 	}
 
 	public IssueUpdate(Date createDate, String createdBy, Map<String, Property> props) {
-		this.createDate = createDate != null ? createDate : new Date(System.currentTimeMillis());
+		this.lastModified = this.createDate = createDate != null ? createDate : new Date(System.currentTimeMillis());
 		this.createdBy = createdBy;
 		this.properties = props;
 	}
@@ -151,7 +153,7 @@ public class IssueUpdate implements Serializable {
 	}
 
 	public void setCreateDateIso(String createDate) {
-		this.createDate = Date.from(ZonedDateTime.parse(createDate).toInstant());
+		setCreateDate(Date.from(ZonedDateTime.parse(createDate).toInstant()));
 	}
 
 	public void setCreatedBy(String createdBy) {
@@ -169,4 +171,17 @@ public class IssueUpdate implements Serializable {
 	public void setId(String id) {
 		this.id = id;
 	}
+
+	public Date getLastModified() {
+		return lastModified;
+	}
+
+	public void setLastModified(Date lastModified) {
+		this.lastModified = lastModified;
+	}
+
+	public void setLastModifiedIso(String iso) {
+		setCreateDate(Date.from(ZonedDateTime.parse(iso).toInstant()));
+	}
+
 }

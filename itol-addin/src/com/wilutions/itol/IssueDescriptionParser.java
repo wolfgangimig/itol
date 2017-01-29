@@ -17,6 +17,7 @@ public class IssueDescriptionParser {
 		if (outlookDelimPos >= 0) {
 			ret = description.substring(0, outlookDelimPos).trim();
 		}
+		ret = ret.replace("\n\n", "\n");
 		return ret;
 	}
 
