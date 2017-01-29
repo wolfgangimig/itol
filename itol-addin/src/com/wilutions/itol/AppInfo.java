@@ -124,12 +124,17 @@ public class AppInfo {
 	}
 	
 	public String getLogLevel() {
-		return getConfigPropertyString(Property.LOG_LEVEL, "INFO");
+		String ret = getConfigPropertyString(Property.LOG_LEVEL, null);
+		if (Default.value(ret).isEmpty()) ret = "INFO";
+		return ret;
 	}
 	
 	public String getLogFile() {
-		String defaultValue  = new File(System.getProperty("java.io.tmpdir"), "itol.log").getAbsolutePath();
-		return getConfigPropertyString(Property.LOG_FILE, defaultValue);
+		String ret = getConfigPropertyString(Property.LOG_FILE, null);
+		if (Default.value(ret).isEmpty()) {
+			ret = new File(System.getProperty("java.io.tmpdir"), "itol.log").getAbsolutePath();
+		}
+		return ret;
 	}
 	
 	public String getIssueIdMailSubjectFormat() {
