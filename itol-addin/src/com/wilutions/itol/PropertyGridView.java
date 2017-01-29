@@ -121,11 +121,19 @@ public class PropertyGridView {
 
 	public void initProperties(Issue issue) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "PropertyGridView(");
+		
+		// Cleanup current view.
 		propGrid.getChildren().clear();
 		propGrid.getRowConstraints().clear();
 		propNodes.clear();
 
 		int rowIndex = 0;
+
+		// Add propert for create date.
+		if (!issue.isNew()) {
+			addPropertyForCreateDate(issue, rowIndex++);
+		}
+
 		IssueService srv = Globals.getIssueService();
 		List<String> propOrder = srv.getPropertyDisplayOrder(issue);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "propOrder=" + propOrder);
@@ -140,6 +148,23 @@ public class PropertyGridView {
 			}
 		}
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")PropertyGridView");
+	}
+
+	private void addPropertyForCreateDate(Issue issue, int rowIndex) {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "prop for create date=" + issue.getCreateDate());
+
+		LocalDateTime ldate = issue.getCreateDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+		String text = ldate.format(DateTimeFormatter.ofPattern(DateTimePicker.DefaultFormat));
+		
+		TextField ctrl = new TextField(text);
+		ctrl.setEditable(false);
+//		ctrl.setMouseTransparent(true); cannot be activated by mouse clicks
+		ctrl.setFocusTraversable(false);		
+		
+		Label label = new Label(resb.getString("IssueProperty.CreateDate"));
+
+		propGrid.add(label, 0, rowIndex);
+		propGrid.add(ctrl, 1, rowIndex);
 	}
 
 	public void updateData(boolean save) {

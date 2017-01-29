@@ -143,7 +143,7 @@ public class Issue implements Serializable {
 		}
 		return ret;
 	}
-	
+
 	public Object getPropertyValue(String propertyId, Object defaultValue) {
 		IssueUpdate update = getCurrentUpdate();
 		Property property = update.getProperty(propertyId);
@@ -286,6 +286,15 @@ public class Issue implements Serializable {
 	public Date getLastModified() {
 		Date ret = getLastUpdate().getCreateDate();
 		return ret;
+	}
+	
+	public Date getCreateDate() {
+		Date ret = currentUpdate.getCreateDate();
+		return ret;
+	}
+	
+	public void setCreateDate(Date date) {
+		currentUpdate.setCreateDate(date);
 	}
 
 	@Override
