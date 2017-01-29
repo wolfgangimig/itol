@@ -59,7 +59,7 @@ public class MailAttachmentHelper {
 
 			if (!ext.equals(MsgFileTypes.NOTHING.getId())) {
 				
-				List<Attachment> attachments = new ArrayList<Attachment>();
+				List<Attachment> attachments = new ArrayList<Attachment>(issue.getAttachments());
 
 				MailAtt mailAtt = new MailAtt(mailItem, ext);
 				attachments.add(mailAtt);
