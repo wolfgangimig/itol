@@ -180,13 +180,15 @@ public class AppInfo {
 
 	public AppInfo readFromAppData() {
 		AppInfo ret = null;
+		File configFile = null;
 		try {
-			File configFile = getConfigFile(manufacturerName, appName);
+			configFile = getConfigFile(manufacturerName, appName);
 			System.out.println("Load config from " + configFile);
 			ret = read(configFile);
 		}
 		catch(Exception e) {
-			System.out.println("File not found.");
+			System.out.println("Failed to read config file=" + configFile);
+			e.printStackTrace();
 			ret = new AppInfo();
 		}
 		ret.setManufacturerName(manufacturerName);
