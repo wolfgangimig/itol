@@ -50,7 +50,7 @@ public interface IssueService {
 	 * @return Issue
 	 * @throws Exception
 	 */
-	Issue validateIssue(Issue iss) throws Exception;
+	void validateIssue(Issue iss) throws Exception;
 
 	String extractIssueIdFromMailSubject(String subject) throws Exception;
 
@@ -63,6 +63,8 @@ public interface IssueService {
 	Issue updateIssue(Issue iss, List<String> modifiedProperties, ProgressCallback cb) throws Exception;
 
 	Issue readIssue(String issueId, ProgressCallback cb) throws Exception;
+	
+	MailInfo replyToComment(Issue issue, String mailTo, String comment) throws Exception;
 	
 	Collection<Issue> findIssues(String query, int maxResults) throws Exception;
 	

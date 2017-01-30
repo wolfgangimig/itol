@@ -26,12 +26,11 @@ import java.util.Set;
 import com.wilutions.itol.IssueSubjectId;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.DescriptionTextEditor;
-import com.wilutions.itol.db.FindIssuesInfo;
-import com.wilutions.itol.db.FindIssuesResult;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssuePropertyEditor;
 import com.wilutions.itol.db.IssueService;
+import com.wilutions.itol.db.MailInfo;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
@@ -126,13 +125,11 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public Issue validateIssue(Issue iss) {
-		Issue ret = iss;
+	public void validateIssue(Issue iss) {
 		if (iss.getType().equals(String.valueOf(TYPE_DOCUMENTATION))) {
 
 
 		}
-		return ret;
 	}
 
 	public Issue readIssue(String issueId, ProgressCallback cb) {
@@ -274,6 +271,12 @@ public class IssueServiceImpl implements IssueService {
 
 	@Override
 	public Collection<Issue> findIssues(String query, int maxResults) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public MailInfo replyToComment(Issue issue, String mailTo, String comment) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}

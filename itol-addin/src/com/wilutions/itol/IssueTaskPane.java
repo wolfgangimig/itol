@@ -13,12 +13,12 @@ package com.wilutions.itol;
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
+import com.wilutions.com.Dispatch;
 import com.wilutions.com.IDispatch;
 import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
@@ -40,6 +41,7 @@ import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssuePropertyEditor;
 import com.wilutions.itol.db.IssueService;
+import com.wilutions.itol.db.MailInfo;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackImpl;
 import com.wilutions.itol.db.Property;
@@ -52,6 +54,8 @@ import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.office._CustomTaskPane;
 import com.wilutions.mslib.outlook.Application;
 import com.wilutions.mslib.outlook.MailItem;
+import com.wilutions.mslib.outlook.OlAttachmentType;
+import com.wilutions.mslib.outlook.OlItemType;
 import com.wilutions.mslib.outlook._NameSpace;
 
 import javafx.animation.KeyFrame;
@@ -219,6 +223,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	 * Owner window for child dialogs (message boxes)
 	 */
 	private Object windowOwner;
+	
+	/**
+	 * THis property is true, if the NOTES were extracted from the mail body.
+	 */
+	private volatile boolean tookNotesFromMail;
 
 	public IssueTaskPane(MyWrapper inspectorOrExplorer) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "IssueTaskPane(");
@@ -245,6 +254,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void internalSetMailItem(IssueMailItem mailItem) {
 		this.mailItem = mailItem;
+		this.tookNotesFromMail = false;
 
 		Platform.runLater(() -> {
 
@@ -400,6 +410,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				autoIssueModifications.add(() -> {
 
 					issue.setPropertyString(Property.NOTES, replyDescription);
+					
+					// ITJ-18: Send auto reply.
+					// Mark that notes were copied from mail body.
+					// This information is used to prevent an auto reply mail 
+					// to be sent.  
+					tookNotesFromMail = true;
 
 					Platform.runLater(() -> {
 
@@ -1361,7 +1377,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					updateData(true);
 
 					IssueService srv = Globals.getIssueService();
-					issue = srv.validateIssue(issue);
+					srv.validateIssue(issue);
 
 					updateData(false);
 
@@ -1462,6 +1478,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					// show that progress has started.
 					progressCallback.setProgress(4 * 1000);
 
+					// Update issue.
+					// this.issue is replaced by a new object.
+					Issue prevIssue = (Issue)issue.clone();
 					updateIssueChangedMembers(srv, progressCallback);
 
 					Platform.runLater(() -> {
@@ -1469,7 +1488,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 							initialUpdate();
 
 							progressCallback.setFinished();
-
+							
+							maybeSendReplyWithNotes(prevIssue);
 						}
 						catch (Exception e) {
 							log.log(Level.SEVERE, "Failed to read issue data into UI controls.", e);
@@ -1711,5 +1731,89 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	 */
 	public ProgressCallback createProgressCallback() {
 		return new MyProgressCallback();
+	}
+	
+
+	/**
+	 * ITJ-18: Send reply with notes.
+	 * The recipient(s) of the reply mail is found in a custom property.
+	 * The property ID is defined in ITOL configuration.
+	 * @param issue
+	 */
+	private void maybeSendReplyWithNotes(Issue prevIssue) {
+		if (log.isLoggable(Level.FINE)) log.fine("maybeSendReplyWithNotes(tookNotesFromMail=" + tookNotesFromMail);
+		if (!tookNotesFromMail) {
+			String mailToPropId = "customfield_11000";
+			if (log.isLoggable(Level.FINE)) log.fine("mailToPropId=" + mailToPropId);
+			if (!mailToPropId.isEmpty()) {
+				String mailTo = issue.getPropertyString(mailToPropId, "");
+				if (log.isLoggable(Level.FINE)) log.fine("mailTo=" + mailTo);
+				if (!mailTo.isEmpty()) {
+					String lastComment = (prevIssue.isNew()) ? prevIssue.getDescription() : prevIssue.getPropertyString(Property.NOTES, "");
+					if (log.isLoggable(Level.FINE)) log.fine("lastComment=" + lastComment);
+					if (!lastComment.isEmpty()) {
+						if (log.isLoggable(Level.FINE)) log.fine("start sendReplyWithNotes in background");
+						BackgTask.run(() -> {
+							sendReplyWithNotes(issue, mailTo, lastComment, createProgressCallback());
+						});
+					}
+				}
+			}
+		}
+		if (log.isLoggable(Level.FINE)) log.fine(")maybeSendReplyWithNotes");
+	}
+
+	private void sendReplyWithNotes(Issue issue, String mailTo, String lastComment, ProgressCallback cb) {
+		if (log.isLoggable(Level.FINE)) log.fine("sendReplyWithNotes(issue=" + issue + ", mailTo=" + mailTo + ", lastComment=" + lastComment);
+		try {
+			IssueService srv = Globals.getIssueService();
+			MailInfo mailInfo = srv.replyToComment(issue, mailTo, lastComment);
+
+			// Compute total size of attachments to be added.
+			double[] totalProgress = new double[] { 1000 };
+			List<Attachment> attachments = mailInfo.getAttachments();
+			attachments.stream().forEach((att) -> totalProgress[0] += att.getContentLength());
+			
+			// Create MailItem object with subject, body, TO,...
+			cb.setTotal(totalProgress[0]);
+			Application application = Globals.getThisAddin().getApplication();
+			MailItem mailItem = Dispatch.as(application.CreateItem(OlItemType.olMailItem), MailItem.class);
+
+			mailItem.setTo(mailInfo.getTO());
+			mailItem.setCC(mailInfo.getCC());
+			mailItem.setBCC(mailInfo.getBCC());
+			mailItem.setSubject(mailInfo.getSubject());
+			mailItem.setHTMLBody(mailInfo.getHtmlBody());
+			cb.setProgress(1000);
+			
+			// Attachments
+			addAttachmentsToReply(mailItem, attachments, cb);
+
+			// Show Inspector window
+			if (log.isLoggable(Level.FINE)) log.fine("mailItem.Display");
+			mailItem.Display(false); 
+		}
+		catch (Exception e) {
+			log.log(Level.SEVERE, "Failed to build reply mail.", e);
+			this.showMessageBoxError("Failed to build reply mail.\n" + e);
+		}
+		finally {
+			cb.setFinished();
+		}
+		if (log.isLoggable(Level.FINE)) log.fine(")sendReplyWithNotes");
+	}
+	
+	private void addAttachmentsToReply(MailItem mailItem, List<Attachment> attachments, ProgressCallback cb) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.fine("addAttachmentsToReply(" + attachments);
+		com.wilutions.mslib.outlook.Attachments mailAttachments = mailItem.getAttachments().as(com.wilutions.mslib.outlook.Attachments.class);
+		int index = 0;
+		for (Attachment attachment : attachments) {
+			if (log.isLoggable(Level.FINE)) log.fine("download " + attachment);
+			String uri = attachmentHelper.downloadAttachment(attachment, cb);
+			File file = new File(new URI(uri));
+			if (log.isLoggable(Level.FINE)) log.fine("mailAttachment.Add " + file.getAbsolutePath());
+			mailAttachments.Add(file.getAbsolutePath(), OlAttachmentType.olByValue, ++index, attachment.getFileName());
+		}
+		if (log.isLoggable(Level.FINE)) log.fine(")addAttachmentsToReply");
 	}
 }
