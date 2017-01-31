@@ -3,3 +3,5 @@ dist
 /readme.txt.2
 /build/
 /src-gen/
+/.classpath
+/.project
