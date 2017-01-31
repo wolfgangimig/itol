@@ -277,6 +277,7 @@ public class AppInfo {
 		builder.setPrettyPrinting();
         Gson gson = builder.create();
         String json = gson.toJson(this);
+        configFile.delete();
         Files.write(configFile.toPath(), json.getBytes("UTF-8"), StandardOpenOption.CREATE);
 	}
 	
