@@ -92,6 +92,7 @@ public class UserProfile {
 	
 	private void write(File configFile) throws Exception {
         String json = root.toString(2);
+        configFile.delete();
         Files.write(configFile.toPath(), json.getBytes("UTF-8"), StandardOpenOption.CREATE);
 	}
 
