@@ -224,8 +224,10 @@ public class Config implements Serializable, Cloneable {
 		builder.setPrettyPrinting();
 		Gson gson = builder.create();
 		String json = gson.toJson(this);
+		json = json.replaceAll("\n", "\r\n");
 		byte[] bytes = json.getBytes("UTF-8");
-		Files.write(configFile.toPath(), bytes, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+		configFile.delete();
+		Files.write(configFile.toPath(), bytes, StandardOpenOption.CREATE_NEW);
 	}
 	
 	protected Config extractApplicationConfig() {

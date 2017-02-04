@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1656,7 +1657,27 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public void onConfigure() {
 		ItolAddin addin = (ItolAddin) Globals.getThisAddin();
 		Window owner = this.getWindow();
-		addin.internalConfigure(owner, null);
+		addin.internalConfigure(owner, (succ, ex) -> {
+			if (succ) {
+				ProgressCallback cb = createProgressCallback();
+				cb.setTotal(100);
+				try {
+					cb.setProgress(50);
+					Globals.initialize(false); // Re-connect in background.
+					cb.setProgress(100);
+				}
+				catch (Exception e) {
+					log.log(Level.WARNING, "Re-connect to server failed.", e);
+					String msg = e.getMessage();
+					String textf = resb.getString("msg.connection.error");
+					String text = MessageFormat.format(textf, msg);
+					showMessageBoxError(text);
+				}
+				finally {
+					cb.setFinished();
+				}
+			}
+		});
 	}
 
 	@FXML

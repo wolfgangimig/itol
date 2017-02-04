@@ -1,6 +1,7 @@
 package com.wilutions.itol.db;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class MsgFileFormat {
@@ -15,8 +16,9 @@ public class MsgFileFormat {
 	public final static IdName MSG = new IdName(".msg", "Outlook (.msg)");
 	/**
 	 * Attach mail as MHTML.
+	 * Nobody would use this proprietary Microsoft format:
 	 */
-	public final static IdName MHTML = new IdName(".mhtml", "MIME HTML (.mhtml)");
+	//public final static IdName MHTML = new IdName(".mhtml", "MIME HTML (.mhtml)");
 	/**
 	 * Attach mail as RTF.
 	 */
@@ -33,14 +35,12 @@ public class MsgFileFormat {
 	/**
 	 * List of all types.
 	 */
-	public final static IdName[] TYPES = new IdName[] {
-			NOTHING, DEFAULT, MSG, MHTML, RTF, TEXT
-	};
+	public final static List<IdName> FORMATS = Collections.unmodifiableList(Arrays.asList(new IdName[] { NOTHING, MSG, RTF, TEXT }));
 
 	/**
 	 * File extensions in relation to OlSaveAsType
 	 */
-	public final static List<String> exts = Arrays.asList(".txt", ".rtf", ".tmp", ".msg", ".doc", ".html", ".vcard",
-			".vcal", ".ical", ".msg", ".mhtml");
+	public final static List<String> exts = Collections.unmodifiableList(Arrays.asList(".txt", ".rtf", ".tmp", ".msg", ".doc", ".html", ".vcard",
+			".vcal", ".ical", ".msg", ".mhtml"));
 
 }

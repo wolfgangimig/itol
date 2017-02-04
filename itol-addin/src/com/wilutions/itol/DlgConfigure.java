@@ -1,11 +1,10 @@
 package com.wilutions.itol;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.List;
 import java.util.ResourceBundle;
 
 import com.wilutions.fx.acpl.AutoCompletionBinding;
@@ -51,8 +50,6 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	@FXML
 	CheckBox ckInsertIssueId;
 
-	List<IdName> msgFileFormats = Arrays.asList(MsgFileFormat.NOTHING, MsgFileFormat.TEXT, MsgFileFormat.MSG,
-			MsgFileFormat.MHTML, MsgFileFormat.RTF);
 	private AutoCompletionBinding<IdName> autoCompletionAttachMailAs;
 
 	public DlgConfigure() {
@@ -84,22 +81,27 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	@FXML
 	public void onOK() {
 		updateData(true);
+		
 		try {
+			File dir = new File(config.getExportAttachmentsDirectory());
+			dir.mkdirs();
+			if (!dir.exists() || !dir.isDirectory()) {
+				String textf = resb.getString("msg.config.invalidExportDir");
+				String text = MessageFormat.format(textf, dir.getAbsolutePath());
+				throw new FileNotFoundException(text);
+			}
+			
 			Globals.getAppInfo().setConfig(config);
+			
+			finish(true);
+			
 		} catch (Exception e) {
+			
 			String msg = e.getMessage();
-			String textf = resb.getString("msg.connection.error");
+			String textf = resb.getString("msg.config.error");
 			String text = MessageFormat.format(textf, msg);
 			MessageBox.error(this, text, (ignored, ex) -> {
 			});
-
-			// Something wrong in the configuration. Maybe the  
-			// connection options do not fit anymore.    
-			// I close the dialog to give the user the chance to 
-			// adopt them.
-		}
-		finally {
-			close();
 		}
 	}
 
@@ -134,7 +136,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			}
 		};
 		autoCompletionAttachMailAs = AutoCompletions.bindAutoCompletion(extractImage, cbAttachMailAs, recentCaption,
-				suggestionsCaption, null, msgFileFormats);
+				suggestionsCaption, null, MsgFileFormat.FORMATS);
 	}
 
 	private void updateData(boolean save) {
@@ -143,25 +145,14 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			config.setLogLevel(cbLogLevel.getSelectionModel().getSelectedItem().getId());
 			config.setMsgFileFormat(autoCompletionAttachMailAs.getSelectedItem());
 			config.setInjectIssueIdIntoMailSubject(ckInsertIssueId.isSelected());
-			
-			File dir = new File(edExportAttachmentsDirectory.getText());
-			dir.mkdirs();
-			if (dir.exists() && dir.isDirectory()) {
-				config.setExportAttachmentsDirectory(dir.getAbsolutePath());
-			}
-			else {
-				// Causes Outlook to crash:
-				// MessageBox.error(this, "Invalid directory " + dir, (succ, ex) -> {});
-				// This is most likely a JOA bug.
-			}
+			config.setExportAttachmentsDirectory(edExportAttachmentsDirectory.getText());
 		}
 		else {
 			edLogFile.setText(config.getLogFile());
 			cbLogLevel.getSelectionModel().select(new IdName(config.getLogLevel(), ""));
 
 			String fileTypeId = config.getMsgFileFormat().getId();	
-			if (fileTypeId == null || fileTypeId.isEmpty()) fileTypeId = MsgFileFormat.DEFAULT.getId();
-			for (IdName item : msgFileFormats) {
+			for (IdName item : MsgFileFormat.FORMATS) {
 				if (item.getId().equals(fileTypeId)) {
 					autoCompletionAttachMailAs.select(item);
 					break;
@@ -179,11 +170,18 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 		directoryChooser.setTitle(resb.getString("bnAddAttachment.menu.fileChooser"));
 		String dir = edExportAttachmentsDirectory.getText();
 		if (!dir.isEmpty()) {
-			File fdir = new File(dir);
-			while (!fdir.exists()) fdir = fdir.getParentFile();
-			directoryChooser.setInitialDirectory(fdir);
+			try {
+				File fdir = new File(dir);
+				while (fdir != null && !fdir.exists()) fdir = fdir.getParentFile();
+				if (fdir != null) {
+					directoryChooser.setInitialDirectory(fdir);
+				}
+			}
+			catch (Exception ignored) {
+				// invalid directory
+			}
 		}
-        final File selectedDirectory = directoryChooser.showDialog(null);
+        final File selectedDirectory = directoryChooser.showDialog(scene.getWindow());
         if (selectedDirectory != null) {
             edExportAttachmentsDirectory.setText(selectedDirectory.getAbsolutePath());
         }
