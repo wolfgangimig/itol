@@ -1,0 +1,4 @@
+
+include ("joa") 
+project(":joa").projectDir = new File("$settingsDir/../../joa")
+

@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.text.MessageFormat;
-import java.util.List;
 import java.util.Properties;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -24,28 +23,24 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
+import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
-import com.wilutions.itol.db.Property;
+import com.wilutions.itol.db.PasswordEncryption;
 import com.wilutions.joa.OfficeAddinUtil;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
 
 public class Globals {
-
-	public final static String REG_CONFIG = "Config";
-	public final static String REG_defaultIssueAsString = "defaultIssueAsString";
 
 	private static OutlookAddinEx addin;
 	private static MailExport mailExport = new MailExport();
 	private static ResourceBundleNoThrow resb;
 	private static volatile IssueService issueService;
 	private static volatile boolean issueServiceRunning;
-	private static File appDir;
 	private static File __tempDir;
 	private static Logger log = Logger.getLogger("Globals");
 
 	private static AppInfo appInfo = new AppInfo();
-	private static UserProfile userProfile;
 
 	public static AppInfo getAppInfo() {
 		return appInfo;
@@ -53,31 +48,18 @@ public class Globals {
 
 	public static void setAppInfo(AppInfo config) {
 		appInfo = config;
-		getRegistry();
 	}
 
 	protected static void setThisAddin(OutlookAddinEx addin) {
 		Globals.addin = addin;
 	}
 
-	public static void initIssueService(File appDir, boolean async) throws Exception {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" + appDir);
-		long t1, t2, t3;
+	private static void initIssueService(boolean async) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(");
 
-		Globals.appDir = appDir;
 		Globals.issueServiceRunning = false;
 
-		t1 = System.currentTimeMillis();
-		readData();
-		t2 = System.currentTimeMillis();
-
-		initLogging();
-		t3 = System.currentTimeMillis();
-
-		if (log.isLoggable(Level.FINE))
-			log.log(Level.FINE, "readData ms=" + (t2 - t1) + ", initLogging ms=" + (t3 - t2));
-		
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" + appDir);
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" );
 
 		try {
 			if (async) {
@@ -93,13 +75,6 @@ public class Globals {
 			else {
 				internalInitIssueService();
 			}
-
-			// if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Waiting for
-			// initialized service...");
-			// cdl.await(1, TimeUnit.SECONDS);
-			// if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Service
-			// initialized=" + issueServiceRunning);
-
 		}
 		catch (Exception e) {
 			log.log(Level.SEVERE, "Cannot initialize issue service", e);
@@ -115,12 +90,12 @@ public class Globals {
 			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "getService");
 			Class<?> clazz = Class.forName(appInfo.getServiceFactoryClass());
 			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
-			issueService = fact.getService(appDir, appInfo.getServiceFactoryParams());
+			issueService = fact.getService(appInfo.getAppDir(), appInfo.getServiceFactoryParams());
 			
 			initProxy();
 
 			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
-			issueService.setConfig(appInfo.getConfigProps());
+			issueService.setConfig(appInfo.getConfig());
 
 			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initializing...");
 			issueService.initialize();
@@ -136,17 +111,18 @@ public class Globals {
 	}
 
 	private static void initProxy() {
-		String redmineUrl = appInfo.getConfigPropertyString(Property.URL, "http:").toLowerCase();
+		Config config = appInfo.getConfig();
+		String redmineUrl = config.getServiceUrl().toLowerCase();
 		String httpProtocol = redmineUrl.indexOf("https") == 0 ? "https" : "http";
-		String proxyHost = appInfo.getConfigPropertyString(Property.PROXY_SERVER, "");
-		String proxyServerEnabled = appInfo.getConfigPropertyString(Property.PROXY_SERVER_ENABLED, "false"); 
-		String proxyPort = appInfo.getConfigPropertyString(Property.PROXY_PORT, "");
-		String proxyUserName = appInfo.getConfigPropertyString(Property.PROXY_USER_NAME, "");
-		String proxyPassword = appInfo.getConfigPropertyString(Property.PROXY_PASSWORD, "");
+		String proxyHost = config.getProxyServer();
+		boolean proxyServerEnabled = config.isProxyServerEnabled(); 
+		int proxyPort = config.getProxyServerPort();
+		String proxyUserName = config.getProxyServerUserName(); 
+		String proxyPassword = PasswordEncryption.decrypt(config.getProxyServerEncryptedUserPassword());
 
-		if (!proxyServerEnabled.equals("true")) {
+		if (!proxyServerEnabled) {
 			proxyHost = "";
-			proxyPort = "";
+			proxyPort = 0;
 			proxyUserName = "";
 			proxyPassword = "";
 		}
@@ -172,9 +148,9 @@ public class Globals {
 			});
 		}
 		
-		System.setProperty(httpProtocol + ".proxySet", proxyServerEnabled); 
+		System.setProperty(httpProtocol + ".proxySet", Boolean.toString(proxyServerEnabled)); 
 		System.setProperty(httpProtocol + ".proxyHost", proxyHost); 
-		System.setProperty(httpProtocol + ".proxyPort", proxyPort);
+		System.setProperty(httpProtocol + ".proxyPort", Integer.toString(proxyPort));
 		System.setProperty(httpProtocol + ".proxyUser", proxyUserName);
 		System.setProperty(httpProtocol + ".proxyPassword", proxyPassword);
 		
@@ -184,31 +160,12 @@ public class Globals {
 	public static boolean isIssueServiceRunning() {
 		return issueServiceRunning;
 	}
-
-	private static void readData() throws Exception {
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "readData(");
-		AppInfo config = appInfo.readFromAppData();
-		setAppInfo(config);
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")readData");
-	}
-
-	public static void writeData() {
-		try {
-			appInfo.writeIntoAppData();
-		}
-		catch (Exception e) {
-			log.log(Level.SEVERE, "Failed to write configuration file.", e);
-		}
-	}
-
-	public static void setConfig(List<Property> configProps) throws Exception {
-		appInfo.setConfigProps(configProps);
+	
+	public static void initialize(boolean async) throws Exception {
 		initLogging();
-		writeData();
-		readData();
-		initIssueService(appDir, false);
+		initIssueService(async);
 	}
-
+	
 	public static OutlookAddinEx getThisAddin() {
 		return addin;
 	}
@@ -272,8 +229,8 @@ public class Globals {
 			ClassLoader classLoader = Globals.class.getClassLoader();
 			String logprops = OfficeAddinUtil.getResourceAsString(classLoader, "com/wilutions/itol/logging.properties");
 
-			String logLevel = getAppInfo().getLogLevel();
-			String logFile = getAppInfo().getLogFile();
+			String logLevel = getAppInfo().getConfig().getLogLevel();
+			String logFile = getAppInfo().getConfig().getLogFile();
 
 			if (logLevel != null && !logLevel.isEmpty() && logFile != null && !logFile.isEmpty()) {
 				logFile = logFile.replace('\\', '/');
@@ -300,12 +257,4 @@ public class Globals {
 		}
 
 	}
-
-	public static UserProfile getRegistry() {
-		if (userProfile == null) {
-			userProfile = UserProfile.readFromAppData(appInfo.getManufacturerName(), appInfo.getAppName());
-		}
-		return userProfile;
-	}
-
 }

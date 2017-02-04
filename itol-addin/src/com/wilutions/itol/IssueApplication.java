@@ -19,7 +19,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.wilutions.com.ComException;
-import com.wilutions.com.JoaDll;
 import com.wilutions.com.reg.RegUtil;
 import com.wilutions.itol.db.impl.IssueServiceFactory_JS;
 import com.wilutions.joa.AddinApplication;
@@ -33,16 +32,17 @@ public class IssueApplication extends AddinApplication {
 	static {
 		System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %2$s %5$s%6$s%n");
 		
-		AppInfo config = Globals.getAppInfo();
+		AppInfo appConfig = Globals.getAppInfo();
 		// config.appName = "Issue Tracker for Microsoft Outlook " +
 		// System.getProperty("sun.arch.data.model") + "bit";
-		config.setAppName("Issue Tracker for Microsoft Outlook");
-		config.setManufacturerName("WILUTIONS");
-		config.setServiceFactoryClass(IssueServiceFactory_JS.class.getName());
-		config.setServiceFactoryParams(Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT));
+		appConfig.setAppName("Issue Tracker for Microsoft Outlook");
+		appConfig.setManufacturerName("WILUTIONS");
+		appConfig.setServiceFactoryClass(IssueServiceFactory_JS.class.getName());
+		appConfig.setServiceFactoryParams(Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT));
+		appConfig.setAppDir(getAppDir());
 	}
 
-	public static File getAppDir() {
+	private static File getAppDir() {
 		File ret = RegUtil.getAppPathIfSelfContained();
 		if (ret == null) {
 			ret = new File(System.getProperty("user.dir"));
@@ -70,9 +70,7 @@ public class IssueApplication extends AddinApplication {
 
 	private void initIssueService() throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(");
-		File appDir = getAppDir();
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "appDir=" + appDir);
-		Globals.initIssueService(appDir, true);
+		Globals.initialize(true);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")initIssueService");
 	}
 

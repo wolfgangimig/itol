@@ -3,16 +3,17 @@ package com.wilutions.itol;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ResourceBundle;
 
 import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
+import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IdName;
-import com.wilutions.itol.db.Property;
+import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.joa.fx.ModalDialogFX;
 
 import javafx.fxml.FXML;
@@ -31,7 +32,7 @@ import javafx.stage.DirectoryChooser;
 
 public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializable {
 
-	private List<Property> configProps;
+	private Config config;
 	private ResourceBundle resb;
 	private Scene scene;
 
@@ -50,13 +51,13 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	@FXML
 	CheckBox ckInsertIssueId;
 
-	List<IdName> msgFileTypes = Arrays.asList(MsgFileTypes.NOTHING, MsgFileTypes.TEXT, MsgFileTypes.MSG,
-			MsgFileTypes.MHTML, MsgFileTypes.RTF);
+	List<IdName> msgFileFormats = Arrays.asList(MsgFileFormat.NOTHING, MsgFileFormat.TEXT, MsgFileFormat.MSG,
+			MsgFileFormat.MHTML, MsgFileFormat.RTF);
 	private AutoCompletionBinding<IdName> autoCompletionAttachMailAs;
 
 	public DlgConfigure() {
 		this.resb = Globals.getResourceBundle();
-		this.configProps = Globals.getAppInfo().getConfigProps();
+		this.config = (Config)Globals.getAppInfo().getConfig().clone();
 		setTitle(resb.getString("DlgConfigure.Caption"));
 	}
 
@@ -83,9 +84,23 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	@FXML
 	public void onOK() {
 		updateData(true);
-		Globals.writeData();
-		Globals.initLogging();
-		close();
+		try {
+			Globals.getAppInfo().setConfig(config);
+		} catch (Exception e) {
+			String msg = e.getMessage();
+			String textf = resb.getString("msg.connection.error");
+			String text = MessageFormat.format(textf, msg);
+			MessageBox.error(this, text, (ignored, ex) -> {
+			});
+
+			// Something wrong in the configuration. Maybe the  
+			// connection options do not fit anymore.    
+			// I close the dialog to give the user the chance to 
+			// adopt them.
+		}
+		finally {
+			close();
+		}
 	}
 
 	@FXML
@@ -106,7 +121,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	}
 
 	private void initAutoCompletionAttachMailAs(ResourceBundle resb) {
-		MsgFileTypes.NOTHING.setName(resb.getString("DlgConfigure.AttachMailAs.nothing"));
+		MsgFileFormat.NOTHING.setName(resb.getString("DlgConfigure.AttachMailAs.nothing"));
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
 		ExtractImage<IdName> extractImage = new ExtractImage<IdName>() {
@@ -119,26 +134,20 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			}
 		};
 		autoCompletionAttachMailAs = AutoCompletions.bindAutoCompletion(extractImage, cbAttachMailAs, recentCaption,
-				suggestionsCaption, null, msgFileTypes);
+				suggestionsCaption, null, msgFileFormats);
 	}
 
 	private void updateData(boolean save) {
 		if (save) {
-			setConfigProperty(Property.LOG_FILE, edLogFile.getText());
-			setConfigProperty(Property.LOG_LEVEL, cbLogLevel.getSelectionModel().getSelectedItem().getId());
-
-			IdName fileType = autoCompletionAttachMailAs.getSelectedItem();
-			String fileTypeId = fileType.getId();
-			setConfigProperty(Property.MSG_FILE_TYPE, fileTypeId);
+			config.setLogFile(edLogFile.getText());
+			config.setLogLevel(cbLogLevel.getSelectionModel().getSelectedItem().getId());
+			config.setMsgFileFormat(autoCompletionAttachMailAs.getSelectedItem());
+			config.setInjectIssueIdIntoMailSubject(ckInsertIssueId.isSelected());
 			
-			boolean injectIssueId = ckInsertIssueId.isSelected();
-			setConfigProperty(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, Boolean.toString(injectIssueId));
-			
-			String exportAttachmentDir = edExportAttachmentsDirectory.getText();
-			File dir = new File(exportAttachmentDir);
+			File dir = new File(edExportAttachmentsDirectory.getText());
 			dir.mkdirs();
 			if (dir.exists() && dir.isDirectory()) {
-				setConfigProperty(Property.EXPORT_ATTACHMENTS_DIRECTORY, exportAttachmentDir);
+				config.setExportAttachmentsDirectory(dir.getAbsolutePath());
 			}
 			else {
 				// Causes Outlook to crash:
@@ -147,54 +156,20 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			}
 		}
 		else {
-			String logFile = getConfigProperty(Property.LOG_FILE);
-			if (logFile.isEmpty())
-				logFile = (new File(System.getProperty("java.io.tmpdir"), "itol.log")).getAbsolutePath();
-			edLogFile.setText(logFile);
+			edLogFile.setText(config.getLogFile());
+			cbLogLevel.getSelectionModel().select(new IdName(config.getLogLevel(), ""));
 
-			cbLogLevel.getSelectionModel().select(new IdName(getConfigProperty(Property.LOG_LEVEL), ""));
-
-			String fileTypeId = getConfigProperty(Property.MSG_FILE_TYPE);
-			if (fileTypeId == null || fileTypeId.isEmpty()) fileTypeId = MsgFileTypes.RTF.getId();
-			for (IdName item : msgFileTypes) {
+			String fileTypeId = config.getMsgFileFormat().getId();	
+			if (fileTypeId == null || fileTypeId.isEmpty()) fileTypeId = MsgFileFormat.DEFAULT.getId();
+			for (IdName item : msgFileFormats) {
 				if (item.getId().equals(fileTypeId)) {
 					autoCompletionAttachMailAs.select(item);
 					break;
 				}
 			}
 			
-			String insertIssueIdStr = getConfigProperty(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT);
-			Boolean insertIssueId = (insertIssueIdStr.isEmpty()) ? Boolean.FALSE : Boolean.valueOf(insertIssueIdStr);
-			ckInsertIssueId.setSelected(insertIssueId);
-			
-			String exportAttachmentDir = getConfigProperty(Property.EXPORT_ATTACHMENTS_DIRECTORY);
-			edExportAttachmentsDirectory.setText(exportAttachmentDir);
-		}
-	}
-
-	private String getConfigProperty(String propId) {
-		Property ret = null;
-		for (Property prop : configProps) {
-			if (prop.getId().equals(propId)) {
-				ret = prop;
-				break;
-			}
-		}
-		return ret != null ? (String) ret.getValue() : "";
-	}
-
-	private void setConfigProperty(String propId, String propValue) {
-		boolean found = false;
-		for (Iterator<Property> it = configProps.iterator(); it.hasNext();) {
-			Property prop = it.next();
-			if (prop.getId().equals(propId)) {
-				prop.setValue(propValue);
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			configProps.add(new Property(propId, propValue));
+			ckInsertIssueId.setSelected(config.getInjectIssueIdIntoMailSubject());
+			edExportAttachmentsDirectory.setText(config.getExportAttachmentsDirectory());
 		}
 	}
 

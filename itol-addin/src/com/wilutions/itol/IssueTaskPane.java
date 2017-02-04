@@ -42,11 +42,13 @@ import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssuePropertyEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.MailInfo;
+import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackImpl;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
 import com.wilutions.itol.db.Suggest;
+import com.wilutions.joa.TaskPanePosition;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.mslib.office.CustomTaskPane;
@@ -238,7 +240,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		this.mailItem = inspectorOrExplorer.getSelectedItem();
 
 		this.resb = Globals.getResourceBundle();
-		Globals.getRegistry().readFields(this);
+
+		this.setPosition(Globals.getAppInfo().getConfig().getTaskPanePosition());
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")IssueTaskPane");
 	}
@@ -349,12 +352,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				if (issue == null) {
 
 					// ... no issue ID: create blank issue
-					String defaultIssueAsString = (String) Globals.getRegistry().read(Globals.REG_defaultIssueAsString);
+					String defaultIssueAsString = (String) Globals.getAppInfo().getConfig().getDefaultIssueAsString();
 					if (defaultIssueAsString == null) {
 						defaultIssueAsString = "";
 					}
 
-					issue = srv.createIssue(subject, description, defaultIssueAsString);
+					issue = srv.createIssue(subject, description);
 
 					Thread.sleep(300);
 				}
@@ -464,7 +467,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@Override
 	public void close() {
 		super.close();
-		Globals.getRegistry().writeFields(this);
+		
+		TaskPanePosition tpp = this.getPosition();
+		Globals.getAppInfo().getConfig().setTaskPanePosition(tpp);
+		Globals.getAppInfo().getConfig().write();
+
 		for (Runnable run : resourcesToRelease) {
 			try {
 				run.run();
@@ -859,7 +866,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					boolean disableReply = true;
 					if (!c.getList().isEmpty()) {
 						Attachment firstAtt = c.getList().iterator().next();
-						boolean isMsg = firstAtt.getFileName().endsWith(MsgFileTypes.MSG.getId());
+						boolean isMsg = firstAtt.getFileName().endsWith(MsgFileFormat.MSG.getId());
 						disableReply = !isMsg;
 					}
 					bnReply.setDisable(disableReply);
@@ -1020,9 +1027,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	private boolean isInjectIssueId() {
-		Boolean injectId = Boolean
-				.valueOf(Globals.getAppInfo().getConfigPropertyString(Property.INJECT_ISSUE_ID_INTO_MAIL_SUBJECT, "false"));
-		return injectId == null || injectId;
+		boolean ret = Globals.getAppInfo().getConfig().isInjectIssueIdIntoMailSubject();
+		return ret;
 	}
 
 	private void addOrRemoveTab(Tab t, boolean add, int pos) {
@@ -1073,7 +1079,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			// Get destination directory
 			File exportDirectory = null;
 			{
-				String exportDirectoryName = Globals.getAppInfo().getConfigPropertyString(Property.EXPORT_ATTACHMENTS_DIRECTORY, System.getProperty("java.io.tmpdir"));
+				String exportDirectoryName = Globals.getAppInfo().getConfig().getExportAttachmentsDirectory();
 				
 				// Build sub-directory: issue ID or NEW-<now>
 				String subdir = issue.getId();
@@ -1558,8 +1564,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		// Therefore, we have to create the issue before uploading attachments.
 		List<Attachment> deferredAttachments = null;
 		if (isNew && isInjectIssueId()) {
-			IdName type = Globals.getAppInfo().getMsgFileType();
-			if (type == MsgFileTypes.MSG) {
+			IdName type = Globals.getAppInfo().getConfig().getMsgFileFormat();
+			if (type == MsgFileFormat.MSG) {
 				modifiedProperties.remove(Property.ATTACHMENTS);
 				deferredAttachments = issue.getAttachments();
 				issue.setAttachments(new ArrayList<Attachment>(0));
@@ -1622,8 +1628,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	public void onSaveAsDefault() {
 		try {
-			String str = Globals.getIssueService().getDefaultIssueAsString(issue);
-			Globals.getRegistry().write(Globals.REG_defaultIssueAsString, str);
+			Globals.getIssueService().setDefaultIssue(issue);
 		}
 		catch (Exception e) {
 			showMessageBoxError(e.toString());
@@ -1662,7 +1667,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private Attachment getSelectedAttachmentMsg() {
 		Attachment ret = null;
 		Attachment att = tabAttachments.getSelectionModel().getSelectedItem();
-		if (att != null && att.getFileName().endsWith(MsgFileTypes.MSG.getId())) {
+		if (att != null && att.getFileName().endsWith(MsgFileFormat.MSG.getId())) {
 			ret = att;
 		}
 		return ret;

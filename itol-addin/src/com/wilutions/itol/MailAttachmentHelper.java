@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
+import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
 import com.wilutions.mslib.outlook.OlSaveAsType;
@@ -57,7 +58,7 @@ public class MailAttachmentHelper {
 		if (mailItem.getBody().length() != 0) {
 			String ext = getConfigMsgFileExt();
 
-			if (!ext.equals(MsgFileTypes.NOTHING.getId())) {
+			if (!ext.equals(MsgFileFormat.NOTHING.getId())) {
 				
 				List<Attachment> attachments = new ArrayList<Attachment>(issue.getAttachments());
 
@@ -338,7 +339,7 @@ public class MailAttachmentHelper {
 	}
 
 	private static String getConfigMsgFileExt() {
-		IdName type = Globals.getAppInfo().getMsgFileType();
+		IdName type = Globals.getAppInfo().getConfig().getMsgFileFormat();
 		return type.getId();
 	}
 

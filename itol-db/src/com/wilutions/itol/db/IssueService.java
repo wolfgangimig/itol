@@ -15,8 +15,8 @@ import java.util.List;
 
 public interface IssueService {
 	
-	List<Property> getConfig();
-	void setConfig(List<Property> configProps);
+	Config getConfig();
+	void setConfig(Config config);
 	
 	void initialize() throws Exception;
 	
@@ -40,7 +40,7 @@ public interface IssueService {
 
 	IssuePropertyEditor getPropertyEditor(Object parent, Issue issue, String propertyId) throws Exception;
 
-	Issue createIssue(String subject, String description, String defaultIssueAsString) throws Exception;
+	Issue createIssue(String subject, String description) throws Exception;
 
 	/**
 	 * Validate properties in given issue and set default values for invalid properties.
@@ -68,7 +68,7 @@ public interface IssueService {
 	
 	Collection<Issue> findIssues(String query, int maxResults) throws Exception;
 	
-	String getDefaultIssueAsString(Issue iss) throws Exception;
+	void setDefaultIssue(Issue iss) throws Exception;
 	
 	// TODO: rename to getHistory
 	String getIssueHistoryUrl(String issueId) throws Exception;

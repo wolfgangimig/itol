@@ -33,6 +33,7 @@ import com.wilutions.itol.db.Default;
 /**
  * This class helps to store and load the state of UI controls.
  */
+@Deprecated
 public class UserProfile {
 
 	private static final int OPT_ONLY_ANNOTATED_FIELDS = 1;

@@ -4,15 +4,13 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.URL;
 import java.text.MessageFormat;
-import java.util.Iterator;
-import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.wilutions.com.BackgTask;
+import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.HttpClient;
 import com.wilutions.itol.db.PasswordEncryption;
-import com.wilutions.itol.db.Property;
 import com.wilutions.joa.fx.ModalDialogFX;
 
 import javafx.application.Platform;
@@ -33,7 +31,7 @@ import javafx.scene.control.TextField;
 
 public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable {
 
-	private List<Property> configProps;
+	private Config config;
 	private ResourceBundle resb;
 	private Scene scene;
 	private SimpleBooleanProperty connectionInProcess = new SimpleBooleanProperty();
@@ -73,7 +71,7 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 	
 	public DlgConnect() {
 		this.resb = Globals.getResourceBundle();
-		this.configProps = Globals.getAppInfo().getConfigProps();
+		this.config = (Config)Globals.getAppInfo().getConfig().clone();
 		setTitle(resb.getString("DlgConnect.Caption"));
 	}
 
@@ -133,7 +131,7 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 		});
 
 		BackgTask.run(() -> {
-			if (connect(this, configProps)) {
+			if (connect(this, config)) {
 				Platform.runLater(() -> {
 					setResult(true);
 					close();
@@ -142,11 +140,12 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 		});
 	}
 
-	protected boolean connect(Object ownerWindow, List<Property> configProps) {
+	protected boolean connect(Object ownerWindow, Config config) {
 		long id = connectionProcessId.get();
 		boolean succ = false;
 		try {
-			Globals.setConfig(configProps);
+			Globals.getAppInfo().setConfig(config);
+			Globals.initialize(false);
 			succ = true;
 		}
 		catch (Throwable e) {
@@ -192,81 +191,48 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 
 	private void updateData(boolean save) {
 		if (save) {
-			setConfigProperty(Property.URL, edUrl.getText());
-			setConfigProperty(Property.API_KEY, "");
-			setConfigProperty(Property.USER_NAME, "");
-			setConfigProperty(Property.PASSWORD, "");
+			config.setServiceUrl(edUrl.getText());
+			config.setUserName("");
+			config.setEncryptedPassword("");
+			config.setCredentials("");
 			String pwd = edPassword.getText();
 			if (pwd.isEmpty()) {
-				setConfigProperty(Property.API_KEY, edUserName.getText());
+				config.setCredentials(edUserName.getText());
 			}
 			else {
-				setConfigProperty(Property.USER_NAME, edUserName.getText());
-				setConfigProperty(Property.PASSWORD, PasswordEncryption.encrypt(edPassword.getText()));
+				config.setUserName(edUserName.getText());
+				config.setEncryptedPassword(PasswordEncryption.encrypt(edPassword.getText()));
 			}
-			
-			setConfigProperty(Property.PROXY_SERVER_ENABLED, Boolean.toString(ckProxyEnabled.isSelected()));
-			setConfigProperty(Property.PROXY_SERVER, edProxyServer.getText());
-			setConfigProperty(Property.PROXY_PORT, edProxyPort.getText());
-			setConfigProperty(Property.PROXY_USER_NAME, edProxyUserName.getText());
-			setConfigProperty(Property.PROXY_PASSWORD, edProxyPassword.getText());
+			config.setProxyServerEnabled(ckProxyEnabled.isSelected());
+			config.setProxyServer(edProxyServer.getText());
+			config.setProxyServerPort(Integer.parseInt(edProxyPort.getText()));
+			config.setProxyServerUserName(edProxyUserName.getText());
+			config.setProxyServerEncryptedUserPassword(PasswordEncryption.encrypt(edProxyUserName.getText()));
 		}
 		else {
-			String url = getConfigProperty(Property.URL);
+			String url = config.getServiceUrl();
 			if (url.isEmpty()) url = "http://server:port";
 			edUrl.setText(url);
 
-			String apiKey = getConfigProperty(Property.API_KEY);
+			String apiKey = config.getCredentials();
 			// 1b5d44de5539ef39c6b3ef0befc2e71234af3d81
 			if (apiKey.isEmpty()) {
-				String userName = getConfigProperty(Property.USER_NAME);
-				if (userName.isEmpty()) userName = System.getProperty("user.name");
-				edUserName.setText(userName);
+				edUserName.setText(config.getUserName());
+				edPassword.setText(PasswordEncryption.decrypt(config.getEncryptedPassword()));
 			}
 			else {
 				edUserName.setText(apiKey);
 			}
-			edPassword.setText(PasswordEncryption.decrypt(getConfigProperty(Property.PASSWORD)));
-			
-			String proxyServer = getConfigProperty(Property.PROXY_SERVER);
-			edProxyServer.setText(proxyServer);
-			String proxyPort = getConfigProperty(Property.PROXY_PORT);
-			edProxyPort.setText(proxyPort);
-			String proxyKey = getConfigProperty(Property.PROXY_USER_NAME);
-			edProxyUserName.setText(proxyKey);
-			String proxyPassword = getConfigProperty(Property.PROXY_PASSWORD);
-			edProxyPassword.setText(proxyPassword);
 
-			String proxyEnabledStr = getConfigProperty(Property.PROXY_SERVER_ENABLED);
-			ckProxyEnabled.setSelected(proxyEnabledStr.equals("true"));
+			edProxyServer.setText(config.getProxyServer());
+			int proxyPort = config.getProxyServerPort();
+			edProxyPort.setText(Integer.toString(proxyPort));
+			edProxyUserName.setText(config.getProxyServerUserName());
+			String proxyPassword = config.getProxyServerEncryptedUserPassword();
+			edProxyPassword.setText(PasswordEncryption.decrypt(proxyPassword));
+			ckProxyEnabled.setSelected(config.isProxyServerEnabled());
 			
 			enableProxySettings();
-		}
-	}
-
-	private String getConfigProperty(String propId) {
-		Property ret = null;
-		for (Property prop : configProps) {
-			if (prop.getId().equals(propId)) {
-				ret = prop;
-				break;
-			}
-		}
-		return ret != null ? (String) ret.getValue() : "";
-	}
-
-	private void setConfigProperty(String propId, String propValue) {
-		boolean found = false;
-		for (Iterator<Property> it = configProps.iterator(); it.hasNext();) {
-			Property prop = it.next();
-			if (prop.getId().equals(propId)) {
-				prop.setValue(propValue);
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			configProps.add(new Property(propId, propValue));
 		}
 	}
 	

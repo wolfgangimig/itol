@@ -24,7 +24,7 @@ public class IdName implements Serializable {
 	
 	private String name;
 	
-	private Image image;
+	private transient Image image;
 
 	public IdName(String id, String name) {
 		this.id = id;

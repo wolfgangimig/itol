@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,6 +24,7 @@ import java.util.Set;
 
 import com.wilutions.itol.IssueSubjectId;
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.DescriptionTextEditor;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
@@ -32,7 +32,6 @@ import com.wilutions.itol.db.IssuePropertyEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.MailInfo;
 import com.wilutions.itol.db.ProgressCallback;
-import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
 
 public class IssueServiceImpl implements IssueService {
@@ -112,7 +111,7 @@ public class IssueServiceImpl implements IssueService {
 //	}
 
 	@Override
-	public Issue createIssue(String subject, String description, String defaultIssueAsString) {
+	public Issue createIssue(String subject, String description) {
 //		issi.setProperty(new Property(Property.ISSUE_TYPE, getIssueTypes(Issue.NULL).get(0).getId()));
 //		issi.setProperty(new Property(Property.ASSIGNEE, getAssignees(Issue.NULL).get(0).getId()));
 //		issi.setProperty(new Property(Property.CATEGORY, getCategories(Issue.NULL).get(0).getId()));
@@ -182,12 +181,12 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public List<Property> getConfig() {
-		return new ArrayList<Property>();
+	public Config getConfig() {
+		return new Config();
 	}
 
 	@Override
-	public void setConfig(List<Property> configProps) {
+	public void setConfig(Config config) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -237,8 +236,7 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public String getDefaultIssueAsString(Issue iss) throws IOException {
-		return "";
+	public void setDefaultIssue(Issue iss) throws IOException {
 	}
 
 	@Override

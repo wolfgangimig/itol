@@ -93,7 +93,7 @@ public class Property {
 	
 	public static final String INJECT_ISSUE_ID_INTO_MAIL_SUBJECT = "injectIssueIdIntoMailSubject";
 	public static final String ISSUE_ID_MAIL_SUBJECT_FORMAT = "issueIdMailSubjectFormat";
-	public static final String ISSUE_ID_MAIL_SUBJECT_FORMAT_DEFAULT = "[#%1]";
+	public static final String ISSUE_ID_MAIL_SUBJECT_FORMAT_DEFAULT = "(%1)";
 	
 	public static final String RECENTLY_USED_PROJECTS = "recentlyUsedProjects";
 	
