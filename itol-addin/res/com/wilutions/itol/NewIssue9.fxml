@@ -8,7 +8,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox fx:id="vboxRoot" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="661.0" prefWidth="641.0" styleClass="vboxRoot" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.IssueTaskPane">
+<VBox fx:id="vboxRoot" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="892.0" prefWidth="895.0" styleClass="vboxRoot" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.IssueTaskPane">
    <children>
       <GridPane fx:id="rootGrid" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="0.0" vgap="10.0" VBox.vgrow="ALWAYS">
         <columnConstraints>
@@ -26,15 +26,14 @@
          <children>
              <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="2.0" GridPane.columnSpan="3">
                <children>
-                  <ToggleButton fx:id="bnAssignSelection" mnemonicParsing="false" onAction="#onAssignSelection" text="%bnAssignSelection.text">
-                     <tooltip>
-                        <Tooltip text="%nbAssignSelection.tooltip" />
-                     </tooltip>
-                  </ToggleButton>
-                  <Button fx:id="bnClear" mnemonicParsing="false" onAction="#onClear" text="%bnClear.text">
-                     <tooltip>
-                        <Tooltip text="%bnClear.tooltip" />
-                     </tooltip></Button>
+                  <SplitMenuButton fx:id="bnAssignSelection" mnemonicParsing="false">
+                    <items>
+                      <MenuItem fx:id="bnClear" mnemonicParsing="false" onAction="#onClear" text="%bnClear.text" />
+                    </items>
+                     <graphic>
+                        <CheckBox fx:id="ckAssigned" mnemonicParsing="false" onAction="#onAssignSelection" text="%bnAssignSelection.text" />
+                     </graphic>
+                  </SplitMenuButton>
                   <TextField fx:id="edIssueId" prefWidth="70.0" promptText="%edIssueId.prompt" HBox.hgrow="ALWAYS">
                      <opaqueInsets>
                         <Insets />

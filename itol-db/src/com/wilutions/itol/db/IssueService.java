@@ -40,7 +40,9 @@ public interface IssueService {
 
 	IssuePropertyEditor getPropertyEditor(Object parent, Issue issue, String propertyId) throws Exception;
 
-	Issue createIssue(String subject, String description) throws Exception;
+	List<IdName> getSubtaskTypes(Issue issue) throws Exception;
+	
+	Issue createIssue(String subject, String description, Issue parentIssue, IdName subtaskType) throws Exception;
 
 	/**
 	 * Validate properties in given issue and set default values for invalid properties.

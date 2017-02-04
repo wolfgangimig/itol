@@ -70,6 +70,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -80,14 +81,18 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -117,9 +122,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	private VBox boxDescription;
 	@FXML
-	private ToggleButton bnAssignSelection;
+	private SplitMenuButton bnAssignSelection;
 	@FXML
-	private Button bnClear;
+	private MenuItem bnClear;
+	@FXML
+	private CheckBox ckAssigned;
 	@FXML
 	private Button bnShow;
 	@FXML
@@ -250,7 +257,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public void setMailItem(IssueMailItem mailItem) {
 		// Task pane initialized?
 		if (bnAssignSelection != null) {
-			if (bnAssignSelection.isSelected()) {
+			if (bnAssignSelection_isSelected()) {
 				internalSetMailItem(mailItem);
 			}
 		}
@@ -353,12 +360,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				if (issue == null) {
 
 					// ... no issue ID: create blank issue
-					String defaultIssueAsString = (String) Globals.getAppInfo().getConfig().getDefaultIssueAsString();
-					if (defaultIssueAsString == null) {
-						defaultIssueAsString = "";
-					}
-
-					issue = srv.createIssue(subject, description);
+					issue = srv.createIssue(subject, description, null, null);
 
 					Thread.sleep(300);
 				}
@@ -552,7 +554,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			// Press Assign button when called from inspector.
 			if (inspectorOrExplorer instanceof InspectorWrapper) {
-				bnAssignSelection.setSelected(true);
+				bnAssignSelection_select(true);
 				internalSetMailItem(mailItem);
 			}
 			// Show defaults when called from explorer.
@@ -690,6 +692,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 		else {
 			long t1 = System.currentTimeMillis();
+			
+			initMenuItemsOfButtonAssign();
 
 			initIssueId();
 
@@ -730,7 +734,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	private void initModified() {
 		if (modified) {
-			bnAssignSelection.setSelected(false);
+			bnAssignSelection_select(false);
 		}
 		boolean enabled = modified || isNew();
 		boolean hasSubject = !issue.getSubject().isEmpty();
@@ -1221,7 +1225,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public void onClear() {
 		queryDiscardChangesAsync((succ, ex) -> {
 			if (ex == null && succ) {
-				bnAssignSelection.setSelected(false);
+				bnAssignSelection_select(false);
 				internalSetMailItem(new IssueMailItemBlank());
 			}
 		});
@@ -1229,7 +1233,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	@FXML
 	public void onAssignSelection() {
-		boolean sel = bnAssignSelection.isSelected();
+		boolean sel = bnAssignSelection_isSelected();
 		if (sel) {
 			queryDiscardChangesAsync((succ, ex) -> {
 				if (ex == null && succ) {
@@ -1242,7 +1246,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 					}
 				}
 				else {
-					bnAssignSelection.setSelected(false);
+					bnAssignSelection_select(false);
 				}
 			});
 		}
@@ -1267,7 +1271,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		queryDiscardChangesAsync((succ, ex) -> {
 			if (ex == null && succ) {
 
-				bnAssignSelection.setSelected(false);
+				bnAssignSelection_select(false);
 				
 				try {
 					String issueId = edIssueId.getText();
@@ -1640,7 +1644,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	public void setVisible(final boolean v) throws ComException {
 		super.setVisible(v);
 		if (v) {
-			if (bnAssignSelection != null && !bnAssignSelection.isSelected() && !modified) {
+			if (bnAssignSelection != null && !bnAssignSelection_isSelected() && !modified) {
 				// internalSetMailItem(new IssueMailItemBlank());
 			}
 		}
@@ -1841,5 +1845,75 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			mailAttachments.Add(file.getAbsolutePath(), OlAttachmentType.olByValue, ++index, attachment.getFileName());
 		}
 		if (log.isLoggable(Level.FINE)) log.fine(")addAttachmentsToReply");
+	}
+	
+	private void bnAssignSelection_select(boolean v) {
+		ckAssigned.setSelected(v);
+	}
+	
+	private boolean bnAssignSelection_isSelected() {
+		return ckAssigned.isSelected();
+	}
+
+	/**
+	 * Update menu items of button "Assign".
+	 */
+	private void initMenuItemsOfButtonAssign() {
+		try {
+			ObservableList<MenuItem> items = bnAssignSelection.getItems();
+			items.remove(1, items.size());
+			if (!issue.isNew()) {
+				IssueService srv = Globals.getIssueService();
+				boolean hasSeparator = false;
+				for (IdName subtaskType : srv.getSubtaskTypes(issue)) {
+					if (!hasSeparator) {
+						items.add(new SeparatorMenuItem());
+						hasSeparator = true;
+					}
+					MenuItem mnCreateSubtask = new MenuItem(subtaskType.getName());
+					mnCreateSubtask.setGraphic(new ImageView(subtaskType.getImage()));
+					mnCreateSubtask.setOnAction((e) -> {
+						onCreateSubtask(subtaskType);
+					});
+					items.add(mnCreateSubtask);
+				}
+			}
+			
+		} catch (Exception e) {
+		}
+	}
+
+	public void onCreateSubtask(IdName subtaskType) {
+
+		BackgTask.run(() -> {
+
+			IssueService srv = null;
+			try {
+
+				srv = Globals.getIssueService();
+				
+				String subject = "";
+				String description = "";
+				
+				issue = srv.createIssue(subject, description, issue, subtaskType);
+
+				Platform.runLater(() -> {
+					try {
+						initialUpdate();
+					} catch (Exception e) {
+						String text = e.toString();
+						log.log(Level.SEVERE, text, e);
+						showMessageBoxError(text);
+					}
+				});
+
+			}
+			catch (Throwable e) {
+				String text = e.toString();
+				log.log(Level.SEVERE, text, e);
+				showMessageBoxError(text);
+			}
+		});
+
 	}
 }

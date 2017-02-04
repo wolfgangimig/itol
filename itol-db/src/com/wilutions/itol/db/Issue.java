@@ -27,12 +27,6 @@ public class Issue implements Serializable {
 
 	private String id;
 	
-	private String parentIssueId;
-	
-	private List<String> subIssueIds;
-	
-	private List<String> relatedIssueIds;
-	
 	/**
 	 * Current issue data.
 	 */
@@ -107,25 +101,6 @@ public class Issue implements Serializable {
 	public String getId() {
 		if (id == null) id = "";
 		return id;
-	}
-
-	public String getParentIssueId() {
-		if (parentIssueId == null) parentIssueId = "";
-		return parentIssueId;
-	}
-
-	public void setParentIssueId(String parentIssueId) {
-		this.parentIssueId = parentIssueId;
-	}
-
-	public List<String> getSubIssueIds() {
-		if (subIssueIds == null) subIssueIds = new ArrayList<String>();
-		return subIssueIds;
-	}
-
-	public List<String> getRelatedIssueIds() {
-		if (relatedIssueIds == null) relatedIssueIds = new ArrayList<String>();
-		return relatedIssueIds;
 	}
 
 	public List<IssueUpdate> getUpdates() {

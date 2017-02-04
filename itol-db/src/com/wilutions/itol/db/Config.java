@@ -65,7 +65,6 @@ public class Config implements Serializable, Cloneable {
 	private String proxyServer = "";
 	private boolean proxyServerEnabled;
 	private int proxyServerPort;
-	private String defaultIssueAsString = "";
 	private TaskPanePosition taskPanePosition;
 
 	// Only user related options.
@@ -111,7 +110,6 @@ public class Config implements Serializable, Cloneable {
 		this.proxyServer = rhs.proxyServer;
 		this.proxyServerEnabled = rhs.proxyServerEnabled;
 		this.proxyServerPort = rhs.proxyServerPort;
-		this.defaultIssueAsString = rhs.defaultIssueAsString;
 		this.taskPanePosition = rhs.taskPanePosition;
 	}
 
@@ -411,14 +409,6 @@ public class Config implements Serializable, Cloneable {
 
 	public void setProxyServerEncryptedUserPassword(String proxyServerEncryptedUserPassword) {
 		this.proxyServerEncryptedUserPassword = proxyServerEncryptedUserPassword;
-	}
-
-	public String getDefaultIssueAsString() {
-		return defaultIssueAsString;
-	}
-
-	public void setDefaultIssueAsString(String defaultIssueAsString) {
-		this.defaultIssueAsString = defaultIssueAsString;
 	}
 
 	public TaskPanePosition getTaskPanePosition() {
