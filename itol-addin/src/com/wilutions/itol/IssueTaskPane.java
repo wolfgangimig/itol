@@ -1884,6 +1884,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	}
 
 	public void onCreateSubtask(IdName subtaskType) {
+		
+		bnAssignSelection_select(false);
 
 		BackgTask.run(() -> {
 
