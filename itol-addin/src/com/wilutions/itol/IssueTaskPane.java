@@ -1863,14 +1863,19 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			ObservableList<MenuItem> items = bnAssignSelection.getItems();
 			items.remove(1, items.size());
 			if (!issue.isNew()) {
+				
 				IssueService srv = Globals.getIssueService();
+				final String resourceText = resb.getString("bnCreateSubtask.text");
+				
 				boolean hasSeparator = false;
 				for (IdName subtaskType : srv.getSubtaskTypes(issue)) {
 					if (!hasSeparator) {
 						items.add(new SeparatorMenuItem());
 						hasSeparator = true;
 					}
-					MenuItem mnCreateSubtask = new MenuItem(subtaskType.getName());
+					
+					MenuItem mnCreateSubtask = new MenuItem();
+					mnCreateSubtask.setText(MessageFormat.format(resourceText, subtaskType.getName()));
 					mnCreateSubtask.setGraphic(new ImageView(subtaskType.getImage()));
 					mnCreateSubtask.setOnAction((e) -> {
 						onCreateSubtask(subtaskType);
