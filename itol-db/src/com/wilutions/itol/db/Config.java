@@ -229,7 +229,7 @@ public class Config implements Serializable, Cloneable {
 	}
 	
 	protected Config extractApplicationConfig() {
-		Config appConfig = new Config();
+		Config appConfig = (Config)this.clone();
 		appConfig.setUserName(null);
 		appConfig.setEncryptedPassword(null);
 		appConfig.setLogFile(null);
