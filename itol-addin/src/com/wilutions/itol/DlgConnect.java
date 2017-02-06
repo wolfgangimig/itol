@@ -153,6 +153,9 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 			}
 			else if (connectionInProcess.getValue() && id == connectionProcessId.get()) {
 				String msg = e.getMessage();
+				if (msg.contains("401") || msg.contains("403")) {
+					msg = resb.getString("msg.connection.authentication.failed");
+				}
 				String textf = resb.getString("msg.connection.error");
 				String text = MessageFormat.format(textf, msg);
 				MessageBox.error(ownerWindow, text, (ignored, ex) -> {

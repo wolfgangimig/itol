@@ -27,7 +27,13 @@ public class HttpResponse {
 	}
 
 	public void setContent(String content) {
-		this.content = content != null ? content.trim() : "";
+		if (getErrorMessage().contains("401") || getErrorMessage().contains("403")) {
+			// JIRA sends trash for this status codes!
+			this.content = "";
+		}
+		else {
+			this.content = content != null ? content.trim() : "";
+		}
 	}
 
 	public String[] getHeaders() {
@@ -53,6 +59,11 @@ public class HttpResponse {
 
 	public void setErrorMessage(String errorMessage) {
 		this.errorMessage = errorMessage;
+
+		if (getErrorMessage().contains("401") || getErrorMessage().contains("403")) {
+			// JIRA sends trash for this status codes!
+			this.content = "";
+		}
 	}
 
 	public String toString() {

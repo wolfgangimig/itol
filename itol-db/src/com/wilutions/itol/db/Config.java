@@ -3,6 +3,7 @@ package com.wilutions.itol.db;
 import java.io.File;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 
@@ -196,24 +197,26 @@ public class Config implements Serializable, Cloneable {
 		return gson.fromJson(new String(bytes, "UTF-8"), clazz);
 	}
 	
-	protected <T extends Config> void copyNotEmptyFields(T userConfig, Class<T> clazz) {
-		try {
-			for (Field field : clazz.getDeclaredFields()) {
-				field.setAccessible(true);
-				Object value = field.get(userConfig);
-				if (value != null) {
-					if (value instanceof String) {
-						if (!((String)value).isEmpty()) {
-							field.set(this, value);
-						}
-					}
-					else {
+	protected void copyNotEmptyFields(Object userConfig, Class<?> clazz) throws Exception {
+		for (Field field : clazz.getDeclaredFields()) {
+			if (Modifier.isStatic(field.getModifiers())) continue;
+			if (Modifier.isFinal(field.getModifiers())) continue;
+			if (Modifier.isTransient(field.getModifiers())) continue;
+			field.setAccessible(true);
+			Object value = field.get(userConfig);
+			if (value != null) {
+				if (value instanceof String) {
+					if (!((String)value).isEmpty()) {
 						field.set(this, value);
 					}
 				}
+				else {
+					field.set(this, value);
+				}
 			}
 		}
-		catch (Exception e) {
+		if (clazz != Config.class) {
+			copyNotEmptyFields(userConfig, clazz.getSuperclass());
 		}
 	}
 	
