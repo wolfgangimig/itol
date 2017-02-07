@@ -67,4 +67,9 @@ public class IssueMailItemBlank implements IssueMailItem {
 		return false;
 	}
 
+	@Override
+	public String getFromAddress() {
+		return "";
+	}
+
 }

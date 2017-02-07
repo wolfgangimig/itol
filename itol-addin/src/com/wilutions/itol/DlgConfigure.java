@@ -26,6 +26,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
 
@@ -41,6 +42,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	Button bnCancel;
 	@FXML
 	ComboBox<IdName> cbAttachMailAs;
+	@FXML
+	TextField edAutoReplyField;
 	@FXML
 	TextField edExportAttachmentsDirectory;
 	@FXML
@@ -70,6 +73,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			Parent p = loader.load();
 
 			scene = new Scene(p);
+			scene.getStylesheets().add(getClass().getResource("TaskPane.css").toExternalForm());
+
 			return scene;
 		}
 		catch (IOException e) {
@@ -114,6 +119,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	public void initialize(URL location, ResourceBundle resb) {
 
 		initAutoCompletionAttachMailAs(resb);
+		
+		edAutoReplyField.setTooltip(new Tooltip(resb.getString("DlgConfigure.AutoReplyAddressField.tooltip")));
 
 		cbLogLevel.getItems().add(new IdName("INFO", resb.getString("DlgConnect.LogLevel.Info")));
 		cbLogLevel.getItems().add(new IdName("FINE", resb.getString("DlgConnect.LogLevel.Debug")));
@@ -146,6 +153,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			config.setMsgFileFormat(autoCompletionAttachMailAs.getSelectedItem());
 			config.setInjectIssueIdIntoMailSubject(ckInsertIssueId.isSelected());
 			config.setExportAttachmentsDirectory(edExportAttachmentsDirectory.getText());
+			config.setAutoReplyField(edAutoReplyField.getText());
 		}
 		else {
 			edLogFile.setText(config.getLogFile());
@@ -161,6 +169,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			
 			ckInsertIssueId.setSelected(config.getInjectIssueIdIntoMailSubject());
 			edExportAttachmentsDirectory.setText(config.getExportAttachmentsDirectory());
+			edAutoReplyField.setText(config.getAutoReplyField());
 		}
 	}
 

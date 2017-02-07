@@ -32,11 +32,11 @@ import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
 import com.wilutions.com.Dispatch;
-import com.wilutions.com.IDispatch;
 import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.DefaultSuggest;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
@@ -59,7 +59,6 @@ import com.wilutions.mslib.outlook.Application;
 import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.OlAttachmentType;
 import com.wilutions.mslib.outlook.OlItemType;
-import com.wilutions.mslib.outlook._NameSpace;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -177,8 +176,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private TextField edIssueId;
 	@FXML
 	private ProgressBar pgProgress;
-	@FXML
-	private Button bnReply;
 
 	private AutoCompletionBinding<IdName> autoCompletionProject;
 	private AutoCompletionBinding<IdName> autoCompletionTracker;
@@ -235,7 +232,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private Object windowOwner;
 	
 	/**
-	 * THis property is true, if the NOTES were extracted from the mail body.
+	 * This property is true, if the NOTES were extracted from the mail body.
 	 */
 	private volatile boolean tookNotesFromMail;
 
@@ -361,6 +358,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 					// ... no issue ID: create blank issue
 					issue = srv.createIssue(subject, description, null, null);
+					
+					assignMailAdressToAutoReplyField();
 
 					Thread.sleep(300);
 				}
@@ -389,6 +388,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		});
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueFromMailItem");
+	}
+
+	private void assignMailAdressToAutoReplyField() {
+		String autoReplyField = Globals.getAppInfo().getConfig().getAutoReplyField();
+		if (!Default.value(autoReplyField).isEmpty()) {
+			String from = mailItem.getFromAddress();
+			issue.setPropertyString(autoReplyField, from);
+		}
 	}
 
 	private Issue tryReadIssue(IssueService srv, String subject, String description, String issueId)
@@ -851,7 +858,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 
 			bnRemoveAttachment.setDisable(true);
-			bnReply.setDisable(true);
 
 			// This selection listener disables the "Remove" button, if
 			// an already uploaded attachment is selected. Attachments
@@ -867,14 +873,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 						}
 					}
 					bnRemoveAttachment.setDisable(!hasId);
-
-					boolean disableReply = true;
-					if (!c.getList().isEmpty()) {
-						Attachment firstAtt = c.getList().iterator().next();
-						boolean isMsg = firstAtt.getFileName().endsWith(MsgFileFormat.MSG.getId());
-						disableReply = !isMsg;
-					}
-					bnReply.setDisable(disableReply);
 				}
 
 			});
@@ -1389,6 +1387,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 					IssueService srv = Globals.getIssueService();
 					srv.validateIssue(issue);
+					
+					assignMailAdressToAutoReplyField();
 
 					updateData(false);
 
@@ -1684,53 +1684,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		});
 	}
 
-	@FXML
-	public void onReply() {
-		replyMail(false);
-	}
-
-	private Attachment getSelectedAttachmentMsg() {
-		Attachment ret = null;
-		Attachment att = tabAttachments.getSelectionModel().getSelectedItem();
-		if (att != null && att.getFileName().endsWith(MsgFileFormat.MSG.getId())) {
-			ret = att;
-		}
-		return ret;
-	}
-
-	private void replyMail(boolean all) {
-		Attachment att = getSelectedAttachmentMsg();
-		if (att != null) {
-			IDispatch dispItem = null;
-			try {
-				Application app = Globals.getThisAddin().getApplication();
-				_NameSpace ns = app.GetNamespace("MAPI");
-				String tempPath = attachmentHelper.downloadAttachment(att, null);
-				if (tempPath.startsWith(MailAttachmentHelper.FILE_URL_PREFIX)) {
-					tempPath = tempPath.substring(MailAttachmentHelper.FILE_URL_PREFIX.length());
-				}
-			
-//				try {
-//					dispItem = app.CreateItemFromTemplate(tempPath, Missing.Value);
-//				}
-//				catch (Exception e) {
-//					log.log(Level.INFO, "Cannot open mail=" + tempPath + ", maybe already open.", e);
-//					dispItem = ns.OpenSharedItem(tempPath);
-//				}
-				dispItem = ns.OpenSharedItem(tempPath);
-				if (dispItem.is(MailItem.class)) {
-					MailItem mailItem = dispItem.as(MailItem.class);
-					MailItem replyItem = all ? mailItem.ReplyAll() : mailItem.Reply();
-					replyItem.Display(false);
-				}
-			}
-			catch (Exception e) {
-				log.log(Level.INFO, "Cannot open mail attachment.", e);
-				showMessageBoxError("Cannot open mail attachment. " + e);
-			}
-		}
-	}
-
 	/**
 	 * Comment editor of JIRA addin binds to this value.
 	 * If the value changes, the editor will call {@link #getObservableAttachments()}
@@ -1766,26 +1719,29 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	/**
 	 * ITJ-18: Send reply with notes.
-	 * The recipient(s) of the reply mail is found in a custom property.
-	 * The property ID is defined in ITOL configuration.
-	 * @param issue
+	 * The recipient(s) of the reply mail is found in a custom property, see Config.getAutoReplyField().
+	 * 
+	 * @param prevIssue Issue before it has been saved.
 	 */
 	private void maybeSendReplyWithNotes(Issue prevIssue) {
 		if (log.isLoggable(Level.FINE)) log.fine("maybeSendReplyWithNotes(tookNotesFromMail=" + tookNotesFromMail);
-		if (!tookNotesFromMail) {
-			String mailToPropId = "customfield_11000";
-			if (log.isLoggable(Level.FINE)) log.fine("mailToPropId=" + mailToPropId);
-			if (!mailToPropId.isEmpty()) {
-				String mailTo = issue.getPropertyString(mailToPropId, "");
-				if (log.isLoggable(Level.FINE)) log.fine("mailTo=" + mailTo);
-				if (!mailTo.isEmpty()) {
-					String lastComment = (prevIssue.isNew()) ? prevIssue.getDescription() : prevIssue.getPropertyString(Property.NOTES, "");
-					if (log.isLoggable(Level.FINE)) log.fine("lastComment=" + lastComment);
-					if (!lastComment.isEmpty()) {
-						if (log.isLoggable(Level.FINE)) log.fine("start sendReplyWithNotes in background");
-						BackgTask.run(() -> {
-							sendReplyWithNotes(issue, mailTo, lastComment, createProgressCallback());
-						});
+		
+		if (!prevIssue.isNew()) {
+			if (!tookNotesFromMail) {
+				String mailToPropId = Globals.getAppInfo().getConfig().getAutoReplyField();  
+				if (log.isLoggable(Level.FINE)) log.fine("mailToPropId=" + mailToPropId);
+				if (!mailToPropId.isEmpty()) {
+					String mailTo = issue.getPropertyString(mailToPropId, "");
+					if (log.isLoggable(Level.FINE)) log.fine("mailTo=" + mailTo);
+					if (!mailTo.isEmpty()) {
+						String lastComment = prevIssue.getPropertyString(Property.NOTES, "");
+						if (log.isLoggable(Level.FINE)) log.fine("lastComment=" + lastComment);
+						if (!lastComment.isEmpty()) {
+							if (log.isLoggable(Level.FINE)) log.fine("start sendReplyWithNotes in background");
+							BackgTask.run(() -> {
+								sendReplyWithNotes(issue, mailTo, lastComment, createProgressCallback());
+							});
+						}
 					}
 				}
 			}

@@ -67,6 +67,11 @@ public class Config implements Serializable, Cloneable {
 	private boolean proxyServerEnabled;
 	private int proxyServerPort;
 	private TaskPanePosition taskPanePosition;
+	
+	/**
+	 * Custom field for mail address.
+	 */
+	private String autoReplyField = "";
 
 	// Only user related options.
 	private String userName = "";
@@ -112,6 +117,7 @@ public class Config implements Serializable, Cloneable {
 		this.proxyServerEnabled = rhs.proxyServerEnabled;
 		this.proxyServerPort = rhs.proxyServerPort;
 		this.taskPanePosition = rhs.taskPanePosition;
+		this.autoReplyField = rhs.autoReplyField;
 	}
 
 	public static <T extends Config> T read(String manufacturerName, String appName, Class<T> clazz) throws Exception {
@@ -420,6 +426,14 @@ public class Config implements Serializable, Cloneable {
 
 	public void setTaskPanePosition(TaskPanePosition taskPanePosition) {
 		this.taskPanePosition = taskPanePosition;
+	}
+
+	public String getAutoReplyField() {
+		return autoReplyField;
+	}
+
+	public void setAutoReplyField(String autoReplyField) {
+		this.autoReplyField = autoReplyField;
 	}
 
 	

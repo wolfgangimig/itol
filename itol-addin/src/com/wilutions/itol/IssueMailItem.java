@@ -13,6 +13,7 @@ public interface IssueMailItem {
 	public String getBody() throws ComException;
 	
 	public String getFrom();
+	public String getFromAddress();
 	public String getTo();
 
 	public void Save() throws ComException;

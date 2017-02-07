@@ -15,6 +15,7 @@ public class IssueMailItemImpl implements IssueMailItem {
 	private String body;
 	private String entryId;
 	private String from;
+	private String fromAddress;
 	private String to;
 	private Date receivedTime;
 
@@ -29,6 +30,7 @@ public class IssueMailItemImpl implements IssueMailItem {
 		this.body = mailItem.getBody();
 		this.entryId = mailItem.getEntryID();
 		this.from = mailItem.getSenderName();
+		this.setFromAddress(mailItem.getSenderEmailAddress());
 		this.to = mailItem.getReceivedByName();
 		this.receivedTime = mailItem.getReceivedTime();
 	}
@@ -107,6 +109,14 @@ public class IssueMailItemImpl implements IssueMailItem {
 	@Override
 	public boolean isNew() {
 		return entryId.isEmpty();
+	}
+
+	public String getFromAddress() {
+		return fromAddress;
+	}
+
+	public void setFromAddress(String fromAddress) {
+		this.fromAddress = fromAddress;
 	}
 
 }
