@@ -120,8 +120,6 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 
 		initAutoCompletionAttachMailAs(resb);
 		
-		edAutoReplyField.setTooltip(new Tooltip(resb.getString("DlgConfigure.AutoReplyAddressField.tooltip")));
-
 		cbLogLevel.getItems().add(new IdName("INFO", resb.getString("DlgConnect.LogLevel.Info")));
 		cbLogLevel.getItems().add(new IdName("FINE", resb.getString("DlgConnect.LogLevel.Debug")));
 		cbLogLevel.getSelectionModel().select(0);
