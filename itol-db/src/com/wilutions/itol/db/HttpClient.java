@@ -23,6 +23,10 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -33,6 +37,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+
 public class HttpClient {
 
 	private final static Logger log = Logger.getLogger(HttpClient.class.getName());
@@ -42,9 +54,12 @@ public class HttpClient {
 	public final static int CONNECT_TIMEOUT_SECONDS = 10;
 
 	static {
-		// see #12 "handshake alert: unrecognized_name"
-		// http://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0
-		System.setProperty("jsse.enableSNIExtension", "false");
+
+//		 see #12 "handshake alert: unrecognized_name"
+//		 http://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0
+//			UUUHHH this cannot be a solution. If this option is false, images from https://avatar-cdn.atlassian.com cannot be downloaded.
+//			(This image URLs are provided by https://ecosystem.atlassian.net)
+//		 System.setProperty("jsse.enableSNIExtension", "false");
 	}
 	
 	public static CompletableFuture<HttpResponse> sendAsync(String surl, String method, String[] headers, Object content, ProgressCallback cb) {
@@ -79,6 +94,9 @@ public class HttpClient {
 		}
 
 		try {
+			
+			//doTrustToCertificates();  
+			
 			URL url = new URL(surl);
 			conn = (HttpURLConnection) (url.openConnection());
 
@@ -245,7 +263,7 @@ public class HttpClient {
 			}
 
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			String msg = "HTTP request to URL=" + surl + " failed. ";
 			log.log(Level.WARNING, msg, e);
 			ret.setErrorMessage(msg + e.toString());
@@ -404,5 +422,42 @@ public class HttpClient {
 		String up = userName + ":" + plainPwd;
 		String b64 = Base64.getEncoder().encodeToString(up.getBytes("UTF-8"));
 		return b64;
+	}
+	
+	
+	// Try to fix LazyHttpInputStream:70 Download https://avatar-cdn.atlassian.com/227743a57756a82078cffda8cf49a7dc?s=16&d=https%3A%2F%2Fsecure.gravatar.com%2Favatar%2F227743a57756a82078cffda8cf49a7dc%3Fd%3Dmm%26s%3D16%26noRedirect%3Dtrue failed. 
+	//	 javax.net.ssl.SSLHandshakeException: Received fatal alert: handshake_failure
+
+	// http://stackoverflow.com/questions/6659360/how-to-solve-javax-net-ssl-sslhandshakeexception-error
+	// trusting all certificate
+	private static void doTrustToCertificates() throws Exception {
+		Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
+		TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+			public X509Certificate[] getAcceptedIssuers() {
+				return null;
+			}
+
+			public void checkServerTrusted(X509Certificate[] certs, String authType) throws CertificateException {
+				return;
+			}
+
+			public void checkClientTrusted(X509Certificate[] certs, String authType) throws CertificateException {
+				return;
+			}
+		} };
+
+		SSLContext sc = SSLContext.getInstance("SSL");
+		sc.init(null, trustAllCerts, new SecureRandom());
+		HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+		HostnameVerifier hv = new HostnameVerifier() {
+			public boolean verify(String urlHostName, SSLSession session) {
+				if (!urlHostName.equalsIgnoreCase(session.getPeerHost())) {
+					System.out.println("Warning: URL host '" + urlHostName + "' is different to SSLSession host '"
+							+ session.getPeerHost() + "'.");
+				}
+				return true;
+			}
+		};
+		HttpsURLConnection.setDefaultHostnameVerifier(hv);
 	}
 }
