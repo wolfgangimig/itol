@@ -39,6 +39,13 @@ public class PropertyClass {
 	 */
 	public static final int TYPE_FLOAT = 9; 
 	
+	/**
+	 * Custom type.
+	 * Values are treated as java.lang.Object.
+	 * The IssueService implementation has to provide property editor for properties of this type.
+	 */
+	public static final int TYPE_CUSTOM = 10;
+	
 //	public final static int TYPE_INTEGER = 6;
 //	public final static int TYPE_FLOAT = 7;
 	
