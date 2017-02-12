@@ -166,28 +166,35 @@ public class Property {
 		Property prop = new Property();
 		prop.id = this.id;
 		if (value != null) {
+			// Make deep copy of list
 			if (value instanceof List) {
 				List list = (List)value;
 				List listCopy = new ArrayList(list.size());
 				for (Object elm : list) {
-					Object elmCopy = elm;
-					if (elm instanceof Cloneable) {
-						try {
-							Method cloneMethod = elm.getClass().getMethod("clone");
-							elmCopy = cloneMethod.invoke(elm);
-						}
-						catch (Exception e) {}
-					}
+					Object elmCopy = internalClone(elm);
 					listCopy.add(elmCopy);
 				}
 				prop.value = listCopy;
 			}
 			else {
-				// String or Boolean
-				prop.value = value;
+				prop.value = internalClone(value);
 			}
 		}
 		return prop;
+	}
+
+	private Object internalClone(Object elm) {
+		Object elmCopy = elm;
+		if (elm instanceof Cloneable) {
+			try {
+				Method cloneMethod = elm.getClass().getMethod("clone");
+				elmCopy = cloneMethod.invoke(elm);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return elmCopy;
 	}
 
 	@Override
