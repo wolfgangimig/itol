@@ -68,7 +68,14 @@ public class DefaultSuggest<T> implements Suggest<T> {
 		Collection<T> ret = allItems;
 		String textLC = text.toLowerCase();
 		
-		if (!textLC.isEmpty()) {
+		if (textLC.isEmpty()) {
+			ret = new ArrayList<T>();
+			for (T item : allItems) {
+				if (ret.size() == max) break;
+				ret.add(item);
+			}
+		}
+		else {
 			ArrayList<T> matches = new ArrayList<T>();
 			if (ignoreHits != null) {
 				for (T t : allItems) {
