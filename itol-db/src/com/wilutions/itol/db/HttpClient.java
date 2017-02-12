@@ -33,6 +33,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -62,8 +63,8 @@ public class HttpClient {
 //		 System.setProperty("jsse.enableSNIExtension", "false");
 	}
 	
-	public static CompletableFuture<HttpResponse> sendAsync(String surl, String method, String[] headers, Object content, ProgressCallback cb) {
-		return CompletableFuture.supplyAsync(() -> send(surl, method, headers, content, cb));
+	public static CompletableFuture<HttpResponse> sendAsync(String surl, String method, String[] headers, Object content, ProgressCallback cb, Executor executor) {
+		return CompletableFuture.supplyAsync(() -> send(surl, method, headers, content, cb), executor);
 	}
 
 	public static HttpResponse send(String surl, String method, String[] headers, Object content, ProgressCallback cb) {
@@ -392,24 +393,24 @@ public class HttpClient {
 		return ret;
 	}
 
-	public static CompletableFuture<HttpResponse> postAsync(String url, String[] headers, String content, ProgressCallback cb) {
-		return sendAsync(url, "POST", headers, content, cb);
+	public static CompletableFuture<HttpResponse> postAsync(String url, String[] headers, String content, ProgressCallback cb, Executor executor) {
+		return sendAsync(url, "POST", headers, content, cb, executor);
 	}
 
 	public static HttpResponse post(String url, String[] headers, String content, ProgressCallback cb) {
 		return send(url, "POST", headers, content, cb);
 	}
 
-	public static CompletableFuture<HttpResponse> getAsync(String url, String[] headers, ProgressCallback cb) {
-		return sendAsync(url, "GET", headers, null, cb);
+	public static CompletableFuture<HttpResponse> getAsync(String url, String[] headers, ProgressCallback cb, Executor executor) {
+		return sendAsync(url, "GET", headers, null, cb, executor);
 	}
 
 	public static HttpResponse get(String url, String[] headers, ProgressCallback cb) {
 		return send(url, "GET", headers, null, cb);
 	}
 
-	public static CompletableFuture<HttpResponse> uploadAsync(String url, String[] headers, File file, ProgressCallback cb) {
-		return sendAsync(url, "POST", headers, file, cb);
+	public static CompletableFuture<HttpResponse> uploadAsync(String url, String[] headers, File file, ProgressCallback cb, Executor executor) {
+		return sendAsync(url, "POST", headers, file, cb, executor);
 	}
 
 	public static HttpResponse upload(String url, String[] headers, File file, ProgressCallback cb) {
