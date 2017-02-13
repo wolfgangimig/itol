@@ -55,7 +55,7 @@ public class Attachment implements Cloneable {
 	}
 	
 	@Override
-	protected Object clone() {
+	public Object clone() {
 		Attachment copy = new Attachment();
 		copy.id = id;
 		copy.subject = subject;
