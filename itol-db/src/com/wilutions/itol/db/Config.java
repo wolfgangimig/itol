@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.Collection;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -213,6 +214,11 @@ public class Config implements Serializable, Cloneable {
 			if (value != null) {
 				if (value instanceof String) {
 					if (!((String)value).isEmpty()) {
+						field.set(this, value);
+					}
+				}
+				else if (value instanceof Collection) {
+					if (!((Collection<?>)value).isEmpty()) {
 						field.set(this, value);
 					}
 				}
