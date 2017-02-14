@@ -93,13 +93,13 @@ public class PropertyGridView {
 	}
 	
 	public void pushPropertyGrid(Node replaceBy, String title, Insets padding) {
-		Pane tabVBox = (Pane)tabProperties.getContent();
-		tabVBox.setPadding(padding);
+		Pane box = (Pane)tabProperties.getContent();
+		box.setPadding(padding);
 		HBox.setHgrow(replaceBy, Priority.ALWAYS);
 
-		tabVBox.getChildren().add(replaceBy);
+		box.getChildren().add(replaceBy);
 		
-		Region scrollPane = (Region)tabVBox.getChildren().get(0);
+		Region scrollPane = (Region)box.getChildren().get(0);
 		scrollPane.setVisible(false);
 		scrollPane.setManaged(false);
 		
