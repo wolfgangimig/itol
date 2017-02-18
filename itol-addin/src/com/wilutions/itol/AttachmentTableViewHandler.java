@@ -165,7 +165,7 @@ public class AttachmentTableViewHandler {
 			}
 
 		});
-		final int lastModifiedColumnWidth = 120;
+		final int lastModifiedColumnWidth = 150;
 		lastModifiedColumn.setPrefWidth(lastModifiedColumnWidth);
 		
 		fileNameColumn.prefWidthProperty()
