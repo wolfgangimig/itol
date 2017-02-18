@@ -26,6 +26,7 @@ import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.fx.util.DateTimePicker;
 import com.wilutions.fx.util.TextFieldWithSuggestions;
+import com.wilutions.itol.db.ISODate;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssuePropertyEditor;
@@ -833,25 +834,19 @@ public class PropertyGridView {
 	private PropertyNode makeDateTimePickerForProperty(Issue issue, PropertyClass pclass) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeDateTimePickerForProperty(");
 		DateTimePicker ctrl = new DateTimePicker();
-		SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 		PropertyNode propNode = new PropertyNode(issue, pclass, ctrl) {
 			@Override
 			public void updateData(boolean save) {
 				if (save) {
 					LocalDateTime ldate = ctrl.getDateTimeValue();
-					String iso = null;
-					if (ldate != null) {
-						Date date = Date.from(ldate.atZone(ZoneId.systemDefault()).toInstant());
-						iso = dateTimeFormat.format(date);
-					}
+					String iso = ISODate.toISO(ldate);
 					issue.setPropertyString(pclass.getId(), iso);
 				}
 				else {
 					String iso = issue.getPropertyString(pclass.getId(), "");
 					if (iso != null && iso.length() != 0) {
 						try {
-							Date date = dateTimeFormat.parse(iso);
-							LocalDateTime ldate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+							LocalDateTime ldate = ISODate.toLocalDateTime(iso);
 							ctrl.setDateTimeValue(ldate);
 						} catch (ParseException e) {
 							log.log(Level.WARNING, "Failed to parse ISO date provided by JIRA for property " + pclass.getId() + "=" + iso, e);
