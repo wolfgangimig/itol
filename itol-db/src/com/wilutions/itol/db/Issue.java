@@ -125,7 +125,9 @@ public class Issue implements Serializable {
 		Object ret = property.getValue();
 		if (ret == null) {
 			ret = defaultValue;
-			setPropertyValue(propertyId, ret);
+			if (ret != null) {
+				setPropertyValue(propertyId, ret);
+			}
 		}
 		
 		return ret;
