@@ -111,17 +111,21 @@ public class PropertyGridView {
 	
 	public void popPropertyGrid() {
 		Pane tabVBox = (Pane)tabProperties.getContent();
-		tabVBox.setPadding(DEFAULT_PADDING);
-		Node scrollPane = tabVBox.getChildren().get(0);
-		scrollPane.setVisible(true);
-		scrollPane.setManaged(true);
-		tabVBox.getChildren().remove(1);
-		tabProperties.setText(tabPropertiesTitle);
-		tabpIssue.getStyleClass().remove("sub-prop-tab");
+		if (tabVBox.getChildren().size() > 1) {
+			tabVBox.setPadding(DEFAULT_PADDING);
+			Node scrollPane = tabVBox.getChildren().get(0);
+			scrollPane.setVisible(true);
+			scrollPane.setManaged(true);
+			tabVBox.getChildren().remove(1);
+			tabProperties.setText(tabPropertiesTitle);
+			tabpIssue.getStyleClass().remove("sub-prop-tab");
+		}
 	}
 
 	public void initProperties(Issue issue) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "PropertyGridView(");
+		
+		popPropertyGrid();
 		
 		// Cleanup current view.
 		propGrid.getChildren().clear();
@@ -866,7 +870,6 @@ public class PropertyGridView {
 		final IssuePropertyEditor propEdit = Globals.getIssueService().getPropertyEditor(issueTaskPane, issue, pclass.getId());
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "propEdit=" + propEdit);
 		if (propEdit != null) {
-
 			Node control = propEdit.getNode();
 			propNode = new PropertyNode(issue, pclass, control) {
 				public void updateData(boolean save) {
