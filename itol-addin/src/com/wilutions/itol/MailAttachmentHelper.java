@@ -7,7 +7,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
@@ -379,15 +382,51 @@ public class MailAttachmentHelper {
 		if (cb != null) cb.setFinished();
 		return url;
 	}
+	
+	private boolean compareFiles(File lhs, File rhs) {
+		if (lhs.length() != rhs.length()) return false;
+		byte[] lhsHash = getFileHash(lhs);
+		byte[] rhsHash = getFileHash(rhs);
+		return Arrays.equals(lhsHash, rhsHash);
+	}
+	
+	private byte[] getFileHash(File file) {
+		byte[] digest = null;
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			try (InputStream is = Files.newInputStream(file.toPath());
+			     DigestInputStream dis = new DigestInputStream(is, md)) 
+			{
+				byte[] buf = new byte[10*1000];
+				while (dis.read(buf) > 0) {}
+			}
+			digest = md.digest();
+		}
+		catch (Exception e) {
+			digest = new byte[16];
+		}
+		return digest;
+	}
 
 	public String exportAttachment(File dir, Attachment att, ProgressCallback cb) throws Exception {
 		String url = "";
 		try {
+			// Download into temp dir.
 			url = downloadAttachment(att, cb);
 			File attFile = new File(new URI(url));
+			
+			// Make unique file name
 			File destFile = new File(dir, attFile.getName());
+			if (destFile.exists()) {
+				for (int retries = 1; retries < 100 && destFile.exists() && !compareFiles(attFile, destFile); retries++) {
+					destFile = makeTempFile(dir, attFile.getName(), retries);
+				}
+			}
+
+			// Copy to dest dir.
 			if (!destFile.exists()) {
 				Files.copy(attFile.toPath(), destFile.toPath());
+				destFile.setLastModified(att.getLastModified().getTime());
 			}
 		}
 		finally {
