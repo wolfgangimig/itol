@@ -89,7 +89,7 @@ public class PropertyGridView {
 		this.tabProperties = tabProperties;
 		this.tabPropertiesTitle = tabProperties.getText();
 		ColumnConstraints constr0 = propGrid.getColumnConstraints().get(0);
-		constr0.setPercentWidth(25);
+		constr0.setPercentWidth(30);
 	}
 	
 	public void pushPropertyGrid(Node replaceBy, String title, Insets padding) {
