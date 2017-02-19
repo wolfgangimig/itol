@@ -104,7 +104,7 @@ public class AddAttachmentMenu {
 					clipboardFiles = (List<File>)transferable.getTransferData(DataFlavor.javaFileListFlavor);
 				}
 				
-				if (clipboardImage != null || !clipboardFiles.isEmpty()) {
+				if (clipboardImage != null || (clipboardFiles != null && !clipboardFiles.isEmpty())) {
 					
 					CustomMenuItem miSeparatorCliboard = makeSeparator("bnAddAttachment.menu.clipboard");
 					menuItems.add(miSeparatorCliboard);
