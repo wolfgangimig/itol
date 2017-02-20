@@ -16,6 +16,10 @@ import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.Properties;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -24,6 +28,7 @@ import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
 import com.wilutions.itol.db.Config;
+import com.wilutions.itol.db.ISODate;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
 import com.wilutions.itol.db.PasswordEncryption;
@@ -191,14 +196,13 @@ public class Globals {
 
 	public static File getTempDir() {
 		if (__tempDir == null) {
-			try {
-				__tempDir = File.createTempFile("itol", ".tmp");
-				__tempDir.delete();
-				__tempDir.mkdirs();
-			}
-			catch (IOException e) {
-				e.printStackTrace();
-			}
+			SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
+			Date date = Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
+			String iso = dateTimeFormat.format(date);
+			File baseDir = new File(System.getProperty("java.io.tmpdir"), "itol");
+			__tempDir = new File(baseDir, iso); 
+			__tempDir.delete();
+			__tempDir.mkdirs();
 		}
 		return __tempDir;
 	}

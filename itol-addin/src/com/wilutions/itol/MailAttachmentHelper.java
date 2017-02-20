@@ -367,6 +367,7 @@ public class MailAttachmentHelper {
 	}
 
 	public String downloadAttachment(Attachment att, ProgressCallback cb) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.fine("downloadAttachment(att=" + att);
 		String url = att.getUrl();
 		// Local file added from file system (new file, not uploaded)
 		if (url.startsWith(FILE_URL_PREFIX)) {
@@ -375,16 +376,21 @@ public class MailAttachmentHelper {
 		else {
 			// Already downloaded attachment?
 			if (att.getLocalFile() != null && att.getLocalFile().exists()) {
+				if (log.isLoggable(Level.FINE)) log.fine("already downloaded file=" + att.getLocalFile());
 				url = att.getLocalFile().toURI().toString();
 			}
 			else {
+				if (log.isLoggable(Level.FINE)) log.fine("download from url=" + url);
 				String fileName = Globals.getIssueService().downloadAttachment(url, cb);
 				File srcFile = new File(fileName);
+				if (log.isLoggable(Level.FINE)) log.fine("received file=" + srcFile);
 				if (srcFile.exists()) {
 					for (int retries = 0; retries < 100; retries++) {
 						File destFile = makeTempFile(getTempDir(), att.getFileName(), retries);
 						destFile.delete();
-						if (srcFile.renameTo(destFile)) {
+						boolean succ = srcFile.renameTo(destFile);
+						if (log.isLoggable(Level.FINE)) log.fine("move to=" + destFile + ", succ=" + succ);
+						if (succ) {
 							att.setLocalFile(destFile);
 							fileName = destFile.getAbsolutePath();
 							url = destFile.toURI().toString();
@@ -395,10 +401,13 @@ public class MailAttachmentHelper {
 			}
 		}
 		if (cb != null) cb.setFinished();
+		if (log.isLoggable(Level.FINE)) log.fine(")downloadAttachment=" + url);
 		return url;
 	}
 	
 	private boolean compareFiles(File lhs, File rhs) {
+		if (!lhs.exists()) return false;
+		if (!rhs.exists()) return false;
 		if (lhs.length() != rhs.length()) return false;
 		byte[] lhsHash = getFileHash(lhs);
 		byte[] rhsHash = getFileHash(rhs);
@@ -424,48 +433,54 @@ public class MailAttachmentHelper {
 	}
 
 	public String exportAttachment(File dir, Application outlookApplication, Attachment att, ProgressCallback cb) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.fine("exportAttachment(dir=" + dir + ", att=" + att);
 		String url = "";
 		try {
 			// Download into temp dir.
 			url = downloadAttachment(att, cb);
-			File attFile = new File(new URI(url));
+			File tempFile = new File(new URI(url));
 
 			// Is the issue attachment a mail?
-			// TODO Check this code
-			boolean attachmentIsMail = false; // att.getFileName().toLowerCase().endsWith(MsgFileFormat.MSG.getId()); 
+			boolean attachmentIsMail = tempFile.getName().toLowerCase().endsWith(MsgFileFormat.MSG.getId()); 
+			if (log.isLoggable(Level.FINE)) log.fine("attachmentIsMail=" + attachmentIsMail);
 			if (attachmentIsMail) {
 				try {
 					// Load mail into Outlook.MailItem object
-					MailItem mailItemDisp = Dispatch.as(outlookApplication.getSession().OpenSharedItem(attFile.getAbsolutePath()), MailItem.class);
-					IssueMailItem mailItem = new IssueMailItemImpl(mailItemDisp);
-					IssueAttachments mailAtts = mailItem.getAttachments();
-
+					IssueMailItem mailItem = loadMailItem(outlookApplication, tempFile);
+					
+					// Export mail as RTF 
+					{
+						MailAtt matt = new MailAtt(mailItem, MsgFileFormat.RTF.getId());
+						File destFile = makeUniqueExportFileName(dir, new File(dir, matt.getFileName()));
+						if (log.isLoggable(Level.INFO)) log.info("Export mail to destFile=" + destFile);
+						mailItem.SaveAs(destFile.getAbsolutePath(), OlSaveAsType.olRTF);
+						destFile.setLastModified(mailItem.getReceivedTime().getTime());
+					}
+					
 					// Export mail attachments
+					IssueAttachments mailAtts = mailItem.getAttachments();
 					int n = mailAtts.getCount();
 					for (int i = 1; i <= n; i++) {
 						com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
-						MailAttAtt attatt = new MailAttAtt(matt);
-						attatt.setLastModified(mailItem.getReceivedTime());
-						exportAttachment(dir, outlookApplication, attatt, null);
+						File destFile = makeUniqueExportFileName(dir, new File(dir, matt.getFileName()));
+						if (log.isLoggable(Level.INFO)) log.info("Export mail attachment to destFile=" + destFile);
+						matt.SaveAsFile(destFile.getAbsolutePath());
+						destFile.setLastModified(mailItem.getReceivedTime().getTime());
 					}
+					
 				}
 				catch (Exception e) {
-					log.log(Level.WARNING, "Failed to export mail " + attFile, e);
+					log.log(Level.WARNING, "Failed to export mail " + tempFile, e);
 				}
 			}
 			else {
-	
 				// Make unique file name
-				File destFile = new File(dir, attFile.getName());
-				if (destFile.exists()) {
-					for (int retries = 1; retries < 100 && destFile.exists() && !compareFiles(attFile, destFile); retries++) {
-						destFile = makeTempFile(dir, attFile.getName(), retries);
-					}
-				}
-	
+				File destFile = makeUniqueExportFileName(dir, tempFile);
+				if (log.isLoggable(Level.INFO)) log.info("Export issue attachment to destFile=" + destFile);
+
 				// Copy to dest dir.
 				if (!destFile.exists()) {
-					Files.copy(attFile.toPath(), destFile.toPath());
+					Files.copy(tempFile.toPath(), destFile.toPath());
 					destFile.setLastModified(att.getLastModified().getTime());
 				}
 			}
@@ -473,9 +488,63 @@ public class MailAttachmentHelper {
 		finally {
 			if (cb != null) cb.setFinished();
 		}
+		if (log.isLoggable(Level.FINE)) log.fine(")exportAttachment=" + url);
 		return url;
 	}
+
+	/**
+	 * Load file into Outlook MailItem object.
+	 * @param outlookApplication Outlook application object.
+	 * @param tempFile MSG file
+	 * @return MailItem object
+	 * @throws Exception
+	 */
+	private IssueMailItem loadMailItem(Application outlookApplication, File tempFile) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.fine("loadMailItem(" + tempFile);
+		IssueMailItem mailItem = null;
+		MailItem mailItemDisp = null;
+		File mailFile = tempFile;
+		int maxRetries = 100;
+		
+		// We need a retry loop, because the MSG file could already be opened. 
+		for (int retries = 0; retries < maxRetries; retries++) {
+			try {
+				// Create MailItem object from file.
+				if (log.isLoggable(Level.FINE)) log.fine("OpenSharedItem(" + tempFile + ")");
+				mailItemDisp = Dispatch.as(outlookApplication.getSession().OpenSharedItem(mailFile.getAbsolutePath()), MailItem.class);
+				mailItem = new IssueMailItemImpl(mailItemDisp);
+				break;
+			}
+			catch (Exception e) {
+				if (log.isLoggable(Level.FINE)) log.fine("failed: " + e);
+				if (retries == maxRetries-1) throw e;
+				
+				// Copy MSG file to an unique file.
+				for (; retries < maxRetries && mailFile.exists(); retries++) {
+					mailFile = makeTempFile(tempFile.getParentFile(), tempFile.getName(), retries);
+				}
+				final File fmailFile = mailFile;
+				Files.copy(tempFile.toPath(), fmailFile.toPath());
+				resourcesToRelease.add(() -> fmailFile.delete());
+				
+				// for-loop: try to open the copied MSG file. 
+			}
+		}
+		
+		if (log.isLoggable(Level.FINE)) log.fine(")loadMailItem=" + mailItem);
+		return mailItem;
+	}
 	
+	private File makeUniqueExportFileName(File dir, File tempFile) {
+		File destFile = new File(dir, tempFile.getName());
+		if (destFile.exists()) {
+			for (int retries = 0; retries < 100 && destFile.exists() && !compareFiles(tempFile, destFile); retries++) {
+				destFile = makeTempFile(dir, tempFile.getName(), retries);
+			}
+		}
+		return destFile;
+	}
+
 	private File makeTempFile(File tempDir, String fname, int retries) {
 		if (retries != 0) {
 			String unique = Integer.toString(retries);
