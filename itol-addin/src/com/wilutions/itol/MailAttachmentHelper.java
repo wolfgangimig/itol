@@ -16,12 +16,15 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.wilutions.com.Dispatch;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
+import com.wilutions.mslib.outlook.Application;
+import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.OlSaveAsType;
 
 public class MailAttachmentHelper {
@@ -420,25 +423,51 @@ public class MailAttachmentHelper {
 		return digest;
 	}
 
-	public String exportAttachment(File dir, Attachment att, ProgressCallback cb) throws Exception {
+	public String exportAttachment(File dir, Application outlookApplication, Attachment att, ProgressCallback cb) throws Exception {
 		String url = "";
 		try {
 			// Download into temp dir.
 			url = downloadAttachment(att, cb);
 			File attFile = new File(new URI(url));
-			
-			// Make unique file name
-			File destFile = new File(dir, attFile.getName());
-			if (destFile.exists()) {
-				for (int retries = 1; retries < 100 && destFile.exists() && !compareFiles(attFile, destFile); retries++) {
-					destFile = makeTempFile(dir, attFile.getName(), retries);
+
+			// Is the issue attachment a mail?
+			// TODO Check this code
+			boolean attachmentIsMail = false; // att.getFileName().toLowerCase().endsWith(MsgFileFormat.MSG.getId()); 
+			if (attachmentIsMail) {
+				try {
+					// Load mail into Outlook.MailItem object
+					MailItem mailItemDisp = Dispatch.as(outlookApplication.getSession().OpenSharedItem(attFile.getAbsolutePath()), MailItem.class);
+					IssueMailItem mailItem = new IssueMailItemImpl(mailItemDisp);
+					IssueAttachments mailAtts = mailItem.getAttachments();
+
+					// Export mail attachments
+					int n = mailAtts.getCount();
+					for (int i = 1; i <= n; i++) {
+						com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
+						MailAttAtt attatt = new MailAttAtt(matt);
+						attatt.setLastModified(mailItem.getReceivedTime());
+						exportAttachment(dir, outlookApplication, attatt, null);
+					}
+				}
+				catch (Exception e) {
+					log.log(Level.WARNING, "Failed to export mail " + attFile, e);
 				}
 			}
-
-			// Copy to dest dir.
-			if (!destFile.exists()) {
-				Files.copy(attFile.toPath(), destFile.toPath());
-				destFile.setLastModified(att.getLastModified().getTime());
+			else {
+	
+				// Make unique file name
+				File destFile = new File(dir, attFile.getName());
+				if (destFile.exists()) {
+					for (int retries = 1; retries < 100 && destFile.exists() && !compareFiles(attFile, destFile); retries++) {
+						destFile = makeTempFile(dir, attFile.getName(), retries);
+					}
+				}
+	
+				// Copy to dest dir.
+				if (!destFile.exists()) {
+					Files.copy(attFile.toPath(), destFile.toPath());
+					destFile.setLastModified(att.getLastModified().getTime());
+				}
 			}
 		}
 		finally {

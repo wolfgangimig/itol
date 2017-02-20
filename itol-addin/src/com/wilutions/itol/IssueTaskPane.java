@@ -1105,9 +1105,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			long currentProgress = 0;
 			cb.setTotal(totalBytes);
 			
+			Application outlookApplication = Globals.getThisAddin().getApplication();
 			for (Attachment att : selectedItems) {
 				try {
-					attachmentHelper.exportAttachment(exportDirectory, att, null);
+					attachmentHelper.exportAttachment(exportDirectory, outlookApplication, att, null);
 				} catch (Exception e) {
 					log.log(Level.WARNING, "Attachment could not be exported.", e);
 				}
