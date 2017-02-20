@@ -65,12 +65,24 @@ public class MailAttachmentHelper {
 				
 				List<Attachment> attachments = new ArrayList<Attachment>(issue.getAttachments());
 
-				MailAtt mailAtt = new MailAtt(mailItem, ext);
-				attachments.add(mailAtt);
+				boolean addAttachments = false; 
+				boolean addMail = false;
+				if (ext.equals(MsgFileFormat.ONL_ATTACHMENTS.getId())) {
+					addAttachments = true;
+					addMail = false;
+				}
+				else {
+					OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
+					addAttachments = !MsgFileTypes.isContainerFormat(saveAsType);
+					addMail = true;
+				}
 
-				OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
+				if (addMail) {
+					MailAtt mailAtt = new MailAtt(mailItem, ext);
+					attachments.add(mailAtt);
+				}
 
-				if (!MsgFileTypes.isContainerFormat(saveAsType)) {
+				if (addAttachments) {
 					IssueAttachments mailAtts = mailItem.getAttachments();
 					int n = mailAtts.getCount();
 					for (int i = 1; i <= n; i++) {

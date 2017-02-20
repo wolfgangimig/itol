@@ -129,6 +129,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 
 	private void initAutoCompletionAttachMailAs(ResourceBundle resb) {
 		MsgFileFormat.NOTHING.setName(resb.getString("DlgConfigure.AttachMailAs.nothing"));
+		MsgFileFormat.ONL_ATTACHMENTS.setName(resb.getString("DlgConfigure.AttachMailAs.onlyAttachments"));
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
 		ExtractImage<IdName> extractImage = new ExtractImage<IdName>() {
