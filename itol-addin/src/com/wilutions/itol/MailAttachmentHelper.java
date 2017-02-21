@@ -362,7 +362,9 @@ public class MailAttachmentHelper {
 	}
 
 	public void showAttachment(Attachment att, ProgressCallback cb) throws Exception {
-		String url = downloadAttachment(att, cb);
+		// Download the entire file into a temp dir. Opening the URL with Desktop.browse()
+		// would start a browser first, which in turn downloads the file. 
+		String url = downloadAttachment(att, cb); 
 		IssueApplication.showDocument(url);
 	}
 

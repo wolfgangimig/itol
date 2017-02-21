@@ -143,8 +143,18 @@ public class IssueApplication extends AddinApplication {
 	public static void showDocument(String url) {
 		try {
 			if (url.startsWith("file:/")) {
-				// AWT opens the file more reliably
 				File file = new File(new URI(url));
+				
+				// Open potentially dangerous files with notepad. 
+				String ext_1 = MailAttachmentHelper.getFileExt(file.getName()).toLowerCase() + ".";
+				if (Globals.getAppInfo().getConfig().getBlackExtensions().contains(ext_1)) {
+					File dest = new File(file.getParentFile(), file.getName() + ".txt");
+					dest.delete();
+					file.renameTo(dest);
+					file = dest;
+				}
+				
+				// AWT opens the file more reliably
 				Desktop.getDesktop().open(file);
 			}
 			else {

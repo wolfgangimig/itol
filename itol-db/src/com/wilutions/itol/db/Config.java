@@ -48,7 +48,7 @@ public class Config implements Serializable, Cloneable {
 	 * User configuration file name.
 	 */
 	public final static String CONFIG_FILE_USER = "user.json";
-
+	
 	private transient String manufacturerName;
 	private transient String appName;
 	
@@ -73,6 +73,17 @@ public class Config implements Serializable, Cloneable {
 	 * Custom field for mail address.
 	 */
 	private String autoReplyField = "";
+	
+	/**
+	 * Files with this extensions are always opened as text files. 
+	 */
+	private String blackExtensions = DEFAULT_BLACK_EXTENSIONS;
+
+	// https://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
+	private final static String DEFAULT_BLACK_EXTENSIONS =  
+			".exe.pif.application.gadget.msi.msp.com.scr.hta.cpl.msc.jar.pl" +
+			".bat.cmd.vb.vbs.js.jse.ws.wsf.wsc.wsh.ps1.ps1xml.ps2.ps2xml.psc1.psc2.msh.msh1.msh2.mshxml.msh1xml.msh2xml." +
+			".scf.lnk.inf.reg.docm.dotm.xlsm.xltm.xlam.pptm.potm.ppam.ppsm.sldm.";
 
 	// Only user related options.
 	private String userName = "";
@@ -119,6 +130,7 @@ public class Config implements Serializable, Cloneable {
 		this.proxyServerPort = rhs.proxyServerPort;
 		this.taskPanePosition = rhs.taskPanePosition;
 		this.autoReplyField = rhs.autoReplyField;
+		this.blackExtensions = rhs.blackExtensions;
 	}
 
 	public static <T extends Config> T read(String manufacturerName, String appName, Class<T> clazz) throws Exception {
@@ -245,6 +257,8 @@ public class Config implements Serializable, Cloneable {
 	
 	protected Config extractApplicationConfig() {
 		Config appConfig = (Config)this.clone();
+		
+		// Unset user related properties.
 		appConfig.setUserName(null);
 		appConfig.setEncryptedPassword(null);
 		appConfig.setLogFile(null);
@@ -440,6 +454,14 @@ public class Config implements Serializable, Cloneable {
 
 	public void setAutoReplyField(String autoReplyField) {
 		this.autoReplyField = autoReplyField;
+	}
+
+	public String getBlackExtensions() {
+		return blackExtensions;
+	}
+
+	public void setBlackExtensions(String blackExtensions) {
+		this.blackExtensions = blackExtensions;
 	}
 
 	

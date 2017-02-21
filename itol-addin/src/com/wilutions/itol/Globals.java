@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
 import com.wilutions.itol.db.Config;
-import com.wilutions.itol.db.ISODate;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
 import com.wilutions.itol.db.PasswordEncryption;
