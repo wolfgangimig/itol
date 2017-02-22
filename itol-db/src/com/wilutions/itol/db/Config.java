@@ -81,9 +81,8 @@ public class Config implements Serializable, Cloneable {
 
 	// https://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
 	private final static String DEFAULT_BLACK_EXTENSIONS =  
-			".exe.pif.application.gadget.msi.msp.com.scr.hta.cpl.msc.jar.pl" +
-			".bat.cmd.vb.vbs.js.jse.ws.wsf.wsc.wsh.ps1.ps1xml.ps2.ps2xml.psc1.psc2.msh.msh1.msh2.mshxml.msh1xml.msh2xml" +
-			".scf.lnk.inf.reg.docm.dotm.xlsm.xltm.xlam.pptm.potm.ppam.ppsm.sldm.";
+			".exe.pif.application.gadget.msi.msp.com.scr.hta.cpl.msc.jar.scf.lnk.inf" +
+			".reg.pl.bat.cmd.vb.vbs.js.jse.ws.wsf.wsc.wsh.ps1.ps1xml.ps2.ps2xml.psc1.psc2.msh.msh1.msh2.mshxml.msh1xml.msh2xml";
 
 	// Only user related options.
 	private String userName = "";

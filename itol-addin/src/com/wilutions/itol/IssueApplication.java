@@ -146,16 +146,14 @@ public class IssueApplication extends AddinApplication {
 				File file = new File(new URI(url));
 				
 				// Open potentially dangerous files with notepad. 
-				String ext_1 = MailAttachmentHelper.getFileExt(file.getName()).toLowerCase() + ".";
-				if (Globals.getAppInfo().getConfig().getBlackExtensions().contains(ext_1)) {
-					File dest = new File(file.getParentFile(), file.getName() + ".txt");
-					dest.delete();
-					file.renameTo(dest);
-					file = dest;
+				if (isPotentiallyDangerousFile(file)) {
+					ProcessBuilder pb = new ProcessBuilder("notepad.exe", file.getAbsolutePath());
+					pb.start();
 				}
-				
-				// AWT opens the file more reliably
-				Desktop.getDesktop().open(file);
+				else {
+					// AWT opens the file more reliably than JavaFX
+					Desktop.getDesktop().open(file);
+				}
 			}
 			else {
 				Desktop.getDesktop().browse(new URI(url));
@@ -163,6 +161,11 @@ public class IssueApplication extends AddinApplication {
 		} catch (Exception e) {
 			log.log(Level.WARNING, "Failed to opent document=" + url, e);
 		}
+	}
+
+	private static boolean isPotentiallyDangerousFile(File file) {
+		String ext_1 = MailAttachmentHelper.getFileExt(file.getName()).toLowerCase() + ".";
+		return Globals.getAppInfo().getConfig().getBlackExtensions().contains(ext_1);
 	}
 
 }
