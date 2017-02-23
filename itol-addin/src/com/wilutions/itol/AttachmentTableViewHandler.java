@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 
 import com.wilutions.com.IDispatch;
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.Selection;
@@ -27,7 +28,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -291,6 +294,32 @@ public class AttachmentTableViewHandler {
 			}
 
 		});
+		
+		// Render preview in tooltip for image attachments.
+		table.setRowFactory(tableView -> {
+		    final TableRow<Attachment> row = new TableRow<>();
+	        Tooltip tooltip = new Tooltip();
+
+		    row.setOnMouseEntered((event) -> {
+		        Attachment attachment = row.getItem();
+		        if (attachment != null) {
+		        	String url = attachment.getThumbnailUrl();
+		        	if (!Default.value(url).isEmpty()) {
+		        		if (tooltip.getGraphic() == null) {
+		        			Image image = new Image(url);
+				        	tooltip.setGraphic(new ImageView(image));
+		        		}
+			        	tooltip.show(table, event.getScreenX() + 50, event.getScreenY());
+		        	}
+		        }
+		    });
+		    row.setOnMouseExited((event) -> {
+		    	tooltip.hide();
+		    });
+
+		    return row;
+		});
+		
 		
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] apply(observableAttachments=" + observableAttachments + ")");

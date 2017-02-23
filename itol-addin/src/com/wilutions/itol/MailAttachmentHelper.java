@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 
 import com.wilutions.com.Dispatch;
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.MsgFileFormat;
@@ -230,15 +231,29 @@ public class MailAttachmentHelper {
 		}
 
 		private File save() {
-			final File mattFile = new File(dir, getFileName());
-			if (!mattFile.exists()) {
+			if (getLocalFile() == null) {
+				final File mattFile = new File(dir, getFileName());
+				super.setLocalFile(mattFile);
 				resourcesToRelease.add(() -> mattFile.delete());
 				log.info("Save attachment to " + mattFile);
 				matt.SaveAsFile(mattFile.getAbsolutePath());
 				super.setContentLength(mattFile.length());
 				super.setUrl(mattFile.toURI().toString());
 			}
-			return mattFile;
+			return getLocalFile();
+		}
+		
+		public String getThumbnailUrl() {
+			String thurl = super.getThumbnailUrl();
+			if (Default.isEmpty(thurl)) {
+				if (!ThumbnailHelper.getImageFileType(new File(getFileName())).isEmpty()) {
+					save();
+					File thumbnailFile = ThumbnailHelper.makeThumbnail(getLocalFile());
+					thurl = thumbnailFile != null ? thumbnailFile.toURI().toString() : "";
+					setThumbnailUrl(thurl);
+				}
+			}
+			return thurl;
 		}
 	}
 

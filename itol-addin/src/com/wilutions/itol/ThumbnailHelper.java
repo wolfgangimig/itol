@@ -131,7 +131,7 @@ public class ThumbnailHelper {
 	 * @param file
 	 * @return png, jpg or ""
 	 */
-	private static String getImageFileType(File file) {
+	public static String getImageFileType(File file) {
 		String fname = file.getName();
 		String type = "";
 		int p = fname.lastIndexOf('.');
