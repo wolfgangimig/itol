@@ -146,7 +146,7 @@ public class IssueApplication extends AddinApplication {
 				File file = new File(new URI(url));
 				
 				// Open potentially dangerous files with notepad. 
-				if (isPotentiallyDangerousFile(file)) {
+				if (file.isFile() && isPotentiallyDangerousFile(file)) {
 					ProcessBuilder pb = new ProcessBuilder("notepad.exe", file.getAbsolutePath());
 					pb.start();
 				}
