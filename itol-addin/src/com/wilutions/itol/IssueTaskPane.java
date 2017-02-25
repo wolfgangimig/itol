@@ -45,6 +45,7 @@ import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.MailInfo;
 import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.itol.db.ProgressCallback;
+import com.wilutions.itol.db.ProgressCallbackFactory;
 import com.wilutions.itol.db.ProgressCallbackImpl;
 import com.wilutions.itol.db.Property;
 import com.wilutions.itol.db.PropertyClass;
@@ -105,7 +106,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.Window;
 import javafx.util.Duration;
 
-public class IssueTaskPane extends TaskPaneFX implements Initializable {
+public class IssueTaskPane extends TaskPaneFX implements Initializable, ProgressCallbackFactory {
 
 	private volatile Issue issue = new Issue();
 
@@ -779,7 +780,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			}
 			observableAttachments = new Attachments(FXCollections.observableList(atts));
 
-			AttachmentTableViewHandler.apply(attachmentHelper, tabAttachments, observableAttachments);
+			AttachmentTableViewHandler.apply(attachmentHelper, tabAttachments, observableAttachments, this);
 
 			tabAttachments.setOnMouseClicked((click) -> {
 				if (click.getClickCount() == 2) {
@@ -1669,6 +1670,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	 * Create a callback object that displays the state in the progress bar.
 	 * @return ProgressCallback object
 	 */
+	@Override
 	public ProgressCallback createProgressCallback(String name) {
 		return new MyProgressCallback(name);
 	}

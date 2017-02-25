@@ -12,17 +12,22 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.wilutions.com.BackgTask;
 import com.wilutions.com.IDispatch;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.ProgressCallback;
+import com.wilutions.itol.db.ProgressCallbackFactory;
 import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.Selection;
 import com.wilutions.mslib.outlook._Explorer;
 
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
@@ -44,7 +49,7 @@ public class AttachmentTableViewHandler {
 	private final static Logger log = Logger.getLogger("AttachmentTableViewHandler");
 	
 	@SuppressWarnings("unchecked")
-	public static void apply(MailAttachmentHelper attachmentHelper, TableView<Attachment> table, Attachments observableAttachments) {
+	public static void apply(MailAttachmentHelper attachmentHelper, TableView<Attachment> table, Attachments observableAttachments, ProgressCallbackFactory progressCallbackFactory) {
 		long t1 = System.currentTimeMillis();
 		table.setItems(observableAttachments.getObservableList());
 
@@ -299,21 +304,51 @@ public class AttachmentTableViewHandler {
 		table.setRowFactory(tableView -> {
 		    final TableRow<Attachment> row = new TableRow<>();
 	        Tooltip tooltip = new Tooltip();
+	        AtomicBoolean mouseEntered = new AtomicBoolean();
+	        AtomicReference<Image> refImage = new AtomicReference<>();
 
 		    row.setOnMouseEntered((event) -> {
-		        Attachment attachment = row.getItem();
-		        if (attachment != null) {
-		        	String url = attachment.getThumbnailUrl();
-		        	if (!Default.value(url).isEmpty()) {
-		        		if (tooltip.getGraphic() == null) {
-		        			Image image = new Image(url);
-				        	tooltip.setGraphic(new ImageView(image));
-		        		}
-			        	tooltip.show(table, event.getScreenX() + 50, event.getScreenY());
-		        	}
-		        }
+		    	mouseEntered.set(true);
+		    	BackgTask.run(() -> {
+			        Attachment attachment = row.getItem();
+			        if (attachment != null) {
+			        	String thumbnailUrl = attachment.getThumbnailUrl();
+			        	if (!Default.value(thumbnailUrl).isEmpty()) {
+			        		if (refImage.get() == null) {
+								File thumbnailFile = null;
+			        			try {
+			        				// Use download function since Image constructor does not follow redirections.
+									String fpath = Globals.getIssueService().downloadAttachment(thumbnailUrl, progressCallbackFactory.createProgressCallback("Download thumbnail"));
+									thumbnailFile = new File(fpath);
+									String localUrl = thumbnailFile.toURI().toString();
+				        			Image image = new Image(localUrl);
+				        			refImage.set(image);
+								} catch (Exception e) {
+									log.log(Level.WARNING, "Failed to load thumbnail for attachment=" + attachment.getFileName(), e);
+								}
+			        			finally {
+			        				if (thumbnailFile != null) {
+			        					thumbnailFile.delete();
+			        				}
+			        			}
+			        		}
+			        		
+			        		if (refImage.get() != null) {
+			        			Platform.runLater(() -> {
+				        			if (mouseEntered.get()) {
+				        				if (tooltip.getGraphic() == null) {
+				        					tooltip.setGraphic(new ImageView(refImage.get()));
+				        				}
+				        				tooltip.show(table, event.getScreenX() + 50, event.getScreenY());
+				        			}
+			        			});
+			        		}
+			        	}
+			        }
+		    	});
 		    });
 		    row.setOnMouseExited((event) -> {
+		    	mouseEntered.set(false);
 		    	tooltip.hide();
 		    });
 

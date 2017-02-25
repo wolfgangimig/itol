@@ -50,8 +50,6 @@ public class HttpClient {
 
 	private final static Logger log = Logger.getLogger(HttpClient.class.getName());
 
-	private static HashMap<String, String> redirections = new HashMap<>();
-	
 	public final static int CONNECT_TIMEOUT_SECONDS = 10;
 
 	static {
@@ -82,18 +80,6 @@ public class HttpClient {
 		long startTime = System.currentTimeMillis();
 		HttpURLConnection conn = null;
 		HttpResponse ret = new HttpResponse();
-
-		for (String key : redirections.keySet()) {
-			int p = surl.indexOf(key);
-			if (p >= 0) {
-				String srepl = redirections.get(key);
-				log.fine("redirect, replace part=" + key + " with " + srepl);
-
-				String nurl = surl.substring(0, p) + srepl + surl.substring(p + key.length());
-				log.info("redirect, new-url=" + nurl);
-				surl = nurl;
-			}
-		}
 
 		try {
 			
@@ -204,17 +190,6 @@ public class HttpClient {
 				String ol = surl;
 				String nl = conn.getURL().toString();
 				log.info("was redirected, old-url=" + ol + ", new-url=" + nl);
-				for (int i = 0; i < ol.length(); i++) {
-					String sub = ol.substring(i);
-					int p = nl.indexOf(sub);
-					if (p >= 0) {
-						String sfind = ol.substring(0, i);
-						String srepl = nl.substring(0, p);
-						log.fine("add redirection replacement " + sfind + " -> " + srepl);
-						redirections.put(sfind, srepl);
-						break;
-					}
-				}
 			}
 
 			if (contentDisposition != null && contentDisposition.length() != 0) {
@@ -269,9 +244,10 @@ public class HttpClient {
 			ret.setErrorMessage(msg + e.toString());
 		}
 		finally {
-			// if (conn != null) {
-			// conn.disconnect();
-			// }
+			if (conn != null) {
+				conn.disconnect();
+			}
+			cb.setFinished();
 		}
 
 		if (log.isLoggable(Level.FINE)) {
