@@ -30,7 +30,7 @@ public class MsgFileFormat {
 	/**
 	 * Attach only mail attachments, not the mail itself.
 	 */
-	public final static IdName ONL_ATTACHMENTS = new IdName(".attachments_09efeb7a-9eb6-4631-a25f-57a45de7f0da", "Only attachments");
+	public final static IdName ONLY_ATTACHMENTS = new IdName(".attachments_09efeb7a-9eb6-4631-a25f-57a45de7f0da", "Only attachments");
 	/**
 	 * Default format.
 	 */
@@ -39,7 +39,7 @@ public class MsgFileFormat {
 	/**
 	 * List of all types.
 	 */
-	public final static List<IdName> FORMATS = Collections.unmodifiableList(Arrays.asList(new IdName[] { NOTHING, MSG, RTF, TEXT, ONL_ATTACHMENTS }));
+	public final static List<IdName> FORMATS = Collections.unmodifiableList(Arrays.asList(new IdName[] { NOTHING, MSG, RTF, TEXT, ONLY_ATTACHMENTS }));
 
 	/**
 	 * File extensions in relation to OlSaveAsType

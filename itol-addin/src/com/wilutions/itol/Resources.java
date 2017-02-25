@@ -24,4 +24,9 @@ public class Resources {
 		return rloader.getImage(Resources.class, "delete-disabled.png");
 	}
 
+	public Image getAttachmentImage() {
+		return rloader.getImage(Resources.class, "Attachment32.png");
+	}
+	
+
 }

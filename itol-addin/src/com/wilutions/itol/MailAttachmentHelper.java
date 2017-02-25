@@ -71,7 +71,7 @@ public class MailAttachmentHelper {
 
 				boolean addAttachments = false; 
 				boolean addMail = false;
-				if (ext.equals(MsgFileFormat.ONL_ATTACHMENTS.getId())) {
+				if (ext.equals(MsgFileFormat.ONLY_ATTACHMENTS.getId())) {
 					addAttachments = true;
 					addMail = false;
 				}

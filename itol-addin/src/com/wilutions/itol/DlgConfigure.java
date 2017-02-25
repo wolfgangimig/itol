@@ -26,7 +26,6 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
 
@@ -129,13 +128,14 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 
 	private void initAutoCompletionAttachMailAs(ResourceBundle resb) {
 		MsgFileFormat.NOTHING.setName(resb.getString("DlgConfigure.AttachMailAs.nothing"));
-		MsgFileFormat.ONL_ATTACHMENTS.setName(resb.getString("DlgConfigure.AttachMailAs.onlyAttachments"));
+		MsgFileFormat.ONLY_ATTACHMENTS.setName(resb.getString("DlgConfigure.AttachMailAs.onlyAttachments"));
+		MsgFileFormat.ONLY_ATTACHMENTS.setImage(Resources.getInstance().getAttachmentImage());
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
 		ExtractImage<IdName> extractImage = new ExtractImage<IdName>() {
 			public Image getImage(IdName item) {
-				Image ret = null;
-				if (item.getId().length() > 1) {
+				Image ret = item.getImage();
+				if (ret == null && !item.getId().isEmpty()) {
 					ret = FileIconCache.getFileIcon(item.getId());
 				}
 				return ret;
