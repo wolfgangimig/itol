@@ -30,7 +30,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -95,6 +94,7 @@ public class HttpClient {
 			// conn.setInstanceFollowRedirects(false);
 
 			long contentLength = -1;
+			@SuppressWarnings("unused")
 			String contentDisposition = "";
 			
 			// Wrap String bytes into InputStream 
@@ -128,6 +128,8 @@ public class HttpClient {
 			
 			log.info(method + " " + url + " #" + contentLength);
 
+			ProgressCallback subcb = null; 
+			ProgressCallback subcbRecv = null;
 			if (content != null) {
 
 				conn.setUseCaches(false);
@@ -138,17 +140,21 @@ public class HttpClient {
 					conn.setChunkedStreamingMode(9000);
 				}
 
-				ProgressCallback subcb = cb.createChild("Upload", 0.5);
+				subcb = cb.createChild("Upload", 0.5);
+				subcbRecv = cb.createChild("Receive", 0.5);
 				if (content instanceof File) {
 					writeFileIntoStream(conn.getOutputStream(), ((File) content), subcb);
 				}
 				else if (content instanceof InputStream) {
 					writeFileIntoStream(conn.getOutputStream(), ((InputStream) content), contentLength, subcb);
 				}
-				subcb.setFinished();
 			}
+			else {
+				subcb = cb.createChild("Upload", 0.1);
+				subcbRecv = cb.createChild("Receive", 0.9);
+			}
+			subcb.setFinished();
 
-			ProgressCallback subcbRecv = cb.createChild("Receive", content != null ? 0.5 : 1.0);
 			if (log.isLoggable(Level.FINE)) log.fine("getResponseCode...");
 			ret.setStatus(conn.getResponseCode());
 			if (log.isLoggable(Level.FINE)) log.fine("status=" + ret.getStatus());
@@ -190,10 +196,6 @@ public class HttpClient {
 				String ol = surl;
 				String nl = conn.getURL().toString();
 				log.info("was redirected, old-url=" + ol + ", new-url=" + nl);
-			}
-
-			if (contentDisposition != null && contentDisposition.length() != 0) {
-				subcbRecv.setParams(contentDisposition);
 			}
 
 			String contentType = Default.value(conn.getHeaderField("Content-Type")).toLowerCase();

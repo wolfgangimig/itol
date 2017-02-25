@@ -1072,10 +1072,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			long totalBytes = selectedItems.stream().collect(Collectors.summingLong((att) -> att.getContentLength())).longValue();
 			ProgressCallback cb = createProgressCallback("Export attachments");
 			
+			// Show that export process has started
+			cb.incrProgress(0.1); 
+			
+			// Export
+			ProgressCallback cbExportAll = cb.createChild(0.9);
 			Application outlookApplication = Globals.getThisAddin().getApplication();
 			for (Attachment att : selectedItems) {
 				try {
-					ProgressCallback childProgress = cb.createChild("Export " + att.getFileName(), (double)att.getContentLength() / (double)totalBytes);
+					ProgressCallback childProgress = cbExportAll.createChild("Export " + att.getFileName(), (double)att.getContentLength() / (double)totalBytes);
 					attachmentHelper.exportAttachment(exportDirectory, outlookApplication, att, childProgress);
 				} catch (Exception e) {
 					log.log(Level.WARNING, "Attachment could not be exported.", e);
@@ -1216,9 +1221,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		}
 	}
 	
-	private void internalShowIssue(String issueId, ProgressCallback cb) throws Exception {
+	private void internalShowIssue(String issueId, ProgressCallback cb, AsyncResult<Boolean> asyncResult) throws Exception {
 		IssueService srv = Globals.getIssueService();
-		cb.incrProgress(0.1);
 		Issue issue = srv.readIssue(issueId, cb.createChild(0.5));
 		String subject = srv.injectIssueIdIntoMailSubject("", issue);
 		
@@ -1227,7 +1231,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 				return subject;
 			}
 		};
-		internalSetMailItem(mitem, cb.createChild(0.4), (succ,ex) -> cb.setFinished());
+		internalSetMailItem(mitem, cb.createChild(0.5), asyncResult);
 	}
 
 	@FXML
@@ -1237,11 +1241,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			if (ex == null && succ) {
 
 				ProgressCallback cb = createProgressCallback("Show issue");
+				
+				// Show that reading issue has started
+				cb.incrProgress(0.1);
+				
 				bnAssignSelection_select(false);
 				
 				try {
 					String issueId = edIssueId.getText();
-					internalShowIssue(issueId, cb);
+					internalShowIssue(issueId, cb.createChild(0.9), (succ1, ex1) -> {
+						cb.setFinished();	
+					});
 				}
 				catch (Exception e) {
 					showMessageBoxError(e.toString());
