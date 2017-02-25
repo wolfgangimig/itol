@@ -1071,7 +1071,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			// Prepare progress object: compute total number of bytes to export.
 			long totalBytes = selectedItems.stream().collect(Collectors.summingLong((att) -> att.getContentLength())).longValue();
 			ProgressCallback cb = createProgressCallback("Export attachments");
-			cb.setTotal(totalBytes);
 			
 			Application outlookApplication = Globals.getThisAddin().getApplication();
 			for (Attachment att : selectedItems) {
@@ -1080,9 +1079,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 					attachmentHelper.exportAttachment(exportDirectory, outlookApplication, att, childProgress);
 				} catch (Exception e) {
 					log.log(Level.WARNING, "Attachment could not be exported.", e);
-				}
-				finally {
-					cb.incrProgress(att.getContentLength());
 				}
 			}
 			cb.setFinished();

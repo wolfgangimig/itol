@@ -422,30 +422,35 @@ public class MailAttachmentHelper {
 		return url;
 	}
 	
-	private boolean compareFiles(File lhs, File rhs) {
+	private boolean compareFiles(File lhs, File rhs, ProgressCallback cb) {
 		if (!lhs.exists()) return false;
 		if (!rhs.exists()) return false;
 		if (lhs.length() != rhs.length()) return false;
-		byte[] lhsHash = getFileHash(lhs);
-		byte[] rhsHash = getFileHash(rhs);
+		byte[] lhsHash = getFileHash(lhs, cb.createChild("MD5", 0.5));
+		byte[] rhsHash = getFileHash(rhs, cb.createChild("MD5", 0.5));
 		return Arrays.equals(lhsHash, rhsHash);
 	}
 	
-	private byte[] getFileHash(File file) {
+	private byte[] getFileHash(File file, ProgressCallback cb) {
 		byte[] digest = null;
+		cb.setTotal(file.length());
 		try {
 			MessageDigest md = MessageDigest.getInstance("MD5");
 			try (InputStream is = Files.newInputStream(file.toPath());
 			     DigestInputStream dis = new DigestInputStream(is, md)) 
 			{
 				byte[] buf = new byte[10*1000];
-				while (dis.read(buf) > 0) {}
+				int len = 0;
+				while ((len = dis.read(buf)) > 0) {
+					cb.incrProgress(len);
+				}
 			}
 			digest = md.digest();
 		}
 		catch (Exception e) {
 			digest = new byte[16];
 		}
+		cb.setFinished();
 		return digest;
 	}
 
@@ -454,35 +459,45 @@ public class MailAttachmentHelper {
 		String url = "";
 		try {
 			// Download into temp dir.
-			url = downloadAttachment(att, cb);
+			ProgressCallback cbDownload = cb.createChild("Download " + att.getFileName(), 0.5);
+			url = downloadAttachment(att, cbDownload);
 			File tempFile = new File(new URI(url));
 
 			// Is the issue attachment a mail?
+			ProgressCallback cbSave = cb.createChild("Save " + att.getFileName(), 0.5);
 			boolean attachmentIsMail = tempFile.getName().toLowerCase().endsWith(MsgFileFormat.MSG.getId()); 
 			if (log.isLoggable(Level.FINE)) log.fine("attachmentIsMail=" + attachmentIsMail);
 			if (attachmentIsMail) {
+
 				try {
 					// Load mail into Outlook.MailItem object
 					IssueMailItem mailItem = loadMailItem(outlookApplication, tempFile);
+					IssueAttachments mailAtts = mailItem.getAttachments();
+					int nbOfAttachments = mailAtts.getCount();
+					cbSave.setTotal(nbOfAttachments + 1);
 					
 					// Export mail as RTF 
 					{
 						MailAtt matt = new MailAtt(mailItem, MsgFileFormat.RTF.getId());
-						File destFile = makeUniqueExportFileName(dir, new File(dir, matt.getFileName()));
+						File destFile = makeUniqueExportFileName(dir, new File(dir, matt.getFileName()), cbSave.createChild(0.5));
 						if (log.isLoggable(Level.INFO)) log.info("Export mail to destFile=" + destFile);
-						mailItem.SaveAs(destFile.getAbsolutePath(), OlSaveAsType.olRTF);
-						destFile.setLastModified(mailItem.getReceivedTime().getTime());
+						if (!destFile.exists()) {
+							mailItem.SaveAs(destFile.getAbsolutePath(), OlSaveAsType.olRTF);
+							destFile.setLastModified(mailItem.getReceivedTime().getTime());
+						}
+						cbSave.incrProgress(0.5);
 					}
 					
 					// Export mail attachments
-					IssueAttachments mailAtts = mailItem.getAttachments();
-					int n = mailAtts.getCount();
-					for (int i = 1; i <= n; i++) {
+					for (int i = 1; i <= nbOfAttachments; i++) {
 						com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
-						File destFile = makeUniqueExportFileName(dir, new File(dir, matt.getFileName()));
+						File destFile = makeUniqueExportFileName(dir, new File(dir, matt.getFileName()), cbSave.createChild(0.5));
 						if (log.isLoggable(Level.INFO)) log.info("Export mail attachment to destFile=" + destFile);
-						matt.SaveAsFile(destFile.getAbsolutePath());
-						destFile.setLastModified(mailItem.getReceivedTime().getTime());
+						if (!destFile.exists()) {
+							matt.SaveAsFile(destFile.getAbsolutePath());
+							destFile.setLastModified(mailItem.getReceivedTime().getTime());
+						}
+						cbSave.incrProgress(0.5);
 					}
 					
 				}
@@ -492,7 +507,7 @@ public class MailAttachmentHelper {
 			}
 			else {
 				// Make unique file name
-				File destFile = makeUniqueExportFileName(dir, tempFile);
+				File destFile = makeUniqueExportFileName(dir, tempFile, cbSave.createChild(0.5));
 				if (log.isLoggable(Level.INFO)) log.info("Export issue attachment to destFile=" + destFile);
 
 				// Copy to dest dir.
@@ -500,10 +515,12 @@ public class MailAttachmentHelper {
 					Files.copy(tempFile.toPath(), destFile.toPath());
 					destFile.setLastModified(att.getLastModified().getTime());
 				}
+				cbSave.incrProgress(0.5);
 			}
+			
 		}
 		finally {
-			if (cb != null) cb.setFinished();
+			cb.setFinished();
 		}
 		if (log.isLoggable(Level.FINE)) log.fine(")exportAttachment=" + url);
 		return url;
@@ -552,13 +569,17 @@ public class MailAttachmentHelper {
 		return mailItem;
 	}
 	
-	private File makeUniqueExportFileName(File dir, File tempFile) {
+	private File makeUniqueExportFileName(File dir, File tempFile, ProgressCallback cb) {
 		File destFile = new File(dir, tempFile.getName());
 		if (destFile.exists()) {
-			for (int retries = 0; retries < 100 && destFile.exists() && !compareFiles(tempFile, destFile); retries++) {
+			for (int retries = 0; retries < 100 && destFile.exists(); retries++) {
+				if (retries == 0 && compareFiles(tempFile, destFile, cb)) {
+					break;
+				}
 				destFile = makeTempFile(dir, tempFile.getName(), retries);
 			}
 		}
+		cb.setFinished();
 		return destFile;
 	}
 
