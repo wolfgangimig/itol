@@ -109,8 +109,9 @@ public class IssueApplication extends AddinApplication {
 	protected void register(boolean userNotMachine, String execPath) {
 		try {
 			super.register(userNotMachine, execPath);
-
+			
 			String linkName = registerAutostart(true, execPath);
+			log.fine("autostart link=" + linkName);
 
 //			if (linkName != null && linkName.length() != 0) {
 //				showDocument(linkName);
@@ -127,6 +128,7 @@ public class IssueApplication extends AddinApplication {
 	protected void unregister(boolean userNotMachine, String exePath) {
 		try {
 			String linkName = registerAutostart(false, exePath);
+			log.fine("autostart link=" + linkName);
 
 //			if (linkName != null && linkName.length() != 0) {
 //				showDocument("http://www.wilutions.com/joa/itol/uninstalled.html");
