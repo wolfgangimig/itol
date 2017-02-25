@@ -1221,7 +1221,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	
 	private void internalShowIssue(String issueId, ProgressCallback cb) throws Exception {
 		IssueService srv = Globals.getIssueService();
-		Issue issue = srv.readIssue(issueId, cb.createChild(0.3));
+		cb.incrProgress(0.1);
+		Issue issue = srv.readIssue(issueId, cb.createChild(0.5));
 		String subject = srv.injectIssueIdIntoMailSubject("", issue);
 		
 		IssueMailItem mitem = new IssueMailItemBlank() {
@@ -1229,7 +1230,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				return subject;
 			}
 		};
-		internalSetMailItem(mitem, cb.createChild(0.7), (succ,ex) -> cb.setFinished());
+		internalSetMailItem(mitem, cb.createChild(0.4), (succ,ex) -> cb.setFinished());
 	}
 
 	@FXML
