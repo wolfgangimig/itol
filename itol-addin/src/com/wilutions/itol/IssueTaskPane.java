@@ -1383,13 +1383,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 		public MyProgressCallback(String name) {
 			super("");
-			System.out.println("start progress ---- ");
-			log.info("start progress");
+//			System.out.println("start progress ---- ");
+//			log.info("start progress");
 		}
 		
 		@Override
 		public void setTotal(double total) {
-			System.out.println("total=" + total);
+//			System.out.println("total=" + total);
 			super.setTotal(total);
 		}
 		
@@ -1402,7 +1402,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 				lastPercent = percent;
 			}
 			if (quote > 1.01) {
-				System.err.println("progress " + quote);
+//				System.err.println("progress " + quote);
 			}
 			else {
 				Platform.runLater(() -> {
@@ -1411,8 +1411,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 					}
 				});
 			}
-			System.out.println("progress " + quote);
-			log.info("progress=" + quote);
+//			System.out.println("progress " + quote);
+//			log.info("progress=" + quote);
 		}
 
 		@Override
@@ -1424,8 +1424,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 					// System.out.println("progress 0");
 				}
 			});
-			System.out.println("progress finished");
-			log.info("progress finished");
+//			System.out.println("progress finished");
+//			log.info("progress finished");
 		}
 
 	}
