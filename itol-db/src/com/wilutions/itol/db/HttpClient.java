@@ -163,7 +163,6 @@ public class HttpClient {
 			}
 
 			ProgressCallback subcbRecv = cb.createChild("Receive", content != null ? 0.5 : 1.0);
-			subcbRecv.incrProgress(0.1);
 			if (log.isLoggable(Level.FINE)) log.fine("getResponseCode...");
 			ret.setStatus(conn.getResponseCode());
 			if (log.isLoggable(Level.FINE)) log.fine("status=" + ret.getStatus());
