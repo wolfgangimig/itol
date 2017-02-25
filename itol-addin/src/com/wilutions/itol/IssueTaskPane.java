@@ -524,26 +524,23 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			initDetectIssueModified();
 
 
-			// Update menu items for "Add Attachment" button 
-			// after issue has been initialized.
-			AsyncResult<Boolean> asyncResult = (succ, ex) -> {
-				bnAddAttachment.showingProperty().addListener((obs, wasShowing, isNowShowing) -> {
-		            if (isNowShowing) {
-		            	updateBnAddAttachmentMenuItems();
-		            }
-		        });
-			};
-			
 			// Press Assign button when called from inspector.
 			if (inspectorOrExplorer instanceof InspectorWrapper) {
 				bnAssignSelection_select(true);
-				internalSetMailItem(mailItem, createProgressCallback("Initialize"), asyncResult);
+				internalSetMailItem(mailItem, createProgressCallback("Initialize"), (succ,ex) -> {});
 			}
 			// Show defaults when called from explorer.
 			else {
-				internalSetMailItem(new IssueMailItemBlank(), createProgressCallback("Initialize"), asyncResult);
+				internalSetMailItem(new IssueMailItemBlank(), createProgressCallback("Initialize"), (succ,ex) -> {});
 			}
-			
+
+			// Update menu items for "Add Attachment" button 
+			bnAddAttachment.showingProperty().addListener((obs, wasShowing, isNowShowing) -> {
+	            if (isNowShowing) {
+	            	updateBnAddAttachmentMenuItems();
+	            }
+	        });
+
 		}
 		catch (Throwable e) {
 			log.log(Level.WARNING, "", e);
