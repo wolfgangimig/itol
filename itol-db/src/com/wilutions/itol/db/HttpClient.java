@@ -77,6 +77,7 @@ public class HttpClient {
 		if (cb == null) {
 			cb = new ProgressCallbackImpl("HttpClient.send");
 		}
+		cb.setTotal(1.0);
 
 		long startTime = System.currentTimeMillis();
 		HttpURLConnection conn = null;
@@ -151,7 +152,7 @@ public class HttpClient {
 					conn.setChunkedStreamingMode(9000);
 				}
 
-				ProgressCallback subcb = cb.createChild("upload");
+				ProgressCallback subcb = cb.createChild("Upload", 0.5);
 				if (content instanceof File) {
 					writeFileIntoStream(conn.getOutputStream(), ((File) content), subcb);
 				}
@@ -161,7 +162,8 @@ public class HttpClient {
 				subcb.setFinished();
 			}
 
-			ProgressCallback subcbRecv = cb.createChild("receive");
+			ProgressCallback subcbRecv = cb.createChild("Receive", content != null ? 0.5 : 1.0);
+			subcbRecv.incrProgress(0.1);
 			if (log.isLoggable(Level.FINE)) log.fine("getResponseCode...");
 			ret.setStatus(conn.getResponseCode());
 			if (log.isLoggable(Level.FINE)) log.fine("status=" + ret.getStatus());
@@ -198,7 +200,6 @@ public class HttpClient {
 
 			}
 			ret.setHeaders(responseHeaders.toArray(new String[responseHeaders.size()]));
-			subcbRecv.setFinished();
 
 			if (!url.equals(conn.getURL())) {
 				String ol = surl;
@@ -217,9 +218,8 @@ public class HttpClient {
 				}
 			}
 
-			ProgressCallback subcbDownload = cb.createChild("download");
 			if (contentDisposition != null && contentDisposition.length() != 0) {
-				subcbDownload.setParams(contentDisposition);
+				subcbRecv.setParams(contentDisposition);
 			}
 
 			String contentType = Default.value(conn.getHeaderField("Content-Type")).toLowerCase();
@@ -237,11 +237,11 @@ public class HttpClient {
 				if (log.isLoggable(Level.FINE)) log.fine("read from input...");
 				long responseContentLength = 0;
 				if (isStringContent) {
-					ret.setContent(readStringFromStream(istream, contentLength, subcbDownload));
+					ret.setContent(readStringFromStream(istream, contentLength, subcbRecv));
 					responseContentLength = ret.getContent().length();
 				}
 				else {
-					ret.setFile(readFileFromStream(istream, contentLength, subcbDownload));
+					ret.setFile(readFileFromStream(istream, contentLength, subcbRecv));
 					responseContentLength = ret.getFile().length();
 				}
 				
@@ -257,10 +257,10 @@ public class HttpClient {
 				if (isGZIP) {
 					istream = new GZIPInputStream(istream, 10 * 1000); 
 				}
-				ret.setContent(readStringFromStream(istream, contentLength, subcbDownload));
+				ret.setContent(readStringFromStream(istream, contentLength, subcbRecv));
 			}
 			finally {
-				subcbDownload.setFinished();
+				subcbRecv.setFinished();
 			}
 
 		}
@@ -282,7 +282,8 @@ public class HttpClient {
 	}
 
 	private static File readFileFromStream(InputStream is, long contentLength, ProgressCallback cb) throws IOException {
-		cb.setTotal(contentLength);
+		cb.setTotal(contentLength >= 0 ? contentLength : 1);
+		cb.setFakeProgress(contentLength < 0);
 		File ret = null;
 		if (is != null) {
 			FileOutputStream fos = null;
@@ -291,7 +292,6 @@ public class HttpClient {
 				fos = new FileOutputStream(ret);
 				byte[] buf = new byte[10000];
 				int len = 0;
-				double sum = 0;
 				while ((len = is.read(buf)) != -1) {
 
 					if (cb.isCancelled()) {
@@ -299,9 +299,8 @@ public class HttpClient {
 					}
 
 					fos.write(buf, 0, len);
-
-					sum += len;
-					cb.setProgress(sum);
+					
+					cb.incrProgress(len);
 				}
 			}
 			finally {
@@ -331,8 +330,8 @@ public class HttpClient {
 	private static void writeFileIntoStream(OutputStream os, InputStream stream, long contentLength,
 			ProgressCallback cb) throws IOException {
 		if (log.isLoggable(Level.FINE)) log.fine("writeFileIntoStream(contentLength=" + contentLength);
-		cb.setTotal(contentLength);
-		cb.setProgress(0);
+		cb.setTotal(contentLength >= 0 ? contentLength : 1);
+		cb.setFakeProgress(contentLength < 0);
 		try {
 			byte[] buf = new byte[10000];
 			int len = 0;
@@ -345,7 +344,7 @@ public class HttpClient {
 				}
 
 				sum += (double) len;
-				cb.setProgress(sum);
+				cb.incrProgress(len);
 			}
 			if (log.isLoggable(Level.FINE)) log.fine("#written=" + sum);
 		}
@@ -353,12 +352,14 @@ public class HttpClient {
 			if (stream != null) {
 				stream.close();
 			}
+			cb.setFinished();
 		}
 		if (log.isLoggable(Level.FINE)) log.fine(")writeFileIntoStream");
 	}
 
 	private static String readStringFromStream(InputStream is, long contentLength, ProgressCallback cb) throws IOException {
-		cb.setTotal(contentLength);
+		cb.setTotal(contentLength >= 0 ? contentLength : 1);
+		cb.setFakeProgress(contentLength < 0);
 		String ret = null;
 		if (is != null) {
 			Reader rd = null;
@@ -367,7 +368,6 @@ public class HttpClient {
 				StringBuilder sbuf = new StringBuilder();
 				char[] buf = new char[10000];
 				int len = 0;
-				double sum = 0;
 				while ((len = rd.read(buf)) != -1) {
 					sbuf.append(buf, 0, len);
 
@@ -375,8 +375,7 @@ public class HttpClient {
 						throw new InterruptedIOException();
 					}
 
-					sum += len;
-					cb.setProgress(sum);
+					cb.incrProgress(len);
 				}
 				ret = sbuf.toString();
 			}
@@ -431,6 +430,7 @@ public class HttpClient {
 
 	// http://stackoverflow.com/questions/6659360/how-to-solve-javax-net-ssl-sslhandshakeexception-error
 	// trusting all certificate
+	@SuppressWarnings("unused")
 	private static void doTrustToCertificates() throws Exception {
 		Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
 		TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {

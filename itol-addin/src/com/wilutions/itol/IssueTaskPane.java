@@ -255,12 +255,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		// Task pane initialized?
 		if (bnAssignSelection != null) {
 			if (bnAssignSelection_isSelected()) {
-				internalSetMailItem(mailItem);
+				internalSetMailItem(mailItem, createProgressCallback("Set mail item"), (succ, ex) -> {});
 			}
 		}
 	}
 
-	private void internalSetMailItem(IssueMailItem mailItem) {
+	private void internalSetMailItem(IssueMailItem mailItem, ProgressCallback cb, AsyncResult<Boolean> asyncResult) {
 		this.mailItem = mailItem;
 		this.tookNotesFromMail = false;
 
@@ -268,69 +268,32 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			detectIssueModifiedStop();
 
-			updateIssueFromMailItem((succ, ex) -> {
+			updateIssueFromMailItem(cb.createChild(0.9), (succ, ex) -> {
 				if (succ) {
 					Platform.runLater(() -> {
 						try {
-							initialUpdate();
+							initialUpdate(cb.createChild(0.1));
 						}
 						catch (Exception e) {
 							log.log(Level.WARNING, "initialUpdate failed", e);
 						}
+						finally {
+							cb.setFinished();
+							asyncResult.setAsyncResult(succ, ex);
+						}
 					});
+				}
+				else {
+					cb.setFinished();
+					asyncResult.setAsyncResult(succ, ex);
 				}
 			});
 
 		});
 	}
 
-	private class MyFakeProgressCallback extends MyProgressCallback {
-
-		final Timeline fakeProgressTimer;
-		private boolean finished;
-
-		MyFakeProgressCallback() {
-			super.setTotal(1);
-
-			fakeProgressTimer = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
-				double x = 0;
-
-				@Override
-				public void handle(ActionEvent event) {
-					x += 1;
-					syncSetProgress(1 * (-1 / x + 1));
-				}
-			}));
-			fakeProgressTimer.setCycleCount(Timeline.INDEFINITE);
-			fakeProgressTimer.play();
-		}
-
-		private synchronized void syncSetProgress(double q) {
-			if (!finished) {
-				internalSetProgress(q);
-			}
-		}
-
-		@Override
-		public synchronized void setFinished() {
-			finished = true;
-			fakeProgressTimer.stop();
-			super.setFinished();
-		}
-
-		@Override
-		public void setTotal(double total) {
-		}
-
-		@Override
-		public void setProgress(double current) {
-		}
-	}
-
-	private void updateIssueFromMailItem(AsyncResult<Boolean> asyncResult) {
+	private void updateIssueFromMailItem(ProgressCallback cb, AsyncResult<Boolean> asyncResult) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "updateIssueFromMailItem(");
-
-		final ProgressCallback progressCallback = new MyFakeProgressCallback();
 
 		BackgTask.run(() -> {
 
@@ -351,13 +314,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				if (issueId != null && issueId.length() != 0) {
 
 					// read issue
-					issue = tryReadIssue(srv, subject, description, issueId);
+					issue = tryReadIssue(srv, subject, description, issueId, cb);
 				}
 
 				if (issue == null) {
 
 					// ... no issue ID: create blank issue
-					issue = srv.createIssue(subject, description, null, null);
+					issue = srv.createIssue(subject, description, null, null, cb);
 					
 					assignMailAdressToAutoReplyField();
 
@@ -379,7 +342,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			}
 			finally {
 
-				progressCallback.setFinished();
+				cb.setFinished();
 
 				if (asyncResult != null) {
 					asyncResult.setAsyncResult(succ, null);
@@ -398,13 +361,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 
-	private Issue tryReadIssue(IssueService srv, String subject, String description, String issueId)
+	private Issue tryReadIssue(IssueService srv, String subject, String description, String issueId, ProgressCallback cb)
 			throws IOException {
 
 		Issue ret = null;
 
 		try {
-			final Issue issue = srv.readIssue(issueId, createProgressCallback());
+			final Issue issue = srv.readIssue(issueId, cb);
 
 			Date lastModified = issue.getLastModified();
 
@@ -559,22 +522,26 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 			initDetectIssueModified();
 
+
+			// Update menu items for "Add Attachment" button 
+			// after issue has been initialized.
+			AsyncResult<Boolean> asyncResult = (succ, ex) -> {
+				bnAddAttachment.showingProperty().addListener((obs, wasShowing, isNowShowing) -> {
+		            if (isNowShowing) {
+		            	updateBnAddAttachmentMenuItems();
+		            }
+		        });
+			};
+			
 			// Press Assign button when called from inspector.
 			if (inspectorOrExplorer instanceof InspectorWrapper) {
 				bnAssignSelection_select(true);
-				internalSetMailItem(mailItem);
+				internalSetMailItem(mailItem, createProgressCallback("Initialize"), asyncResult);
 			}
 			// Show defaults when called from explorer.
 			else {
-				internalSetMailItem(new IssueMailItemBlank());
+				internalSetMailItem(new IssueMailItemBlank(), createProgressCallback("Initialize"), asyncResult);
 			}
-			
-			// Update menu items for "Add Attachment" button
-			bnAddAttachment.showingProperty().addListener((obs, wasShowing, isNowShowing) -> {
-	            if (isNowShowing) {
-	            	updateBnAddAttachmentMenuItems();
-	            }
-	        });
 			
 		}
 		catch (Throwable e) {
@@ -727,7 +694,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			initHistory();
 
 			long t2 = System.currentTimeMillis();
-			log.info("[" + (t2-t1) + "] innternalUpdateData(saveAndValidate=" + saveAndValidate + ")");
+			log.info("[" + (t2-t1) + "] internalUpdateData(saveAndValidate=" + saveAndValidate + ")");
 		}
 	}
 
@@ -897,7 +864,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	
 	private void copySelectedAttachmentsToClipboard() {
 		try {
-			AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, createProgressCallback());
+			AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, createProgressCallback("Copy attachmnts to clipboard"));
 		} catch (Exception e) {
 			log.log(Level.WARNING, "Failed to copy attachments.", e);
 			showMessageBoxError("Failed to copy attachments. " + e);
@@ -985,7 +952,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		log.info("[" + (t2-t1) + "] initComboBox(propertyId=" + propertyId + ")");
 	}
 
-	private void initialUpdate() throws Exception {
+	private void initialUpdate(ProgressCallback cb) throws Exception {
 		long t1 = System.currentTimeMillis();
 		
 		// Create a new binding for attachment modifications.
@@ -1025,6 +992,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		detectIssueModifiedStart();
 		
+		cb.setFinished();
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] initialUpdate()");
 	}
@@ -1050,7 +1018,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	private void showSelectedIssueAttachment() {
 		Attachment att = tabAttachments.getSelectionModel().getSelectedItem();
 		if (att != null) {
-			ProgressCallback cb = createProgressCallback();
+			ProgressCallback cb = createProgressCallback("Show selected attachment");
 			BackgTask.run(() -> {
 				try {
 					attachmentHelper.showAttachment(att, cb);
@@ -1101,19 +1069,19 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			
 			// Prepare progress object: compute total number of bytes to export.
 			long totalBytes = selectedItems.stream().collect(Collectors.summingLong((att) -> att.getContentLength())).longValue();
-			ProgressCallback cb = createProgressCallback();
-			long currentProgress = 0;
+			ProgressCallback cb = createProgressCallback("Export attachments");
 			cb.setTotal(totalBytes);
 			
 			Application outlookApplication = Globals.getThisAddin().getApplication();
 			for (Attachment att : selectedItems) {
 				try {
-					attachmentHelper.exportAttachment(exportDirectory, outlookApplication, att, null);
+					ProgressCallback childProgress = cb.createChild("Export " + att.getFileName(), (double)att.getContentLength() / (double)totalBytes);
+					attachmentHelper.exportAttachment(exportDirectory, outlookApplication, att, childProgress);
 				} catch (Exception e) {
 					log.log(Level.WARNING, "Attachment could not be exported.", e);
 				}
 				finally {
-					cb.setProgress(currentProgress += att.getContentLength());
+					cb.incrProgress(att.getContentLength());
 				}
 			}
 			cb.setFinished();
@@ -1225,7 +1193,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		queryDiscardChangesAsync((succ, ex) -> {
 			if (ex == null && succ) {
 				bnAssignSelection_select(false);
-				internalSetMailItem(new IssueMailItemBlank());
+				internalSetMailItem(new IssueMailItemBlank(), createProgressCallback("Clear"), (succ1,ex1)->{});
 			}
 		});
 	}
@@ -1251,9 +1219,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		}
 	}
 	
-	private void internalShowIssue(String issueId) throws Exception {
+	private void internalShowIssue(String issueId, ProgressCallback cb) throws Exception {
 		IssueService srv = Globals.getIssueService();
-		Issue issue = srv.readIssue(issueId, createProgressCallback());
+		Issue issue = srv.readIssue(issueId, cb.createChild(0.3));
 		String subject = srv.injectIssueIdIntoMailSubject("", issue);
 		
 		IssueMailItem mitem = new IssueMailItemBlank() {
@@ -1261,7 +1229,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				return subject;
 			}
 		};
-		internalSetMailItem(mitem);
+		internalSetMailItem(mitem, cb.createChild(0.7), (succ,ex) -> cb.setFinished());
 	}
 
 	@FXML
@@ -1270,14 +1238,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		queryDiscardChangesAsync((succ, ex) -> {
 			if (ex == null && succ) {
 
+				ProgressCallback cb = createProgressCallback("Show issue");
 				bnAssignSelection_select(false);
 				
 				try {
 					String issueId = edIssueId.getText();
-					internalShowIssue(issueId);
+					internalShowIssue(issueId, cb);
 				}
 				catch (Exception e) {
 					showMessageBoxError(e.toString());
+					cb.setFinished();
 				}
 			}
 		});
@@ -1406,48 +1376,51 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 		private int lastPercent = 0;
 
-		public MyProgressCallback() {
+		public MyProgressCallback(String name) {
 			super("");
+			System.out.println("start progress ---- ");
+			log.info("start progress");
 		}
-
-		public void setProgress(final double current) {
-			internalSetProgress(current);
+		
+		@Override
+		public void setTotal(double total) {
+			System.out.println("total=" + total);
+			super.setTotal(total);
 		}
-
-		protected void internalSetProgress(final double current) {
-			super.setProgress(current);
-			double currentSum = childSum + current;
-			final double quote = currentSum / total;
+		
+		@Override
+		public void incrProgress(double amount) {
+			super.incrProgress(amount);
+			final double quote = current / total;
 			int percent = (int) Math.ceil(100.0 * quote);
 			if (percent > lastPercent) {
 				lastPercent = percent;
 			}
-			Platform.runLater(() -> {
-				if (pgProgress != null) {
-					pgProgress.setProgress(quote);
-					// System.out.println("progress " + quote);
-				}
-			});
-		}
-
-		@Override
-		public void setParams(String... params) {
-			super.setParams(params);
-		}
-
-		@Override
-		public boolean isCancelled() {
-			return false;
+			if (quote > 1.01) {
+				System.err.println("progress " + quote);
+			}
+			else {
+				Platform.runLater(() -> {
+					if (pgProgress != null) {
+						pgProgress.setProgress(quote);
+					}
+				});
+			}
+			System.out.println("progress " + quote);
+			log.info("progress=" + quote);
 		}
 
 		@Override
 		public void setFinished() {
+			super.setFinished();
 			Platform.runLater(() -> {
 				if (pgProgress != null) {
 					pgProgress.setProgress(0);
 					// System.out.println("progress 0");
 				}
 			});
+			System.out.println("progress finished");
+			log.info("progress finished");
 		}
 
 	}
@@ -1455,7 +1428,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	@FXML
 	public void onUpdate() {
 
-		final ProgressCallback progressCallback = isNew() ? createProgressCallback() : new MyFakeProgressCallback();
+		final ProgressCallback progressCallback = createProgressCallback("Update issue");
 		detectIssueModifiedStop();
 
 		try {
@@ -1464,21 +1437,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			// Save dialog elements into data members
 			updateData(true);
 
-			// Compute bytes to upload
-			long totalBytes = 0;
-			for (Attachment att : issue.getAttachments()) {
-				// Only new attachments are uploaded
-				if (att.getId().isEmpty()) {
-					// getContentLength() might store the attachment in a
-					// temporary directory.
-					totalBytes += att.getContentLength();
-				}
-			}
-
-			// Total bytes to upload: #attachment-bytes + some bytes for the
-			// issue's JSON object
-			progressCallback.setTotal(totalBytes + 20 * 1000);
-
 			// Create issue in background.
 			// Currently, we are in the UI thread. The progress dialog would not
 			// be updated,
@@ -1486,25 +1444,24 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			BackgTask.run(() -> {
 				try {
 
-					// Fake an upload of 4000 bytes to
-					// show that progress has started.
-					progressCallback.setProgress(4 * 1000);
+					// Show that progress has started.
+					progressCallback.incrProgress(0.1);
 
 					// Update issue.
 					// this.issue is replaced by a new object.
 					Issue prevIssue = (Issue)issue.clone();
-					updateIssueChangedMembers(srv, progressCallback);
+					updateIssueChangedMembers(srv, progressCallback.createChild(0.8));
 
 					Platform.runLater(() -> {
 						try {
-							initialUpdate();
-
-							progressCallback.setFinished();
-							
+							initialUpdate(progressCallback.createChild(0.1));
 							maybeSendReplyWithNotes(prevIssue);
 						}
 						catch (Exception e) {
 							log.log(Level.SEVERE, "Failed to read issue data into UI controls.", e);
+						}
+						finally {
+							progressCallback.setFinished();
 						}
 					});
 
@@ -1522,8 +1479,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 						detectIssueModifiedContinue();
 					}
-				}
-				finally {
+
 					progressCallback.setFinished();
 				}
 			});
@@ -1664,12 +1620,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		Window owner = this.getWindow();
 		addin.internalConfigure(owner, (succ, ex) -> {
 			if (succ) {
-				ProgressCallback cb = createProgressCallback();
-				cb.setTotal(100);
+				ProgressCallback cb = createProgressCallback("Re-connect");
 				try {
-					cb.setProgress(50);
+					cb.incrProgress(0.5);
 					Globals.initialize(false); // Re-connect in background.
-					cb.setProgress(100);
+					cb.incrProgress(0.5);
 				}
 				catch (Exception e) {
 					log.log(Level.WARNING, "Re-connect to server failed.", e);
@@ -1713,8 +1668,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	 * Create a callback object that displays the state in the progress bar.
 	 * @return ProgressCallback object
 	 */
-	public ProgressCallback createProgressCallback() {
-		return new MyProgressCallback();
+	public ProgressCallback createProgressCallback(String name) {
+		return new MyProgressCallback(name);
 	}
 	
 
@@ -1740,7 +1695,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 						if (!lastComment.isEmpty()) {
 							if (log.isLoggable(Level.FINE)) log.fine("start sendReplyWithNotes in background");
 							BackgTask.run(() -> {
-								sendReplyWithNotes(issue, mailTo, lastComment, createProgressCallback());
+								sendReplyWithNotes(issue, mailTo, lastComment, createProgressCallback("Prepare reply"));
 							});
 						}
 					}
@@ -1754,15 +1709,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 		if (log.isLoggable(Level.FINE)) log.fine("sendReplyWithNotes(issue=" + issue + ", mailTo=" + mailTo + ", lastComment=" + lastComment);
 		try {
 			IssueService srv = Globals.getIssueService();
-			MailInfo mailInfo = srv.replyToComment(issue, mailTo, lastComment);
+			MailInfo mailInfo = srv.replyToComment(issue, mailTo, lastComment, cb);
 
-			// Compute total size of attachments to be added.
-			double[] totalProgress = new double[] { 1000 };
-			List<Attachment> attachments = mailInfo.getAttachments();
-			attachments.stream().forEach((att) -> totalProgress[0] += att.getContentLength());
-			
 			// Create MailItem object with subject, body, TO,...
-			cb.setTotal(totalProgress[0]);
 			Application application = Globals.getThisAddin().getApplication();
 			MailItem mailItem = Dispatch.as(application.CreateItem(OlItemType.olMailItem), MailItem.class);
 
@@ -1771,9 +1720,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 			mailItem.setBCC(mailInfo.getBCC());
 			mailItem.setSubject(mailInfo.getSubject());
 			mailItem.setHTMLBody(mailInfo.getHtmlBody());
-			cb.setProgress(1000);
 			
 			// Attachments
+			List<Attachment> attachments = mailInfo.getAttachments();
 			addAttachmentsToReply(mailItem, attachments, cb);
 
 			// Show Inspector window
@@ -1792,11 +1741,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 	
 	private void addAttachmentsToReply(MailItem mailItem, List<Attachment> attachments, ProgressCallback cb) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("addAttachmentsToReply(" + attachments);
+		
+		// Compute total size of attachments to be added.
+		double totalProgress = attachments.stream().collect(Collectors.summarizingLong((att) -> att.getContentLength())).getSum();
+		cb.setTotal(totalProgress);
+
 		com.wilutions.mslib.outlook.Attachments mailAttachments = mailItem.getAttachments().as(com.wilutions.mslib.outlook.Attachments.class);
 		int index = 0;
 		for (Attachment attachment : attachments) {
 			if (log.isLoggable(Level.FINE)) log.fine("download " + attachment);
-			String uri = attachmentHelper.downloadAttachment(attachment, cb);
+			String uri = attachmentHelper.downloadAttachment(attachment, cb.createChild("Download " + attachment.getFileName(), attachment.getContentLength(), cb.getTotal()));
 			File file = new File(new URI(uri));
 			if (log.isLoggable(Level.FINE)) log.fine("mailAttachment.Add " + file.getAbsolutePath());
 			mailAttachments.Add(file.getAbsolutePath(), OlAttachmentType.olByValue, ++index, attachment.getFileName());
@@ -1847,6 +1801,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 
 	public void onCreateSubtask(IdName subtaskType) {
 		
+		ProgressCallback cb = createProgressCallback("Create subtask");
 		bnAssignSelection_select(false);
 
 		BackgTask.run(() -> {
@@ -1859,16 +1814,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				String subject = "";
 				String description = "";
 				
-				issue = srv.createIssue(subject, description, issue, subtaskType);
+				issue = srv.createIssue(subject, description, issue, subtaskType, cb.createChild(0.9));
 
 				Platform.runLater(() -> {
 					try {
-						initialUpdate();
+						initialUpdate(cb.createChild(0.1));
 					} catch (Exception e) {
 						String text = e.toString();
 						log.log(Level.SEVERE, text, e);
 						showMessageBoxError(text);
 					}
+					cb.setFinished();
 				});
 
 			}
@@ -1876,6 +1832,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable {
 				String text = e.toString();
 				log.log(Level.SEVERE, text, e);
 				showMessageBoxError(text);
+				cb.setFinished();
 			}
 		});
 

@@ -111,7 +111,7 @@ public class IssueServiceImpl implements IssueService {
 //	}
 
 	@Override
-	public Issue createIssue(String subject, String description, Issue parentIssue, IdName subtaskType) {
+	public Issue createIssue(String subject, String description, Issue parentIssue, IdName subtaskType, ProgressCallback cb) {
 //		issi.setProperty(new Property(Property.ISSUE_TYPE, getIssueTypes(Issue.NULL).get(0).getId()));
 //		issi.setProperty(new Property(Property.ASSIGNEE, getAssignees(Issue.NULL).get(0).getId()));
 //		issi.setProperty(new Property(Property.CATEGORY, getCategories(Issue.NULL).get(0).getId()));
@@ -246,7 +246,7 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public void initialize() {
+	public void initialize(ProgressCallback cb) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -268,13 +268,13 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public Collection<Issue> findIssues(String query, int maxResults) throws Exception {
+	public Collection<Issue> findIssues(String query, int maxResults, ProgressCallback cb) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public MailInfo replyToComment(Issue issue, String mailTo, String comment) throws Exception {
+	public MailInfo replyToComment(Issue issue, String mailTo, String comment, ProgressCallback cb) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}

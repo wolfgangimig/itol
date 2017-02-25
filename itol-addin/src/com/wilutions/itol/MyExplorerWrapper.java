@@ -40,7 +40,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "MyExplorerWrapper(");
 
-		deferShowSelectedItem = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
+		deferShowSelectedItem = new Timeline(new KeyFrame(Duration.seconds(0.3), new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
 				if (isSelectionDelayOver()) {

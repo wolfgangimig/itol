@@ -18,7 +18,7 @@ public interface IssueService {
 	Config getConfig();
 	void setConfig(Config config);
 	
-	void initialize() throws Exception;
+	void initialize(ProgressCallback cb) throws Exception;
 	
 	PropertyClass getPropertyClass(String propertyId, Issue iss) throws Exception;
 	
@@ -42,7 +42,7 @@ public interface IssueService {
 
 	List<IdName> getSubtaskTypes(Issue issue) throws Exception;
 	
-	Issue createIssue(String subject, String description, Issue parentIssue, IdName subtaskType) throws Exception;
+	Issue createIssue(String subject, String description, Issue parentIssue, IdName subtaskType, ProgressCallback cb) throws Exception;
 
 	/**
 	 * Validate properties in given issue and set default values for invalid properties.
@@ -66,9 +66,9 @@ public interface IssueService {
 
 	Issue readIssue(String issueId, ProgressCallback cb) throws Exception;
 	
-	MailInfo replyToComment(Issue issue, String mailTo, String comment) throws Exception;
+	MailInfo replyToComment(Issue issue, String mailTo, String comment, ProgressCallback cb) throws Exception;
 	
-	Collection<Issue> findIssues(String query, int maxResults) throws Exception;
+	Collection<Issue> findIssues(String query, int maxResults, ProgressCallback cb) throws Exception;
 	
 	void setDefaultIssue(Issue iss) throws Exception;
 	

@@ -31,6 +31,7 @@ import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
 import com.wilutions.itol.db.PasswordEncryption;
+import com.wilutions.itol.db.ProgressCallbackImpl;
 import com.wilutions.joa.OfficeAddinUtil;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
 
@@ -102,7 +103,7 @@ public class Globals {
 			issueService.setConfig(appInfo.getConfig());
 
 			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initializing...");
-			issueService.initialize();
+			issueService.initialize(new ProgressCallbackImpl());
 			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initialized.");
 			System.out.println("Issue service initialized.");
 

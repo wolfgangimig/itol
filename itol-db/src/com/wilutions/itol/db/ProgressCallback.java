@@ -12,10 +12,16 @@ package com.wilutions.itol.db;
 
 public interface ProgressCallback {
 	public void setParams(String ... params);
-	public void setProgress(double current);
+	public void incrProgress(double amout);
+	public double getProgress();
 	public void setTotal(double total);
+	public double getTotal();
+	public void setFakeProgress(boolean v);
 	public void setFinished();
 	public boolean isCancelled();
-	public ProgressCallback createChild(String name);
-	public void childFinished(double total);
+	public ProgressCallback createChild(String name, double ratio);
+	public ProgressCallback createChild(String name, double childTotal, double parentTotal);
+	public ProgressCallback createChild(double ratio);
+	public ProgressCallback createChild(double childTotal, double parentTotal);
+	public void cancel();
 }
