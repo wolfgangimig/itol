@@ -45,4 +45,22 @@ public class License {
 	public static int getLicenseCount() {
 		return DDAddinDll.getLicenseCount();
 	}
+	
+	public static boolean isValid() {
+		boolean ret = true;
+		String licenseKey = getLicenseKey();
+		switch (licenseKey) {
+		case "DEMO":
+			String expiresAtIso = getLicenseTimeLimit();
+			ret = expiresAtIso.length() >= 8;
+			break;
+		case "INVALID":
+			ret = false;
+			break;
+		default: // VALID license
+			ret = true;
+			break;
+		}
+		return ret;
+	}
 }

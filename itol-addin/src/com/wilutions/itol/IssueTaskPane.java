@@ -235,6 +235,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	 */
 	private volatile boolean tookNotesFromMail;
 
+	/**
+	 * True, if license is valid.
+	 */
+	private boolean licenseValid;
+
 	public IssueTaskPane(MyWrapper inspectorOrExplorer) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "IssueTaskPane(");
 		this.inspectorOrExplorer = inspectorOrExplorer;
@@ -246,6 +251,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		this.resb = Globals.getResourceBundle();
 
 		this.setPosition(Globals.getAppInfo().getConfig().getTaskPanePosition());
+		
+		this.licenseValid = License.isValid();
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")IssueTaskPane");
 	}
@@ -970,7 +977,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		boolean hasHistory = !Globals.getIssueService().getIssueHistoryUrl(issue.getId()).isEmpty();
 		tabpIssue.getSelectionModel().select(hasHistory ? tpHistory : tpDescription);
 
-		bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
+		initBnUpdateText();
 
 		descriptionEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
 		VBox.setVgrow(descriptionEditor.getNode(), Priority.ALWAYS);
@@ -991,6 +998,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		cb.setFinished();
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] initialUpdate()");
+	}
+
+	private void initBnUpdateText() {
+		if (isLicenseValid()) {
+			bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
+		}
+		else {
+			bnUpdate.setText(resb.getString("mnLicense"));
+		}
 	}
 
 	private boolean isInjectIssueId() {
@@ -1402,6 +1418,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 	@FXML
 	public void onUpdate() {
+		
+		// If the license is not valid, show the license dialog instead of storing any issue changes.
+		if (!isLicenseValid()) {
+			DlgLicense.show(this);
+			return;
+		}
 
 		final ProgressCallback progressCallback = createProgressCallback("Update issue");
 		detectIssueModifiedStop();
@@ -1817,5 +1839,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	@FXML
 	public void onLicense() {
 		DlgLicense.show(this);
+	}
+	
+	private boolean isLicenseValid() {
+		return licenseValid;
+	}
+	
+	public void setLicenseValid(boolean v) {
+		this.licenseValid = v;
+		initBnUpdateText();
 	}
 }

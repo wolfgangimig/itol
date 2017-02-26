@@ -60,6 +60,8 @@ public class DlgLicense {
 					cb.setFinished();
 					
 					Platform.runLater(() -> {
+						
+						// Show information or error dialog.
 						if (succ) {
 							log.info("Successuflly installed license key=" + licenseKey2);
 							Alert alert = new Alert(AlertType.INFORMATION);
@@ -80,6 +82,9 @@ public class DlgLicense {
 							alert.initOwner(owner);
 							alert.showAndWait();
 						}
+
+						// Set the license in the IssueTaskPane valid/invalid.
+						taskPane.setLicenseValid(succ);
 					});
 				});
 			}
