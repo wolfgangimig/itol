@@ -6,7 +6,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -51,6 +53,7 @@ public class Config implements Serializable, Cloneable {
 	
 	private transient String manufacturerName;
 	private transient String appName;
+	private transient File tempDirForSession;
 	
 	/**
 	 * Configuration file version.
@@ -92,10 +95,12 @@ public class Config implements Serializable, Cloneable {
 	private String exportAttachmentsDirectory = "";
 	private String proxyServerUserName = "";
 	private String proxyServerEncryptedUserPassword = "";
+	private String tempDir = "";
 	
 	public Config() {
+		tempDir = new File(System.getProperty("java.io.tmpdir"), "ITOL").getAbsolutePath();
 		logFile = new File(System.getProperty("java.io.tmpdir"), "itol.log").getAbsolutePath();
-		exportAttachmentsDirectory = System.getProperty("java.io.tmpdir");
+		exportAttachmentsDirectory = new File(tempDir, "Export").getAbsolutePath();
 		userName = proxyServerUserName = System.getProperty("user.name");
 		taskPanePosition = new TaskPanePosition();
 	}
@@ -463,5 +468,20 @@ public class Config implements Serializable, Cloneable {
 		this.blackExtensions = blackExtensions;
 	}
 
+	public String getTempDirBase() {
+		return tempDir;
+	}
 	
+	public void setTempDirBase(String tempDir) {
+		this.tempDir = tempDir;
+	}
+	
+	public synchronized File getTempDir() {
+		if (tempDirForSession == null) {
+			SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
+			tempDirForSession = new File(tempDir, dateTimeFormat.format(new Date(System.currentTimeMillis())));
+			tempDirForSession.mkdirs();
+		}
+		return tempDirForSession;
+	}
 }

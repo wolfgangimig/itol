@@ -16,10 +16,6 @@ import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.Properties;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -43,7 +39,6 @@ public class Globals {
 	private static ResourceBundleNoThrow resb;
 	private static volatile IssueService issueService;
 	private static volatile boolean issueServiceRunning;
-	private static File __tempDir;
 	private static Logger log = Logger.getLogger("Globals");
 
 	private static AppInfo appInfo = new AppInfo();
@@ -195,19 +190,6 @@ public class Globals {
 		return resb;
 	}
 
-	public static File getTempDir() {
-		if (__tempDir == null) {
-			SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
-			Date date = Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
-			String iso = dateTimeFormat.format(date);
-			File baseDir = new File(System.getProperty("java.io.tmpdir"), "itol");
-			__tempDir = new File(baseDir, iso); 
-			__tempDir.delete();
-			__tempDir.mkdirs();
-		}
-		return __tempDir;
-	}
-
 	public static String getVersion() {
 		String ret = "";
 		try {
@@ -223,12 +205,24 @@ public class Globals {
 	}
 
 	public static void releaseResources() {
-		if (__tempDir != null) {
-			__tempDir.delete();
-			__tempDir = null;
+		
+		// Purge temporary directory
+		File tempDir = getAppInfo().getConfig().getTempDir();
+		if (tempDir.getAbsolutePath().length() > 10) { // make sure the we do not delete c:\\
+			purgeDirectory(tempDir);
 		}
-
+		
 		DDAddinDll.closeLogFile();
+	}
+	
+	private static void purgeDirectory(File dir) {
+		for (File f : dir.listFiles()) {
+			if (f.isDirectory()) {
+				purgeDirectory(f);
+			}
+			f.delete();
+		}
+		dir.delete();
 	}
 
 	public static void initLogging() {
@@ -270,5 +264,9 @@ public class Globals {
 		finally {
 		}
 
+	}
+
+	public static File getTempDir() {
+		return Globals.getAppInfo().getConfig().getTempDir();
 	}
 }

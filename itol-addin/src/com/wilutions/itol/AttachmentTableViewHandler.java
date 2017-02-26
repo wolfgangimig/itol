@@ -315,22 +315,19 @@ public class AttachmentTableViewHandler {
 			        	String thumbnailUrl = attachment.getThumbnailUrl();
 			        	if (!Default.value(thumbnailUrl).isEmpty()) {
 			        		if (refImage.get() == null) {
-								File thumbnailFile = null;
 			        			try {
 			        				// Use download function since Image constructor does not follow redirections.
-									String fpath = Globals.getIssueService().downloadAttachment(thumbnailUrl, progressCallbackFactory.createProgressCallback("Download thumbnail"));
-									thumbnailFile = new File(fpath);
-									String localUrl = thumbnailFile.toURI().toString();
-				        			Image image = new Image(localUrl);
+			        				if (!thumbnailUrl.startsWith(MailAttachmentHelper.FILE_URL_PREFIX)) {
+										String fpath = Globals.getIssueService().downloadAttachment(thumbnailUrl, progressCallbackFactory.createProgressCallback("Download thumbnail"));
+										File thumbnailFile = new File(fpath);
+										thumbnailUrl = thumbnailFile.toURI().toString();
+										attachment.setThumbnailUrl(thumbnailUrl);
+			        				}
+				        			Image image = new Image(thumbnailUrl);
 				        			refImage.set(image);
 								} catch (Exception e) {
 									log.log(Level.WARNING, "Failed to load thumbnail for attachment=" + attachment.getFileName(), e);
 								}
-			        			finally {
-			        				if (thumbnailFile != null) {
-			        					thumbnailFile.delete();
-			        				}
-			        			}
 			        		}
 			        		
 			        		if (refImage.get() != null) {
