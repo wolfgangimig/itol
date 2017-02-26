@@ -49,6 +49,8 @@
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" onAction="#onConfigure" text="%mnConfigure" />
                         <MenuItem mnemonicParsing="false" onAction="#onConnect" text="%mnConnect" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" onAction="#onLicense" text="%mnLicense" />
                     </items>
                      <HBox.margin>
                         <Insets left="10.0" />

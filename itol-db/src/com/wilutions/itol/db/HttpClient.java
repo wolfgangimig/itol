@@ -260,7 +260,6 @@ public class HttpClient {
 
 	private static File readFileFromStream(InputStream is, long contentLength, ProgressCallback cb) throws IOException {
 		cb.setTotal(contentLength >= 0 ? contentLength : 1);
-		cb.setFakeProgress(contentLength < 0);
 		File ret = null;
 		if (is != null) {
 			FileOutputStream fos = null;
@@ -277,7 +276,7 @@ public class HttpClient {
 
 					fos.write(buf, 0, len);
 					
-					cb.incrProgress(len);
+					if (contentLength >= 0) cb.incrProgress(len);
 				}
 			}
 			finally {
@@ -297,6 +296,7 @@ public class HttpClient {
 				}
 			}
 		}
+		cb.setFinished();
 		return ret;
 	}
 
@@ -308,7 +308,6 @@ public class HttpClient {
 			ProgressCallback cb) throws IOException {
 		if (log.isLoggable(Level.FINE)) log.fine("writeFileIntoStream(contentLength=" + contentLength);
 		cb.setTotal(contentLength >= 0 ? contentLength : 1);
-		cb.setFakeProgress(contentLength < 0);
 		try {
 			byte[] buf = new byte[10000];
 			int len = 0;
@@ -321,7 +320,7 @@ public class HttpClient {
 				}
 
 				sum += (double) len;
-				cb.incrProgress(len);
+				if (contentLength >= 0) cb.incrProgress(len);
 			}
 			if (log.isLoggable(Level.FINE)) log.fine("#written=" + sum);
 		}
@@ -336,7 +335,6 @@ public class HttpClient {
 
 	private static String readStringFromStream(InputStream is, long contentLength, ProgressCallback cb) throws IOException {
 		cb.setTotal(contentLength >= 0 ? contentLength : 1);
-		cb.setFakeProgress(contentLength < 0);
 		String ret = null;
 		if (is != null) {
 			Reader rd = null;
@@ -352,7 +350,7 @@ public class HttpClient {
 						throw new InterruptedIOException();
 					}
 
-					cb.incrProgress(len);
+					if (contentLength >= 0) cb.incrProgress(len);
 				}
 				ret = sbuf.toString();
 			}
@@ -366,6 +364,7 @@ public class HttpClient {
 				}
 			}
 		}
+		cb.setFinished();
 		return ret;
 	}
 

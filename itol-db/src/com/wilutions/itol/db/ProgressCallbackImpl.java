@@ -72,7 +72,7 @@ public class ProgressCallbackImpl implements ProgressCallback {
 		}
 	}
 	
-	private synchronized void internalIncrProgress(double amount) {
+	protected synchronized void internalIncrProgress(double amount) {
 		current += amount;
 		// System.out.println(name + " incr " + amount + ", current=" + current);
 		if (current >= total) {
@@ -162,20 +162,20 @@ public class ProgressCallbackImpl implements ProgressCallback {
 	@Override
 	public void setFakeProgress(boolean v) {
 		if (v) {
-			fakeProgressTimer = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
+			setTotal(1);
+			fakeProgressTimer = new Timeline(new KeyFrame(Duration.seconds(0.2), new EventHandler<ActionEvent>() {
 				double x = 0;
 
 				@Override
 				public void handle(ActionEvent event) {
 					if (finished) return;
-					x += 1;
+					x += .7;
 					double nextVal = (-1 / x + 1);
 					internalIncrProgress(nextVal - current);
 				}
 			}));
 			fakeProgressTimer.setCycleCount(Timeline.INDEFINITE);
 			fakeProgressTimer.play();
-			setTotal(1);
 		}
 	}
 

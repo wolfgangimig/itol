@@ -27,6 +27,7 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
+import com.wilutions.com.DDAddinDll;
 import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
@@ -226,6 +227,8 @@ public class Globals {
 			__tempDir.delete();
 			__tempDir = null;
 		}
+
+		DDAddinDll.closeLogFile();
 	}
 
 	public static void initLogging() {
@@ -251,6 +254,13 @@ public class Globals {
 			}
 			else {
 				Logger.getLogger("").setLevel(Level.SEVERE);
+			}
+
+			
+			// Initialize DDAddin Logfile
+			{
+				File ddaddinLogFile = new File(new File(logFile).getParent(), "itol-ddaddin.log");
+				DDAddinDll.openLogFile(ddaddinLogFile.getAbsolutePath(), logLevel, true);
 			}
 
 		}

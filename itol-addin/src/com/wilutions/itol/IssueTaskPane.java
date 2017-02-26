@@ -15,9 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
-import java.text.DateFormat;
 import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -1366,8 +1364,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		}
 		
 		@Override
-		public void incrProgress(double amount) {
-			super.incrProgress(amount);
+		protected void internalIncrProgress(double amount) {
+			super.internalIncrProgress(amount);
 			final double quote = current / total;
 			int percent = (int) Math.ceil(100.0 * quote);
 			if (percent > lastPercent) {
@@ -1814,5 +1812,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			}
 		});
 
+	}
+	
+	@FXML
+	public void onLicense() {
+		DlgLicense.show(this);
 	}
 }
