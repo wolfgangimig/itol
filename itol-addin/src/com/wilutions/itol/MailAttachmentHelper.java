@@ -3,18 +3,24 @@ package com.wilutions.itol;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
+import java.nio.file.StandardOpenOption;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import com.wilutions.com.Dispatch;
 import com.wilutions.itol.db.Attachment;
@@ -423,44 +429,102 @@ public class MailAttachmentHelper {
 	}
 	
 	private boolean compareFiles(File lhs, File rhs, ProgressCallback cb) {
-		if (!lhs.exists()) return false;
-		if (!rhs.exists()) return false;
-		if (lhs.length() != rhs.length()) return false;
-		byte[] lhsHash = getFileHash(lhs, cb.createChild("MD5", 0.5));
-		byte[] rhsHash = getFileHash(rhs, cb.createChild("MD5", 0.5));
-		return Arrays.equals(lhsHash, rhsHash);
+		return compareFilesContents(lhs, rhs, cb);
 	}
 	
-	private byte[] getFileHash(File file, ProgressCallback cb) {
-		byte[] digest = null;
-		cb.setTotal(file.length());
-		try {
-			MessageDigest md = MessageDigest.getInstance("MD5");
-			try (InputStream is = Files.newInputStream(file.toPath());
-			     DigestInputStream dis = new DigestInputStream(is, md)) 
-			{
-				byte[] buf = new byte[10*1000];
+	/**
+	 * Compare up to 8000 bytes at the beginning and end of the given files.
+	 * @param lhs File 1
+	 * @param rhs File 2
+	 * @param cb ProgressCallback
+	 * @return true, if the first and last 8000 bytes are equal.
+	 */
+	private boolean compareFilesContents(File lhs, File rhs, ProgressCallback cb) {
+		cb.setTotal(1.0);
+		boolean ret = lhs.exists() && rhs.exists() && lhs.length() == rhs.length();
+		if (ret) {
+			final int maxBytes = 8000; // less than default buffer size of BufferedInputStream
+			ByteBuffer bbufL = ByteBuffer.allocate(maxBytes);
+			ByteBuffer bbufR = ByteBuffer.allocate(maxBytes);
+			
+			try (
+				FileChannel fcL = FileChannel.open(lhs.toPath(), StandardOpenOption.READ); 
+				FileChannel fcR = FileChannel.open(rhs.toPath(), StandardOpenOption.READ)
+			) {
+				// Read up to 8000 bytes from the beginning
 				int len = 0;
-				while ((len = dis.read(buf)) > 0) {
-					cb.incrProgress(len);
+				do { len = fcL.read(bbufL);	} 
+				while (len >= 0 && bbufL.hasRemaining());
+				do { len = fcR.read(bbufR);	} 
+				while (len >= 0 && bbufR.hasRemaining());
+				cb.incrProgress(0.5);
+				
+				// Compare 
+				bbufL.flip(); bbufR.flip();
+				ret = bbufL.compareTo(bbufR) == 0;
+				if (ret && fcL.size() > maxBytes) {
+					
+					// Read up to last 8000 bytes.
+					
+					// Move position to the last 8000 bytes
+					long pos = Math.max(maxBytes, fcL.size() - maxBytes);
+					fcL.position(pos);
+					fcR.position(pos);
+					bbufL.clear();
+					bbufR.clear();
+
+					// Read last bytes
+					do { len = fcL.read(bbufL);	} 
+					while (len >= 0 && bbufL.hasRemaining());
+					do { len = fcR.read(bbufR);	} 
+					while (len >= 0 && bbufR.hasRemaining());
+					cb.incrProgress(0.5);
+					
+					// Compare
+					bbufL.flip(); bbufR.flip();
+					ret = bbufL.compareTo(bbufR) == 0;
 				}
+				
 			}
-			digest = md.digest();
-		}
-		catch (Exception e) {
-			digest = new byte[16];
+			catch (Exception e) {
+				log.log(Level.WARNING, "Failed to compare file content, file1=" + lhs + ", file2=" + rhs, e);
+				// Assume files are equal. This avoids copying rhs on lhs in exportAttachment.
+			}
 		}
 		cb.setFinished();
-		return digest;
+		return ret;
 	}
 
-	public String exportAttachment(File dir, Application outlookApplication, Attachment att, ProgressCallback cb) throws Exception {
+//	private byte[] getFileHash(File file, ProgressCallback cb) {
+//		byte[] digest = null;
+//		cb.setTotal(file.length());
+//		try {
+//			MessageDigest md = MessageDigest.getInstance("MD5");
+//			try (InputStream is = Files.newInputStream(file.toPath());
+//			     DigestInputStream dis = new DigestInputStream(is, md)) 
+//			{
+//				byte[] buf = new byte[10*1000];
+//				int len = 0;
+//				while ((len = dis.read(buf)) > 0) {
+//					cb.incrProgress(len);
+//				}
+//			}
+//			digest = md.digest();
+//		}
+//		catch (Exception e) {
+//			digest = new byte[16];
+//		}
+//		cb.setFinished();
+//		return digest;
+//	}
+
+	private File exportAttachment(File dir, Application outlookApplication, Attachment att, ProgressCallback cb) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("exportAttachment(dir=" + dir + ", att=" + att);
-		String url = "";
+		File ret = null;
 		try {
 			// Download into temp dir.
 			ProgressCallback cbDownload = cb.createChild("Download " + att.getFileName(), 0.5);
-			url = downloadAttachment(att, cbDownload);
+			String url = downloadAttachment(att, cbDownload);
 			File tempFile = new File(new URI(url));
 
 			// Is the issue attachment a mail?
@@ -486,6 +550,8 @@ public class MailAttachmentHelper {
 							destFile.setLastModified(mailItem.getReceivedTime().getTime());
 						}
 						cbSave.incrProgress(0.5);
+						
+						ret = destFile;
 					}
 					
 					// Export mail attachments
@@ -516,14 +582,145 @@ public class MailAttachmentHelper {
 					destFile.setLastModified(att.getLastModified().getTime());
 				}
 				cbSave.incrProgress(0.5);
+				
+				ret = destFile;
 			}
 			
 		}
 		finally {
 			cb.setFinished();
 		}
-		if (log.isLoggable(Level.FINE)) log.fine(")exportAttachment=" + url);
-		return url;
+		if (log.isLoggable(Level.FINE)) log.fine(")exportAttachment=" + ret);
+		return ret;
+	}
+	
+	/**
+	 * Export attachments to export directory.
+	 * @param issue Issue
+	 * @param selectedItems Attachments to be exported
+	 * @param cb ProgressCallback
+	 */
+	public void exportAttachments(Issue issue, List<Attachment> selectedItems, ProgressCallback cb) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.fine("exportAttachments(" + issue + ", #selectedItems=" + selectedItems.size() );
+		
+		// Get destination directory
+		File exportDirectory = null;
+		{
+			String exportDirectoryName = Globals.getAppInfo().getConfig().getExportAttachmentsDirectory();
+			
+			// Build sub-directory: issue ID or NEW-<now>
+			String subdir = issue.getId();
+			if (subdir.isEmpty()) {
+				DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+				subdir = issue.getProject().getId() + "-NEW-" + dateFormat.format(new Date());
+			}
+
+			exportDirectory = new File(new File(exportDirectoryName), subdir);
+			if (log.isLoggable(Level.FINE)) log.fine("export directory=" + exportDirectory + ", exists=" + exportDirectory.exists());
+					
+			if (exportDirectory.exists()) {
+				if (!exportDirectory.isDirectory()) {
+					throw new IllegalStateException("Export destination=" + exportDirectory + " is not a directory.");
+				}
+			}
+			else {
+				if (!exportDirectory.mkdirs()) {
+					throw new IllegalStateException("Export destination=" + exportDirectory + " cannot be created.");
+				}
+			}
+		}
+
+		// Properties file of exported attachments.
+		ExportedAttachmentsPropertiesFile exportedAttachments = new ExportedAttachmentsPropertiesFile(exportDirectory);
+
+		// Prepare progress object: compute total number of bytes to export.
+		long totalBytes = selectedItems.stream().collect(Collectors.summingLong((att) -> att.getContentLength())).longValue();
+		
+		if (log.isLoggable(Level.INFO)) log.info("Export issue=" + issue.getId() + " " + selectedItems.size() + " attachments of totalBytes=" + totalBytes + " to directory=" + exportDirectory);
+		
+		// Show that export process has started
+		cb.incrProgress(0.1); 
+		
+		// Export
+		ProgressCallback cbExportAll = cb.createChild(0.9);
+		Application outlookApplication = Globals.getThisAddin().getApplication();
+		for (Attachment att : selectedItems) {
+			if (cb.isCancelled()) break;
+
+			// Move progress by this fraction.
+			double progressRatio = (double)att.getContentLength() / (double)totalBytes;
+
+			// Attachment already exported? lookup file name in .contents file.
+			File alreadyExportedFile = exportedAttachments.get(att);
+			if (log.isLoggable(Level.FINE)) log.fine("att=" + att + " already exported to=" + alreadyExportedFile);
+
+			if (exportedAttachments.get(att) == null) {
+				
+				// Export attachment
+				try {
+					ProgressCallback childProgress = cbExportAll.createChild("Export " + att.getFileName(), progressRatio);
+					File exportedFile = exportAttachment(exportDirectory, outlookApplication, att, childProgress);
+					exportedAttachments.add(att, exportedFile);
+				} catch (Exception e) {
+					log.log(Level.WARNING, "Attachment could not be exported.", e);
+				}
+			}
+			else {
+				cbExportAll.incrProgress(progressRatio);
+			}
+		}
+		cb.setFinished();
+
+		// Open export directory in Windows Explorer 
+		if (!cb.isCancelled()) {
+			String url = exportDirectory.toURI().toString();
+			IssueApplication.showDocument(url);
+		}
+
+		if (log.isLoggable(Level.FINE)) log.fine(")exportAttachments");
+	}
+
+	/**
+	 * This class handles a properties file with exported attachments.
+	 */
+	private static class ExportedAttachmentsPropertiesFile {
+		final static String FILENAME = ".exported-attachments";
+		Properties props = new Properties();
+		File exportDirectory;
+		
+		ExportedAttachmentsPropertiesFile(File exportDir) {
+			this.exportDirectory = exportDir;
+			load();
+		}
+		
+		private synchronized void load() {
+			try (InputStream fis = new FileInputStream(new File(exportDirectory, FILENAME))) {
+				props.load(fis);
+			}
+			catch (Exception ignored) {}
+		}
+
+		private synchronized void store() {
+			try (OutputStream fos = new FileOutputStream(new File(exportDirectory, FILENAME))) {
+				props.store(fos, "Exported Issue Attachments");
+			}
+			catch (Exception ignored) {}
+		}
+		
+		synchronized void add(Attachment att, File exportFile) {
+			if (!exportFile.getParentFile().equals(exportDirectory)) throw new IllegalArgumentException("Export file=" + exportFile + " must be stored in export directory=" + exportDirectory);
+			props.setProperty(att.getId(), exportFile.getName());
+			store();
+		}
+		
+		synchronized File get(Attachment att) {
+			File ret = null;
+			String fname = props.getProperty(att.getId());
+			if (!Default.value(fname).isEmpty()) {
+				ret = new File(exportDirectory, fname);
+			}
+			return ret;
+		}
 	}
 
 	/**

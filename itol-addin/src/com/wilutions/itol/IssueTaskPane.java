@@ -1042,51 +1042,23 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	
 	@FXML
 	public void onExportAttachments() {
+
+		ProgressCallback cb = createProgressCallback("Export attachments");
+
+		// Selected items or all items
+		List<Attachment> selectedItems = new ArrayList<Attachment>();
+		selectedItems.addAll(tabAttachments.getSelectionModel().getSelectedItems());
+		if (selectedItems.isEmpty()) {
+			selectedItems.addAll(tabAttachments.getItems());
+		}
 		
 		BackgTask.run(() -> {
-			
-			// Get destination directory
-			File exportDirectory = null;
-			{
-				String exportDirectoryName = Globals.getAppInfo().getConfig().getExportAttachmentsDirectory();
-				
-				// Build sub-directory: issue ID or NEW-<now>
-				String subdir = issue.getId();
-				if (subdir.isEmpty()) {
-					DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-					subdir = issue.getProject().getId() + "-NEW-" + dateFormat.format(new Date());
-				}
-
-				exportDirectory = new File(new File(exportDirectoryName), subdir);
-				exportDirectory.mkdirs();
+			try {
+				attachmentHelper.exportAttachments(issue, selectedItems, cb);
 			}
-
-			// Selected items or all items
-			List<Attachment> selectedItems = tabAttachments.getSelectionModel().getSelectedItems();
-			if (selectedItems.isEmpty()) selectedItems = tabAttachments.getItems();
-			
-			// Prepare progress object: compute total number of bytes to export.
-			long totalBytes = selectedItems.stream().collect(Collectors.summingLong((att) -> att.getContentLength())).longValue();
-			ProgressCallback cb = createProgressCallback("Export attachments");
-			
-			// Show that export process has started
-			cb.incrProgress(0.1); 
-			
-			// Export
-			ProgressCallback cbExportAll = cb.createChild(0.9);
-			Application outlookApplication = Globals.getThisAddin().getApplication();
-			for (Attachment att : selectedItems) {
-				try {
-					ProgressCallback childProgress = cbExportAll.createChild("Export " + att.getFileName(), (double)att.getContentLength() / (double)totalBytes);
-					attachmentHelper.exportAttachment(exportDirectory, outlookApplication, att, childProgress);
-				} catch (Exception e) {
-					log.log(Level.WARNING, "Attachment could not be exported.", e);
-				}
+			catch (Exception e) {
+				log.log(Level.WARNING, "Failed to export attachments of issue=" + issue, e);
 			}
-			cb.setFinished();
-			
-			String url = exportDirectory.toURI().toString();
-			IssueApplication.showDocument(url);
 		});
 	}
 	
