@@ -12,37 +12,36 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
-import com.wilutions.com.IDispatch;
 import com.wilutions.itol.db.Attachment;
-import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackFactory;
-import com.wilutions.mslib.outlook.MailItem;
-import com.wilutions.mslib.outlook.Selection;
-import com.wilutions.mslib.outlook._Explorer;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
-import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.stage.Popup;
 import javafx.util.Callback;
+import javafx.util.Duration;
 
 public class AttachmentTableViewHandler {
 	
@@ -188,63 +187,14 @@ public class AttachmentTableViewHandler {
 		lastModifiedColumn.setSortType(TableColumn.SortType.DESCENDING);
 		table.getSortOrder().add(lastModifiedColumn);
 
-		// table.setOnKeyPressed(new EventHandler<KeyEvent>() {
-		// @Override
-		// public void handle(KeyEvent event) {
-		// if (event.getCode() == KeyCode.V && event.isControlDown()) {
-		// Clipboard cb = Clipboard.getSystemClipboard();
-		// System.out.println("clipboard: image=" + cb.hasImage() +
-		// ", files=" + cb.hasFiles() +
-		// ", html=" + cb.hasHtml() +
-		// ", rtf=" + cb.hasRtf() +
-		// ", string=" + cb.hasString());
-		// if (cb.hasImage()) {
-		// bild wird falsch dargestellt.
-		// Image image = cb.getImage();
-		// ImageView iv = new ImageView();
-		// iv.setImage(image);
-		//
-		// VBox vbox = new VBox();
-		// vbox.getChildren().add(iv);
-		// Scene scene = new Scene(vbox);
-		// Stage stage = new Stage();
-		// stage.setScene(scene);
-		// stage.show();
-		//
-		// Attachment att = attachmentHelper.createFromImage(image, "");
-		// table.getItems().add(att);
-		// }
-		//
-		// }
-		// }
-		// });
-
-		// //////////////////
+		////////////////////
 		// Drag&Drop
-
-		// Java does not support D&D from Outlook.
-		// Outlook sends a special data format that Java does not
-		// understand.
-
-		// If an item is dragged from Outlook, Java 8 runs in an
-		// "java.io.IOException: no native data was transfered".
-		// This exception occurs deep inside the toolkit and cannot
-		// be caught.
 
 		table.setOnDragOver(new EventHandler<DragEvent>() {
 			@Override
 			public void handle(DragEvent event) {
 				Dragboard db = event.getDragboard();
-//				System.out.println("clipboard: image=" + db.hasImage() + ", files=" + db.hasFiles() + ", html="
-//						+ db.hasHtml() + ", rtf=" + db.hasRtf() + ", string=" + db.hasString());
-				if (db.hasImage()) {
-
-				}
-				else if (db.hasFiles()) {
-					// D&D from Outlook also enteres this block,
-					// although Java does not understand the format.
-					// In contrast to this, db.hasFiles() is false
-					// for Outlook D&D inside the drop handler.
+				if (db.hasFiles()) {
 					event.acceptTransferModes(TransferMode.COPY);
 				}
 				else {
@@ -267,87 +217,64 @@ public class AttachmentTableViewHandler {
 						table.getItems().add(att);
 					}
 				}
-				else {
-
-					// Because db.hasFiles() was true in onDragOver
-					// and it is false here, we assume that Outlook
-					// data is dropped.
-					// Here, all selected items in the explorer are
-					// dropped.
-
-					// Mail attachments are sent as ordinary file drops.
-
-					try {
-						_Explorer explorer = Globals.getThisAddin().getApplication().ActiveExplorer();
-						Selection selection = explorer.getSelection();
-						int count = selection.getCount();
-						for (int i = 1; i <= count; i++) {
-							IDispatch item = selection.Item(i);
-							if (item.is(MailItem.class)) {
-								MailItem mailItem = item.as(MailItem.class);
-								Attachment att = attachmentHelper.makeMailAttachment(new IssueMailItemImpl(mailItem));
-								table.getItems().add(att);
-							}
-						}
-					}
-					catch (Throwable e) {
-						e.printStackTrace();
-					}
-				}
 				event.setDropCompleted(success);
 				event.consume();
 			}
 
 		});
-		
+
+		/////////////////////////////////////////////////////
 		// Render preview in tooltip for image attachments.
+		
+		TooltipRefCount activeTooltip = new TooltipRefCount();
+		activeTooltip.owner = table;
+		
 		table.setRowFactory(tableView -> {
 		    final TableRow<Attachment> row = new TableRow<>();
-	        Tooltip tooltip = new Tooltip();
-	        AtomicBoolean mouseEntered = new AtomicBoolean();
-	        AtomicReference<Image> refImage = new AtomicReference<>();
+	        final Popup tooltip = new Popup();
 
 		    row.setOnMouseEntered((event) -> {
-		    	mouseEntered.set(true);
-		    	BackgTask.run(() -> {
-			        Attachment attachment = row.getItem();
-			        if (attachment != null) {
-			        	String thumbnailUrl = attachment.getThumbnailUrl();
-			        	if (!Default.value(thumbnailUrl).isEmpty()) {
-			        		if (refImage.get() == null) {
-			        			try {
-			        				// Use download function since Image constructor does not follow redirections.
-			        				if (!thumbnailUrl.startsWith(MailAttachmentHelper.FILE_URL_PREFIX)) {
-										String fpath = Globals.getIssueService().downloadAttachment(thumbnailUrl, progressCallbackFactory.createProgressCallback("Download thumbnail"));
-										File thumbnailFile = new File(fpath);
-										thumbnailUrl = thumbnailFile.toURI().toString();
-										attachment.setThumbnailUrl(thumbnailUrl);
-			        				}
-				        			Image image = new Image(thumbnailUrl);
-				        			refImage.set(image);
+		    	
+		    	Attachment attachment = row.getItem();
+				double x = event.getScreenX(), y = event.getScreenY();
+
+		    	if (tooltip.getContent().isEmpty()) {
+					initThumbnailTooltip(attachment, tooltip, progressCallbackFactory, () -> {
+						
+						// Add mouse handlers to keep showing tooltip if mouse is over the image.
+						ImageView imageView = (ImageView)tooltip.getContent().get(0);
+						imageView.setOnMouseEntered((_ignore) -> {
+							imageView.getScene().setCursor(Cursor.HAND);
+							activeTooltip.show(tooltip, x, y);
+						});
+						imageView.setOnMouseExited((_ignore) -> {
+							activeTooltip.hide(tooltip);
+							imageView.getScene().setCursor(Cursor.DEFAULT);
+						});
+						
+						// If image is clicked, show full attachment and hide tooltip.
+						imageView.setOnMouseClicked((_ignore) -> {
+							BackgTask.run(() -> {
+								try {
+									attachmentHelper.showAttachment(attachment, progressCallbackFactory.createProgressCallback("Show attachment"));
 								} catch (Exception e) {
-									log.log(Level.WARNING, "Failed to load thumbnail for attachment=" + attachment.getFileName(), e);
+									log.log(Level.WARNING, "Failed to show attachment=" + attachment, e);
 								}
-			        		}
-			        		
-			        		if (refImage.get() != null) {
-			        			Platform.runLater(() -> {
-				        			if (mouseEntered.get()) {
-				        				if (tooltip.getGraphic() == null) {
-				        					tooltip.setGraphic(new ImageView(refImage.get()));
-				        				}
-				        				tooltip.show(table, event.getScreenX() + 50, event.getScreenY());
-				        			}
-			        			});
-			        		}
-			        	}
-			        }
-		    	});
+							});
+						});
+						
+						activeTooltip.show(tooltip, x, y);
+					});
+				}
+				else {
+					activeTooltip.show(tooltip, x, y);
+				}
 		    });
+		    
 		    row.setOnMouseExited((event) -> {
-		    	mouseEntered.set(false);
-		    	tooltip.hide();
+		    	activeTooltip.hide(tooltip);
 		    });
+
 
 		    return row;
 		});
@@ -356,6 +283,84 @@ public class AttachmentTableViewHandler {
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] apply(observableAttachments=" + observableAttachments + ")");
 	}
+
+	/**
+	 * This class holds tooltip window and a reference count for the number of calls to show().
+	 * The tooltip is being hidden, when the reference count reaches 0.
+	 */
+	private static class TooltipRefCount {
+		
+		final static Popup NO_TOOLTIP = new Popup(); 
+		Node owner;
+		Popup tooltip = NO_TOOLTIP;
+		int refCount;
+		
+		public void show(Popup newTooltip, double x, double y) { 
+			Popup oldTooltip = tooltip;
+			tooltip = newTooltip;
+			
+			if (oldTooltip != newTooltip) {
+				oldTooltip.hide();
+				refCount = 0;
+			}
+
+			refCount++;
+
+			if (!tooltip.isShowing()) {
+				tooltip.show(owner, x, y);
+			}
+		}
+		
+		public void hide(Popup newTooltip) {
+			Popup oldTooltip = tooltip;
+			if (oldTooltip == newTooltip) {
+				refCount--;
+				if (refCount == 0) {
+			    	Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1.0), new EventHandler<ActionEvent>() {
+						@Override
+						public void handle(ActionEvent event) {
+							if (oldTooltip == tooltip && refCount == 0) {
+								tooltip.hide();
+							}
+						}
+			    	}));
+			    	timeline.setCycleCount(1);
+			    	timeline.play();
+				}
+			}
+			else {
+				refCount = 0;
+				oldTooltip.hide();
+			}
+		}
+	}
+	
+	/**
+	 * Add a ImageView node to the given tooltip for showing the thumbnail image of the attachment.
+	 * @param attachment
+	 * @param tooltip
+	 * @param progressCallbackFactory
+	 * @param thenRunInFxThread
+	 */
+	private static void initThumbnailTooltip(Attachment attachment, Popup tooltip, ProgressCallbackFactory progressCallbackFactory, Runnable thenRunInFxThread) {
+        if (attachment != null) {
+        	BackgTask.run(() -> {
+        		if (attachment.getThumbnailImage() == null) {
+			        MailAttachmentHelper.getThumbnailImage(attachment, progressCallbackFactory.createProgressCallback("Download thumbnail"));
+        		}
+        		Image image = attachment.getThumbnailImage();
+        		if (image != null) {
+        			Platform.runLater(() -> {
+        				ImageView imageView = new ImageView(image);
+    					tooltip.getContent().add(imageView);
+    	    			thenRunInFxThread.run();
+        			});
+        		}
+        	});
+        }
+	}
+	
+	
 
 	public static List<Attachment> paste(Attachments attachments) {
 		if (log.isLoggable(Level.FINE)) log.fine("paste(");

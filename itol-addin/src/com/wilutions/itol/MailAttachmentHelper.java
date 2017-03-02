@@ -34,6 +34,8 @@ import com.wilutions.mslib.outlook.Application;
 import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.OlSaveAsType;
 
+import javafx.scene.image.Image;
+
 public class MailAttachmentHelper {
 
 	private List<Runnable> resourcesToRelease = new ArrayList<Runnable>();
@@ -794,6 +796,36 @@ public class MailAttachmentHelper {
 		File destFile = new File(tempDir, fname);
 		return destFile;
 	}
-	
+
+	/**
+	 * Return thumbnail image of attachment.
+	 * Downloads the image if thumbnailUrl is not empty from the sever. 
+	 * @param attachment
+	 * @param cb
+	 * @return Thumbnail image or null, if there is no thumbnail available.
+	 */
+	public static Image getThumbnailImage(Attachment attachment, ProgressCallback cb) {
+		Image ret = attachment.getThumbnailImage();
+		if (ret == null) {
+			String thumbnailUrl = attachment.getThumbnailUrl();
+			try {
+				if (!Default.value(thumbnailUrl).isEmpty()) {
+					// Use download function since Image constructor does not follow redirections.
+					if (!thumbnailUrl.startsWith(MailAttachmentHelper.FILE_URL_PREFIX)) {
+						String fpath = Globals.getIssueService().downloadAttachment(thumbnailUrl, cb);
+						File thumbnailFile = new File(fpath);
+						thumbnailUrl = thumbnailFile.toURI().toString();
+						attachment.setThumbnailUrl(thumbnailUrl);
+					}
+					Image image = new Image(thumbnailUrl);
+					attachment.setThumbnailImage(image);
+				}
+			}
+			catch (Exception e) {
+				log.log(Level.WARNING, "Failed to download thumbnail=" + thumbnailUrl + " for attachment=" + attachment, e);
+			}
+		}
+		return ret;
+	}
 
 }

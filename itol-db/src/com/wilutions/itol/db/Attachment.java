@@ -15,6 +15,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Date;
 
+import javafx.scene.image.Image;
+
 public class Attachment implements Cloneable {
 
 	private String id;
@@ -27,6 +29,7 @@ public class Attachment implements Cloneable {
 	private String thumbnailUrl;
 	private boolean deleted;
 	private Date lastModified;
+	private Image thumbnailImage;
 	
 	/**
 	 * This member is set if the attachment was downloaded into a local file.
@@ -41,6 +44,7 @@ public class Attachment implements Cloneable {
 		stream = new ByteArrayInputStream(new byte[0]);
 		url = "";
 		thumbnailUrl = "";
+		thumbnailImage = null;
 	}
 
 	public Attachment(String id, String subject, String contentType, String fileName, InputStream stream, String url) {
@@ -52,6 +56,7 @@ public class Attachment implements Cloneable {
 		this.stream = stream;
 		this.url = url;
 		this.thumbnailUrl = "";
+		this.thumbnailImage = null;
 	}
 	
 	@Override
@@ -66,6 +71,7 @@ public class Attachment implements Cloneable {
 		copy.deleted = deleted;
 		copy.thumbnailUrl = thumbnailUrl;
 		copy.localFile = localFile;
+		copy.thumbnailImage = thumbnailImage;
 		return copy;
 	}
 	
@@ -186,5 +192,17 @@ public class Attachment implements Cloneable {
 		this.lastModified = lastModified;
 	}
 
+	/**
+	 * Return thumbnail image.
+	 * For convenience, call MailAttachmentHelper#getThumbnailImage() to download the thumbnail.
+	 * @return Image object.
+	 */
+	public Image getThumbnailImage() {
+		return thumbnailImage;
+	}
+	
+	public void setThumbnailImage(Image thumbnailImage) {
+		this.thumbnailImage = thumbnailImage;
+	}
 	
 }
