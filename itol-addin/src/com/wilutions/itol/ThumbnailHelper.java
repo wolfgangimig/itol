@@ -83,18 +83,17 @@ public class ThumbnailHelper {
 	 * Make file name as imageFile-thumbnail.png
 	 * @param imageFile
 	 * @return
+	 * @throws IOException 
 	 */
-	private static File makeThumbnailFileName(File imageFile) {
+	private static File makeThumbnailFileName(File imageFile) throws IOException {
 		String fileName = imageFile.getName();
-		String fname = fileName;
 		String ext = "";
 		int p = fileName.lastIndexOf('.');
 		if (p >= 0) {
-			fname = fileName.substring(0, p);
 			ext = fileName.substring(p);
 		}
-		fname += "-thumbnail" + ext;
-		return new File(imageFile.getParentFile(), fname);
+		File thumbFile = File.createTempFile("thumbnail", ext, Globals.getTempDir());
+		return thumbFile;
 	}
 	
 	/**
