@@ -31,7 +31,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
@@ -52,6 +51,9 @@ public class AttachmentTableViewHandler {
 		long t1 = System.currentTimeMillis();
 		table.setItems(observableAttachments.getObservableList());
 
+		// Render preview in tooltip for image attachments.
+		TooltipRefCount activeTooltip = new TooltipRefCount(table, attachmentHelper, progressCallbackFactory);
+
 		ResourceBundle resb = Globals.getResourceBundle();
 
 		TableColumn<Attachment, String> iconColumn = new TableColumn<>("");
@@ -64,6 +66,7 @@ public class AttachmentTableViewHandler {
 
 			@Override
 			public TableCell<Attachment, String> call(TableColumn<Attachment, String> item) {
+				
 				TableCell<Attachment, String> cell = new TableCell<Attachment, String>() {
 					@Override
 					protected void updateItem(String fileName, boolean empty) {
@@ -77,6 +80,7 @@ public class AttachmentTableViewHandler {
 						}
 					}
 				};
+
 				return cell;
 			}
 
@@ -95,20 +99,50 @@ public class AttachmentTableViewHandler {
 			@Override
 			public TableCell<Attachment, String> call(TableColumn<Attachment, String> item) {
 				TableCell<Attachment, String> cell = new TableCell<Attachment, String>() {
+
+					Popup tooltip = new Popup();
+
+					// Constructor
+					{
+						this.setOnMouseEntered((event) -> {
+							Attachment attachment = (Attachment)getTableRow().getItem();
+							if (attachment != null) { 
+								// System.out.println("Enter attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
+								activeTooltip.handleMouseEnter(attachment, tooltip, event.getScreenX(), event.getScreenY());
+							}
+						});
+						this.setOnMouseExited((event) -> {
+							Attachment attachment = (Attachment)getTableRow().getItem();
+							if (attachment != null) { 
+								// System.out.println("Exit attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
+								activeTooltip.handleMouseExit(tooltip);
+							}
+						});
+						this.setOnMouseClicked((event) -> {
+							Attachment attachment = (Attachment)getTableRow().getItem();
+							if (attachment != null) { 
+								// System.out.println("Hide attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
+								activeTooltip.hide(tooltip);
+							}
+						});
+					}
+
 					@Override
 					protected void updateItem(String fileName, boolean empty) {
 						super.updateItem(fileName, empty);
 						if (fileName != null) {
-							Attachment att = (Attachment) getTableRow().getItem();
-							if (att != null) { // att is null when table.getItems() is modified in IssueHtmlEditor - why?
-								String style = att.getId().isEmpty() ? "-fx-font-weight: bold;" : "fx-font-weight: normal;";
+							Attachment attachment = (Attachment)getTableRow().getItem();
+							if (attachment != null) { // att is null when table.getItems() is modified in IssueHtmlEditor - why?
+								String style = attachment.getId().isEmpty() ? "-fx-font-weight: bold;" : "fx-font-weight: normal;";
 								setStyle(style);
 								String str = MailAttachmentHelper.getFileName(fileName);
 								setText(str);
 							}
 						}
 					}
+
 				};
+				
 				return cell;
 			}
 
@@ -223,63 +257,7 @@ public class AttachmentTableViewHandler {
 
 		});
 
-		/////////////////////////////////////////////////////
-		// Render preview in tooltip for image attachments.
-		
-		TooltipRefCount activeTooltip = new TooltipRefCount();
-		activeTooltip.owner = table;
-		
-		table.setRowFactory(tableView -> {
-		    final TableRow<Attachment> row = new TableRow<>();
-	        final Popup tooltip = new Popup();
-
-		    row.setOnMouseEntered((event) -> {
-		    	
-		    	Attachment attachment = row.getItem();
-				double x = event.getScreenX(), y = event.getScreenY();
-
-		    	if (tooltip.getContent().isEmpty()) {
-					initThumbnailTooltip(attachment, tooltip, progressCallbackFactory, () -> {
-						
-						// Add mouse handlers to keep showing tooltip if mouse is over the image.
-						ImageView imageView = (ImageView)tooltip.getContent().get(0);
-						imageView.setOnMouseEntered((_ignore) -> {
-							imageView.getScene().setCursor(Cursor.HAND);
-							activeTooltip.show(tooltip, x, y);
-						});
-						imageView.setOnMouseExited((_ignore) -> {
-							activeTooltip.hide(tooltip);
-							imageView.getScene().setCursor(Cursor.DEFAULT);
-						});
-						
-						// If image is clicked, show full attachment and hide tooltip.
-						imageView.setOnMouseClicked((_ignore) -> {
-							BackgTask.run(() -> {
-								try {
-									attachmentHelper.showAttachment(attachment, progressCallbackFactory.createProgressCallback("Show attachment"));
-								} catch (Exception e) {
-									log.log(Level.WARNING, "Failed to show attachment=" + attachment, e);
-								}
-							});
-						});
-						
-						activeTooltip.show(tooltip, x, y);
-					});
-				}
-				else {
-					activeTooltip.show(tooltip, x, y);
-				}
-		    });
-		    
-		    row.setOnMouseExited((event) -> {
-		    	activeTooltip.hide(tooltip);
-		    });
-
-
-		    return row;
-		});
-		
-		
+	
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] apply(observableAttachments=" + observableAttachments + ")");
 	}
@@ -292,34 +270,98 @@ public class AttachmentTableViewHandler {
 		
 		final static Popup NO_TOOLTIP = new Popup(); 
 		Node owner;
+		MailAttachmentHelper attachmentHelper;
+		ProgressCallbackFactory progressCallbackFactory;
 		Popup tooltip = NO_TOOLTIP;
 		int refCount;
+		
+		public TooltipRefCount(Node owner, MailAttachmentHelper attachmentHelper, ProgressCallbackFactory progressCallbackFactory) {
+			this.owner = owner;
+			this.attachmentHelper = attachmentHelper;
+			this.progressCallbackFactory = progressCallbackFactory;
+		}
+		
+		public void handleMouseExit(Popup tooltip) {
+	    	this.hide(tooltip);
+		}
+
+		public void handleMouseEnter(Attachment attachment, Popup tooltip, double x, double y) {
+			
+	    	if (tooltip.getContent().isEmpty()) {
+				initThumbnailTooltip(attachment, tooltip, progressCallbackFactory, () -> {
+					
+					// Add mouse handlers to keep showing tooltip if mouse is over the image.
+					ImageView imageView = (ImageView)tooltip.getContent().get(0);
+					imageView.setOnMouseEntered((_ignore) -> {
+						imageView.getScene().setCursor(Cursor.HAND);
+						this.show(tooltip, x, y);
+					});
+					imageView.setOnMouseExited((_ignore) -> {
+						this.hide(tooltip);
+						imageView.getScene().setCursor(Cursor.DEFAULT);
+					});
+					
+					// If image is clicked, show full attachment and hide tooltip.
+					imageView.setOnMouseClicked((_ignore) -> {
+						BackgTask.run(() -> {
+							try {
+								attachmentHelper.showAttachment(attachment, progressCallbackFactory.createProgressCallback("Show attachment"));
+							} catch (Exception e) {
+								log.log(Level.WARNING, "Failed to show attachment=" + attachment, e);
+							}
+						});
+					});
+					
+					this.show(tooltip, x, y);
+				});
+			}
+			else {
+				this.show(tooltip, x, y);
+			}
+		}
 		
 		public void show(Popup newTooltip, double x, double y) { 
 			Popup oldTooltip = tooltip;
 			tooltip = newTooltip;
 			
+			// Hide previous tooltip if another one should be shown.
 			if (oldTooltip != newTooltip) {
+				// System.out.println("s.hide oldTooltip=" + System.identityHashCode(oldTooltip));
 				oldTooltip.hide();
 				refCount = 0;
 			}
 
+			// Increment number of showing calls for active tooltip.
 			refCount++;
 
 			if (!tooltip.isShowing()) {
+				// System.out.println("s.show tooltip=" + System.identityHashCode(tooltip));
 				tooltip.show(owner, x, y);
 			}
 		}
 		
 		public void hide(Popup newTooltip) {
 			Popup oldTooltip = tooltip;
+			
+			// If passed tooltip is active...
 			if (oldTooltip == newTooltip) {
-				refCount--;
+				
+				// Decrement number of showing calls.
+				if (refCount > 0) {
+					refCount--;
+				}
+				
+				// If counted to 0, hide after some time.
 				if (refCount == 0) {
 			    	Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1.0), new EventHandler<ActionEvent>() {
 						@Override
 						public void handle(ActionEvent event) {
+							// System.out.println("h.hide tooltip=" + System.identityHashCode(tooltip) + ", refCount=" + refCount);
+							
+							// Hide tooltip if it is still active and there was no new showing call.
+							// Example: mouse is moved from table cell into image -> cell exit (refCount--), image enter (refCount++)
 							if (oldTooltip == tooltip && refCount == 0) {
+								// System.out.println("h.hide tooltip=" + System.identityHashCode(tooltip));
 								tooltip.hide();
 							}
 						}
@@ -330,6 +372,7 @@ public class AttachmentTableViewHandler {
 			}
 			else {
 				refCount = 0;
+				// System.out.println("h.hide oldTooltip=" + System.identityHashCode(oldTooltip));
 				oldTooltip.hide();
 			}
 		}
