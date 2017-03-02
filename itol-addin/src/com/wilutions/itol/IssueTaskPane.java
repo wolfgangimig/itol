@@ -90,6 +90,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -512,6 +513,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 					}
 				}
 			});
+			
+			bnAssignSelection.setTooltip(new Tooltip(resb.getString("nbAssignSelection.tooltip")));
 
 			bnShow.disableProperty().bind(Bindings.isEmpty(edIssueId.textProperty()));
 			bnShowIssueInBrowser.disableProperty().bind(Bindings.isEmpty(edIssueId.textProperty()));
