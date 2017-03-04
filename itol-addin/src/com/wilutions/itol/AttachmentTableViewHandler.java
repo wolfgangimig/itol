@@ -336,7 +336,7 @@ public class AttachmentTableViewHandler {
 
 			if (!tooltip.isShowing()) {
 				// System.out.println("s.show tooltip=" + System.identityHashCode(tooltip));
-				tooltip.show(owner, x, y);
+				tooltip.show(owner, x + 20, y);
 			}
 		}
 		
