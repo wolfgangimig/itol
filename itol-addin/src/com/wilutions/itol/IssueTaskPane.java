@@ -1852,4 +1852,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		this.licenseValid = v;
 		initBnUpdateText();
 	}
+	
+	@FXML
+	public void onAbout() {
+		DlgAbout.show(this.getWindow());
+	}
 }

@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.CoClass;
 import com.wilutions.com.ComException;
+import com.wilutions.fx.util.ManifestUtil;
 import com.wilutions.joa.DeclAddin;
 import com.wilutions.joa.LoadBehavior;
 import com.wilutions.joa.OfficeApplication;
@@ -183,4 +184,11 @@ public class ItolAddin extends OutlookAddinEx {
 		return explorerWrapper;
 	}
 
+	public String getProgramVersion() {
+		return ManifestUtil.getProgramVersion(this.getClass());
+	}
+	
+	public String getProgramName() {
+		return ManifestUtil.getProgramName(this.getClass());
+	}
 }

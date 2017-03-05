@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="477.0" prefWidth="600.0" spacing="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.DlgAbout">
+   <children>
+      <Label fx:id="lbProgramName" maxWidth="1.7976931348623157E308" prefHeight="143.0" text="Program Name" wrapText="true">
+         <font>
+            <Font size="36.0" />
+         </font>
+      </Label>
+      <Label fx:id="lbProgramVersion" maxWidth="1.7976931348623157E308" text="Program Version" />
+      <Label text="Designed by Wolfgang Imig">
+         <VBox.margin>
+            <Insets />
+         </VBox.margin>
+      </Label>
+      <Hyperlink onAction="#onHomepageClicked" text="www.wilutions.com" />
+      <Label text="3rd Party Libraries:" />
+      <TableView fx:id="tv3rdPartyLibs" prefHeight="200.0" prefWidth="200.0">
+        <columns>
+          <TableColumn prefWidth="75.0" text="C1" />
+          <TableColumn prefWidth="75.0" text="C2" />
+        </columns>
+      </TableView>
+      <HBox alignment="CENTER_RIGHT">
+         <children>
+            <Button alignment="CENTER" mnemonicParsing="false" onAction="#onOK" prefHeight="39.0" prefWidth="150.0" text="OK" />
+         </children>
+      </HBox>
+   </children>
+   <padding>
+      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+   </padding>
+</VBox>
