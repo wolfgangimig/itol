@@ -71,6 +71,7 @@ public class Config implements Serializable, Cloneable {
 	private boolean proxyServerEnabled;
 	private int proxyServerPort;
 	private TaskPanePosition taskPanePosition;
+	private int maxHistoryItems = 100;
 	
 	/**
 	 * Custom field for mail address.
@@ -135,6 +136,7 @@ public class Config implements Serializable, Cloneable {
 		this.taskPanePosition = rhs.taskPanePosition;
 		this.autoReplyField = rhs.autoReplyField;
 		this.blackExtensions = rhs.blackExtensions;
+		this.maxHistoryItems = rhs.maxHistoryItems;
 	}
 
 	public static <T extends Config> T read(String manufacturerName, String appName, Class<T> clazz) throws Exception {
@@ -483,5 +485,12 @@ public class Config implements Serializable, Cloneable {
 			tempDirForSession.mkdirs();
 		}
 		return tempDirForSession;
+	}
+
+	public int getMaxHistoryItems() {
+		return maxHistoryItems;
+	}
+	public void setMaxHistoryItems(int v) {
+		maxHistoryItems = v;
 	}
 }
