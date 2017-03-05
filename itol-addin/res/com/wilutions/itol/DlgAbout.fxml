@@ -6,7 +6,6 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-
 <VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="477.0" prefWidth="600.0" spacing="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.DlgAbout">
    <children>
       <Label fx:id="lbProgramName" maxWidth="1.7976931348623157E308" prefHeight="143.0" text="Program Name" wrapText="true">
@@ -14,7 +13,10 @@
             <Font size="36.0" />
          </font>
       </Label>
-      <Label fx:id="lbProgramVersion" maxWidth="1.7976931348623157E308" text="Program Version" />
+      <Label fx:id="lbProgramVersion" maxWidth="1.7976931348623157E308" text="Program Version">
+         <font>
+            <Font size="24.0" />
+         </font></Label>
       <Label text="Designed by Wolfgang Imig">
          <VBox.margin>
             <Insets />

@@ -43,6 +43,8 @@ public class ManifestUtil {
 				Manifest manifest = jarConnection.getManifest();
 				String version = manifest.getMainAttributes().getValue("Implementation-Version");
 				props.put("programVersion", version);
+				String programName = manifest.getMainAttributes().getValue("Implementation-Title");
+				props.put("programName", programName);
 			}
 		}
 		catch (Exception ex) {
