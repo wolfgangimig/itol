@@ -395,6 +395,9 @@ public class AttachmentTableViewHandler {
         		if (image != null) {
         			Platform.runLater(() -> {
         				ImageView imageView = new ImageView(image);
+        				imageView.setFitWidth(ThumbnailHelper.THUMBNAIL_WIDTH);
+        				imageView.setFitHeight(ThumbnailHelper.THUMBNAIL_HEIGHT);
+        				imageView.setPreserveRatio(true);
     					tooltip.getContent().add(imageView);
     	    			thenRunInFxThread.run();
         			});

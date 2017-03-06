@@ -138,7 +138,7 @@ public class ThumbnailHelper {
 			type = fname.substring(p+1).toLowerCase();
 		}
 		switch (type) {
-		case "png": case "jpg": break;
+		case "png": case "jpg": case "gif": break;
 		default: type = "";
 		}
 		return type;

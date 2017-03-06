@@ -805,17 +805,34 @@ public class MailAttachmentHelper {
 	 * @return Thumbnail image or null, if there is no thumbnail available.
 	 */
 	public static Image getThumbnailImage(Attachment attachment, ProgressCallback cb) {
+		if (log.isLoggable(Level.FINE)) log.fine("getThumbnailImage(" + attachment);
 		Image ret = attachment.getThumbnailImage();
 		if (ret == null) {
 			String thumbnailUrl = attachment.getThumbnailUrl();
+			if (log.isLoggable(Level.FINE)) log.fine("thumbnailUrl=" + thumbnailUrl);
 			try {
-				if (!Default.value(thumbnailUrl).isEmpty()) {
+				if (Default.value(thumbnailUrl).isEmpty()) {
+					if (attachment.getId().isEmpty()) {
+						if (attachment.getLocalFile() != null) {
+							cb.incrProgress(0.2);
+							File thumbnailFile = ThumbnailHelper.makeThumbnail(attachment.getLocalFile());
+							if (thumbnailFile != null) {
+								attachment.setThumbnailUrl(thumbnailFile.toURI().toString());
+								if (log.isLoggable(Level.FINE)) log.fine("thumbnailUrl=" + attachment.getThumbnailUrl());
+								ret = new Image(attachment.getThumbnailUrl());
+							}
+							cb.setFinished();
+						}
+					}
+				}
+				else {
 					// Use download function since Image constructor does not follow redirections.
 					if (!thumbnailUrl.startsWith(MailAttachmentHelper.FILE_URL_PREFIX)) {
 						String fpath = Globals.getIssueService().downloadAttachment(thumbnailUrl, cb);
 						File thumbnailFile = new File(fpath);
 						thumbnailUrl = thumbnailFile.toURI().toString();
 						attachment.setThumbnailUrl(thumbnailUrl);
+						if (log.isLoggable(Level.FINE)) log.fine("thumbnailUrl=" + attachment.getThumbnailUrl());
 					}
 					Image image = new Image(thumbnailUrl);
 					attachment.setThumbnailImage(image);
@@ -825,6 +842,7 @@ public class MailAttachmentHelper {
 				log.log(Level.WARNING, "Failed to download thumbnail=" + thumbnailUrl + " for attachment=" + attachment, e);
 			}
 		}
+		if (log.isLoggable(Level.FINE)) log.fine(")getThumbnailImage=" + ret);
 		return ret;
 	}
 
