@@ -709,15 +709,25 @@ public class MailAttachmentHelper {
 			catch (Exception ignored) {}
 		}
 		
+		private String getAttachmentId(Attachment att) {
+			String id = att.getId();
+			if (id.isEmpty()) {
+				id = att.getFileName(); // new attachment
+			}
+			return id;
+		}
+		
 		synchronized void add(Attachment att, File exportFile) {
 			if (!exportFile.getParentFile().equals(exportDirectory)) throw new IllegalArgumentException("Export file=" + exportFile + " must be stored in export directory=" + exportDirectory);
-			props.setProperty(att.getId(), exportFile.getName());
+			String id = getAttachmentId(att);
+			props.setProperty(id, exportFile.getName());
 			store();
 		}
 		
 		synchronized File get(Attachment att) {
 			File ret = null;
-			String fname = props.getProperty(att.getId());
+			String id = getAttachmentId(att);
+			String fname = props.getProperty(id);
 			if (!Default.value(fname).isEmpty()) {
 				ret = new File(exportDirectory, fname);
 			}
