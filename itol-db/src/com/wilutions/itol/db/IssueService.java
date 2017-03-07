@@ -77,6 +77,8 @@ public interface IssueService {
 	
 	String downloadAttachment(String url, ProgressCallback cb) throws Exception;
 	
+	String convertHtmlBodyToMarkup(String htmlBody) throws Exception;
+	
 //
 //	FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) throws Exception;
 //

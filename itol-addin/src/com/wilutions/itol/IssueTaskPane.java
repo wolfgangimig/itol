@@ -40,6 +40,7 @@ import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssuePropertyEditor;
 import com.wilutions.itol.db.IssueService;
+import com.wilutions.itol.db.MailBodyConversion;
 import com.wilutions.itol.db.MailInfo;
 import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.itol.db.ProgressCallback;
@@ -307,13 +308,22 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			IssueService srv = null;
 			boolean succ = false;
 			try {
+				srv = Globals.getIssueService();
 
 				// Get issue ID from mailItem
 				String subject = mailItem.getSubject();
-				String description = mailItem.getBody().replace("\r\n", "\n");
-
-				srv = Globals.getIssueService();
 				String issueId = srv.extractIssueIdFromMailSubject(subject);
+				
+				// Issue description from mail body.
+				String textBody = mailItem.getBody().replace("\r\n", "\n");
+				String description = textBody;
+				if (Globals.getAppInfo().getConfig().getMailBodyConversion().equals(MailBodyConversion.MARKUP)) {
+					String htmlBody = mailItem.getHTMLBody();
+					String markup = Globals.getIssueService().convertHtmlBodyToMarkup(htmlBody);
+					if (markup.length() > textBody.length()/2) {
+						description = markup;
+					}
+				}
 
 				issue = null;
 

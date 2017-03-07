@@ -12,6 +12,7 @@ import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IdName;
+import com.wilutions.itol.db.MailBodyConversion;
 import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.joa.fx.ModalDialogFX;
 
@@ -51,6 +52,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	ChoiceBox<IdName> cbLogLevel;
 	@FXML
 	CheckBox ckInsertIssueId;
+	@FXML
+	ChoiceBox<IdName> cbMailBody;
 
 	private AutoCompletionBinding<IdName> autoCompletionAttachMailAs;
 
@@ -122,6 +125,10 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 		cbLogLevel.getItems().add(new IdName("INFO", resb.getString("DlgConnect.LogLevel.Info")));
 		cbLogLevel.getItems().add(new IdName("FINE", resb.getString("DlgConnect.LogLevel.Debug")));
 		cbLogLevel.getSelectionModel().select(0);
+		
+		cbMailBody.getItems().add(new IdName(MailBodyConversion.MARKUP.toString(), resb.getString("DlgConfigure.MailBody.markup")));
+		cbMailBody.getItems().add(new IdName(MailBodyConversion.TEXT.toString(), resb.getString("DlgConfigure.MailBody.text")));
+		cbMailBody.getSelectionModel().select(0);
 
 		updateData(false);
 	}
@@ -153,6 +160,9 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			config.setInjectIssueIdIntoMailSubject(ckInsertIssueId.isSelected());
 			config.setExportAttachmentsDirectory(edExportAttachmentsDirectory.getText());
 			config.setAutoReplyField(edAutoReplyField.getText());
+			
+			String mailBodyConversionId = cbMailBody.getSelectionModel().getSelectedItem().getId();
+			config.setMailBodyConversion(MailBodyConversion.valueOf(mailBodyConversionId));
 		}
 		else {
 			edLogFile.setText(config.getLogFile());
@@ -165,6 +175,9 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 					break;
 				}
 			}
+
+			IdName mailBodyConversionItem = new IdName(config.getMailBodyConversion().toString(), "");
+			cbMailBody.getSelectionModel().select(mailBodyConversionItem);
 			
 			ckInsertIssueId.setSelected(config.getInjectIssueIdIntoMailSubject());
 			edExportAttachmentsDirectory.setText(config.getExportAttachmentsDirectory());

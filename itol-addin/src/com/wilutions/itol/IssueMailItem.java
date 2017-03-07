@@ -11,6 +11,7 @@ public interface IssueMailItem {
 	public void setSubject(String mailSubject) throws ComException;
 
 	public String getBody() throws ComException;
+	public String getHTMLBody() throws ComException;
 	
 	public String getFrom();
 	public String getFromAddress();

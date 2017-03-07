@@ -13,6 +13,7 @@ public class IssueMailItemImpl implements IssueMailItem {
 	private final IDispatch mailItem;
 	private String subject;
 	private String body;
+	private String htmlBody;
 	private String entryId;
 	private String from;
 	private String fromAddress;
@@ -33,6 +34,7 @@ public class IssueMailItemImpl implements IssueMailItem {
 		this.setFromAddress(mailItem.getSenderEmailAddress());
 		this.to = mailItem.getReceivedByName();
 		this.receivedTime = mailItem.getReceivedTime();
+		this.htmlBody = mailItem.getHTMLBody();
 	}
 
 	public String getSubject() {
@@ -45,6 +47,11 @@ public class IssueMailItemImpl implements IssueMailItem {
 
 	public String getBody() {
 		return body;
+	}
+	
+	@Override
+	public String getHTMLBody() throws ComException {
+		return htmlBody;
 	}
 
 	public String getEntryId() {

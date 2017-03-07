@@ -74,6 +74,11 @@ public class Config implements Serializable, Cloneable {
 	private int maxHistoryItems = 100;
 	
 	/**
+	 * Convert HTML mail body to markup.
+	 */
+	private MailBodyConversion mailBodyConversion = MailBodyConversion.MARKUP;
+	
+	/**
 	 * Custom field for mail address.
 	 */
 	private String autoReplyField = "";
@@ -137,6 +142,7 @@ public class Config implements Serializable, Cloneable {
 		this.autoReplyField = rhs.autoReplyField;
 		this.blackExtensions = rhs.blackExtensions;
 		this.maxHistoryItems = rhs.maxHistoryItems;
+		this.mailBodyConversion = rhs.mailBodyConversion;
 	}
 
 	public static <T extends Config> T read(String manufacturerName, String appName, Class<T> clazz) throws Exception {
@@ -493,4 +499,15 @@ public class Config implements Serializable, Cloneable {
 	public void setMaxHistoryItems(int v) {
 		maxHistoryItems = v;
 	}
+
+	public MailBodyConversion getMailBodyConversion() {
+		return mailBodyConversion;
+	}
+
+	public void setMailBodyConversion(MailBodyConversion mailBodyConversion) {
+		this.mailBodyConversion = mailBodyConversion;
+	}
+
+	
+	
 }

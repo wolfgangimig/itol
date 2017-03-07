@@ -22,6 +22,11 @@ public class IssueMailItemBlank implements IssueMailItem {
 	}
 	
 	@Override
+	public String getHTMLBody() throws ComException {
+		return "";
+	}
+	
+	@Override
 	public String getFrom() {
 		return "";
 	}
