@@ -307,13 +307,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			IssueService srv = null;
 			boolean succ = false;
 			try {
+				srv = Globals.getIssueService();
 
 				// Get issue ID from mailItem
 				String subject = mailItem.getSubject();
-				String description = mailItem.getBody().replace("\r\n", "\n");
-
-				srv = Globals.getIssueService();
 				String issueId = srv.extractIssueIdFromMailSubject(subject);
+				
+				// Issue description from mail body.
+				String textBody = mailItem.getBody().replace("\r\n", "\n");
+				String htmlBody = mailItem.getHTMLBody();
+				String description = srv.makeIssueDescription(textBody, htmlBody); 
 
 				issue = null;
 

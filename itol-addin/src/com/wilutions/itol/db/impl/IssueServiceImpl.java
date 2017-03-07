@@ -285,5 +285,11 @@ public class IssueServiceImpl implements IssueService {
 		return null;
 	}
 
+	@Override
+	public String makeIssueDescription(String textBody, String htmlBody) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 }
