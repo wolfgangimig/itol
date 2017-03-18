@@ -199,7 +199,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	private boolean modified;
 	private MailAttachmentHelper attachmentHelper = new MailAttachmentHelper();
 	private MyWrapper inspectorOrExplorer;
-	private StandardContextMenu standardContextMenu = new StandardContextMenu();
+	private AttachmentsContextMenu attachmentsContextMenu = new AttachmentsContextMenu();
 	private static Logger log = Logger.getLogger("IssueTaskPane");
 
 	/**
@@ -887,12 +887,24 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		}
 	}
 	
+	private void addSelectedAttachmentsToBlacklist() {
+		try {
+			AttachmentTableViewHandler.addSelectedAttachmentsToBlacklist(this.getWindow(), tabAttachments);
+		} catch (Exception e) {
+			log.log(Level.WARNING, "Failed to add attachments to blacklist.", e);
+			showMessageBoxError("Failed to add attachments to blacklist.. " + e);
+		}
+	}
+	
 	private void showTabAttachmentsContextMenu(double screenX, double screenY) {
-		standardContextMenu
+		attachmentsContextMenu
 		.acceptedClipboardDataFlavors(DataFlavor.imageFlavor, DataFlavor.javaFileListFlavor)
-		.showCut(false).showCopy(!observableAttachments.isEmpty())
+		.showCut(false)
+		.showCopy(!observableAttachments.isEmpty())
+		.showAddToBlacklist(tabAttachments.getSelectionModel().getSelectedItems().size() == 1)
 		.onCopy((event) -> copySelectedAttachmentsToClipboard())
 		.onPaste((event) -> AttachmentTableViewHandler.paste(observableAttachments))
+		.onAddToBlacklist((event) -> addSelectedAttachmentsToBlacklist())
 		.show(tabAttachments, screenX, screenY);
 	}
 	

@@ -5,17 +5,26 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
+import com.wilutions.itol.db.AttachmentBlacklistItem;
 import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.MailBodyConversion;
 import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.joa.fx.ModalDialogFX;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -26,9 +35,17 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
+import javafx.util.Callback;
+import javafx.util.Duration;
 
 public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializable {
 
@@ -54,6 +71,17 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	CheckBox ckInsertIssueId;
 	@FXML
 	ChoiceBox<IdName> cbMailBody;
+	@FXML
+	Button bnRemoveFromBlacklist;
+	@FXML
+	TableView<AttachmentBlacklistItem> tvBlacklist;
+	@FXML
+	TableColumn<AttachmentBlacklistItem, String> colBlacklistName;
+	@FXML
+	TableColumn<AttachmentBlacklistItem, Long> colBlacklistSize;
+	@FXML
+	TableColumn<AttachmentBlacklistItem, String> colBlacklistHash;
+	
 
 	private AutoCompletionBinding<IdName> autoCompletionAttachMailAs;
 
@@ -73,6 +101,38 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 				return this;
 			});
 			Parent p = loader.load();
+			
+			tvBlacklist.setPlaceholder(new Label(""));
+			tvBlacklist.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+			colBlacklistName.setCellValueFactory(new PropertyValueFactory<AttachmentBlacklistItem, String>("name"));
+
+			colBlacklistHash.setCellValueFactory(new PropertyValueFactory<AttachmentBlacklistItem, String>("hash"));
+			colBlacklistHash.setVisible(false);
+
+			colBlacklistSize.setCellValueFactory(new PropertyValueFactory<AttachmentBlacklistItem, Long>("size"));
+			colBlacklistSize.setCellFactory(new Callback<TableColumn<AttachmentBlacklistItem, Long>, TableCell<AttachmentBlacklistItem, Long>>() {
+
+				@Override
+				public TableCell<AttachmentBlacklistItem, Long> call(TableColumn<AttachmentBlacklistItem, Long> item) {
+					TableCell<AttachmentBlacklistItem, Long> cell = new TableCell<AttachmentBlacklistItem, Long>() {
+						@Override
+						protected void updateItem(Long contentLength, boolean empty) {
+							super.updateItem(contentLength, empty);
+							if (contentLength != null) {
+								String str = MailAttachmentHelper.makeAttachmentSizeString(contentLength);
+								setText(str);
+							}
+						}
+					};
+					cell.setStyle("-fx-alignment: CENTER-RIGHT;");
+					return cell;
+				}
+
+			});
+
+			colBlacklistSize.setPrefWidth(100);
+			colBlacklistName.prefWidthProperty().bind(tvBlacklist.widthProperty().subtract(100 + 20));
 
 			scene = new Scene(p);
 			//scene.getStylesheets().add(getClass().getResource("TaskPane.css").toExternalForm());
@@ -163,6 +223,9 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			
 			String mailBodyConversionId = cbMailBody.getSelectionModel().getSelectedItem().getId();
 			config.setMailBodyConversion(MailBodyConversion.valueOf(mailBodyConversionId));
+
+			ObservableList<AttachmentBlacklistItem> blacklistItems = tvBlacklist.getItems();
+			config.setBlacklist(blacklistItems);
 		}
 		else {
 			edLogFile.setText(config.getLogFile());
@@ -182,6 +245,9 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			ckInsertIssueId.setSelected(config.getInjectIssueIdIntoMailSubject());
 			edExportAttachmentsDirectory.setText(config.getExportAttachmentsDirectory());
 			edAutoReplyField.setText(config.getAutoReplyField());
+			
+			ObservableList<AttachmentBlacklistItem> blacklistItems = FXCollections.observableArrayList(config.getBlacklist());
+			tvBlacklist.setItems(blacklistItems);
 		}
 	}
 
@@ -206,5 +272,21 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
         if (selectedDirectory != null) {
             edExportAttachmentsDirectory.setText(selectedDirectory.getAbsolutePath());
         }
+	}
+	
+	@FXML
+	public void onRemoveFromBlacklist() {
+		ArrayList<AttachmentBlacklistItem> allItems = new ArrayList<>(tvBlacklist.getItems());
+		for (Integer index : tvBlacklist.getSelectionModel().getSelectedIndices()) {
+			allItems.set(index, null);
+		}
+		ArrayList<AttachmentBlacklistItem> newItems = new ArrayList<>();
+		for (int i = 0; i < allItems.size(); i++) {
+			if (allItems.get(i) != null) newItems.add(allItems.get(i));
+		}
+
+		tvBlacklist.getItems().clear();
+		tvBlacklist.getItems().addAll(newItems);	
+		tvBlacklist.refresh();
 	}
 }

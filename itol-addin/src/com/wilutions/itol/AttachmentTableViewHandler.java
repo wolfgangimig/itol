@@ -11,12 +11,14 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.AttachmentBlacklistItem;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackFactory;
 
@@ -32,6 +34,7 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -39,6 +42,7 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.stage.Popup;
+import javafx.stage.Window;
 import javafx.util.Callback;
 import javafx.util.Duration;
 
@@ -461,5 +465,39 @@ public class AttachmentTableViewHandler {
         }
     }
 
+	/**
+	 * Add selected attachments to blacklist.
+	 * This attachments should not be added to an issue anymore, e.g. company logos.
+	 * For each attachment, a dialog queries for a name under which the properties of the attachment are stored in the configuration file. 
+	 */
+	public static void addSelectedAttachmentsToBlacklist(Window owner, TableView<Attachment> tabAttachments) throws Exception {
+		ResourceBundle resb = Globals.getResourceBundle();
+		for (Attachment att : tabAttachments.getSelectionModel().getSelectedItems()) {
+			TextInputDialog dialog = new TextInputDialog(att.getFileName());
+			dialog.initOwner(owner);
+			dialog.setTitle(resb.getString("menuAddToBlacklist"));
+			dialog.setHeaderText(resb.getString("menuAddToBlacklist.hint"));
+			Optional<String> selectedName = dialog.showAndWait();
+			if (!selectedName.isPresent()) break;
+			
+			// save to local file
+			att.getStream().close();
+			MailAttachmentHelper.addBlacklistItem(selectedName.get(), att.getContentLength(), att.getLocalFile());
+		}
+		
+		// Update table 
+		ArrayList<Attachment> allItems = new ArrayList<>(tabAttachments.getItems());
+		for (Integer index : tabAttachments.getSelectionModel().getSelectedIndices()) {
+			allItems.set(index, null);
+		}
+		ArrayList<Attachment> newItems = new ArrayList<>();
+		for (int i = 0; i < allItems.size(); i++) {
+			if (allItems.get(i) != null) newItems.add(allItems.get(i));
+		}
+		tabAttachments.getItems().clear();
+		tabAttachments.getItems().addAll(newItems);	
+		tabAttachments.refresh();
+	}
 
+	
 }

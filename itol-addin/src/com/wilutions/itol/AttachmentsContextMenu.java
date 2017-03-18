@@ -11,57 +11,70 @@ import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 
 /**
  * Create a context menu with Cut, Copy, Paste. 
  *
  */
-public class StandardContextMenu extends ContextMenu {
+public class AttachmentsContextMenu extends ContextMenu {
 	
 	private MenuItem menuCut;
 	private MenuItem menuCopy;
 	private MenuItem menuPaste;
+	private MenuItem menuAddToBlacklist;
 	private ResourceBundle resb;
 	private Node node;
 	private DataFlavor[] acceptedClipboardDataFlavors = {DataFlavor.javaFileListFlavor};
 
-	public StandardContextMenu() {
+	public AttachmentsContextMenu() {
 		resb = Globals.getResourceBundle();
 		menuCut = new MenuItem(resb.getString("menuCut"));
 		menuCopy = new MenuItem(resb.getString("menuCopy"));
 		menuPaste = new MenuItem(resb.getString("menuPaste"));
+		menuAddToBlacklist = new MenuItem(resb.getString("menuAddToBlacklist"));
 		
 		menuCut.setVisible(false);
-		this.getItems().addAll(menuCut, menuCopy, menuPaste);
+		this.getItems().addAll(menuCut, menuCopy, menuPaste, new SeparatorMenuItem(), menuAddToBlacklist);
 	}
 	
-	public StandardContextMenu acceptedClipboardDataFlavors(DataFlavor ... flavors) {
+	public AttachmentsContextMenu acceptedClipboardDataFlavors(DataFlavor ... flavors) {
 		acceptedClipboardDataFlavors = flavors;
 		return this;
 	}
 	
-	public StandardContextMenu showCut(boolean en) {
+	public AttachmentsContextMenu showCut(boolean en) {
 		menuCut.setVisible(en);
 		return this;
 	}
 	
-	public StandardContextMenu showCopy(boolean en) {
+	public AttachmentsContextMenu showCopy(boolean en) {
 		menuCopy.setVisible(en);
 		return this;
 	}
 	
-	public StandardContextMenu showPaste(boolean en) {
+	public AttachmentsContextMenu showPaste(boolean en) {
 		menuPaste.setVisible(en);
 		return this;
 	}
 	
-	public StandardContextMenu onCopy(EventHandler<ActionEvent> handler) {
+	public AttachmentsContextMenu showAddToBlacklist(boolean en) {
+		menuAddToBlacklist.setVisible(en);
+		return this;
+	}
+	
+	public AttachmentsContextMenu onCopy(EventHandler<ActionEvent> handler) {
 		menuCopy.setOnAction(handler);
 		return this;
 	}
 
-	public StandardContextMenu onPaste(EventHandler<ActionEvent> handler) {
+	public AttachmentsContextMenu onPaste(EventHandler<ActionEvent> handler) {
 		menuPaste.setOnAction(handler);
+		return this;
+	}
+
+	public AttachmentsContextMenu onAddToBlacklist(EventHandler<ActionEvent> handler) {
+		menuAddToBlacklist.setOnAction(handler);
 		return this;
 	}
 

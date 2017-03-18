@@ -7,8 +7,11 @@ import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -86,7 +89,12 @@ public class Config implements Serializable, Cloneable {
 	/**
 	 * Files with this extensions are always opened as text files. 
 	 */
-	private String blackExtensions = DEFAULT_BLACK_EXTENSIONS;
+	private String extensionsAlwaysOpenAsText = DEFAULT_BLACK_EXTENSIONS;
+	
+	/**
+	 * List of files that should not be added to an issue.
+	 */
+	private List<AttachmentBlacklistItem> blacklist = new ArrayList<>();
 
 	// https://www.howtogeek.com/137270/50-file-extensions-that-are-potentially-dangerous-on-windows/
 	private final static String DEFAULT_BLACK_EXTENSIONS =  
@@ -140,9 +148,10 @@ public class Config implements Serializable, Cloneable {
 		this.proxyServerPort = rhs.proxyServerPort;
 		this.taskPanePosition = rhs.taskPanePosition;
 		this.autoReplyField = rhs.autoReplyField;
-		this.blackExtensions = rhs.blackExtensions;
+		this.extensionsAlwaysOpenAsText = rhs.extensionsAlwaysOpenAsText;
 		this.maxHistoryItems = rhs.maxHistoryItems;
 		this.mailBodyConversion = rhs.mailBodyConversion;
+		this.blacklist = new ArrayList<AttachmentBlacklistItem>(rhs.blacklist);
 	}
 
 	public static <T extends Config> T read(String manufacturerName, String appName, Class<T> clazz) throws Exception {
@@ -468,14 +477,6 @@ public class Config implements Serializable, Cloneable {
 		this.autoReplyField = autoReplyField;
 	}
 
-	public String getBlackExtensions() {
-		return blackExtensions;
-	}
-
-	public void setBlackExtensions(String blackExtensions) {
-		this.blackExtensions = blackExtensions;
-	}
-
 	public String getTempDirBase() {
 		return tempDir;
 	}
@@ -508,6 +509,22 @@ public class Config implements Serializable, Cloneable {
 		this.mailBodyConversion = mailBodyConversion;
 	}
 
+	public List<AttachmentBlacklistItem> getBlacklist() {
+		return blacklist;
+	}
+
+	public void setBlacklist(List<AttachmentBlacklistItem> blacklist) {
+		this.blacklist = blacklist;
+	}
+
+	public String getExtensionsAlwaysOpenAsText() {
+		return extensionsAlwaysOpenAsText;
+	}
+
+	public void setExtensionsAlwaysOpenAsText(String extensionsAlwaysOpenAsText) {
+		this.extensionsAlwaysOpenAsText = extensionsAlwaysOpenAsText;
+	}
+
 	
-	
+
 }

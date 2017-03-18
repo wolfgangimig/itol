@@ -9,7 +9,7 @@
    <children>
       <TabPane>
          <tabs>
-            <Tab closable="false" text="Mail to Issue">
+            <Tab closable="false" text="%DlgConfigure.MailToIssue">
                <content>
                   <GridPane hgap="10.0" prefHeight="441.0" prefWidth="651.0" vgap="10.0" VBox.vgrow="ALWAYS">
                     <columnConstraints>
@@ -55,7 +55,35 @@
                   </GridPane>
                </content>
             </Tab>
-            <Tab closable="false" text="Export">
+            <Tab closable="false" text="%DlgConfigure.Attachments">
+               <content>
+                  <VBox prefHeight="200.0" prefWidth="100.0" spacing="10.0">
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                     <children>
+                        <Label text="%DlgConfigure.Attachments.blacklist" />
+                        <HBox spacing="10.0">
+                           <children>
+                              <TableView fx:id="tvBlacklist" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                                <columns>
+                                  <TableColumn fx:id="colBlacklistName" editable="false" prefWidth="75.0" text="%DlgConfigure.Attachments.blacklist.name" />
+                                  <TableColumn fx:id="colBlacklistSize" editable="false" prefWidth="75.0" text="%DlgConfigure.Attachments.blacklist.size" />
+                                    <TableColumn fx:id="colBlacklistHash" editable="false" prefWidth="76.0" text="%DlgConfigure.Attachments.blacklist.hash" />
+                                </columns>
+                              </TableView>
+                              <VBox spacing="10.0">
+                                 <children>
+                                    <Button fx:id="bnRemoveFromBacklist" mnemonicParsing="false" onAction="#onRemoveFromBlacklist" prefWidth="100.0" text="%DlgConfigure.Attachments.blacklist.remove" />
+                                 </children>
+                              </VBox>
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </content>
+            </Tab>
+            <Tab closable="false" text="%DlgConfigure.Export">
               <content>
                   <GridPane hgap="10.0" layoutX="158.0" layoutY="135.0" vgap="10.0">
                     <columnConstraints>
@@ -87,7 +115,7 @@
                   </GridPane>
               </content>
             </Tab>
-            <Tab closable="false" text="Logging">
+            <Tab closable="false" text="%DlgConfigure.Logging">
                <content>
                   <GridPane hgap="10.0" vgap="10.0">
                     <columnConstraints>

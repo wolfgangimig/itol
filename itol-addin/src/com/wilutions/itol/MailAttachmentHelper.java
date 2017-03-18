@@ -11,7 +11,9 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -22,8 +24,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.xml.bind.DatatypeConverter;
+
 import com.wilutions.com.Dispatch;
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.AttachmentBlacklistItem;
 import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
@@ -46,7 +51,13 @@ public class MailAttachmentHelper {
 	public MailAttachmentHelper() {
 	}
 
-	public void initialUpdate(IssueMailItem mailItem, Issue issue) throws IOException {
+	/**
+	 * Convert email attachments to issue attachments.
+	 * @param mailItem
+	 * @param issue
+	 * @throws Exception
+	 */
+	public void initialUpdate(IssueMailItem mailItem, Issue issue) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("initialUpdate(mailItem=" + mailItem + ", issue=" + issue);
 		releaseResources();
 
@@ -68,7 +79,7 @@ public class MailAttachmentHelper {
 		return __tempDir;
 	}
 
-	private void initialUpdateNewIssueAttachments(IssueMailItem mailItem, Issue issue) throws IOException {
+	private void initialUpdateNewIssueAttachments(IssueMailItem mailItem, Issue issue) throws Exception {
 
 		if (mailItem.getBody().length() != 0) {
 			String ext = getConfigMsgFileExt();
@@ -101,7 +112,9 @@ public class MailAttachmentHelper {
 						com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
 						MailAttAtt attatt = new MailAttAtt(matt);
 						attatt.setLastModified(mailItem.getReceivedTime());
-						attachments.add(attatt);
+						if (!isBlacklistAttachment(attatt)) {
+							attachments.add(attatt);
+						}
 					}
 				}
 				
@@ -109,7 +122,7 @@ public class MailAttachmentHelper {
 			}
 		}
 	}
-
+	
 	public Attachment makeMailAttachment(IssueMailItem mailItem) throws IOException {
 		String ext = getConfigMsgFileExt();
 		MailAtt mailAtt = new MailAtt(mailItem, ext);
@@ -337,10 +350,11 @@ public class MailAttachmentHelper {
 
 					super.setContentLength(msgFile.length());
 					super.setUrl(msgFile.toURI().toString());
+					super.setLocalFile(msgFile);
 				}
 			}
 			catch (Exception e) {
-				e.printStackTrace();
+				log.log(Level.SEVERE, "Failed to save attachment=" + this + " to local file.", e);
 			}
 
 			return msgFile;
@@ -372,7 +386,7 @@ public class MailAttachmentHelper {
 				ret = new FileInputStream(getLocalFile());
 			}
 			catch (FileNotFoundException e) {
-				e.printStackTrace();
+				log.log(Level.SEVERE, "Failed to get stream for attachment=" + this, e);
 			}
 			return ret;
 		}
@@ -856,4 +870,49 @@ public class MailAttachmentHelper {
 		return ret;
 	}
 
+	public static String getFileChecksum(File file) throws Exception {
+		byte[] b = Files.readAllBytes(Paths.get(file.toURI()));
+		byte[] hash = MessageDigest.getInstance("MD5").digest(b);
+		String ret = DatatypeConverter.printHexBinary(hash);
+		return ret;
+	}
+
+	private boolean isBlacklistAttachment(Attachment att) throws Exception {
+		boolean ret = false;
+		long size = att.getContentLength();
+		for (AttachmentBlacklistItem blackItem : Globals.getAppInfo().getConfig().getBlacklist()) {
+			
+			// For performance reasons, check the size first before saving the attachment and 
+			// computing the MD5 hash. 
+			// Since the file size returned from Outlook is a bit larger than the real file size,
+			// we cannot check of equal size. We have to add a tolerance.
+			
+			if (Math.abs(blackItem.getSize() - size) < 10000) {
+				
+				att.getStream().close(); // save attachment to local file
+				String hash = MailAttachmentHelper.getFileChecksum(att.getLocalFile());
+				ret = hash.equals(blackItem.getHash());
+				if (ret) break;
+			}
+		}
+		return ret;
+	}
+
+	public static void addBlacklistItem(String name, long size, File file) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addBlacklistItem(" + file);
+		String hash = MailAttachmentHelper.getFileChecksum(file);
+		AttachmentBlacklistItem item = new AttachmentBlacklistItem(name, size, hash);
+		if (log.isLoggable(Level.INFO)) log.info("Add blacklist item=" + item);
+		
+		boolean found = false;
+		for (AttachmentBlacklistItem blackItem : Globals.getAppInfo().getConfig().getBlacklist()) {
+			found = blackItem.getHash().equals(hash);
+			if (found) break;
+		}
+		
+		if (!found) {
+			Globals.getAppInfo().getConfig().getBlacklist().add(item);
+		}
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")addBlacklistItem");
+	}
 }

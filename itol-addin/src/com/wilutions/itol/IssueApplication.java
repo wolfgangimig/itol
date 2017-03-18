@@ -167,7 +167,7 @@ public class IssueApplication extends AddinApplication {
 
 	private static boolean isPotentiallyDangerousFile(File file) {
 		String ext_1 = MailAttachmentHelper.getFileExt(file.getName()).toLowerCase() + ".";
-		return Globals.getAppInfo().getConfig().getBlackExtensions().contains(ext_1);
+		return Globals.getAppInfo().getConfig().getExtensionsAlwaysOpenAsText().contains(ext_1);
 	}
 
 }

@@ -11,16 +11,9 @@
 package com.wilutions.itol;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
-
-import javax.xml.bind.DatatypeConverter;
 
 import com.wilutions.com.IDispatch;
 import com.wilutions.mslib.outlook.Attachment;
@@ -38,7 +31,7 @@ public class MailExport {
 		tempDir.mkdirs();
 	}
 
-	public String export(MailItem mailItem) throws IOException {
+	public String export(MailItem mailItem) throws Exception {
 
 		long id = rand.nextLong();
 		File itemDir = new File(tempDir, Long.toHexString(id));
@@ -72,7 +65,7 @@ public class MailExport {
 			att.SaveAsFile(attFile.getAbsolutePath());
 
 			// Is attachment embedded in mail body?
-			String attChecksum = getFileChecksum(attFile);
+			String attChecksum = MailAttachmentHelper.getFileChecksum(attFile);
 			if (refsChecksums.contains(attChecksum)) {
 				attFile.delete();
 			}
@@ -81,19 +74,7 @@ public class MailExport {
 		return itemDir.getAbsolutePath();
 	}
 
-	private String getFileChecksum(File file) throws IOException {
-		String ret = "";
-		try {
-			byte[] b = Files.readAllBytes(Paths.get(file.toURI()));
-			byte[] hash = MessageDigest.getInstance("MD5").digest(b);
-			ret = DatatypeConverter.printHexBinary(hash);
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
-		return ret;
-	}
-
-	private Set<String> getRefsChecksums(File itemDir) throws IOException {
+	private Set<String> getRefsChecksums(File itemDir) throws Exception {
 		File[] itemRefs = null;
 		File[] itemFiles = itemDir.listFiles();
 		File itemRefsDir = null;
@@ -106,7 +87,7 @@ public class MailExport {
 		itemRefs = itemRefsDir != null ? itemRefsDir.listFiles() : new File[0];
 		Set<String> ret = new HashSet<String>(itemRefs.length);
 		for (File f : itemRefs) {
-			String hash = getFileChecksum(f);
+			String hash = MailAttachmentHelper.getFileChecksum(f);
 			ret.add(hash);
 		}
 		return ret;
