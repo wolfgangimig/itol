@@ -5,70 +5,115 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.DlgConfigure">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="340.0" prefWidth="651.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.DlgConfigure">
    <children>
-      <GridPane hgap="10.0" prefHeight="135.0" prefWidth="566.0" vgap="10.0" VBox.vgrow="ALWAYS">
-        <columnConstraints>
-          <ColumnConstraints hgrow="SOMETIMES" maxWidth="400.0" minWidth="10.0" prefWidth="337.0" />
-          <ColumnConstraints hgrow="ALWAYS" maxWidth="559.0" minWidth="10.0" prefWidth="559.0" />
-        </columnConstraints>
-        <rowConstraints>
-          <RowConstraints vgrow="ALWAYS" />
-            <RowConstraints vgrow="ALWAYS" />
-            <RowConstraints vgrow="ALWAYS" />
-            <RowConstraints vgrow="ALWAYS" />
-            <RowConstraints vgrow="ALWAYS" />
-          <RowConstraints vgrow="ALWAYS" />
-          <RowConstraints vgrow="ALWAYS" />
-        </rowConstraints>
-         <children>
-
-            <Label text="%DlgConfigure.MailSubject" GridPane.rowIndex="0" />
-            <CheckBox fx:id="ckInsertIssueId" mnemonicParsing="false" text="%DlgConfigure.ckIssueIdIntoMailSubject" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-
-            <Label text="%DlgConfigure.MailBody" GridPane.rowIndex="1" />
-            <ChoiceBox fx:id="cbMailBody" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.hgrow="ALWAYS" />
-
-            <Label text="%DlgConfigure.AttachMailAs" GridPane.valignment="TOP" GridPane.rowIndex="2" />
-            <VBox GridPane.columnIndex="1" GridPane.rowIndex="2">
-               <children>
-                  <ComboBox fx:id="cbAttachMailAs" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" />
-                  <Label text="%DlgConfigure.AttachMailAs.tooltip" wrapText="true" VBox.vgrow="ALWAYS" />
-               </children>
-            </VBox>
-
-            <Label text="%DlgConfigure.AutoReplyAddressField" GridPane.rowIndex="3" GridPane.valignment="TOP" />
-            <VBox GridPane.columnIndex="1" GridPane.rowIndex="3">
-               <children>
-                  <TextField fx:id="edAutoReplyField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                  <Label text="%DlgConfigure.AutoReplyAddressField.tooltip" wrapText="true" />
-               </children>
-            </VBox>
-            <Label text="%DlgConfigure.ExportAttachmentsDir" wrapText="true" GridPane.rowIndex="4" GridPane.valignment="TOP" />
-            <VBox GridPane.columnIndex="1" GridPane.rowIndex="4">
-               <children>
-                  <HBox spacing="4.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+      <TabPane>
+         <tabs>
+            <Tab closable="false" text="Mail to Issue">
+               <content>
+                  <GridPane hgap="10.0" prefHeight="441.0" prefWidth="651.0" vgap="10.0" VBox.vgrow="ALWAYS">
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="NEVER" minWidth="10.0" prefWidth="300.0" />
+                      <ColumnConstraints hgrow="ALWAYS" maxWidth="559.0" minWidth="10.0" prefWidth="559.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints vgrow="SOMETIMES" />
+                        <RowConstraints vgrow="SOMETIMES" />
+                        <RowConstraints vgrow="ALWAYS" />
+                        <RowConstraints vgrow="ALWAYS" />
+                    </rowConstraints>
                      <children>
-                        <TextField fx:id="edExportAttachmentsDirectory" GridPane.columnIndex="1" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
-                        <Button mnemonicParsing="false" onAction="#onChooseExportAttachmentsDirectory" text="..." />
+            
+                        <Label text="%DlgConfigure.MailSubject" GridPane.rowIndex="0" />
+                        <CheckBox fx:id="ckInsertIssueId" mnemonicParsing="false" text="%DlgConfigure.ckIssueIdIntoMailSubject" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+            
+                        <Label text="%DlgConfigure.MailBody" GridPane.rowIndex="1" />
+                        <ChoiceBox fx:id="cbMailBody" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" />
+            
+                        <Label text="%DlgConfigure.AttachMailAs" wrapText="true" GridPane.rowIndex="2" GridPane.valignment="TOP" />
+                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="2">
+                           <children>
+                              <ComboBox fx:id="cbAttachMailAs" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" />
+                              <Label text="%DlgConfigure.AttachMailAs.tooltip" wrapText="true" VBox.vgrow="ALWAYS" />
+                           </children>
+                        </VBox>
+            
+                        <Label text="%DlgConfigure.AutoReplyAddressField" wrapText="true" GridPane.rowIndex="3" GridPane.valignment="TOP" />
+                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="3">
+                           <children>
+                              <TextField fx:id="edAutoReplyField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                              <Label text="%DlgConfigure.AutoReplyAddressField.tooltip" wrapText="true" />
+                           </children>
+                        </VBox>
                      </children>
-                  </HBox>
-                  <Label text="%DlgConfigure.ExportAttachmentsDir.tooltip" wrapText="true" />
-               </children>
-            </VBox>
-            <Label text="%DlgConfigure.LogFile" GridPane.rowIndex="5" />
-            <TextField fx:id="edLogFile" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-            <Label text="%DlgConfigure.LogLevel" GridPane.rowIndex="6" />
-            <ChoiceBox fx:id="cbLogLevel" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="6" />
-         </children>
-         <padding>
-            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-         </padding>
-         <VBox.margin>
-            <Insets />
-         </VBox.margin>
-      </GridPane>
-      <HBox alignment="CENTER_RIGHT" prefHeight="13.0" prefWidth="566.0" spacing="10.0" VBox.vgrow="NEVER">
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                     <VBox.margin>
+                        <Insets />
+                     </VBox.margin>
+                  </GridPane>
+               </content>
+            </Tab>
+            <Tab closable="false" text="Export">
+              <content>
+                  <GridPane hgap="10.0" layoutX="158.0" layoutY="135.0" vgap="10.0">
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="NEVER" maxWidth="257.0" minWidth="10.0" prefWidth="192.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="459.0" minWidth="10.0" prefWidth="459.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints vgrow="ALWAYS" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                     <children>
+                        <Label text="%DlgConfigure.ExportAttachmentsDir" wrapText="true" GridPane.valignment="TOP" />
+                        <VBox GridPane.columnIndex="1">
+                           <children>
+                              <HBox spacing="4.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                                 <children>
+                                    <TextField fx:id="edExportAttachmentsDirectory" GridPane.columnIndex="1" GridPane.rowIndex="2" HBox.hgrow="ALWAYS" />
+                                    <Button mnemonicParsing="false" onAction="#onChooseExportAttachmentsDirectory" text="..." />
+                                 </children>
+                              </HBox>
+                              <Label text="%DlgConfigure.ExportAttachmentsDir.tooltip" wrapText="true" />
+                           </children>
+                        </VBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </GridPane>
+              </content>
+            </Tab>
+            <Tab closable="false" text="Logging">
+               <content>
+                  <GridPane hgap="10.0" vgap="10.0">
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="NEVER" maxWidth="293.0" minWidth="10.0" prefWidth="197.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="473.0" minWidth="10.0" prefWidth="454.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints vgrow="NEVER" />
+                      <RowConstraints vgrow="NEVER" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                     <children>
+                        <Label text="%DlgConfigure.LogFile" />
+                        <TextField fx:id="edLogFile" GridPane.columnIndex="1" HBox.hgrow="ALWAYS" />
+                        <Label text="%DlgConfigure.LogLevel" GridPane.rowIndex="1" />
+                        <ChoiceBox fx:id="cbLogLevel" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </GridPane>
+               </content>
+            </Tab>
+         </tabs>
+      </TabPane>
+      <HBox alignment="CENTER_RIGHT" prefHeight="67.0" prefWidth="651.0" spacing="10.0" VBox.vgrow="NEVER">
          <children>
             <Button fx:id="bnOK" defaultButton="true" mnemonicParsing="false" onAction="#onOK" prefWidth="100.0" text="%Button.OK" />
             <Button fx:id="bnCancel" cancelButton="true" mnemonicParsing="false" onAction="#onCancel" prefWidth="100.0" text="%Button.Cancel" />

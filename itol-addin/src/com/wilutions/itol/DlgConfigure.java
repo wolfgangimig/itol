@@ -75,7 +75,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			Parent p = loader.load();
 
 			scene = new Scene(p);
-			scene.getStylesheets().add(getClass().getResource("TaskPane.css").toExternalForm());
+			//scene.getStylesheets().add(getClass().getResource("TaskPane.css").toExternalForm());
 
 			return scene;
 		}
