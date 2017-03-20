@@ -53,6 +53,31 @@ public class Config implements Serializable, Cloneable {
 	 * User configuration file name.
 	 */
 	public final static String CONFIG_FILE_USER = "user.json";
+
+	/**
+	 * Placeholder for export directory.
+	 * Pass this placehoder to {@link #exportAttachmentsProgram} to reference the export directory.
+	 */
+	public final static String PLACEHODER_EXPORT_DIRECTORY = "${export.dir}";
+
+	/**
+	 * Placeholder for project ID.
+	 * Pass this placehoder to {@link #exportAttachmentsProgram} to reference the project ID.
+	 */
+	public final static String PLACEHODER_PROJECT_ID = "${project.id}";
+
+	/**
+	 * Placeholder for issue ID.
+	 * Pass this placehoder to {@link #exportAttachmentsProgram} to reference the issue ID.
+	 */
+	public final static String PLACEHODER_ISSUE_ID = "${issue.id}";
+
+	/**
+	 * Default export program.
+	 * This program is executed by default when attachments are exported.
+	 */
+	public final static String EXPORT_PROROGRAM_DEFAULT = "\"C:\\Windows\\explorer.exe\" " + PLACEHODER_EXPORT_DIRECTORY;
+	
 	
 	private transient String manufacturerName;
 	private transient String appName;
@@ -87,6 +112,11 @@ public class Config implements Serializable, Cloneable {
 	private String autoReplyField = "";
 	
 	/**
+	 * Start this program after attachments have been exported.
+	 */
+	private String exportAttachmentsProgram = "";
+	
+	/**
 	 * Files with this extensions are always opened as text files. 
 	 */
 	private String extensionsAlwaysOpenAsText = DEFAULT_BLACK_EXTENSIONS;
@@ -115,6 +145,7 @@ public class Config implements Serializable, Cloneable {
 		tempDir = new File(System.getProperty("java.io.tmpdir"), "ITOL").getAbsolutePath();
 		logFile = new File(System.getProperty("java.io.tmpdir"), "itol.log").getAbsolutePath();
 		exportAttachmentsDirectory = new File(tempDir, "Export").getAbsolutePath();
+		exportAttachmentsProgram = EXPORT_PROROGRAM_DEFAULT;
 		userName = proxyServerUserName = System.getProperty("user.name");
 		taskPanePosition = new TaskPanePosition();
 	}
@@ -152,6 +183,7 @@ public class Config implements Serializable, Cloneable {
 		this.maxHistoryItems = rhs.maxHistoryItems;
 		this.mailBodyConversion = rhs.mailBodyConversion;
 		this.blacklist = new ArrayList<AttachmentBlacklistItem>(rhs.blacklist);
+		this.exportAttachmentsProgram = rhs.exportAttachmentsProgram;
 	}
 
 	public static <T extends Config> T read(String manufacturerName, String appName, Class<T> clazz) throws Exception {
@@ -523,6 +555,14 @@ public class Config implements Serializable, Cloneable {
 
 	public void setExtensionsAlwaysOpenAsText(String extensionsAlwaysOpenAsText) {
 		this.extensionsAlwaysOpenAsText = extensionsAlwaysOpenAsText;
+	}
+
+	public String getExportAttachmentsProgram() {
+		return exportAttachmentsProgram;
+	}
+
+	public void setExportAttachmentsProgram(String exportAttachmentsProgram) {
+		this.exportAttachmentsProgram = exportAttachmentsProgram;
 	}
 
 	

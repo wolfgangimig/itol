@@ -29,6 +29,7 @@ import javax.xml.bind.DatatypeConverter;
 import com.wilutions.com.Dispatch;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.AttachmentBlacklistItem;
+import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
@@ -689,11 +690,40 @@ public class MailAttachmentHelper {
 
 		// Open export directory in Windows Explorer 
 		if (!cb.isCancelled()) {
-			String url = exportDirectory.toURI().toString();
-			IssueApplication.showDocument(url);
+			openExportDirectory(issue, exportDirectory);
 		}
 
 		if (log.isLoggable(Level.FINE)) log.fine(")exportAttachments");
+	}
+	
+	/**
+	 * Open export directory by configured program.
+	 * @param issue
+	 * @param exportDirectory
+	 * @throws Exception
+	 */
+	private void openExportDirectory(Issue issue, File exportDirectory) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.fine("openExportDirectory(issue=" + issue + ", exportDirectory=" + exportDirectory);
+		String exportProgram = Globals.getAppInfo().getConfig().getExportAttachmentsProgram();
+		if (Default.value(exportProgram).isEmpty()) {
+			String url = exportDirectory.toURI().toString();
+			IssueApplication.showDocument(url);
+		}
+		else {
+			String cmd = exportProgram
+					.replace(Config.PLACEHODER_EXPORT_DIRECTORY, "\"" + exportDirectory + "\"")
+					.replace(Config.PLACEHODER_ISSUE_ID, issue.getId())
+					.replace(Config.PLACEHODER_ISSUE_ID, issue.getProject().getId());
+			try {
+				log.info("Open export directory: " + cmd); 
+				Runtime.getRuntime().exec(cmd);
+			} catch (Exception e) {
+				log.log(Level.WARNING, "Failed to open export directory.", e);
+				throw e;
+			}
+
+		}
+		if (log.isLoggable(Level.FINE)) log.fine(")openExportDirectory");
 	}
 
 	/**

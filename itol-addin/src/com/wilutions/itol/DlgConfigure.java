@@ -81,7 +81,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	TableColumn<AttachmentBlacklistItem, Long> colBlacklistSize;
 	@FXML
 	TableColumn<AttachmentBlacklistItem, String> colBlacklistHash;
-	
+	@FXML
+	TextField edExportAttachmentsProgram;
 
 	private AutoCompletionBinding<IdName> autoCompletionAttachMailAs;
 
@@ -190,6 +191,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 		cbMailBody.getItems().add(new IdName(MailBodyConversion.TEXT.toString(), resb.getString("DlgConfigure.MailBody.text")));
 		cbMailBody.getSelectionModel().select(0);
 
+		edExportAttachmentsProgram.setPromptText(Config.EXPORT_PROROGRAM_DEFAULT);
+		
 		updateData(false);
 	}
 
@@ -226,6 +229,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 
 			ObservableList<AttachmentBlacklistItem> blacklistItems = tvBlacklist.getItems();
 			config.setBlacklist(blacklistItems);
+			
+			config.setExportAttachmentsProgram(edExportAttachmentsProgram.getText());
 		}
 		else {
 			edLogFile.setText(config.getLogFile());
@@ -248,6 +253,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			
 			ObservableList<AttachmentBlacklistItem> blacklistItems = FXCollections.observableArrayList(config.getBlacklist());
 			tvBlacklist.setItems(blacklistItems);
+			
+			edExportAttachmentsProgram.setText(config.getExportAttachmentsProgram());
 		}
 	}
 
