@@ -898,10 +898,10 @@ public class MailAttachmentHelper {
 		return ret;
 	}
 
-	public static void addBlacklistItem(String name, long size, File file) throws Exception {
+	public static void addBlacklistItem(String name, File file) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "addBlacklistItem(" + file);
 		String hash = MailAttachmentHelper.getFileChecksum(file);
-		AttachmentBlacklistItem item = new AttachmentBlacklistItem(name, size, hash);
+		AttachmentBlacklistItem item = new AttachmentBlacklistItem(name, file.length(), hash);
 		if (log.isLoggable(Level.INFO)) log.info("Add blacklist item=" + item);
 		
 		boolean found = false;

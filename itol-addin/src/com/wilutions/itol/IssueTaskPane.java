@@ -880,7 +880,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	
 	private void copySelectedAttachmentsToClipboard() {
 		try {
-			AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, createProgressCallback("Copy attachmnts to clipboard"));
+			AttachmentTableViewHandler.copy(tabAttachments, attachmentHelper, createProgressCallback("Copy attachments to clipboard"));
 		} catch (Exception e) {
 			log.log(Level.WARNING, "Failed to copy attachments.", e);
 			showMessageBoxError("Failed to copy attachments. " + e);
@@ -889,7 +889,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	
 	private void addSelectedAttachmentsToBlacklist() {
 		try {
-			AttachmentTableViewHandler.addSelectedAttachmentsToBlacklist(this.getWindow(), tabAttachments);
+			AttachmentTableViewHandler.addSelectedAttachmentsToBlacklist(this.getWindow(), attachmentHelper,  createProgressCallback("Add attachments to blacklist"), tabAttachments);
 		} catch (Exception e) {
 			log.log(Level.WARNING, "Failed to add attachments to blacklist.", e);
 			showMessageBoxError("Failed to add attachments to blacklist.. " + e);

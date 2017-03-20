@@ -6,6 +6,7 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -18,7 +19,6 @@ import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
 import com.wilutions.itol.db.Attachment;
-import com.wilutions.itol.db.AttachmentBlacklistItem;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackFactory;
 
@@ -427,17 +427,22 @@ public class AttachmentTableViewHandler {
 
 	public static void copy(TableView<Attachment> table, MailAttachmentHelper attachmentHelper, ProgressCallback cb) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("copy(");
-		// http://stackoverflow.com/questions/31798646/can-java-system-clipboard-copy-a-file
-		final String FILE_URL_PREFIX = MailAttachmentHelper.FILE_URL_PREFIX;
-		List<File> files = new ArrayList<File>();
-		for (Attachment att : table.getSelectionModel().getSelectedItems()) {
-			String fileName = attachmentHelper.downloadAttachment(att, cb);
-			if (fileName.isEmpty()) continue;
-			if (fileName.startsWith(FILE_URL_PREFIX)) fileName = fileName.substring(FILE_URL_PREFIX.length());
-			files.add(new File(fileName));
+		try {
+			// http://stackoverflow.com/questions/31798646/can-java-system-clipboard-copy-a-file
+			final String FILE_URL_PREFIX = MailAttachmentHelper.FILE_URL_PREFIX;
+			List<File> files = new ArrayList<File>();
+			for (Attachment att : table.getSelectionModel().getSelectedItems()) {
+				String fileName = attachmentHelper.downloadAttachment(att, cb);
+				if (fileName.isEmpty()) continue;
+				if (fileName.startsWith(FILE_URL_PREFIX)) fileName = fileName.substring(FILE_URL_PREFIX.length());
+				files.add(new File(fileName));
+			}
+			FileTransferable ft = new FileTransferable(files);
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ft, null);
 		}
-		FileTransferable ft = new FileTransferable(files);
-		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ft, null);
+		finally {
+			cb.setFinished();
+		}
 		if (log.isLoggable(Level.FINE)) log.fine(")copy");
 	}
 	
@@ -470,33 +475,38 @@ public class AttachmentTableViewHandler {
 	 * This attachments should not be added to an issue anymore, e.g. company logos.
 	 * For each attachment, a dialog queries for a name under which the properties of the attachment are stored in the configuration file. 
 	 */
-	public static void addSelectedAttachmentsToBlacklist(Window owner, TableView<Attachment> tabAttachments) throws Exception {
-		ResourceBundle resb = Globals.getResourceBundle();
-		for (Attachment att : tabAttachments.getSelectionModel().getSelectedItems()) {
-			TextInputDialog dialog = new TextInputDialog(att.getFileName());
-			dialog.initOwner(owner);
-			dialog.setTitle(resb.getString("menuAddToBlacklist"));
-			dialog.setHeaderText(resb.getString("menuAddToBlacklist.hint"));
-			Optional<String> selectedName = dialog.showAndWait();
-			if (!selectedName.isPresent()) break;
+	public static void addSelectedAttachmentsToBlacklist(Window owner, MailAttachmentHelper attachmentHelper, ProgressCallback cb, TableView<Attachment> tabAttachments) throws Exception {
+		try {
+			ResourceBundle resb = Globals.getResourceBundle();
+			for (Attachment att : tabAttachments.getSelectionModel().getSelectedItems()) {
+				TextInputDialog dialog = new TextInputDialog(att.getFileName());
+				dialog.initOwner(owner);
+				dialog.setTitle(resb.getString("menuAddToBlacklist"));
+				dialog.setHeaderText(resb.getString("menuAddToBlacklist.hint"));
+				Optional<String> selectedName = dialog.showAndWait();
+				if (!selectedName.isPresent()) break;
+				
+				String uri = attachmentHelper.downloadAttachment(att, cb);
+				File localFile = new File(new URI(uri));
+				MailAttachmentHelper.addBlacklistItem(selectedName.get(), localFile);
+			}
 			
-			// save to local file
-			att.getStream().close();
-			MailAttachmentHelper.addBlacklistItem(selectedName.get(), att.getContentLength(), att.getLocalFile());
+			// Update table 
+			ArrayList<Attachment> allItems = new ArrayList<>(tabAttachments.getItems());
+			for (Integer index : tabAttachments.getSelectionModel().getSelectedIndices()) {
+				allItems.set(index, null);
+			}
+			ArrayList<Attachment> newItems = new ArrayList<>();
+			for (int i = 0; i < allItems.size(); i++) {
+				if (allItems.get(i) != null) newItems.add(allItems.get(i));
+			}
+			tabAttachments.getItems().clear();
+			tabAttachments.getItems().addAll(newItems);	
+			tabAttachments.refresh();
 		}
-		
-		// Update table 
-		ArrayList<Attachment> allItems = new ArrayList<>(tabAttachments.getItems());
-		for (Integer index : tabAttachments.getSelectionModel().getSelectedIndices()) {
-			allItems.set(index, null);
+		finally {
+			cb.setFinished();
 		}
-		ArrayList<Attachment> newItems = new ArrayList<>();
-		for (int i = 0; i < allItems.size(); i++) {
-			if (allItems.get(i) != null) newItems.add(allItems.get(i));
-		}
-		tabAttachments.getItems().clear();
-		tabAttachments.getItems().addAll(newItems);	
-		tabAttachments.refresh();
 	}
 
 	
