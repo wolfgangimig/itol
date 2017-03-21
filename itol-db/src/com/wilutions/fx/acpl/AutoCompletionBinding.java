@@ -1,6 +1,5 @@
 package com.wilutions.fx.acpl;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.wilutions.itol.db.Suggest;

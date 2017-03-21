@@ -34,6 +34,7 @@ public class IssueEditorWebView implements IssuePropertyEditor {
 		this.elementId = elementId;
 	}
 	
+	@SuppressWarnings("unused")
 	private JSObject getTextarea() {
 		JSObject elm = null;
 		String elementId = getElementId();
