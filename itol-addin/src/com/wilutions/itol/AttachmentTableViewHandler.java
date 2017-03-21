@@ -108,25 +108,31 @@ public class AttachmentTableViewHandler {
 
 					// Constructor
 					{
+						// Show tooltip if mouse enters this cell.
+						// Premission: the table has the input focus. This makes it easier to 
+						// be notified, if another application window has been moved to foreground (ALT-TAB).
+						// The fousedProperty listener below hides the tooltip, if the table
+						// looses the focus.
 						this.setOnMouseEntered((event) -> {
+							Attachment attachment = (Attachment)getTableRow().getItem();
+							if (attachment != null && table.isFocused()) { 
+								// System.out.println("Enter attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
+								activeTooltip.handleMouseEnter(attachment, tooltip, event.getScreenX(), event.getScreenY());
+							}
+						});
+						this.setOnMouseClicked((event) -> {
 							Attachment attachment = (Attachment)getTableRow().getItem();
 							if (attachment != null) { 
 								// System.out.println("Enter attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
 								activeTooltip.handleMouseEnter(attachment, tooltip, event.getScreenX(), event.getScreenY());
 							}
 						});
+						// Hide tooltip if mouse leaves this cell 
 						this.setOnMouseExited((event) -> {
 							Attachment attachment = (Attachment)getTableRow().getItem();
 							if (attachment != null) { 
 								// System.out.println("Exit attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
 								activeTooltip.handleMouseExit(tooltip);
-							}
-						});
-						this.setOnMouseClicked((event) -> {
-							Attachment attachment = (Attachment)getTableRow().getItem();
-							if (attachment != null) { 
-								// System.out.println("Hide attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
-								activeTooltip.hide(tooltip);
 							}
 						});
 					}
@@ -261,7 +267,15 @@ public class AttachmentTableViewHandler {
 
 		});
 
+		///////////////////////////
+		// Hide tooltip if focus lost
+		table.focusedProperty().addListener((property, oldValue, newValue) -> {
+			if (!newValue) {
+				activeTooltip.hide();
+			}
+		});
 	
+
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] apply(observableAttachments=" + observableAttachments + ")");
 	}
@@ -379,6 +393,10 @@ public class AttachmentTableViewHandler {
 				// System.out.println("h.hide oldTooltip=" + System.identityHashCode(oldTooltip));
 				oldTooltip.hide();
 			}
+		}
+		
+		public void hide() {
+			tooltip.hide();
 		}
 	}
 	
