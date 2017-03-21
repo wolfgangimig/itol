@@ -14,7 +14,7 @@ public class ISODate {
 		String iso = null;
 		if (ldate != null) {
 			Date date = Date.from(ldate.atZone(ZoneId.systemDefault()).toInstant());
-			iso = dateTimeFormat.format(date);
+			iso = toISO(date);
 		}
 		return iso;
 	}
@@ -33,4 +33,13 @@ public class ISODate {
 		}
 		return ldate;
 	}
+
+	public static String toISO(Date date) {
+		String iso = null;
+		if (date != null) {
+			iso = dateTimeFormat.format(date);
+		}
+		return iso;
+	}
+
 }
