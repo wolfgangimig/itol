@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.fxml.JavaFXBuilderFactory;
+import javafx.scene.Cursor;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Hyperlink;
@@ -33,7 +34,7 @@ public class DlgAbout implements Initializable {
 	Label lbProgramVersion;
 	@FXML
 	TableView<About3rdPartyLib> tv3rdPartyLibs;
-	
+		
 	Stage stage;
 	
 	public static void show(Window owner) {
@@ -128,4 +129,13 @@ public class DlgAbout implements Initializable {
 		this.stage.close();
 	}
 
+	@FXML
+	private void onLogoEntered() {
+		this.stage.getScene().setCursor(Cursor.HAND);
+	}
+
+	@FXML
+	private void onLogoExited() {
+		this.stage.getScene().setCursor(Cursor.DEFAULT);
+	}
 }

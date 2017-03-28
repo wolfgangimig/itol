@@ -49,6 +49,10 @@ public class Globals {
 
 	public static void setAppInfo(AppInfo config) {
 		appInfo = config;
+		
+		// Set DDAddin product name. It finds the license key under 
+		// HKCU/Software/WILUTIONS/productName/License
+		DDAddinDll.setProductName(config.getAppName());
 	}
 
 	protected static void setThisAddin(OutlookAddinEx addin) {
