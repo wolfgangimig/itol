@@ -10,7 +10,6 @@ import com.wilutions.com.reg.RegUtil;
 public class License {
 	
 	private final static String MANUFACTURER = "WILUTIONS";
-	private final static String PRODUCT = "ITOL";
 
 	public static boolean install(String licenseKey, boolean userNotMachine) {
 		boolean succ = DDAddinDll.install(licenseKey, userNotMachine);
@@ -29,8 +28,9 @@ public class License {
 	}
 	
 	private static String getProductRegKey(boolean userNotMachine) {
+		String product = Globals.getAppInfo().getAppName();
 		String key = userNotMachine ? "HKCU" : "HKLM";
-		key += "\\SOFTWARE\\" + MANUFACTURER + "\\" + PRODUCT + "\\License";
+		key += "\\SOFTWARE\\" + MANUFACTURER + "\\" + product + "\\License";
 		return key;
 	}
 	
