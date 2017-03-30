@@ -197,6 +197,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	private ResourceBundle resb;
 	private Timeline detectIssueModifiedTimer;
 	private boolean modified;
+	private boolean detectIssueModifiedLock;
 	private MailAttachmentHelper attachmentHelper = new MailAttachmentHelper();
 	private MyWrapper inspectorOrExplorer;
 	private AttachmentsContextMenu attachmentsContextMenu = new AttachmentsContextMenu();
@@ -570,6 +571,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		detectIssueModifiedTimer = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
+				
+				if (detectIssueModifiedLock) return;
+				
 				try {
 					updateData(true);
 
@@ -624,6 +628,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	}
 
 	private void detectIssueModifiedStop() {
+		detectIssueModifiedLock = true; 
 		if (detectIssueModifiedTimer != null) {
 			detectIssueModifiedTimer.stop();
 		}
@@ -635,6 +640,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	}
 
 	private void detectIssueModifiedContinue() {
+		detectIssueModifiedLock = false; 
 		if (detectIssueModifiedTimer != null) {
 			detectIssueModifiedTimer.play();
 		}
@@ -1212,19 +1218,21 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	public void onAssignSelection() {
 		boolean sel = bnAssignSelection_isSelected();
 		if (sel) {
-			queryDiscardChangesAsync((succ, ex) -> {
-				if (ex == null && succ) {
-					try {
-						IssueMailItem mailItem = inspectorOrExplorer.getSelectedItem();
-						IssueTaskPane.this.setMailItem(mailItem);
+			Platform.runLater(() -> {
+				queryDiscardChangesAsync((succ, ex) -> {
+					if (ex == null && succ) {
+						try {
+							IssueMailItem mailItem = inspectorOrExplorer.getSelectedItem();
+							IssueTaskPane.this.setMailItem(mailItem);
+						}
+						catch (Throwable e) {
+	
+						}
 					}
-					catch (Throwable e) {
-
+					else {
+						bnAssignSelection_select(false);
 					}
-				}
-				else {
-					bnAssignSelection_select(false);
-				}
+				});
 			});
 		}
 	}
