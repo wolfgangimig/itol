@@ -79,6 +79,7 @@
                               </VBox>
                            </children>
                         </HBox>
+                        <Label text="%DlgConfigure.Attachments.blacklist.add.hint" />
                      </children>
                   </VBox>
                </content>
@@ -110,7 +111,7 @@
                         <Label text="%DlgConfigure.Export.program" wrapText="true" GridPane.rowIndex="1" GridPane.valignment="TOP" />
                         <VBox GridPane.columnIndex="1" GridPane.rowIndex="1">
                            <children>
-                              <TextField fx:id="edExportAttachmentsProgram" HBox.hgrow="ALWAYS" />
+                              <ComboBox fx:id="cbExportAttachmentsProgram" editable="true" maxWidth="1.7976931348623157E308" />
                               <Label text="%DlgConfigure.Export.program.hint" wrapText="true" />
                            </children>
                         </VBox>

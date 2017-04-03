@@ -22,12 +22,20 @@ public class ManifestUtil {
 		return props.getProperty("programName");
 	}
 
+	public String getProgramTitle() {
+		return props.getProperty("programTitle");
+	}
+
 	public static String getProgramVersion(Class<?> clazz) {
 		return new ManifestUtil(clazz).getProgramVersion();
 	}
 
 	public static String getProgramName(Class<?> clazz) {
 		return new ManifestUtil(clazz).getProgramName();
+	}
+
+	public static String getProgramTitle(Class<?> clazz) {
+		return new ManifestUtil(clazz).getProgramTitle();
 	}
 
 	private void getManifest(Class<?> clazz) {
@@ -43,8 +51,10 @@ public class ManifestUtil {
 				Manifest manifest = jarConnection.getManifest();
 				String version = manifest.getMainAttributes().getValue("Implementation-Version");
 				props.put("programVersion", version);
-				String programName = manifest.getMainAttributes().getValue("Implementation-Title");
+				String programName = manifest.getMainAttributes().getValue("Implementation-Name");
 				props.put("programName", programName);
+				String programTitle = manifest.getMainAttributes().getValue("Implementation-Title");
+				props.put("programTitle", programTitle);
 			}
 		}
 		catch (Exception ex) {

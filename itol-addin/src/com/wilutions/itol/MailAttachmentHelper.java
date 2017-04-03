@@ -711,7 +711,7 @@ public class MailAttachmentHelper {
 		}
 		else {
 			String cmd = exportProgram
-					.replace(Config.PLACEHODER_EXPORT_DIRECTORY, "\"" + exportDirectory + "\"")
+					.replace(Config.PLACEHODER_EXPORT_DIRECTORY, exportDirectory.getAbsolutePath())
 					.replace(Config.PLACEHODER_ISSUE_ID, issue.getId())
 					.replace(Config.PLACEHODER_ISSUE_ID, issue.getProject().getId());
 			try {

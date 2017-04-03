@@ -18,13 +18,8 @@ import com.wilutions.itol.db.MailBodyConversion;
 import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.joa.fx.ModalDialogFX;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -45,7 +40,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
 import javafx.util.Callback;
-import javafx.util.Duration;
 
 public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializable {
 
@@ -82,7 +76,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	@FXML
 	TableColumn<AttachmentBlacklistItem, String> colBlacklistHash;
 	@FXML
-	TextField edExportAttachmentsProgram;
+	ComboBox<String> cbExportAttachmentsProgram;
 
 	private AutoCompletionBinding<IdName> autoCompletionAttachMailAs;
 
@@ -191,8 +185,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 		cbMailBody.getItems().add(new IdName(MailBodyConversion.TEXT.toString(), resb.getString("DlgConfigure.MailBody.text")));
 		cbMailBody.getSelectionModel().select(0);
 
-		edExportAttachmentsProgram.setPromptText(Config.EXPORT_PROROGRAM_DEFAULT);
-		
+		cbExportAttachmentsProgram.getItems().addAll(Config.EXPORT_PROROGRAM_EXPLORER, Config.EXPORT_PROGRAM_CMD);
+				
 		updateData(false);
 	}
 
@@ -230,7 +224,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			ObservableList<AttachmentBlacklistItem> blacklistItems = tvBlacklist.getItems();
 			config.setBlacklist(blacklistItems);
 			
-			config.setExportAttachmentsProgram(edExportAttachmentsProgram.getText());
+			config.setExportAttachmentsProgram(cbExportAttachmentsProgram.getEditor().getText());
 		}
 		else {
 			edLogFile.setText(config.getLogFile());
@@ -254,7 +248,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			ObservableList<AttachmentBlacklistItem> blacklistItems = FXCollections.observableArrayList(config.getBlacklist());
 			tvBlacklist.setItems(blacklistItems);
 			
-			edExportAttachmentsProgram.setText(config.getExportAttachmentsProgram());
+			cbExportAttachmentsProgram.getEditor().setText(config.getExportAttachmentsProgram());
 		}
 	}
 

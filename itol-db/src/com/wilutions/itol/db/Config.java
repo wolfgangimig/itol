@@ -71,12 +71,15 @@ public class Config implements Serializable, Cloneable {
 	 */
 	public final static String PLACEHODER_ISSUE_ID = "${issue.id}";
 
+	public final static String EXPORT_PROROGRAM_EXPLORER = "\"C:\\Windows\\explorer.exe\" \"" + PLACEHODER_EXPORT_DIRECTORY + "\"";
+	public final static String EXPORT_PROGRAM_CMD = "C:\\Windows\\System32\\cmd.exe /C start \"" + PLACEHODER_ISSUE_ID + "\" /d \"" + PLACEHODER_EXPORT_DIRECTORY + "\"";
+	
 	/**
 	 * Default export program.
 	 * This program is executed by default when attachments are exported.
 	 */
-	public final static String EXPORT_PROROGRAM_DEFAULT = "\"C:\\Windows\\explorer.exe\" " + PLACEHODER_EXPORT_DIRECTORY;
-	
+	public final static String EXPORT_PROROGRAM_DEFAULT = EXPORT_PROROGRAM_EXPLORER;
+
 	
 	private transient String manufacturerName;
 	private transient String appName;

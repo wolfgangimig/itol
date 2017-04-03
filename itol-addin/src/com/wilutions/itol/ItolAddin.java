@@ -191,4 +191,8 @@ public class ItolAddin extends OutlookAddinEx {
 	public String getProgramName() {
 		return ManifestUtil.getProgramName(this.getClass());
 	}
+
+	public String getProgramTitle() {
+		return ManifestUtil.getProgramTitle(this.getClass());
+	}
 }

@@ -31,6 +31,8 @@ public class DlgAbout implements Initializable {
 	@FXML
 	Label lbProgramName;
 	@FXML
+	Label lbProgramTitle;
+	@FXML
 	Label lbProgramVersion;
 	@FXML
 	TableView<About3rdPartyLib> tv3rdPartyLibs;
@@ -72,6 +74,9 @@ public class DlgAbout implements Initializable {
 		
 		String programName = ((ItolAddin)Globals.getThisAddin()).getProgramName();
 		lbProgramName.setText(programName);
+
+		String programTitle = ((ItolAddin)Globals.getThisAddin()).getProgramTitle();
+		lbProgramTitle.setText(programTitle);
 		
 		String programVersion = ((ItolAddin)Globals.getThisAddin()).getProgramVersion();
 		lbProgramVersion.setText(programVersion);
