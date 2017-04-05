@@ -38,6 +38,8 @@ import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.Property;
 import com.wilutions.mslib.outlook.Application;
 import com.wilutions.mslib.outlook.MailItem;
+import com.wilutions.mslib.outlook.OlAttachmentType;
+import com.wilutions.mslib.outlook.OlBodyFormat;
 import com.wilutions.mslib.outlook.OlSaveAsType;
 
 import javafx.scene.image.Image;
@@ -81,47 +83,88 @@ public class MailAttachmentHelper {
 	}
 
 	private void initialUpdateNewIssueAttachments(IssueMailItem mailItem, Issue issue) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.fine("initialUpdateNewIssueAttachments(");
+		
+		String ext = getConfigMsgFileExt();
+		if (log.isLoggable(Level.FINE)) log.fine("ext=" + ext);
 
-		if (mailItem.getBody().length() != 0) {
-			String ext = getConfigMsgFileExt();
+		if (!ext.equals(MsgFileFormat.NOTHING.getId())) {
+			
+			List<Attachment> attachments = new ArrayList<Attachment>(issue.getAttachments());
 
-			if (!ext.equals(MsgFileFormat.NOTHING.getId())) {
+			boolean addAttachments = false; 
+			boolean addMail = false;
+			boolean addOnlyAttachments = ext.equals(MsgFileFormat.ONLY_ATTACHMENTS.getId());
+			if (log.isLoggable(Level.FINE)) log.fine("addOnlyAttachments=" + addOnlyAttachments);
+			
+			if (addOnlyAttachments) {
+				addAttachments = true;
+				addMail = false;
+			}
+			else {
+				OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
+				if (log.isLoggable(Level.FINE)) log.fine("saveAsType=" + saveAsType);
+				addAttachments = !MsgFileTypes.isContainerFormat(saveAsType);
+				addMail = true;
+			}
+			
+			if (log.isLoggable(Level.FINE)) log.fine("#mail.body=" + mailItem.getBody().length());
+			if (mailItem.getBody().isEmpty()) {
+				addMail = false;
+			}
+			
+			if (log.isLoggable(Level.FINE)) log.fine("addMail=" + addMail);
+			if (addMail) {
+				MailAtt mailAtt = new MailAtt(mailItem, ext);
+				attachments.add(mailAtt);
+			}
+
+			if (log.isLoggable(Level.FINE)) log.fine("addAttachments=" + addAttachments);
+			if (addAttachments) {
+
+				// Embedded RTF attachments have a special format - not PNG, JPG, BMP.
+				// To add this attachments to the issue, the following code adds the entire mail as RTF file, if it has not been added above.   
+				 
+				boolean addBodyToIncludeEmbeddedAttachments = !addMail;
+				boolean isRTFBody = mailItem.getBodyFormat() == OlBodyFormat.olFormatRichText;
+				if (log.isLoggable(Level.FINE)) log.fine("addBodyToIncludeEmbeddedAttachments=" + addBodyToIncludeEmbeddedAttachments + ", isRTFBody=" + isRTFBody);
+									
+				IssueAttachments mailAtts = mailItem.getAttachments();
+				int n = mailAtts.getCount();
+				if (log.isLoggable(Level.FINE)) log.fine("add #attachments=" + n);
 				
-				List<Attachment> attachments = new ArrayList<Attachment>(issue.getAttachments());
+				for (int i = 1; i <= n; i++) {
+					com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
+					MailAttAtt attatt = new MailAttAtt(matt);
+					if (log.isLoggable(Level.FINE)) log.fine("attachment[" + i + "]=" + attatt);
+					
+					boolean isBlacklistAttachment = isBlacklistAttachment(attatt);
+					if (log.isLoggable(Level.FINE)) log.fine("isBlacklistAttachment=" + isBlacklistAttachment);
+					if (isBlacklistAttachment) continue;
 
-				boolean addAttachments = false; 
-				boolean addMail = false;
-				if (ext.equals(MsgFileFormat.ONLY_ATTACHMENTS.getId())) {
-					addAttachments = true;
-					addMail = false;
-				}
-				else {
-					OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
-					addAttachments = !MsgFileTypes.isContainerFormat(saveAsType);
-					addMail = true;
-				}
+					OlAttachmentType attachmentType = matt.getType();
+					if (log.isLoggable(Level.FINE)) log.fine("attachmentType=" + attachmentType);
 
-				if (addMail) {
-					MailAtt mailAtt = new MailAtt(mailItem, ext);
-					attachments.add(mailAtt);
-				}
-
-				if (addAttachments) {
-					IssueAttachments mailAtts = mailItem.getAttachments();
-					int n = mailAtts.getCount();
-					for (int i = 1; i <= n; i++) {
-						com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
-						MailAttAtt attatt = new MailAttAtt(matt);
-						attatt.setLastModified(mailItem.getReceivedTime());
-						if (!isBlacklistAttachment(attatt)) {
-							attachments.add(attatt);
+					if (isRTFBody && attachmentType == OlAttachmentType.olOLE) {
+						if (addBodyToIncludeEmbeddedAttachments) {
+							if (log.isLoggable(Level.FINE)) log.fine("add mail as attachment to include embedded attachments");
+							addBodyToIncludeEmbeddedAttachments = false;
+							MailAtt mailAtt = new MailAtt(mailItem, MsgFileFormat.RTF.getId());
+							attachments.add(mailAtt);
 						}
 					}
+					else {
+						if (log.isLoggable(Level.FINE)) log.fine("add attachment");
+						attatt.setLastModified(mailItem.getReceivedTime());
+						attachments.add(attatt);
+					}
 				}
-				
-				issue.setAttachments(attachments);
 			}
+			
+			issue.setAttachments(attachments);
 		}
+	
+		if (log.isLoggable(Level.FINE)) log.fine(")initialUpdateNewIssueAttachments");
 	}
 	
 	public Attachment makeMailAttachment(IssueMailItem mailItem) throws IOException {
@@ -228,10 +271,18 @@ public class MailAttachmentHelper {
 
 		private MailAttAtt(com.wilutions.mslib.outlook.Attachment matt) {
 			this.matt = matt;
-			super.setSubject(matt.getFileName());
-			super.setContentType(getFileContentType(new File(getTempDir(), matt.getFileName())));
+			String fname = "";
+			try {
+				fname = matt.getFileName();
+			}
+			catch (Exception e) {
+				// Attachments embedded in a RTF mail body throw an exception here.
+				fname = String.valueOf(System.identityHashCode(matt)); 
+			}
+			super.setSubject(fname);
+			super.setFileName(fname);
+			super.setContentType(getFileContentType(new File(getTempDir(), fname)));
 			super.setContentLength(matt.getSize());
-			super.setFileName(matt.getFileName());
 			super.setLastModified(new Date());
 		}
 

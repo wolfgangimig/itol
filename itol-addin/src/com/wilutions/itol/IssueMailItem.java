@@ -3,6 +3,7 @@ package com.wilutions.itol;
 import java.util.Date;
 
 import com.wilutions.com.ComException;
+import com.wilutions.mslib.outlook.OlBodyFormat;
 
 public interface IssueMailItem {
 
@@ -10,8 +11,9 @@ public interface IssueMailItem {
 
 	public void setSubject(String mailSubject) throws ComException;
 
-	public String getBody() throws ComException;
-	public String getHTMLBody() throws ComException;
+	public String getBody() ;
+	public String getHTMLBody() ;
+	public OlBodyFormat getBodyFormat();
 	
 	public String getFrom();
 	public String getFromAddress();

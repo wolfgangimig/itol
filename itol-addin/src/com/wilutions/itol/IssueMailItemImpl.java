@@ -7,6 +7,7 @@ import com.wilutions.com.IDispatch;
 import com.wilutions.mslib.outlook.Attachment;
 import com.wilutions.mslib.outlook.Attachments;
 import com.wilutions.mslib.outlook.MailItem;
+import com.wilutions.mslib.outlook.OlBodyFormat;
 
 public class IssueMailItemImpl implements IssueMailItem {
 
@@ -19,6 +20,7 @@ public class IssueMailItemImpl implements IssueMailItem {
 	private String fromAddress;
 	private String to;
 	private Date receivedTime;
+	private OlBodyFormat bodyFormat;
 
 	IssueMailItemImpl(MailItem mailItem) {
 		this.mailItem = mailItem;
@@ -35,6 +37,7 @@ public class IssueMailItemImpl implements IssueMailItem {
 		this.to = mailItem.getReceivedByName();
 		this.receivedTime = mailItem.getReceivedTime();
 		this.htmlBody = mailItem.getHTMLBody();
+		this.bodyFormat = mailItem.getBodyFormat();
 	}
 
 	public String getSubject() {
@@ -50,8 +53,12 @@ public class IssueMailItemImpl implements IssueMailItem {
 	}
 	
 	@Override
-	public String getHTMLBody() throws ComException {
+	public String getHTMLBody() {
 		return htmlBody;
+	}
+	
+	public OlBodyFormat getBodyFormat() {
+		return this.bodyFormat; 
 	}
 
 	public String getEntryId() {

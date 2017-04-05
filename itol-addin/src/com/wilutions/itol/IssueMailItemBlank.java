@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.wilutions.com.ComException;
 import com.wilutions.mslib.outlook.Attachment;
+import com.wilutions.mslib.outlook.OlBodyFormat;
 
 public class IssueMailItemBlank implements IssueMailItem {
 
@@ -24,6 +25,11 @@ public class IssueMailItemBlank implements IssueMailItem {
 	@Override
 	public String getHTMLBody() throws ComException {
 		return "";
+	}
+	
+	@Override
+	public OlBodyFormat getBodyFormat() {
+		return OlBodyFormat.olFormatPlain;
 	}
 	
 	@Override
