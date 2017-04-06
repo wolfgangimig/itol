@@ -93,32 +93,64 @@ public class PropertyGridView {
 		constr0.setPercentWidth(30);
 	}
 	
+	/**
+	 * Replace current content of properties tab by given node.
+	 * This function is called by a property view, if button "..." is pressed. 
+	 * @param replaceBy Content is replaced by this node
+	 * @param title This string is inserted into the tab title. 
+	 * @param padding Padding for replaceBy node.
+	 */
 	public void pushPropertyGrid(Node replaceBy, String title, Insets padding) {
+		
+		// Prepare the tab content for displaying the Node replaceBy
 		Pane box = (Pane)tabProperties.getContent();
 		box.setPadding(padding);
 		HBox.setHgrow(replaceBy, Priority.ALWAYS);
 
+		// Add replaceBy to tab content
 		box.getChildren().add(replaceBy);
 		
+		// Hide previous tab content
 		Region scrollPane = (Region)box.getChildren().get(0);
 		scrollPane.setVisible(false);
 		scrollPane.setManaged(false);
 		
+		// Append tile for replaceBy Node 
 		tabProperties.setText(title + " (" + tabPropertiesTitle + ")");
 		
+		// Make tab header orange
 		tabpIssue.getStyleClass().add("sub-prop-tab");
+		
+		// Disable all other tabs
+		tabpIssue.getTabs().stream().filter((tab) -> tab != tabProperties).forEach((tab) -> tab.setDisable(true));
 	}
 	
+	/**
+	 * Restore view of property tab.
+	 */
 	public void popPropertyGrid() {
 		Pane tabVBox = (Pane)tabProperties.getContent();
 		if (tabVBox.getChildren().size() > 1) {
+			
+			// Restore padding
 			tabVBox.setPadding(DEFAULT_PADDING);
+			
+			// Show original properties view
 			Node scrollPane = tabVBox.getChildren().get(0);
 			scrollPane.setVisible(true);
 			scrollPane.setManaged(true);
+			
+			// Remove replacement
 			tabVBox.getChildren().remove(1);
+			
+			// Restore properties tab title
 			tabProperties.setText(tabPropertiesTitle);
+			
+			// Show tab title in default color 
 			tabpIssue.getStyleClass().remove("sub-prop-tab");
+			
+			// Enable all other tabs
+			tabpIssue.getTabs().stream().filter((tab) -> tab != tabProperties).forEach((tab) -> tab.setDisable(false));
 		}
 	}
 
