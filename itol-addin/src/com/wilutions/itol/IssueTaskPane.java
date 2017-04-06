@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
+import com.wilutions.com.DDAddinDll;
 import com.wilutions.com.Dispatch;
 import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
@@ -1885,6 +1886,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	
 	@FXML
 	public void onAbout() {
-		DlgAbout.show(this.getWindow());
+		if (!DDAddinDll.getLicenseKey().contains("[683870274]")) { // Do not display product information for ELO employees
+			DlgAbout.show(this.getWindow());
+		}
 	}
 }
