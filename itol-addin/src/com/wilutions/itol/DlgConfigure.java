@@ -185,7 +185,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 		cbMailBody.getItems().add(new IdName(MailBodyConversion.TEXT.toString(), resb.getString("DlgConfigure.MailBody.text")));
 		cbMailBody.getSelectionModel().select(0);
 
-		cbExportAttachmentsProgram.getItems().addAll(Config.EXPORT_PROROGRAM_EXPLORER, Config.EXPORT_PROGRAM_CMD);
+		cbExportAttachmentsProgram.getItems().addAll(Config.EXPORT_PROROGRAM_EXPLORER, Config.EXPORT_PROGRAM_CMD, Config.EXPORT_PROGRAM_TOTALCMD);
 				
 		updateData(false);
 	}
