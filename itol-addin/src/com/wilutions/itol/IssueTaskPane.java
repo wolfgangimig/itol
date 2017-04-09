@@ -1890,4 +1890,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			DlgAbout.show(this.getWindow());
 		}
 	}
+	
+	@FXML
+	public void onHelp() {
+		File file = Resources.getInstance().getHelpDocumentation();
+		IssueApplication.showDocument(file.toURI().toString());
+	}
 }

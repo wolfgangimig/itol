@@ -1,5 +1,7 @@
 package com.wilutions.itol;
 
+import java.io.File;
+
 import com.wilutions.fx.util.ResourceLoader;
 
 import javafx.scene.image.Image;
@@ -28,5 +30,8 @@ public class Resources {
 		return rloader.getImage(Resources.class, "Attachment32.png");
 	}
 	
+	public File getHelpDocumentation() {
+		return rloader.getFile(Resources.class, "ITOL.pdf");
+	}
 
 }
