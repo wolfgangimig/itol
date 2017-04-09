@@ -292,8 +292,8 @@ public class AttachmentTableViewHandler {
 							if (log.isLoggable(Level.FINE)) log.fine("download attachment=" + att);
 							CompletableFuture<Void> fatt = CompletableFuture.supplyAsync(() -> {
 								try {
-									String url = attachmentHelper.downloadAttachment(att, cb.createChild(progressPerAttachment));
-									File file = new File(new URI(url));
+									URI url = attachmentHelper.downloadAttachment(att, cb.createChild(progressPerAttachment));
+									File file = new File(url);
 									files.add(file);
 									if (log.isLoggable(Level.FINE)) log.fine("file=" + file);
 								}
@@ -517,10 +517,8 @@ public class AttachmentTableViewHandler {
 			final String FILE_URL_PREFIX = MailAttachmentHelper.FILE_URL_PREFIX;
 			List<File> files = new ArrayList<File>();
 			for (Attachment att : table.getSelectionModel().getSelectedItems()) {
-				String fileName = attachmentHelper.downloadAttachment(att, cb);
-				if (fileName.isEmpty()) continue;
-				if (fileName.startsWith(FILE_URL_PREFIX)) fileName = fileName.substring(FILE_URL_PREFIX.length());
-				files.add(new File(fileName));
+				URI fileUri = attachmentHelper.downloadAttachment(att, cb);
+				files.add(new File(fileUri));
 			}
 			FileTransferable ft = new FileTransferable(files);
 			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ft, null);
@@ -571,8 +569,8 @@ public class AttachmentTableViewHandler {
 				Optional<String> selectedName = dialog.showAndWait();
 				if (!selectedName.isPresent()) break;
 				
-				String uri = attachmentHelper.downloadAttachment(att, cb);
-				File localFile = new File(new URI(uri));
+				URI uri = attachmentHelper.downloadAttachment(att, cb);
+				File localFile = new File(uri);
 				MailAttachmentHelper.addBlacklistItem(selectedName.get(), localFile);
 			}
 			

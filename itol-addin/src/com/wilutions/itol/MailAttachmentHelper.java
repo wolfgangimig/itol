@@ -453,11 +453,11 @@ public class MailAttachmentHelper {
 	public void showAttachment(Attachment att, ProgressCallback cb) throws Exception {
 		// Download the entire file into a temp dir. Opening the URL with Desktop.browse()
 		// would start a browser first, which in turn downloads the file. 
-		String url = downloadAttachment(att, cb); 
-		IssueApplication.showDocument(url);
+		URI url = downloadAttachment(att, cb); 
+		IssueApplication.showDocument(url.toString());
 	}
 
-	public String downloadAttachment(Attachment att, ProgressCallback cb) throws Exception {
+	public URI downloadAttachment(Attachment att, ProgressCallback cb) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("downloadAttachment(att=" + att);
 		String url = att.getUrl();
 		// Local file added from file system (new file, not uploaded)
@@ -493,7 +493,7 @@ public class MailAttachmentHelper {
 		}
 		if (cb != null) cb.setFinished();
 		if (log.isLoggable(Level.FINE)) log.fine(")downloadAttachment=" + url);
-		return url;
+		return new URI(url);
 	}
 	
 	private boolean compareFiles(File lhs, File rhs, ProgressCallback cb) {
@@ -592,8 +592,8 @@ public class MailAttachmentHelper {
 		try {
 			// Download into temp dir.
 			ProgressCallback cbDownload = cb.createChild("Download " + att.getFileName(), 0.5);
-			String url = downloadAttachment(att, cbDownload);
-			File tempFile = new File(new URI(url));
+			URI url = downloadAttachment(att, cbDownload);
+			File tempFile = new File(url);
 
 			// Is the issue attachment a mail?
 			ProgressCallback cbSave = cb.createChild("Save " + att.getFileName(), 0.5);

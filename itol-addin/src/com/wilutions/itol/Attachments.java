@@ -64,7 +64,7 @@ public class Attachments implements Iterable<Attachment> {
 				attachments = dropFiles(clipFiles);
 			}
 		
-			if (!attachments.isDone()) {
+			if (image == null & clipFiles == null) {
 				attachments.complete(new ArrayList<Attachment>(0));
 			}
 		}

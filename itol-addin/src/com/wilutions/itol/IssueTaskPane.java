@@ -1782,8 +1782,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		int index = 0;
 		for (Attachment attachment : attachments) {
 			if (log.isLoggable(Level.FINE)) log.fine("download " + attachment);
-			String uri = attachmentHelper.downloadAttachment(attachment, cb.createChild("Download " + attachment.getFileName(), attachment.getContentLength(), cb.getTotal()));
-			File file = new File(new URI(uri));
+			URI uri = attachmentHelper.downloadAttachment(attachment, cb.createChild("Download " + attachment.getFileName(), attachment.getContentLength(), cb.getTotal()));
+			File file = new File(uri);
 			if (log.isLoggable(Level.FINE)) log.fine("mailAttachment.Add " + file.getAbsolutePath());
 			mailAttachments.Add(file.getAbsolutePath(), OlAttachmentType.olByValue, ++index, attachment.getFileName());
 		}
