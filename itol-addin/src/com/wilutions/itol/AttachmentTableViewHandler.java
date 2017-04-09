@@ -560,6 +560,8 @@ public class AttachmentTableViewHandler {
 	 */
 	public static void addSelectedAttachmentsToBlacklist(Window owner, MailAttachmentHelper attachmentHelper, ProgressCallback cb, TableView<Attachment> tabAttachments) throws Exception {
 		try {
+			ArrayList<Attachment> allItems = new ArrayList<>(tabAttachments.getItems());
+			
 			ResourceBundle resb = Globals.getResourceBundle();
 			for (Attachment att : tabAttachments.getSelectionModel().getSelectedItems()) {
 				TextInputDialog dialog = new TextInputDialog(att.getFileName());
@@ -572,20 +574,15 @@ public class AttachmentTableViewHandler {
 				URI uri = attachmentHelper.downloadAttachment(att, cb);
 				File localFile = new File(uri);
 				MailAttachmentHelper.addBlacklistItem(selectedName.get(), localFile);
+				
+				allItems.remove(att);
 			}
 			
-			// Update table 
-			ArrayList<Attachment> allItems = new ArrayList<>(tabAttachments.getItems());
-			for (Integer index : tabAttachments.getSelectionModel().getSelectedIndices()) {
-				allItems.set(index, null);
+			if (allItems.size() != tabAttachments.getItems().size()) {
+				tabAttachments.getItems().clear();
+				tabAttachments.getItems().addAll(allItems);	
+				tabAttachments.refresh();
 			}
-			ArrayList<Attachment> newItems = new ArrayList<>();
-			for (int i = 0; i < allItems.size(); i++) {
-				if (allItems.get(i) != null) newItems.add(allItems.get(i));
-			}
-			tabAttachments.getItems().clear();
-			tabAttachments.getItems().addAll(newItems);	
-			tabAttachments.refresh();
 		}
 		finally {
 			cb.setFinished();

@@ -908,7 +908,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		.acceptedClipboardDataFlavors(DataFlavor.imageFlavor, DataFlavor.javaFileListFlavor)
 		.showCut(false)
 		.showCopy(!observableAttachments.isEmpty())
-		.showAddToBlacklist(tabAttachments.getSelectionModel().getSelectedItems().size() == 1)
+		.showAddToBlacklist(!tabAttachments.getSelectionModel().getSelectedItems().isEmpty())
 		.onCopy((event) -> copySelectedAttachmentsToClipboard())
 		.onPaste((event) -> AttachmentTableViewHandler.paste(observableAttachments))
 		.onAddToBlacklist((event) -> addSelectedAttachmentsToBlacklist())
