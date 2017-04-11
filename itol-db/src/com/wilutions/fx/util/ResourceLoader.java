@@ -77,6 +77,7 @@ public class ResourceLoader {
 					ostream.write(buf, 0, len);
 				}
 			}
+			file.deleteOnExit();
 		}
 		catch (RuntimeException e) {
 			throw e;
