@@ -271,14 +271,27 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	}
 
 	private void internalSetMailItem(IssueMailItem mailItem, ProgressCallback cb, AsyncResult<Boolean> asyncResult) {
+		long t1 = System.currentTimeMillis();
 		this.mailItem = mailItem;
 		this.tookNotesFromMail = false;
+		
+		log.info("Start initialize with mail item " + mailItem + " ---------------");
+
+		AsyncResult<Boolean> outerResult = (succ, ex) -> {
+			asyncResult.setAsyncResult(succ, ex);
+			long t2 = System.currentTimeMillis();
+			log.info("[" + (t2-t1) + "] internalSetMailItem");
+			log.info("End initialize with mail item " + mailItem + " ---------------");
+			cb.setFinished();
+		};
 
 		Platform.runLater(() -> {
+			
+			cb.incrProgress(0.1);
 
 			detectIssueModifiedStop();
 
-			updateIssueFromMailItem(cb.createChild(0.9), (succ, ex) -> {
+			updateIssueFromMailItem(cb.createChild(0.8), (succ, ex) -> {
 				if (succ) {
 					Platform.runLater(() -> {
 						try {
@@ -288,14 +301,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 							log.log(Level.WARNING, "initialUpdate failed", e);
 						}
 						finally {
-							cb.setFinished();
-							asyncResult.setAsyncResult(succ, ex);
+							outerResult.setAsyncResult(succ, ex);
 						}
 					});
 				}
 				else {
-					cb.setFinished();
-					asyncResult.setAsyncResult(succ, ex);
+					outerResult.setAsyncResult(succ, ex);
 				}
 			});
 
@@ -309,13 +320,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 			IssueService srv = null;
 			boolean succ = false;
+			long t1 = System.currentTimeMillis();
 			try {
 				srv = Globals.getIssueService();
 
 				// Get issue ID from mailItem
 				String subject = mailItem.getSubject();
 				String issueId = srv.extractIssueIdFromMailSubject(subject);
-				
+								
 				// Issue description from mail body.
 				String textBody = mailItem.getBody().replace("\r\n", "\n");
 				String description = textBody;
@@ -366,7 +378,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 				if (asyncResult != null) {
 					asyncResult.setAsyncResult(succ, null);
 				}
+				
 			}
+			
+			long t2 = System.currentTimeMillis();
+			log.info("[" + (t2-t1) + "] updateIssueFromMailItem");
 		});
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueFromMailItem");

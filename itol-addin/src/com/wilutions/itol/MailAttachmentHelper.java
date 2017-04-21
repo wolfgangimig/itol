@@ -72,6 +72,7 @@ public class MailAttachmentHelper {
 		// The JavaFX thread hung in an OLE call somewhere at mailItem.get...
 		// To avoid a deadlock, execute the function in background and wait up to 30s.
 				
+		long t1 = System.currentTimeMillis();
 		Executor executor = BackgTask.getExecutor();
 		
 		CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> {
@@ -84,6 +85,8 @@ public class MailAttachmentHelper {
 		}, executor);
 
 		future.get(30, TimeUnit.SECONDS);
+		long t2 = System.currentTimeMillis();
+		log.info("[" + (t2-t1) + "] MailAttachmentHelper.initialUpdate");
 		
 		if (log.isLoggable(Level.FINE)) log.fine(")initialUpdate");
 	}
