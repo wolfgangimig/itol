@@ -64,7 +64,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		RibbonGroup grpIssue = getRibbonControls().group("grpIssue", resb.getString("Ribbon.grpIssue"));
 
 		RibbonButton bnNewIssue = getRibbonControls().button("bnNewIssue", resb.getString("Ribbon.NewIssue"));
-		bnNewIssue.setImage("Alert-icon-32.png");
+		bnNewIssue.setImage("IssueTaskPaneIcon-1a.png");
 		bnNewIssue.setOnAction((IRibbonControl control, Wrapper context, Boolean pressed) -> {
 			ItolAddin addin = (ItolAddin) Globals.getThisAddin();
 			addin.showIssuePane(control, context, pressed);

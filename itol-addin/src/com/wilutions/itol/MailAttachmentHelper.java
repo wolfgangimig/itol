@@ -20,12 +20,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.DatatypeConverter;
 
+import com.wilutions.com.BackgTask;
 import com.wilutions.com.Dispatch;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.AttachmentBlacklistItem;
@@ -41,6 +45,7 @@ import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.OlAttachmentType;
 import com.wilutions.mslib.outlook.OlBodyFormat;
 import com.wilutions.mslib.outlook.OlSaveAsType;
+import com.wilutions.mslib.outlook.PropertyAccessor;
 
 import javafx.scene.image.Image;
 
@@ -61,6 +66,32 @@ public class MailAttachmentHelper {
 	 * @throws Exception
 	 */
 	public void initialUpdate(IssueMailItem mailItem, Issue issue) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.fine("initialUpdate(mailItem=" + mailItem + ", issue=" + issue);
+		
+		// Observed that Outlook/ITOL hangs while updating attachments.
+		// The JavaFX thread hung in an OLE call somewhere at mailItem.get...
+		// To avoid a deadlock, execute the function in background and wait up to 30s.
+				
+		long t1 = System.currentTimeMillis();
+		Executor executor = BackgTask.getExecutor();
+		
+		CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> {
+			try {
+				initialUpdateBackg(mailItem, issue);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+			return null;
+		}, executor);
+
+		future.get(30, TimeUnit.SECONDS);
+		long t2 = System.currentTimeMillis();
+		log.info("[" + (t2-t1) + "] MailAttachmentHelper.initialUpdate");
+		
+		if (log.isLoggable(Level.FINE)) log.fine(")initialUpdate");
+	}
+
+	private void initialUpdateBackg(IssueMailItem mailItem, Issue issue) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("initialUpdate(mailItem=" + mailItem + ", issue=" + issue);
 		releaseResources();
 
@@ -92,38 +123,57 @@ public class MailAttachmentHelper {
 			
 			List<Attachment> attachments = new ArrayList<Attachment>(issue.getAttachments());
 
+			// The code below should add mail attachments as issue attachments.
 			boolean addAttachments = false; 
+			
+			// The code below should add the mail as an issue attachment.
 			boolean addMail = false;
+			
+			// Add attachments embedded in the mail body as issue attachments. 
+			boolean addEmbeddedAttachments = false;
+			
+			// Shortcut for option "Only Attachments" 
 			boolean addOnlyAttachments = ext.equals(MsgFileFormat.ONLY_ATTACHMENTS.getId());
 			if (log.isLoggable(Level.FINE)) log.fine("addOnlyAttachments=" + addOnlyAttachments);
-			
+
 			if (addOnlyAttachments) {
 				addAttachments = true;
+				addEmbeddedAttachments = true;
 				addMail = false;
 			}
 			else {
+				
+				// If the mail should be added as MSG (isContainerFormat), it already includes all mail attachments. 
+				// Thus, the attachments must not be added to save space on the server.   
+				// On the other hand, if the mail body should be converted to JIRA markup, embedded attachments 
+				// must be added to the issue explicitly. Otherwise, thumbnails of embedded images are not available.
+				
 				OlSaveAsType saveAsType = MsgFileTypes.getMsgFileType(ext);
 				if (log.isLoggable(Level.FINE)) log.fine("saveAsType=" + saveAsType);
 				addAttachments = !MsgFileTypes.isContainerFormat(saveAsType);
+				addEmbeddedAttachments = true;
 				addMail = true;
 			}
 			
+			// The mail body is empty, if this function is called from menu items "New issue" or "New Subtask".
 			if (log.isLoggable(Level.FINE)) log.fine("#mail.body=" + mailItem.getBody().length());
 			if (mailItem.getBody().isEmpty()) {
 				addMail = false;
 			}
 			
+			// Maybe add mail as an issue attachment.
 			if (log.isLoggable(Level.FINE)) log.fine("addMail=" + addMail);
 			if (addMail) {
 				MailAtt mailAtt = new MailAtt(mailItem, ext);
 				attachments.add(mailAtt);
 			}
 
+			// Maybe add mail attachments as issue attachments
 			if (log.isLoggable(Level.FINE)) log.fine("addAttachments=" + addAttachments);
-			if (addAttachments) {
+			if (addAttachments || addEmbeddedAttachments) {
 
 				// Embedded RTF attachments have a special format - not PNG, JPG, BMP.
-				// To add this attachments to the issue, the following code adds the entire mail as RTF file, if it has not been added above.   
+				// To add this attachments to the issue, the code adds the entire mail as RTF file, if it has not been added above.   
 				 
 				boolean addBodyToIncludeEmbeddedAttachments = !addMail;
 				boolean isRTFBody = mailItem.getBodyFormat() == OlBodyFormat.olFormatRichText;
@@ -134,15 +184,29 @@ public class MailAttachmentHelper {
 				if (log.isLoggable(Level.FINE)) log.fine("add #attachments=" + n);
 				
 				for (int i = 1; i <= n; i++) {
+					
 					com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
 					MailAttAtt attatt = new MailAttAtt(matt);
 					if (log.isLoggable(Level.FINE)) log.fine("attachment[" + i + "]=" + attatt);
-					
+
+					// Skip attachments from blacklist.
 					boolean isBlacklistAttachment = isBlacklistAttachment(attatt);
 					if (log.isLoggable(Level.FINE)) log.fine("isBlacklistAttachment=" + isBlacklistAttachment);
 					if (isBlacklistAttachment) continue;
 
 					OlAttachmentType attachmentType = matt.getType();
+					
+					// Get advanced attachment properties to find out, whether the attachment is
+					// embedded in the mail body.
+					// https://social.msdn.microsoft.com/Forums/vstudio/en-US/d6d339d2-ebc3-4332-9801-15a53020df94/embedded-images-attachments-with-html-based-emails?forum=vsto
+					PropertyAccessor mattProps = matt.getPropertyAccessor();
+	                Object contentId = mattProps.GetProperty("http://schemas.microsoft.com/mapi/proptag/0x3712001E");
+	                Object mimeType = matt.getPropertyAccessor().GetProperty("http://schemas.microsoft.com/mapi/proptag/0x370E001E");
+	                if (log.isLoggable(Level.FINE)) log.fine("contentId=" + contentId + ", mimeType=" + mimeType);
+	                
+					boolean isEmbeddedAttachment = contentId != null && !contentId.equals("");
+					if (log.isLoggable(Level.FINE)) log.fine("isEmbeddedAttachment=" + isEmbeddedAttachment);
+
 					if (log.isLoggable(Level.FINE)) log.fine("attachmentType=" + attachmentType);
 
 					if (isRTFBody && attachmentType == OlAttachmentType.olOLE) {
@@ -153,7 +217,7 @@ public class MailAttachmentHelper {
 							attachments.add(mailAtt);
 						}
 					}
-					else {
+					else if (addAttachments || isEmbeddedAttachment) {
 						if (log.isLoggable(Level.FINE)) log.fine("add attachment");
 						attatt.setLastModified(mailItem.getReceivedTime());
 						attachments.add(attatt);
