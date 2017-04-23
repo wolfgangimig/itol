@@ -73,7 +73,7 @@ public class Config implements Serializable, Cloneable {
 
 	public final static String EXPORT_PROROGRAM_EXPLORER = "\"C:\\Windows\\explorer.exe\" \"" + PLACEHODER_EXPORT_DIRECTORY + "\"";
 	public final static String EXPORT_PROGRAM_CMD = "C:\\Windows\\System32\\cmd.exe /C start \"" + PLACEHODER_ISSUE_ID + "\" /d \"" + PLACEHODER_EXPORT_DIRECTORY + "\"";
-	public final static String EXPORT_PROGRAM_TOTALCMD = "C:\\Program Files\\totalcmd\\TOTALCMD64.exe\" /O /L=\"" + PLACEHODER_EXPORT_DIRECTORY + "\"";
+	public final static String EXPORT_PROGRAM_TOTALCMD = "\"C:\\Program Files\\totalcmd\\TOTALCMD64.exe\" /O /L=\"" + PLACEHODER_EXPORT_DIRECTORY + "\"";
 	
 	/**
 	 * Default export program.
