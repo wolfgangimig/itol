@@ -123,6 +123,7 @@ public class PropertyGridView {
 		
 		// Disable all other tabs
 		tabpIssue.getTabs().stream().filter((tab) -> tab != tabProperties).forEach((tab) -> tab.setDisable(true));
+		issueTaskPane.setNextTabDisable(true);
 	}
 	
 	/**
@@ -151,6 +152,7 @@ public class PropertyGridView {
 			
 			// Enable all other tabs
 			tabpIssue.getTabs().stream().filter((tab) -> tab != tabProperties).forEach((tab) -> tab.setDisable(false));
+			issueTaskPane.setNextTabDisable(false);
 		}
 	}
 

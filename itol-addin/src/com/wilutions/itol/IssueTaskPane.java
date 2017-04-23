@@ -161,6 +161,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	@FXML
 	private ComboBox<IdName> cbStatus;
 	@FXML
+	private Button bnNextPage;
+	@FXML
 	private Button bnUpdate;
 	@FXML
 	private Button bnShowAttachment;
@@ -1911,5 +1913,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	public void onHelp() {
 		File file = Resources.getInstance().getHelpDocumentation();
 		IssueApplication.showDocument(file.toURI().toString());
+	}
+	
+	public void setNextTabDisable(boolean v) {
+		bnNextPage.setDisable(v);
 	}
 }
