@@ -19,6 +19,7 @@
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
          </rowConstraints>
          <children>
@@ -27,7 +28,7 @@
                   <Font size="36.0" />
                </font>
             </Label>
-            <Label text="3rd Party Libraries:" GridPane.rowIndex="4" />
+            <Label text="3rd Party Libraries:" GridPane.rowIndex="5" />
             <Label fx:id="lbProgramVersion" maxWidth="1.7976931348623157E308" text="Program Version" GridPane.rowIndex="2">
                <font>
                   <Font size="24.0" />
@@ -44,6 +45,7 @@
                   <Font size="24.0" />
                </font>
             </Label>
+            <Hyperlink onAction="#onEulaClicked" text="EULA" GridPane.rowIndex="4" />
          </children>
       </GridPane>
       <TableView fx:id="tv3rdPartyLibs" prefHeight="200.0" prefWidth="200.0">

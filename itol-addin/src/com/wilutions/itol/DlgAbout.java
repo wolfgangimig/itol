@@ -1,5 +1,6 @@
 package com.wilutions.itol;
 
+import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -142,5 +143,11 @@ public class DlgAbout implements Initializable {
 	@FXML
 	private void onLogoExited() {
 		this.stage.getScene().setCursor(Cursor.DEFAULT);
+	}
+	
+	@FXML
+	private void onEulaClicked() {
+		File file = Resources.getInstance().getEula();
+		IssueApplication.showDocument(file.toURI().toString());
 	}
 }

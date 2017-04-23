@@ -34,4 +34,8 @@ public class Resources {
 		return rloader.getFile(Resources.class, "ITOL.pdf");
 	}
 
+	public File getEula() {
+		return rloader.getFile(Resources.class, "EULA.html");
+	}
+
 }
