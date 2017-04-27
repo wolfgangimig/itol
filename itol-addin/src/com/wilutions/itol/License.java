@@ -1,7 +1,21 @@
 package com.wilutions.itol;
 
+import java.security.MessageDigest;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.xml.bind.DatatypeConverter;
+
 import com.wilutions.com.DDAddinDll;
 import com.wilutions.com.reg.RegUtil;
+
+import byps.BTransportFactory;
+import byps.http.HTransportFactoryClient;
+import byps.http.HWireClient;
+import de.wim.lic.BApiDescriptor_LicApi;
+import de.wim.lic.BClient_LicApi;
+import de.wim.lic.LicenseInfo;
+import de.wim.lic.LicenseResult;
 
 /**
  * Install and uninstall license key into registry.
@@ -10,13 +24,16 @@ import com.wilutions.com.reg.RegUtil;
 public class License {
 	
 	private final static String MANUFACTURER = "WILUTIONS";
+	private static Logger log = Logger.getLogger("License");
 
 	public static boolean install(String licenseKey, boolean userNotMachine) {
+		if (log.isLoggable(Level.FINE)) log.fine("install(" + licenseKey + ", userNotMachine=" + userNotMachine);
 		boolean succ = DDAddinDll.install(licenseKey, userNotMachine);
 		if (succ) {
 			String key = getProductRegKey(userNotMachine);
 			RegUtil.setRegistryValue(key, "", licenseKey);
 		}
+		if (log.isLoggable(Level.FINE)) log.fine(")install");
 		return succ;
 	}
 	

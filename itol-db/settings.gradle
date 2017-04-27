@@ -1,4 +1,3 @@
 
 include ("joa") 
-project(":joa").projectDir = new File("$settingsDir/../../joa")
-
+project(":joa").projectDir = new File("$settingsDir/../../joa/java/joa")
