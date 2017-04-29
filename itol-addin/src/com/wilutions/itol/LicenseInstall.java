@@ -25,11 +25,11 @@ public class LicenseInstall {
 
 	public boolean install(String licenseKey, boolean userNotMachine) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("install(" + licenseKey + ", userNotMachine=" + userNotMachine);
-		LicenseCheck licenseCheck = new LicenseCheck(product);
 		if (log.isLoggable(Level.INFO)) log.info("Install license=" + licenseKey);
-		License lic = licenseCheck.check(licenseKey, LicenseCheck.Mode.Install);
+		License lic = check(licenseKey, LicenseCheck.Mode.Install);
 		if (log.isLoggable(Level.FINE)) log.fine("isValid=" + lic.isValid() + ", isDemo=" + lic.isDemo());
 		if (lic.isValid() && !lic.isDemo()) {
+			if (log.isLoggable(Level.FINE)) log.fine("lic.options=" + lic.getOptions());
 			String registryKey = getProductRegKey(userNotMachine);
 			RegUtil.setRegistryValue(registryKey, "", licenseKey);
 			if (log.isLoggable(Level.INFO)) log.info("Saved license into registry-key=" + registryKey);
@@ -40,17 +40,29 @@ public class LicenseInstall {
 	
 	public void uninstall(boolean userNotMachine) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("uninstall(userNotMachine=" + userNotMachine);
-		LicenseCheck licenseCheck = new LicenseCheck(product);
 		String registryKey = getProductRegKey(userNotMachine);
 		if (log.isLoggable(Level.FINE)) log.fine("regkey=" + registryKey);
 		String licenseKey = (String)RegUtil.getRegistryValue(registryKey, "", "");
 		if (log.isLoggable(Level.FINE)) log.fine("licenseKey=" + licenseKey);
 		if (!licenseKey.isEmpty()) {
 			if (log.isLoggable(Level.INFO)) log.info("Uninstall license=" + licenseKey + " found at registry-key=" + registryKey);
-			licenseCheck.check(licenseKey, LicenseCheck.Mode.Uninstall);
+			check(licenseKey, LicenseCheck.Mode.Uninstall);
 			RegUtil.deleteRegistryKey(registryKey);
 		}
 		if (log.isLoggable(Level.FINE)) log.fine(")uninstall");
+	}
+	
+	private License check(String licenseKey, LicenseCheck.Mode mode) throws Exception {
+		LicenseCheck licenseCheck = new LicenseCheck(product);
+		License license = licenseCheck.check(licenseKey, mode);
+		if (license.isValid() && !license.isDemo()) {
+			boolean thisProgram = license.getOptions() == License.OPTION_ITOL;
+			if (!thisProgram) {
+				log.log(Level.SEVERE, "Given license key belongs to other product.");
+				license.setValid(false);
+			}
+		}
+		return license;
 	}
 	
 	private static String getProductRegKey(boolean userNotMachine) {
@@ -70,10 +82,9 @@ public class LicenseInstall {
 			licenseKey = (String)RegUtil.getRegistryValue(registryKey, "", "");
 			if (log.isLoggable(Level.FINE)) log.fine("Read license from user settings, registry-key=" + registryKey + ", license=" + licenseKey);
 		}
-		LicenseCheck licenseCheck = new LicenseCheck(product);
 		License lic = null;
 		try {
-			lic = licenseCheck.check(licenseKey, LicenseCheck.Mode.Check);
+			lic = check(licenseKey, LicenseCheck.Mode.Check);
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "Cannot get installed license.", e);
 			lic = new License(); // invalid
