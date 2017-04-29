@@ -28,7 +28,7 @@ repositories {
     mavenCentral()
     
     flatDir {
-        dirs 'lib'
+        dirs 'd:/java/lib/itol'
     }
 }
 
@@ -46,8 +46,8 @@ dependencies {
     compile("commons-codec:commons-codec:1.+")
 	compile("commons-io:commons-io:2.+")
 	
-	compile name: 'bypshttp-ov'
 	compile name: 'license-1.0'
+	compile name: 'bypshttp-ov'
 }
 
 test {
