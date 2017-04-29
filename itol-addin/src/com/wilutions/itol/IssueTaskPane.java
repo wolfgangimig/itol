@@ -61,6 +61,7 @@ import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.OlAttachmentType;
 import com.wilutions.mslib.outlook.OlItemType;
 
+import de.wim.liccheck.License;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -258,7 +259,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 		this.setPosition(Globals.getAppInfo().getConfig().getTaskPanePosition());
 		
-		this.licenseValid = License.isValid();
+		LicenseInstall licenseInstall = new LicenseInstall(Globals.getProductName());
+		License license = licenseInstall.getInstalledLicense();
+		this.licenseValid = license.isValid();
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")IssueTaskPane");
 	}

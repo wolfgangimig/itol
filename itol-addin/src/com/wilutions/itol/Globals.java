@@ -40,6 +40,7 @@ public class Globals {
 	private static volatile IssueService issueService;
 	private static volatile boolean issueServiceRunning;
 	private static Logger log = Logger.getLogger("Globals");
+	private static String PRODUCT_NAME = "ITOL";
 
 	private static AppInfo appInfo = new AppInfo();
 
@@ -52,7 +53,7 @@ public class Globals {
 		
 		// Set DDAddin product name. It finds the license key under 
 		// HKCU/Software/WILUTIONS/productName/License
-		DDAddinDll.setProductName(config.getAppName());
+		DDAddinDll.setProductName("DDAddin-" + config.getAppName());
 	}
 
 	protected static void setThisAddin(OutlookAddinEx addin) {
@@ -272,5 +273,9 @@ public class Globals {
 
 	public static File getTempDir() {
 		return Globals.getAppInfo().getConfig().getTempDir();
+	}
+
+	public static String getProductName() {
+		return PRODUCT_NAME;
 	}
 }
