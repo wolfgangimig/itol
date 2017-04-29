@@ -156,7 +156,9 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 	public void setIssueTaskPaneVisible(boolean visible) {
 		ensureIssuePaneInstance();
 		if (!issuePane.hasWindow() && visible) {
-			String title = Globals.getResourceBundle().getString("IssueTaskPane.title");
+			LicenseInstall licenseInstall = new LicenseInstall(Globals.getProductName());
+			boolean isDemo = licenseInstall.getInstalledLicense().isDemo();
+			String title = Globals.getResourceBundle().getString(isDemo ? "IssueTaskPane.title.demo" : "IssueTaskPane.title");
 			Globals.getThisAddin().createTaskPaneWindowAsync(issuePane, title, explorer, (succ, ex) -> {
 				if (ex != null) {
 					MessageBox.show(explorer, "Error", ex.getMessage(), null);
