@@ -117,50 +117,153 @@ public class Globals {
 	}
 
 	private static void initProxy() {
+		
+	
+/*
+ * http://www.pcwelt.de/ratgeber/Mit-Squid-als-Proxy-Server-schneller-im-Netzwerk-surfen-5896242.html
+ * https://blog.mafr.de/2013/06/16/setting-up-a-web-proxy-with-squid/
+ * 
+ 	
+ 	1. Installieren:
+ 	
+ 	1.1. Squid installieren
+ 	
+ 	sudo apt install squid
+ 	
+ 	1.2. Apache Hilfsmittel installieren, damit Kennwort-Datenbank erstellt werden kann
+ 	
+ 	sudo apt-get install apache2-utils 
+ 	
+ 	
+ 	2. Konfigurieren
+ 	
+ 	2.1. Original-Konfigurationsdatei sichern
+ 	
+ 	sudo cp /etc/squid/squid.conf /etc/squid/squid.conf.original
+ 	
+ 	2.2. Zugriffsrechte auf Konfigdatei für alle
+ 	
+ 	sudo chmod ugo+rwx ./squid.conf
+ 	
+ 	2.3. Zugriffsrechte auf Logdateien
+ 	
+ 	sudo chmod ugo+rwx /var/log/squid/access.log
+ 	sudo chmod ugo+rwx /var/log/squid/cache.log
+ 	
+ 	2.4. User für Basic-Authentication erstellen
+
+ 	Mit Basic-Authentication kann man sich über Java nicht mit dem Proxy verbinden. 
+ 	Deshalb besser 2.5.
+
+ 	sudo htpasswd -c /etc/squid/passwords squiduser
+ 	> squidpwd
+ 	
+ 	2.5. Digest Authentication
+ 	
+ 	cd /etc/squid
+ 	sudo touch passwd
+ 	sudo chown proxy.proxy passwd
+ 	sudo chmod 640 passwd
+ 	sudo htdigest -c /etc/squid/passwd SquidRealm squiduser
+ 	> squidpwd
+ 	
+ 	Prüfen:
+ 	sudo /usr/lib/squid/digest_file_auth /etc/squid/passwd
+ 	>"squiduser":"SquidRealm"
+ 	OK...
+ 	CTRL-D
+ 	
+ 	
+ 	
+ 	3.5. Konfigurationsdatei 
+
+ 	auth_param digest program /usr/lib/squid/digest_file_auth -c /etc/squid/passwd
+ 	auth_param digest realm SquidRealm
+ 	auth_param digest children 2
+
+	acl auth_users proxy_auth REQUIRED
+	
+	http_access allow auth_users
+	http_access deny all
+
+ 	http_port 3128
+ 	http_port 3129 intercept
+ 	
+ 	
+ 	
+ 	3. Squid neu starten
+ 	
+ 	sudo /etc/init.d/squid restart
+ 	
+ 	
+ 	4. Verwendung mit Chrome
+ 	
+ 	Einstellungen - Suche nach "proxy" - Windows-Einstellungen öffnen - LAN-Einstellungen
+ 	Proxyserver anhaken, Adresse und Port eingeben
+ 	
+ 	// -Djava.net.useSystemProxies=true
+ 		
+ */
+		
 		Config config = appInfo.getConfig();
-		String redmineUrl = config.getServiceUrl().toLowerCase();
-		String httpProtocol = redmineUrl.indexOf("https") == 0 ? "https" : "http";
 		String proxyHost = config.getProxyServer();
 		boolean proxyServerEnabled = config.isProxyServerEnabled(); 
 		int proxyPort = config.getProxyServerPort();
-		String proxyUserName = config.getProxyServerUserName(); 
-		String proxyPassword = PasswordEncryption.decrypt(config.getProxyServerEncryptedUserPassword());
+		final String proxyUserName = config.getProxyServerUserName(); 
+		final String proxyPassword = PasswordEncryption.decrypt(config.getProxyServerEncryptedUserPassword());
 
-		if (!proxyServerEnabled) {
-			proxyHost = "";
-			proxyPort = 0;
-			proxyUserName = "";
-			proxyPassword = "";
-		}
-		else {
-			
+		if (proxyServerEnabled) {
+			log.info("Initialize proxy: proxyHost=" + proxyHost + ", proxyPort=" + proxyPort + ", proxyUser=" + proxyUserName);
+				
 			Authenticator.setDefault(new Authenticator() {
 			    @Override
 			    protected PasswordAuthentication getPasswordAuthentication() {
+			    	PasswordAuthentication ret = null;
 			        if (getRequestorType() == RequestorType.PROXY) {
+			        	
+			        	String requestingHost = getRequestingHost();
+			        	int requestingPort = getRequestingPort();
 			            String prot = getRequestingProtocol().toLowerCase();
-			            String host = System.getProperty(prot + ".proxyHost", "");
-			            String port = System.getProperty(prot + ".proxyPort", "80");
-			            String user = System.getProperty(prot + ".proxyUser", "");
-			            String password = System.getProperty(prot + ".proxyPassword", "");
-			            if (getRequestingHost().equalsIgnoreCase(host)) {
-			                if (Integer.parseInt(port) == getRequestingPort()) {
-			                    return new PasswordAuthentication(user, password.toCharArray());
-			                }
+			            
+			            log.info("Proxy authentication: requestingHost=" + requestingHost + ", requestingProtocol=" + prot + ", requestingPort=" + requestingPort 
+			            		+ ", proxyHost=" + proxyHost + ", proxyPort=" + proxyPort + ", proxyUser=" + proxyUserName);
+						
+			            if (proxyHost.isEmpty()) {
+		                    ret = new PasswordAuthentication(proxyUserName, proxyPassword.toCharArray());
+			            }
+			            else {
+			            	if (requestingHost.equalsIgnoreCase(proxyHost)) {
+				                if (proxyPort == requestingPort) {
+				                    ret = new PasswordAuthentication(proxyUserName, proxyPassword.toCharArray());
+				                }
+				            }
 			            }
 			        }
-			        return null;
+			        return ret;
 			    }
 			});
+
+			if (proxyHost.isEmpty()) {
+				// Use system proxies.
+				// Check whether the program was started with this option.
+				// It can only be set on the command line.
+				String useSystemProxiesStr = System.getProperty("java.net.useSystemProxies");
+				if (useSystemProxiesStr == null || useSystemProxiesStr.isEmpty()) {
+					log.warning("Command line option -Djava.net.useSystemProxies=true has to be passed in order to use system proxies.");
+				}
+			}
+			else {
+				System.setProperty("http.proxyHost", proxyHost); 
+				System.setProperty("http.proxyPort", Integer.toString(proxyPort));
+				System.setProperty("https.proxyHost", proxyHost); 
+				System.setProperty("https.proxyPort", Integer.toString(proxyPort));
+			}
+			
+		}
+		else {
+			log.info("Proxy not used.");
 		}
 		
-		System.setProperty(httpProtocol + ".proxySet", Boolean.toString(proxyServerEnabled)); 
-		System.setProperty(httpProtocol + ".proxyHost", proxyHost); 
-		System.setProperty(httpProtocol + ".proxyPort", Integer.toString(proxyPort));
-		System.setProperty(httpProtocol + ".proxyUser", proxyUserName);
-		System.setProperty(httpProtocol + ".proxyPassword", proxyPassword);
-		
-
 	}
 
 	public static boolean isIssueServiceRunning() {

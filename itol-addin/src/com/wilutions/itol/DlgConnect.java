@@ -25,6 +25,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
@@ -53,11 +54,7 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 	@FXML
 	Label lbProxyServer;
 	@FXML
-	TextField edProxyServer;
-	@FXML
-	Label lbProxyPort;
-	@FXML
-	TextField edProxyPort;
+	ComboBox<String> cbProxyServer;
 	@FXML
 	Label lbProxyUserName;
 	@FXML
@@ -188,6 +185,9 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 		bnOK.visibleProperty().bind(Bindings.not(connectionInProcess));
 		bnOK.managedProperty().bind(Bindings.not(connectionInProcess));
 		pgProgress.visibleProperty().bind(connectionInProcess);
+		
+		cbProxyServer.getItems().add(resb.getString("DlgConnect.Proxy.server.default"));
+		cbProxyServer.getSelectionModel().select(0);
 
 		updateData(false);
 	}
@@ -207,10 +207,26 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 				config.setEncryptedPassword(PasswordEncryption.encrypt(edPassword.getText()));
 			}
 			config.setProxyServerEnabled(ckProxyEnabled.isSelected());
-			config.setProxyServer(edProxyServer.getText());
-			config.setProxyServerPort(Integer.parseInt(edProxyPort.getText()));
+			
+			{
+				String proxyServerAndPort = cbProxyServer.getEditor().getText();
+				int p = proxyServerAndPort.indexOf(':');
+				if (p >= 0) {
+					String proxyServer = proxyServerAndPort.substring(0, p);
+					String proxyPortStr = proxyServerAndPort.substring(p+1);
+					int proxyPort = Integer.parseInt(proxyPortStr);
+					config.setProxyServer(proxyServer);
+					config.setProxyServerPort(proxyPort);
+				}
+				else {
+					// Assume DlgConnect.Proxy.server.default is selected, use default settings.
+					config.setProxyServer("");
+					config.setProxyServerPort(0);
+				}
+			}
+			
 			config.setProxyServerUserName(edProxyUserName.getText());
-			config.setProxyServerEncryptedUserPassword(PasswordEncryption.encrypt(edProxyUserName.getText()));
+			config.setProxyServerEncryptedUserPassword(PasswordEncryption.encrypt(edProxyPassword.getText()));
 		}
 		else {
 			String url = config.getServiceUrl();
@@ -227,9 +243,17 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 				edUserName.setText(apiKey);
 			}
 
-			edProxyServer.setText(config.getProxyServer());
-			int proxyPort = config.getProxyServerPort();
-			edProxyPort.setText(Integer.toString(proxyPort));
+			{
+				String proxyServerAndPort = config.getProxyServer() + ":" + config.getProxyServerPort();
+				boolean useSystemSettings = proxyServerAndPort.equals(":0"); 
+				if (useSystemSettings) { 
+					cbProxyServer.getSelectionModel().select(0);
+				}
+				else {
+					cbProxyServer.getSelectionModel().select(-1);
+					cbProxyServer.getEditor().setText(proxyServerAndPort);
+				}
+			}
 			edProxyUserName.setText(config.getProxyServerUserName());
 			String proxyPassword = config.getProxyServerEncryptedUserPassword();
 			edProxyPassword.setText(PasswordEncryption.decrypt(proxyPassword));
@@ -241,8 +265,7 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 	
 	private void enableProxySettings() {
 		boolean disable = !ckProxyEnabled.isSelected();
-		edProxyServer.setDisable(disable);
-		edProxyPort.setDisable(disable);
+		cbProxyServer.setDisable(disable);
 		edProxyUserName.setDisable(disable);
 		edProxyPassword.setDisable(disable);
 	}

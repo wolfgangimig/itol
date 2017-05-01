@@ -457,6 +457,7 @@ public class Config implements Serializable, Cloneable {
 	}
 
 	public String getProxyServer() {
+		if (proxyServer == null) proxyServer= "";
 		return proxyServer;
 	}
 

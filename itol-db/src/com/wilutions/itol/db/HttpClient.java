@@ -92,7 +92,7 @@ public class HttpClient {
 			conn.setRequestMethod(method);
 			conn.setDoOutput(content != null);
 			// conn.setInstanceFollowRedirects(false);
-
+			
 			long contentLength = -1;
 			@SuppressWarnings("unused")
 			String contentDisposition = "";
@@ -115,6 +115,7 @@ public class HttpClient {
 					key = header.substring(0, p).trim();
 					value = header.substring(p + 1).trim();
 				}
+				
 				conn.setRequestProperty(key, value);
 
 				if (key.equalsIgnoreCase("Content-Length")) {
