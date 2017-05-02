@@ -35,7 +35,6 @@ import com.wilutions.mslib.outlook.OlObjectClass;
 @DeclAddin(application = OfficeApplication.Outlook, loadBehavior = LoadBehavior.LoadOnStart, friendlyName = "Issue Tracker Addin", description = "Issue Tracker Addin for Microsoft Outlook")
 public class ItolAddin extends OutlookAddinEx {
 
-	private AttachmentHttpServer httpServer = new AttachmentHttpServer();
 	private Logger log = Logger.getLogger("ItolAddin");
 
 	public ItolAddin() {
@@ -156,13 +155,8 @@ public class ItolAddin extends OutlookAddinEx {
 	public void onQuit() throws ComException {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "onQuit(");
 		super.onQuit();
-		httpServer.done();
 		Globals.releaseResources();
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")onQuit");
-	}
-
-	public AttachmentHttpServer getHttpServer() {
-		return httpServer;
 	}
 
 	public String test() {
