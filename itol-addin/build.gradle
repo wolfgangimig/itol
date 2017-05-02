@@ -42,13 +42,12 @@ repositories {
     mavenCentral()
     
     flatDir {
-        dirs 'd:/java/lib'
+        dirs 'd:/java/lib/itol'
     }
 }
 
 dependencies {
 	compile project(":itol-db")
-	compile project(":license");
 	compile project(":joa")
 	
 	// UI controls http://fxexperience.com/controlsfx/
