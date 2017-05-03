@@ -110,6 +110,12 @@ public class Config implements Serializable, Cloneable {
 	private MailBodyConversion mailBodyConversion = MailBodyConversion.MARKUP;
 	
 	/**
+	 * Timeout for converting mail body.
+	 * E.g. mails from ABBYY require more than 20s to be loaded.
+	 */
+	private int mailBodyConversionTimeoutSeconds = 10;
+	
+	/**
 	 * Custom field for mail address.
 	 */
 	private String autoReplyField = "";
@@ -567,6 +573,14 @@ public class Config implements Serializable, Cloneable {
 
 	public void setExportAttachmentsProgram(String exportAttachmentsProgram) {
 		this.exportAttachmentsProgram = exportAttachmentsProgram;
+	}
+
+	public int getMailBodyConversionTimeoutSeconds() {
+		return mailBodyConversionTimeoutSeconds;
+	}
+
+	public void setMailBodyConversionTimeoutSeconds(int mailBodyConversionTimeoutSeconds) {
+		this.mailBodyConversionTimeoutSeconds = mailBodyConversionTimeoutSeconds;
 	}
 
 	
