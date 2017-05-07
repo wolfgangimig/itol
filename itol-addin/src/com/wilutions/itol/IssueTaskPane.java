@@ -189,7 +189,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 	private boolean tabAttachmentsApplyHandler = true;
 	private SimpleIntegerProperty updateBindingToAttachmentList = new SimpleIntegerProperty();
-	private Attachments observableAttachments = new Attachments();
+	private Attachments observableAttachments = new Attachments(FXCollections.emptyObservableList());
 	private AddAttachmentMenu addAttachmentMenu;
 
 	private IssuePropertyEditor historyEditor;
