@@ -24,7 +24,6 @@ import javax.imageio.ImageIO;
 
 import com.wilutions.itol.db.Attachment;
 
-import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
@@ -34,11 +33,6 @@ public class Attachments implements Iterable<Attachment> {
 	private final static SimpleDateFormat DATEFORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	ObservableList<Attachment> attachments;
 
-	public Attachments() {
-		this.attachments = FXCollections.observableArrayList();
-		debugInitListener();
-	}
-	
 	public Attachments(ObservableList<Attachment> attachments) {
 		this.attachments = attachments;
 		debugInitListener();
