@@ -60,7 +60,7 @@ public class Property {
 	public static final String STATUS = "IssueProperty.State";
 
 	/**
-	 * Issue update notes. Value is of type String. It contains the notes
+	 * Issue update notes (comment). Value is of type String. It contains the notes
 	 * entered for an updated issue.
 	 */
 	public static final String NOTES = "IssueProperty.Notes";
@@ -70,7 +70,13 @@ public class Property {
 	 * Select list contains project roles.
 	 */
 	public static final String NOTES_VISIBILITY = "IssueProperty.NotesVisibility";
-	
+
+	/**
+	 * Issue history.
+	 * This property is of type PropertyClass.TYPE_CUSTOM.
+	 * The stored value is an instance of class CompletableFuture<History>.
+	 */
+	public static final String HISTORY = "IssueProperty.History";
 	
 	public static final String URL = "url";
 	public static final String USER_NAME = "userName";

@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -37,6 +38,7 @@ import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.DefaultSuggest;
+import com.wilutions.itol.db.History;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssuePropertyEditor;
@@ -103,8 +105,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.HTMLEditor;
-import javafx.scene.web.WebEngine;
-import javafx.scene.web.WebView;
 import javafx.stage.Window;
 import javafx.util.Duration;
 
@@ -123,6 +123,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	private HTMLEditor edDescription;
 	@FXML
 	private VBox boxDescription;
+	@FXML
+	private VBox boxHistory;
 	@FXML
 	private SplitMenuButton bnAssignSelection;
 	@FXML
@@ -151,8 +153,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	private VBox boxNotes;
 	@FXML
 	private Button bnCopyMailBody;
-	@FXML
-	private WebView webHistory;
 	@FXML
 	private Tab tpProperties;
 	@FXML
@@ -192,6 +192,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	private Attachments observableAttachments = new Attachments();
 	private AddAttachmentMenu addAttachmentMenu;
 
+	private IssuePropertyEditor historyEditor;
 	private IssuePropertyEditor descriptionEditor;
 	private IssuePropertyEditor notesEditor;
 	private PropertyGridView propGridView;
@@ -560,8 +561,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			autoCompletionPriority = initAutoComplete(srv, cbPriority, Property.PRIORITY, false);
 			autoCompletionStatus = initAutoComplete(srv, cbStatus, Property.STATUS, false);
 
-			WebViewHelper.addClickHandlerToWebView(webHistory);
-
 			initDetectIssueModified();
 
 
@@ -796,17 +795,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	}
 
 	private void initHistory() throws Exception {
-		if (issue.getId() != null && issue.getId().length() != 0) {
-			IssueService srv = Globals.getIssueService();
-			WebEngine webEngine = webHistory.getEngine();
-			String url = srv.getIssueHistoryUrl(issue.getId());
-			if (url.toLowerCase().startsWith("http")) {
-				webEngine.load(url);
-			}
-			else {
-				webEngine.loadContent(url);
-			}
+		long t1 = System.currentTimeMillis();
+		if (issue != null) {
+			historyEditor.updateData(false);
 		}
+		long t2 = System.currentTimeMillis();
+		log.info("[" + (t2-t1) + "] initHistory()");
 	}
 
 	private void initAttachments() {
@@ -1027,10 +1021,20 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		addOrRemoveTab(tpNotes, !isNew(), 0);
 		addOrRemoveTab(tpHistory, !isNew(), 0);
 		
-		boolean hasHistory = !Globals.getIssueService().getIssueHistoryUrl(issue.getId()).isEmpty();
-		tabpIssue.getSelectionModel().select(hasHistory ? tpHistory : tpDescription);
+		if (!isNew()) {
+			@SuppressWarnings("unchecked")
+			CompletableFuture<History> fhistory = (CompletableFuture<History>)issue.getPropertyValue(Property.HISTORY, null);
+			History history = fhistory.get();
+			boolean hasHistory = !history.getCommentsHtml().isEmpty() || !history.getWorklogsHtml().isEmpty(); 
+			tabpIssue.getSelectionModel().select(hasHistory ? tpHistory : tpDescription);
+		}
 
 		initBnUpdateText();
+		
+		historyEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.HISTORY);
+		VBox.setVgrow(historyEditor.getNode(), Priority.ALWAYS);
+		boxHistory.getChildren().clear();
+		boxHistory.getChildren().add(historyEditor.getNode());
 
 		descriptionEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
 		VBox.setVgrow(descriptionEditor.getNode(), Priority.ALWAYS);

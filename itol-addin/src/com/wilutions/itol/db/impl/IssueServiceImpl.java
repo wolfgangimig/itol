@@ -222,12 +222,6 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public String getIssueHistoryUrl(String issueId) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Issue updateIssue(Issue iss, List<String> modifiedProperties, ProgressCallback cb) throws IOException {
 		String id = String.valueOf(issues.size() + 1);
 		Issue copy = new Issue(id, iss);

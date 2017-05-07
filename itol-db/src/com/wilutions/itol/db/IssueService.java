@@ -72,9 +72,6 @@ public interface IssueService {
 	
 	void setDefaultIssue(Issue iss) throws Exception;
 	
-	// TODO: rename to getHistory
-	String getIssueHistoryUrl(String issueId) throws Exception;
-	
 	String downloadAttachment(String url, ProgressCallback cb) throws Exception;
 	
 	String convertHtmlBodyToMarkup(String htmlBody) throws Exception;
