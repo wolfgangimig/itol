@@ -96,3 +96,19 @@ Does not work nice for short scroll bars.
 	-fx-font-weight: bold; 
 	-fx-text-fill: CORAL;
 }
+
+
+.progress-bar > .bar {
+    -fx-background-color: linear-gradient(to bottom, derive(-fx-accent, -7%), derive(-fx-accent, 0%), derive(-fx-accent, -3%), derive(-fx-accent, -9%) );
+    -fx-background-insets: 3 3 4 3;
+    -fx-background-radius: 0;
+    -fx-padding: 5;
+}
+
+.progress-bar > .track {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+}
+
