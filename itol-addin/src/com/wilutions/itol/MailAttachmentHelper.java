@@ -471,6 +471,7 @@ public class MailAttachmentHelper {
 			}
 			catch (Exception e) {
 				log.log(Level.SEVERE, "Failed to save attachment=" + this + " to local file.", e);
+				throw e;
 			}
 
 			return msgFile;
