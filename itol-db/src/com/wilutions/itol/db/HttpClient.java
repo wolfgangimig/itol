@@ -144,10 +144,12 @@ public class HttpClient {
 				subcb = cb.createChild("Upload", 0.5);
 				subcbRecv = cb.createChild("Receive", 0.5);
 				if (content instanceof File) {
-					writeFileIntoStream(conn.getOutputStream(), ((File) content), subcb);
+					OutputStream ostream = conn.getOutputStream();
+					writeFileIntoStream(ostream, ((File) content), subcb);
 				}
 				else if (content instanceof InputStream) {
-					writeFileIntoStream(conn.getOutputStream(), ((InputStream) content), contentLength, subcb);
+					OutputStream ostream = conn.getOutputStream();
+					writeFileIntoStream(ostream, ((InputStream) content), contentLength, subcb);
 				}
 			}
 			else {
