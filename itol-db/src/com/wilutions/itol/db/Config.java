@@ -76,6 +76,12 @@ public class Config implements Serializable, Cloneable {
 	public final static String EXPORT_PROGRAM_TOTALCMD = "\"C:\\Program Files\\totalcmd\\TOTALCMD64.exe\" /O /L=\"" + PLACEHODER_EXPORT_DIRECTORY + "\"";
 	
 	/**
+	 * Default temp directory.
+	 * Value: %TEMP%\ITOL
+	 */
+	public final static String DEFAULT_TEMP_DIR = new File(System.getProperty("java.io.tmpdir"), "ITOL").getAbsolutePath();
+	
+	/**
 	 * Default export program.
 	 * This program is executed by default when attachments are exported.
 	 */
@@ -148,12 +154,13 @@ public class Config implements Serializable, Cloneable {
 	private String exportAttachmentsDirectory = "";
 	private String proxyServerUserName = "";
 	private String proxyServerEncryptedUserPassword = "";
-	private String tempDir = "";
+	private String tempDirBase = "";
 	
 	public Config() {
-		tempDir = new File(System.getProperty("java.io.tmpdir"), "ITOL").getAbsolutePath();
-		logFile = new File(System.getProperty("java.io.tmpdir"), "itol.log").getAbsolutePath();
-		exportAttachmentsDirectory = new File(tempDir, "Export").getAbsolutePath();
+		getTempDirBase();
+		getTempDir();
+		getLogFile();
+		getExportAttachmentsDirectory();
 		exportAttachmentsProgram = EXPORT_PROROGRAM_DEFAULT;
 		userName = proxyServerUserName = System.getProperty("user.name");
 		taskPanePosition = new TaskPanePosition();
@@ -431,6 +438,9 @@ public class Config implements Serializable, Cloneable {
 	}
 
 	public String getLogFile() {
+		if (Default.value(logFile).isEmpty()) {
+			logFile = new File(getTempDirBase(), "itol.log").getAbsolutePath();
+		}
 		return logFile;
 	}
 
@@ -447,6 +457,9 @@ public class Config implements Serializable, Cloneable {
 	}
 
 	public String getExportAttachmentsDirectory() {
+		if (Default.value(exportAttachmentsDirectory).isEmpty()) {
+			exportAttachmentsDirectory = new File(getTempDirBase(), "Export").getAbsolutePath();
+		}
 		return exportAttachmentsDirectory;
 	}
 
@@ -520,17 +533,21 @@ public class Config implements Serializable, Cloneable {
 	}
 
 	public String getTempDirBase() {
-		return tempDir;
+		if (Default.value(tempDirBase).isEmpty()) {
+			tempDirBase = DEFAULT_TEMP_DIR;
+			new File(tempDirBase).mkdirs();
+		}
+		return tempDirBase;
 	}
 	
 	public void setTempDirBase(String tempDir) {
-		this.tempDir = tempDir;
+		this.tempDirBase = tempDir;
 	}
 	
 	public synchronized File getTempDir() {
 		if (tempDirForSession == null) {
 			SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
-			tempDirForSession = new File(tempDir, dateTimeFormat.format(new Date(System.currentTimeMillis())));
+			tempDirForSession = new File(getTempDirBase(), dateTimeFormat.format(new Date(System.currentTimeMillis())));
 			tempDirForSession.mkdirs();
 		}
 		return tempDirForSession;
