@@ -40,6 +40,8 @@ public class IssueApplication extends AddinApplication {
 		appConfig.setServiceFactoryClass(IssueServiceFactory_JS.class.getName());
 		appConfig.setServiceFactoryParams(Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT));
 		appConfig.setAppDir(getAppDir());
+		
+		Globals.initLogging();
 	}
 
 	private static File getAppDir() {
