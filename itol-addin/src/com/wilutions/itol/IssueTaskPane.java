@@ -299,20 +299,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 			updateIssueFromMailItem(cb.createChild(0.8), (succ, ex) -> {
 				if (succ) {
-					Platform.runLater(() -> {
-						try {
-							initialUpdate(cb.createChild(0.1));
-						}
-						catch (Exception e) {
-							log.log(Level.WARNING, "initialUpdate failed", e);
-						}
-						finally {
-							outerResult.setAsyncResult(succ, ex);
-						}
-					});
+					initialUpdate(cb.createChild(0.1), outerResult);
 				}
 				else {
-					outerResult.setAsyncResult(succ, ex);
+					outerResult.setAsyncResult(false, ex);
 				}
 			});
 
@@ -333,17 +323,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 				// Get issue ID from mailItem
 				String subject = mailItem.getSubject();
 				String issueId = srv.extractIssueIdFromMailSubject(subject);
-								
-				// Issue description from mail body.
-				String textBody = mailItem.getBody().replace("\r\n", "\n");
-				String description = textBody;
-				if (Globals.getAppInfo().getConfig().getMailBodyConversion().equals(MailBodyConversion.MARKUP)) {
-					String htmlBody = mailItem.getHTMLBody();
-					String markup = Globals.getIssueService().convertHtmlBodyToMarkup(htmlBody);
-					if (markup.length() > textBody.length()/2) {
-						description = markup;
-					}
-				}
 
 				issue = null;
 
@@ -351,12 +330,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 				if (issueId != null && issueId.length() != 0) {
 
 					// read issue
-					issue = tryReadIssue(srv, subject, description, issueId, cb);
+					issue = tryReadIssue(srv, subject, issueId, cb);
 				}
 
 				if (issue == null) {
 
 					// ... no issue ID: create blank issue
+					String description = makeDescriptionFromMailBody();
 					issue = srv.createIssue(subject, description, null, null, cb);
 					
 					assignMailAdressToAutoReplyField();
@@ -394,6 +374,19 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueFromMailItem");
 	}
 
+	private String makeDescriptionFromMailBody() throws Exception, IOException {
+		String textBody = mailItem.getBody().replace("\r\n", "\n");
+		String description = textBody;
+		if (Globals.getAppInfo().getConfig().getMailBodyConversion().equals(MailBodyConversion.MARKUP)) {
+			String htmlBody = mailItem.getHTMLBody();
+			String markup = Globals.getIssueService().convertHtmlBodyToMarkup(htmlBody);
+			if (markup.length() > textBody.length()/2) {
+				description = markup;
+			}
+		}
+		return description;
+	}
+
 	private void assignMailAdressToAutoReplyField() {
 		String autoReplyField = Globals.getAppInfo().getConfig().getAutoReplyField();
 		if (!Default.value(autoReplyField).isEmpty()) {
@@ -402,7 +395,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		}
 	}
 
-	private Issue tryReadIssue(IssueService srv, String subject, String description, String issueId, ProgressCallback cb)
+	private Issue tryReadIssue(IssueService srv, String subject, String issueId, ProgressCallback cb)
 			throws IOException {
 
 		Issue ret = null;
@@ -418,35 +411,27 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			// Set reply description (without original message) as issue
 			// notes, if the mail is newer than the last update.
 			if (newMail || lastModified.before(receivedTime)) {
+				
+				String description = makeDescriptionFromMailBody();
+				
 				String replyDescription = IssueDescriptionParser.stripOriginalMessageFromReply(mailItem.getFrom(),
 						mailItem.getTo(), subject, description);
 
-				// Set NEW NOTES property after the backup copy
-				// has been created. Otherwise the issue would not
-				// bee seen as modified.
+				// Set NEW NOTES property from mail description
+				issue.setPropertyString(Property.NOTES, replyDescription);
+
+				// Mail attachments are automatically added in initialUpdate() later.
+				// So not required: attachmentHelper.initialUpdate(mailItem, issue);
+
+				// ITJ-18: Send auto reply.
+				// Mark that notes were copied from mail body.
+				// This information is used to prevent an auto reply mail 
+				// to be sent.  
+				tookNotesFromMail = true;
+
+				// After the dialog is initialized, select tab COMMENT.
 				autoIssueModifications.add(() -> {
-
-					issue.setPropertyString(Property.NOTES, replyDescription);
-					
-					// ITJ-18: Send auto reply.
-					// Mark that notes were copied from mail body.
-					// This information is used to prevent an auto reply mail 
-					// to be sent.  
-					tookNotesFromMail = true;
-
-					Platform.runLater(() -> {
-
-						tabpIssue.getSelectionModel().select(tpNotes);
-
-						try {
-							attachmentHelper.initialUpdate(mailItem, issue);
-							initalUpdateAttachmentView();
-						}
-						catch (Exception e) {
-							log.log(Level.SEVERE, "Failed to update mail attachments.", e);
-						}
-					});
-
+					Platform.runLater(() -> tabpIssue.getSelectionModel().select(tpNotes) );
 				});
 			}
 
@@ -471,11 +456,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 	public void setWindowOwner(Object w) {
 		windowOwner = w;
-	}
-
-	public boolean isNew() {
-		String issueId = issue != null ? issue.getId() : "";
-		return issueId == null || issueId.length() == 0;
 	}
 
 	@Override
@@ -753,7 +733,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		if (modified) {
 			bnAssignSelection_select(false);
 		}
-		boolean enabled = modified || isNew();
+		boolean enabled = modified || issue.isNew() || issue.isNewComment();
 		boolean hasSubject = !issue.getSubject().isEmpty();
 		setBnUpdateEnabled(enabled && hasSubject);
 	}
@@ -1001,65 +981,88 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] initComboBox(propertyId=" + propertyId + ")");
 	}
-
-	private void initialUpdate(ProgressCallback cb) throws Exception {
-		long t1 = System.currentTimeMillis();
-		
-		// Create a new binding for attachment modifications.
-		// This avoids too many listeners for attachment modifications, since
-		// listeners were never removed.
-		updateBindingToAttachmentList = new SimpleIntegerProperty();
-		
-		tpNotes.setStyle("-fx-font-weight:normal;");
-		tpAttachments.setStyle("-fx-font-weight:normal;");
-
-		attachmentHelper.initialUpdate(mailItem, issue);
-
-		initalUpdateAttachmentView();
-
-		// Show/Hide History and Notes
-		addOrRemoveTab(tpNotes, !isNew(), 0);
-		addOrRemoveTab(tpHistory, !isNew(), 0);
-		
-		if (!isNew()) {
-			@SuppressWarnings("unchecked")
-			CompletableFuture<History> fhistory = (CompletableFuture<History>)issue.getPropertyValue(Property.HISTORY, null);
-			History history = fhistory.get();
-			boolean hasHistory = !history.getCommentsHtml().isEmpty() || !history.getWorklogsHtml().isEmpty(); 
-			tabpIssue.getSelectionModel().select(hasHistory ? tpHistory : tpDescription);
+	
+	private void initialUpdate(ProgressCallback cb, AsyncResult<Boolean> asyncResult) {
+		if (Platform.isFxApplicationThread()) {
+			initialUpdateInFxThread(cb, asyncResult);
 		}
+		else {
+			Platform.runLater(() -> {
+				initialUpdateInFxThread(cb, asyncResult);
+			});
+		}
+	}	
 
-		initBnUpdateText();
+	private void initialUpdateInFxThread(ProgressCallback cb, AsyncResult<Boolean> asyncResult) {
+		long t1 = System.currentTimeMillis();
+		try {
 		
-		historyEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.HISTORY);
-		VBox.setVgrow(historyEditor.getNode(), Priority.ALWAYS);
-		boxHistory.getChildren().clear();
-		boxHistory.getChildren().add(historyEditor.getNode());
-
-		descriptionEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
-		VBox.setVgrow(descriptionEditor.getNode(), Priority.ALWAYS);
-		boxDescription.getChildren().clear();
-		boxDescription.getChildren().add(descriptionEditor.getNode());
-
-		notesEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
-		VBox.setVgrow(notesEditor.getNode(), Priority.ALWAYS);
-		boxNotes.getChildren().clear();
-		boxNotes.getChildren().add(notesEditor.getNode());
-
-		modified = false;
-
-		updateData(false);
-
-		detectIssueModifiedStart();
+			// Create a new binding for attachment modifications.
+			// This avoids too many listeners for attachment modifications, since
+			// listeners were never removed.
+			updateBindingToAttachmentList = new SimpleIntegerProperty();
+			
+			tpNotes.setStyle("-fx-font-weight:normal;");
+			tpAttachments.setStyle("-fx-font-weight:normal;");
+	
+			attachmentHelper.initialUpdate(mailItem, issue);
+	
+			initalUpdateAttachmentView();
+	
+			// Show/Hide History and Notes
+			addOrRemoveTab(tpNotes, !issue.isNew(), 0);
+			addOrRemoveTab(tpHistory, !issue.isNew(), 0);
+			
+			if (!issue.isNew()) {
+				@SuppressWarnings("unchecked")
+				CompletableFuture<History> fhistory = (CompletableFuture<History>)issue.getPropertyValue(Property.HISTORY, null);
+				History history = fhistory.get();
+				boolean hasHistory = !history.getCommentsHtml().isEmpty() || !history.getWorklogsHtml().isEmpty(); 
+				tabpIssue.getSelectionModel().select(hasHistory ? tpHistory : tpDescription);
+			}
+	
+			initBnUpdateText();
+			
+			historyEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.HISTORY);
+			VBox.setVgrow(historyEditor.getNode(), Priority.ALWAYS);
+			boxHistory.getChildren().clear();
+			boxHistory.getChildren().add(historyEditor.getNode());
+	
+			descriptionEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.DESCRIPTION);
+			VBox.setVgrow(descriptionEditor.getNode(), Priority.ALWAYS);
+			boxDescription.getChildren().clear();
+			boxDescription.getChildren().add(descriptionEditor.getNode());
+	
+			notesEditor = Globals.getIssueService().getPropertyEditor(this, issue, Property.NOTES);
+			VBox.setVgrow(notesEditor.getNode(), Priority.ALWAYS);
+			boxNotes.getChildren().clear();
+			boxNotes.getChildren().add(notesEditor.getNode());
+	
+			modified = false;
+	
+			updateData(false);
+	
+			detectIssueModifiedStart();
+			
+			asyncResult.setAsyncResult(Boolean.TRUE, null);
+		}
+		catch (Exception e) {
+			String text = e.toString();
+			log.log(Level.SEVERE, text, e);
+			showMessageBoxError(text);
+			asyncResult.setAsyncResult(Boolean.FALSE, e);
+		}
+		finally {
+			cb.setFinished();
+		}
 		
-		cb.setFinished();
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] initialUpdate()");
 	}
 
 	private void initBnUpdateText() {
 		if (isLicenseValid()) {
-			bnUpdate.setText(resb.getString(isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
+			bnUpdate.setText(resb.getString(issue.isNew() ? "bnUpdate.text.create" : "bnUpdate.text.update"));
 		}
 		else {
 			bnUpdate.setText(resb.getString("mnLicense"));
@@ -1265,15 +1268,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	
 	private void internalShowIssue(String issueId, ProgressCallback cb, AsyncResult<Boolean> asyncResult) throws Exception {
 		IssueService srv = Globals.getIssueService();
-		Issue issue = srv.readIssue(issueId, cb.createChild(0.5));
-		String subject = srv.injectIssueIdIntoMailSubject("", issue);
+		this.issue = srv.readIssue(issueId, cb.createChild(0.5));
 		
-		IssueMailItem mitem = new IssueMailItemBlank() {
+		String subject = srv.injectIssueIdIntoMailSubject("", issue);
+		this.mailItem = new IssueMailItemBlank() {
 			public String getSubject() {
 				return subject;
 			}
 		};
-		internalSetMailItem(mitem, cb.createChild(0.5), asyncResult);
+		
+		initialUpdate(cb.createChild(0.5), asyncResult);
 	}
 
 	@FXML
@@ -1282,23 +1286,25 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		queryDiscardChangesAsync((succ, ex) -> {
 			if (ex == null && succ) {
 
-				ProgressCallback cb = createProgressCallback("Show issue");
-				
-				// Show that reading issue has started
-				cb.incrProgress(0.1);
-				
-				bnAssignSelection_select(false);
-				
-				try {
-					String issueId = edIssueId.getText();
-					internalShowIssue(issueId, cb.createChild(0.9), (succ1, ex1) -> {
-						cb.setFinished();	
-					});
-				}
-				catch (Exception e) {
-					showMessageBoxError(e.toString());
-					cb.setFinished();
-				}
+				Platform.runLater(() -> {
+					ProgressCallback cb = createProgressCallback("Show issue");
+					
+					// Show that reading issue has started
+					cb.incrProgress(0.1);
+					
+					bnAssignSelection_select(false);
+					
+					try {
+						String issueId = edIssueId.getText();
+						internalShowIssue(issueId, cb.createChild(0.9), (succ1, ex1) -> {
+							cb.setFinished();	
+						});
+					}
+					catch (Exception e) {
+						showMessageBoxError(e.toString());
+						cb.setFinished();
+					}
+				});
 			}
 		});
 	}
@@ -1508,17 +1514,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 					Issue prevIssue = (Issue)issue.clone();
 					updateIssueChangedMembers(srv, progressCallback.createChild(0.8));
 
-					Platform.runLater(() -> {
-						try {
-							initialUpdate(progressCallback.createChild(0.1));
+					initialUpdate(progressCallback.createChild(0.1), (succ, ex) -> {
+						if (succ) {
 							maybeSendReplyWithNotes(prevIssue);
 						}
-						catch (Exception e) {
-							log.log(Level.SEVERE, "Failed to read issue data into UI controls.", e);
-						}
-						finally {
-							progressCallback.setFinished();
-						}
+						progressCallback.setFinished();
 					});
 
 				}
@@ -1569,13 +1569,28 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "updateIssueChangedMembers(");
 
 		// If the issue ID is empty, a new issue has to be created.
-		boolean isNew = issue.getId().length() == 0;
+		boolean isNew = issue.isNew();
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "isNew=" + isNew);
-
+		
 		// Collect modified properties.
 		List<String> modifiedProperties = new ArrayList<String>();
 		issueCopy.findChangedMembers(issue, modifiedProperties);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "modifiedProperties=" + modifiedProperties);
+		
+		// If the issue comment is automatically initialized in tryReadIssue, 
+		// the comment is not marked as modified, because the Assign button should not loose it's check.
+		// To make sure, that an automatically added comment is saved into the issue, 
+		// add Property.NOTES to the modified Properties.
+		// Same is true for automatically initialized attachments.
+		boolean isNewComment = issue.isNewComment();
+		if (isNewComment) {
+			if (!modifiedProperties.contains(Property.NOTES)) {
+				modifiedProperties.add(Property.NOTES);
+			}
+			if (!modifiedProperties.contains(Property.ATTACHMENTS)) {
+				modifiedProperties.add(Property.ATTACHMENTS);
+			}
+		}
 
 		// Enhancement #40: issue ID should be inserted into the attached mail
 		// too.
@@ -1874,14 +1889,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 				issue = srv.createIssue(subject, description, issue, subtaskType, cb.createChild(0.9));
 
 				Platform.runLater(() -> {
-					try {
-						initialUpdate(cb.createChild(0.1));
-					} catch (Exception e) {
-						String text = e.toString();
-						log.log(Level.SEVERE, text, e);
-						showMessageBoxError(text);
-					}
-					cb.setFinished();
+					initialUpdate(cb.createChild(0.1), (succ, ex) -> {
+						cb.setFinished();
+					});
 				});
 
 			}

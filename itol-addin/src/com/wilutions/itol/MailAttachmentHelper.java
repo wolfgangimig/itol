@@ -39,7 +39,6 @@ import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.itol.db.ProgressCallback;
-import com.wilutions.itol.db.Property;
 import com.wilutions.mslib.outlook.Application;
 import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.OlAttachmentType;
@@ -96,9 +95,9 @@ public class MailAttachmentHelper {
 		releaseResources();
 
 		if (issue != null) {
-			boolean isNew = issue.getId().isEmpty();
-			String newNotes = issue.getPropertyString(Property.NOTES, "");
-			if (isNew || newNotes.length() != 0) {
+			boolean isNew = issue.isNew();
+			boolean isNewComment = issue.isNewComment();
+			if (isNew || isNewComment) {
 				initialUpdateNewIssueAttachments(mailItem, issue);
 			}
 		}

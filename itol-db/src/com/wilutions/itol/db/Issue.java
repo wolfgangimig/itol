@@ -90,6 +90,10 @@ public class Issue implements Serializable {
 		}
 	}
 	
+	/**
+	 * Return true, if this is a new issue.
+	 * @return
+	 */
 	public boolean isNew() {
 		return this.id.isEmpty();
 	}
@@ -101,6 +105,15 @@ public class Issue implements Serializable {
 	public String getId() {
 		if (id == null) id = "";
 		return id;
+	}
+	
+	/**
+	 * Return true, if this has a new comment.
+	 * @return
+	 */
+	public boolean isNewComment() {
+		String newNotes = getPropertyString(Property.NOTES, "");
+		return !newNotes.isEmpty();
 	}
 
 	public List<IssueUpdate> getUpdates() {
