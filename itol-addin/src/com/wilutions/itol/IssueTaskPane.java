@@ -55,6 +55,7 @@ import com.wilutions.itol.db.Suggest;
 import com.wilutions.joa.TaskPanePosition;
 import com.wilutions.joa.fx.TaskPaneFX;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
+import com.wilutions.joa.ribbon.RibbonButton;
 import com.wilutions.mslib.office.CustomTaskPane;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.office._CustomTaskPane;
@@ -1654,7 +1655,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	public void onVisibleStateChange(_CustomTaskPane ctp) throws ComException {
 		IRibbonUI ribbon = Globals.getThisAddin().getRibbon();
 		if (ribbon != null) {
-			ribbon.InvalidateControl("NewIssue");
+			
+			RibbonButton bnNewIssue = (RibbonButton)inspectorOrExplorer.getRibbonControls().get("bnNewIssue");
+			bnNewIssue.setPressed(ctp.getVisible());
+			ribbon.InvalidateControl("bnNewIssue");
 		}
 	}
 
