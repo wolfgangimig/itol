@@ -37,5 +37,9 @@ public class Resources {
 	public File getEula() {
 		return rloader.getFile(Resources.class, "EULA.html");
 	}
+	
+	public Image getSettingsImage() {
+		return rloader.getImage(Resources.class, "settings.png");
+	}
 
 }

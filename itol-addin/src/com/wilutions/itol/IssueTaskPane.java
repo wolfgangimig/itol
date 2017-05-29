@@ -182,6 +182,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	private TextField edIssueId;
 	@FXML
 	private ProgressBar pgProgress;
+	@FXML
+	private MenuButton bnExtra;
 
 	private AutoCompletionBinding<IdName> autoCompletionProject;
 	private AutoCompletionBinding<IdName> autoCompletionTracker;
@@ -533,9 +535,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 			bnShow.disableProperty().bind(Bindings.isEmpty(edIssueId.textProperty()));
 			bnShowIssueInBrowser.disableProperty().bind(Bindings.isEmpty(edIssueId.textProperty()));
+			
+			ImageView settingsImage = new ImageView(Resources.getInstance().getSettingsImage());
+			settingsImage.setFitHeight(16);
+			settingsImage.setFitWidth(16);
+			bnExtra.setGraphic(settingsImage);
 
 			edSubject.requestFocus();
-
+			
 			IssueService srv = Globals.getIssueService();
 			autoCompletionProject = initAutoComplete(srv, cbProject, Property.PROJECT, true);
 			autoCompletionTracker = initAutoComplete(srv, cbTracker, Property.ISSUE_TYPE, true);

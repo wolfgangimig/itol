@@ -44,7 +44,7 @@
                      </HBox.margin></TextField>
                   <Button fx:id="bnShow" mnemonicParsing="false" onAction="#onShowExistingIssue" text="%bnShow.text" />
                   <Button fx:id="bnShowIssueInBrowser" mnemonicParsing="false" onAction="#onShowIssueInBrowser" text="%bnShowIssueInBrowser.text" />
-                  <MenuButton mnemonicParsing="false" onAction="#onSaveAsDefault" text="%bnExtra.text">
+                  <MenuButton fx:id="bnExtra" mnemonicParsing="false" text="%bnExtra.text">
                     <items>
                       <MenuItem mnemonicParsing="false" onAction="#onSaveAsDefault" text="%mnSaveAsDefaults.text" />
                         <SeparatorMenuItem mnemonicParsing="false" />
