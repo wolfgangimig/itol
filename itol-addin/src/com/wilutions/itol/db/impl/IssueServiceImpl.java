@@ -222,7 +222,7 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public Issue updateIssue(Issue iss, List<String> modifiedProperties, ProgressCallback cb) throws IOException {
+	public Issue updateIssue(Issue iss, List<String> modifiedProperties, List<String> warningMessages, ProgressCallback cb) throws IOException {
 		String id = String.valueOf(issues.size() + 1);
 		Issue copy = new Issue(id, iss);
 		issues.put(id, copy);

@@ -1614,7 +1614,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		}
 
 		// Create issue
-		issue = srv.updateIssue(issue, modifiedProperties, progressCallback);
+		List<String> warnings = new ArrayList<String>();
+		issue = srv.updateIssue(issue, modifiedProperties, warnings, progressCallback);
 
 		// Inject the issue ID into Outlook's mail object
 		if (isNew && isInjectIssueId()) {
@@ -1638,7 +1639,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 			// Upload
 			issue.setAttachments(deferredAttachments);
-			issue = srv.updateIssue(issue, modifiedProperties, progressCallback);
+			issue = srv.updateIssue(issue, modifiedProperties, warnings, progressCallback);
+		}
+		
+		if (!warnings.isEmpty()) {
+			StringBuilder msg = new StringBuilder();
+			for (String warn : warnings) {
+				msg.append("\n").append(warn);
+			}
+			String text = MessageFormat.format(resb.getString("Warning.SomeDataNotUpdated"), msg.toString());
+			showMessageBoxError(text);
 		}
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueChangedMembers");

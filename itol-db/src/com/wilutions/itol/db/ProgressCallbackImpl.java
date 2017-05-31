@@ -80,7 +80,7 @@ public class ProgressCallbackImpl implements ProgressCallback {
 		}
 		if (parent != null) {
 			double d = amount / total;
-			parent.incrProgress(d * ratio);
+			parent.incrProgress(d * parent.getTotal() * ratio);
 		}
 	}
 	
