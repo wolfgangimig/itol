@@ -1274,18 +1274,25 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		}
 	}
 	
-	private void internalShowIssue(String issueId, ProgressCallback cb, AsyncResult<Boolean> asyncResult) throws Exception {
-		IssueService srv = Globals.getIssueService();
-		this.issue = srv.readIssue(issueId, cb.createChild(0.5));
-		
-		String subject = srv.injectIssueIdIntoMailSubject("", issue);
-		this.mailItem = new IssueMailItemBlank() {
-			public String getSubject() {
-				return subject;
+	private void internalShowIssue(String issueId, ProgressCallback cb, AsyncResult<Boolean> asyncResult) {
+		BackgTask.run(() -> {
+			try {
+				IssueService srv = Globals.getIssueService();
+				this.issue = srv.readIssue(issueId, cb.createChild(0.5));
+			
+				String subject = srv.injectIssueIdIntoMailSubject("", issue);
+				this.mailItem = new IssueMailItemBlank() {
+					public String getSubject() {
+						return subject;
+					}
+				};
+			
+				initialUpdate(cb.createChild(0.5), asyncResult);
 			}
-		};
-		
-		initialUpdate(cb.createChild(0.5), asyncResult);
+			catch (Exception e) {
+				asyncResult.setAsyncResult(Boolean.FALSE, e);
+			}
+		});
 	}
 
 	@FXML
@@ -1302,16 +1309,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 					
 					bnAssignSelection_select(false);
 					
-					try {
-						String issueId = edIssueId.getText();
-						internalShowIssue(issueId, cb.createChild(0.9), (succ1, ex1) -> {
-							cb.setFinished();	
-						});
-					}
-					catch (Exception e) {
-						showMessageBoxError(e.toString());
+					String issueId = edIssueId.getText();
+					internalShowIssue(issueId, cb.createChild(0.9), (succ1, ex1) -> {
 						cb.setFinished();
-					}
+						if (ex1 != null) {
+							showMessageBoxError(ex1.toString());
+						}
+					});
 				});
 			}
 		});
