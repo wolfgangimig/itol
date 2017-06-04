@@ -902,7 +902,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		int nbOfNewAttachments = observableAttachments.countNewAttachments();
 		StringBuilder tabTitle = new StringBuilder(resb.getString("tpAttachments.text"));
 		if (nbOfNewAttachments != 0) {
-			tabTitle.append(" (").append(nbOfNewAttachments).append(")");
+			tabTitle.append(" (+").append(nbOfNewAttachments).append(")");
 		}
 		tpAttachments.setText(tabTitle.toString());
 	}
