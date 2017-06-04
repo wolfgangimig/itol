@@ -400,20 +400,25 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 	private Issue tryReadIssue(IssueService srv, String subject, String issueId, ProgressCallback cb)
 			throws IOException {
+		if (log.isLoggable(Level.FINE)) log.fine("tryReadIssue(" + issueId);
 
 		Issue ret = null;
 
 		try {
 			final Issue issue = srv.readIssue(issueId, cb);
-
 			Date lastModified = issue.getLastModified();
-
 			boolean newMail = mailItem.isNew();
 			Date receivedTime = mailItem.getReceivedTime();
+			
+			// Check whether it is a notification mail from issue service.
+			String fromAddress = Default.value(mailItem.getFromAddress());
+			boolean isNotification = fromAddress.equalsIgnoreCase(Globals.getAppInfo().getConfig().getServiceNotifcationMailAddress());
 
+			if (log.isLoggable(Level.FINE)) log.fine("issue.lastModified=" + lastModified + ", newMail=" + newMail + ", receivedTime=" + receivedTime + ", fromAddress=" + fromAddress);
+			
 			// Set reply description (without original message) as issue
 			// notes, if the mail is newer than the last update.
-			if (newMail || lastModified.before(receivedTime)) {
+			if (!isNotification && (newMail || lastModified.before(receivedTime))) {
 				
 				String description = makeDescriptionFromMailBody();
 				
@@ -446,6 +451,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			log.log(Level.SEVERE, text, e);
 		}
 
+		if (log.isLoggable(Level.FINE)) log.fine(")tryReadIssue=" + ret);
 		return ret;
 	}
 

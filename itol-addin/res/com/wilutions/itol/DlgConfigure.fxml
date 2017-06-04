@@ -5,7 +5,7 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="340.0" prefWidth="651.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.DlgConfigure">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="428.0" prefWidth="651.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.DlgConfigure">
    <children>
       <TabPane>
          <tabs>
@@ -20,7 +20,8 @@
                       <RowConstraints vgrow="SOMETIMES" />
                         <RowConstraints vgrow="SOMETIMES" />
                         <RowConstraints vgrow="ALWAYS" />
-                        <RowConstraints vgrow="ALWAYS" />
+                        <RowConstraints maxHeight="162.0" minHeight="84.0" prefHeight="99.0" vgrow="ALWAYS" />
+                        <RowConstraints maxHeight="86.0" minHeight="7.0" prefHeight="86.0" vgrow="ALWAYS" />
                     </rowConstraints>
                      <children>
             
@@ -43,6 +44,13 @@
                            <children>
                               <TextField fx:id="edAutoReplyField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                               <Label text="%DlgConfigure.AutoReplyAddressField.tooltip" wrapText="true" />
+                           </children>
+                        </VBox>
+                        <Label text="%DlgConfigure.IssueServiceMailAddress" GridPane.rowIndex="4" GridPane.valignment="TOP" />
+                        <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                           <children>
+                              <TextField fx:id="edServiceNotificationMailAddress" promptText="jira@wilutions.atlassian.net" />
+                              <Label text="%DlgConfigure.IssueServiceMailAddress.tooltip" wrapText="true" />
                            </children>
                         </VBox>
                      </children>

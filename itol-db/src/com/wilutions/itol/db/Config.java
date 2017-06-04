@@ -111,6 +111,12 @@ public class Config implements Serializable, Cloneable {
 	private int maxHistoryItems = 100;
 	
 	/**
+	 * Mail address of issue trackin sevice.
+	 * The body of this mails is not used as comment when assigning to the ITOL dialog. 
+	 */
+	private String serviceNotifcationMailAddress;
+	
+	/**
 	 * Convert HTML mail body to markup.
 	 */
 	private MailBodyConversion mailBodyConversion = MailBodyConversion.MARKUP;
@@ -598,6 +604,14 @@ public class Config implements Serializable, Cloneable {
 
 	public void setMailBodyConversionTimeoutSeconds(int mailBodyConversionTimeoutSeconds) {
 		this.mailBodyConversionTimeoutSeconds = mailBodyConversionTimeoutSeconds;
+	}
+
+	public String getServiceNotifcationMailAddress() {
+		return serviceNotifcationMailAddress;
+	}
+
+	public void setServiceNotifcationMailAddress(String serviceNotifcationMailAddress) {
+		this.serviceNotifcationMailAddress = serviceNotifcationMailAddress;
 	}
 
 	

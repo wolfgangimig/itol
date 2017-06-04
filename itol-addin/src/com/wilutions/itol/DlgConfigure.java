@@ -77,6 +77,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	TableColumn<AttachmentBlacklistItem, String> colBlacklistHash;
 	@FXML
 	ComboBox<String> cbExportAttachmentsProgram;
+	@FXML
+	TextField edServiceNotificationMailAddress;
 
 	private AutoCompletionBinding<IdName> autoCompletionAttachMailAs;
 
@@ -217,6 +219,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			config.setInjectIssueIdIntoMailSubject(ckInsertIssueId.isSelected());
 			config.setExportAttachmentsDirectory(edExportAttachmentsDirectory.getText());
 			config.setAutoReplyField(edAutoReplyField.getText());
+			config.setServiceNotifcationMailAddress(edServiceNotificationMailAddress.getText());
 			
 			String mailBodyConversionId = cbMailBody.getSelectionModel().getSelectedItem().getId();
 			config.setMailBodyConversion(MailBodyConversion.valueOf(mailBodyConversionId));
@@ -244,6 +247,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			ckInsertIssueId.setSelected(config.getInjectIssueIdIntoMailSubject());
 			edExportAttachmentsDirectory.setText(config.getExportAttachmentsDirectory());
 			edAutoReplyField.setText(config.getAutoReplyField());
+			edServiceNotificationMailAddress.setText(config.getServiceNotifcationMailAddress());
 			
 			ObservableList<AttachmentBlacklistItem> blacklistItems = FXCollections.observableArrayList(config.getBlacklist());
 			tvBlacklist.setItems(blacklistItems);
