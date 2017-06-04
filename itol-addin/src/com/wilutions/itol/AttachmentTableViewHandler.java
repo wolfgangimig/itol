@@ -21,7 +21,6 @@ import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
 import com.wilutions.itol.db.Attachment;
-import com.wilutions.itol.db.ISODate;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackFactory;
 
@@ -30,6 +29,7 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.event.EventTarget;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -45,6 +45,7 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Popup;
 import javafx.stage.Window;
 import javafx.util.Callback;
@@ -274,62 +275,65 @@ public class AttachmentTableViewHandler {
 		// Start drag of attachment files.
 		table.setOnDragDetected((dragEvent) -> {
 			if (log.isLoggable(Level.FINE)) log.fine("setOnDragEntered(");
-			List<Attachment> selectedAttachments = table.getSelectionModel().getSelectedItems();
-			if (!selectedAttachments.isEmpty()) {
-				
-				Dragboard db = table.startDragAndDrop(TransferMode.COPY);
-				ClipboardContent content = new ClipboardContent();
-
-				try {
-					CompletableFuture<List<File>> fdownloaded = CompletableFuture.supplyAsync(() -> {
-						
-						List<File> files = Collections.synchronizedList(new ArrayList<File>());
-						ProgressCallback cb = progressCallbackFactory.createProgressCallback("Drag attachments");
-						if (log.isLoggable(Level.FINE)) log.fine("#selectedAttachments=" + selectedAttachments.size());
-						double progressPerAttachment = 1.0 / (double)selectedAttachments.size();
-						List<CompletableFuture<Void>> fatts = new ArrayList<>(selectedAttachments.size());
-						for (Attachment att : selectedAttachments) {
-							if (log.isLoggable(Level.FINE)) log.fine("download attachment=" + att);
-							CompletableFuture<Void> fatt = CompletableFuture.supplyAsync(() -> {
-								try {
-									URI url = attachmentHelper.downloadAttachment(att, cb.createChild(progressPerAttachment));
-									File file = new File(url);
-									files.add(file);
-									if (log.isLoggable(Level.FINE)) log.fine("file=" + file);
-								}
-								catch (Exception e) {
-									log.log(Level.WARNING, "Failed to download attachment.", e);
-								}
-								return null;
-							});
-							fatts.add(fatt);
-						}
-						
-						cb.setFinished();
-							
-						try {
-							CompletableFuture.allOf(fatts.toArray(new CompletableFuture[0])).get();
-						}
-						catch (Exception e) {
-							log.log(Level.WARNING, "Failed to start dragging attachments", e);
-						}
-						
-						return files;
-					});
-
-					List<File> files = fdownloaded.get();
-					log.info("start drag #atts=" + files.size());
+			EventTarget target = dragEvent.getTarget();
+			boolean isDragHeader = target instanceof Rectangle;
+			if (!isDragHeader) {
+				List<Attachment> selectedAttachments = table.getSelectionModel().getSelectedItems();
+				if (!selectedAttachments.isEmpty()) {
+					
+					Dragboard db = table.startDragAndDrop(TransferMode.COPY);
+					ClipboardContent content = new ClipboardContent();
 	
-					content.putFiles(files);
-				}
-				catch (Exception e) {
-					log.log(Level.WARNING, "Failed to start dragging attachments", e);
-				}
-				finally {
-					db.setContent(content);
-				}
-			}			
-			
+					try {
+						CompletableFuture<List<File>> fdownloaded = CompletableFuture.supplyAsync(() -> {
+							
+							List<File> files = Collections.synchronizedList(new ArrayList<File>());
+							ProgressCallback cb = progressCallbackFactory.createProgressCallback("Drag attachments");
+							if (log.isLoggable(Level.FINE)) log.fine("#selectedAttachments=" + selectedAttachments.size());
+							double progressPerAttachment = 1.0 / (double)selectedAttachments.size();
+							List<CompletableFuture<Void>> fatts = new ArrayList<>(selectedAttachments.size());
+							for (Attachment att : selectedAttachments) {
+								if (log.isLoggable(Level.FINE)) log.fine("download attachment=" + att);
+								CompletableFuture<Void> fatt = CompletableFuture.supplyAsync(() -> {
+									try {
+										URI url = attachmentHelper.downloadAttachment(att, cb.createChild(progressPerAttachment));
+										File file = new File(url);
+										files.add(file);
+										if (log.isLoggable(Level.FINE)) log.fine("file=" + file);
+									}
+									catch (Exception e) {
+										log.log(Level.WARNING, "Failed to download attachment.", e);
+									}
+									return null;
+								});
+								fatts.add(fatt);
+							}
+							
+							cb.setFinished();
+								
+							try {
+								CompletableFuture.allOf(fatts.toArray(new CompletableFuture[0])).get();
+							}
+							catch (Exception e) {
+								log.log(Level.WARNING, "Failed to start dragging attachments", e);
+							}
+							
+							return files;
+						});
+	
+						List<File> files = fdownloaded.get();
+						log.info("start drag #atts=" + files.size());
+		
+						content.putFiles(files);
+					}
+					catch (Exception e) {
+						log.log(Level.WARNING, "Failed to start dragging attachments", e);
+					}
+					finally {
+						db.setContent(content);
+					}
+				}			
+			}
 			dragEvent.consume(); 
 			if (log.isLoggable(Level.FINE)) log.fine(")setOnDragEntered");
 		});
@@ -341,7 +345,6 @@ public class AttachmentTableViewHandler {
 				activeTooltip.hide();
 			}
 		});
-	
 
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] apply(observableAttachments=" + observableAttachments + ")");
