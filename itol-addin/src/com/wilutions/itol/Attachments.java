@@ -211,6 +211,11 @@ public class Attachments implements Iterable<Attachment> {
 		if (log.isLoggable(Level.FINE)) log.fine(")getFilesFromClipboard=" + ret);
 		return ret;
 	}
+	
+	public int countNewAttachments() {
+		long nbOfNewAttachments = attachments.stream().filter((a) -> a.getId().isEmpty()).count();
+		return (int)nbOfNewAttachments;
+	}
 
 	public ObservableList<Attachment> getObservableList() {
 		return attachments;

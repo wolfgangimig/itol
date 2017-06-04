@@ -881,11 +881,24 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			bnExportAttachments.disableProperty().bind(Bindings.size(tabAttachments.getItems()).isEqualTo(0));
 			
 			tabAttachmentsApplyHandler = false;
+			
+			// Update tab title when number of new attachments changes
+			observableAttachments.addListener((c) -> updateTabAttachmentsTitle());
+			updateTabAttachmentsTitle();
 		}
 
 		fireUpdateBindingToAttachmentList();
 		long t2 = System.currentTimeMillis();
 		log.info("[" + (t2-t1) + "] initAttachments()");
+	}
+	
+	private void updateTabAttachmentsTitle() {
+		int nbOfNewAttachments = observableAttachments.countNewAttachments();
+		StringBuilder tabTitle = new StringBuilder(resb.getString("tpAttachments.text"));
+		if (nbOfNewAttachments != 0) {
+			tabTitle.append(" (").append(nbOfNewAttachments).append(")");
+		}
+		tpAttachments.setText(tabTitle.toString());
 	}
 	
 	private void copySelectedAttachmentsToClipboard() {
