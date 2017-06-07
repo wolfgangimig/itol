@@ -206,6 +206,7 @@ public class Config implements Serializable, Cloneable {
 		this.mailBodyConversion = rhs.mailBodyConversion;
 		this.blacklist = new ArrayList<AttachmentBlacklistItem>(rhs.blacklist);
 		this.exportAttachmentsProgram = rhs.exportAttachmentsProgram;
+		this.serviceNotifcationMailAddress = rhs.serviceNotifcationMailAddress;
 	}
 
 	public static <T extends Config> T read(String manufacturerName, String appName, Class<T> clazz) throws Exception {
