@@ -299,20 +299,6 @@ public class Globals {
 		return resb;
 	}
 
-	public static String getVersion() {
-		String ret = "";
-		try {
-			byte[] buf = OfficeAddinUtil.getResourceAsBytes(IssueTaskPane.class, "version.properties");
-			Properties props = new Properties();
-			props.load(new ByteArrayInputStream(buf));
-			ret = props.getProperty("Version");
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-		return ret;
-	}
-
 	public static void releaseResources() {
 		
 		// Purge temporary directory
