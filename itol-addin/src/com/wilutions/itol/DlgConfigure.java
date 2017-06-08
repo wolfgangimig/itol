@@ -157,6 +157,8 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			
 			Globals.getAppInfo().setConfig(config);
 			
+			config.write();
+			
 			finish(true);
 			
 		} catch (Exception e) {

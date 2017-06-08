@@ -143,6 +143,9 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 		try {
 			Globals.getAppInfo().setConfig(config);
 			Globals.initialize(false);
+			
+			config.write();
+			
 			succ = true;
 		}
 		catch (Throwable e) {
