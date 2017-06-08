@@ -412,6 +412,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			
 			// Check whether it is a notification mail from issue service.
 			String fromAddress = Default.value(mailItem.getFromAddress());
+			log.info("fromAddress=" + fromAddress);
 			boolean isNotification = fromAddress.equalsIgnoreCase(Globals.getAppInfo().getConfig().getServiceNotifcationMailAddress());
 
 			if (log.isLoggable(Level.FINE)) log.fine("issue.lastModified=" + lastModified + ", newMail=" + newMail + ", receivedTime=" + receivedTime + ", fromAddress=" + fromAddress);

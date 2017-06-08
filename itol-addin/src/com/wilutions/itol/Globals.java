@@ -349,13 +349,15 @@ public class Globals {
 			// Initialize DDAddin Logfile
 			{
 				File ddaddinLogFile = new File(new File(logFile).getParent(), "itol-ddaddin.log");
-				DDAddinDll.openLogFile(ddaddinLogFile.getAbsolutePath(), logLevel, true);
+				String ddaddinLogLevel = logLevel.equals("FINE") ? "DEBUG" : "INFO";
+				DDAddinDll.openLogFile(ddaddinLogFile.getAbsolutePath(), ddaddinLogLevel, true);
 			}
 			
 			// Initialize JOA Logfile
 			{
 				File joaLogFile = new File(new File(logFile).getParent(), "itol-joa.log");
-				JoaDll.nativeInitLogger(joaLogFile.getAbsolutePath(), logLevel, true);
+				String joaLogLevel = logLevel.equals("FINE") ? "DEBUG" : "INFO";
+				JoaDll.nativeInitLogger(joaLogFile.getAbsolutePath(), joaLogLevel, true);
 			}
 
 		}

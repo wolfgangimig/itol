@@ -219,7 +219,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			config.setInjectIssueIdIntoMailSubject(ckInsertIssueId.isSelected());
 			config.setExportAttachmentsDirectory(edExportAttachmentsDirectory.getText());
 			config.setAutoReplyField(edAutoReplyField.getText());
-			config.setServiceNotifcationMailAddress(edServiceNotificationMailAddress.getText());
+			config.setServiceNotifcationMailAddress(edServiceNotificationMailAddress.getText().trim());
 			
 			String mailBodyConversionId = cbMailBody.getSelectionModel().getSelectedItem().getId();
 			config.setMailBodyConversion(MailBodyConversion.valueOf(mailBodyConversionId));
