@@ -26,6 +26,14 @@ public class ManifestUtil {
 		return props.getProperty("programTitle");
 	}
 
+	public ProgramVersionInfo getProgramVersionInfo() {
+		ProgramVersionInfo ret = new ProgramVersionInfo();
+		ret.setName(getProgramName());
+		ret.setVersion(getProgramVersion());
+		ret.setTitle(getProgramTitle());
+		return ret;
+	}
+
 	public static String getProgramVersion(Class<?> clazz) {
 		return new ManifestUtil(clazz).getProgramVersion();
 	}
@@ -36,6 +44,10 @@ public class ManifestUtil {
 
 	public static String getProgramTitle(Class<?> clazz) {
 		return new ManifestUtil(clazz).getProgramTitle();
+	}
+	
+	public static ProgramVersionInfo getProgramVersionInfo(Class<?> clazz) {
+		return new ManifestUtil(clazz).getProgramVersionInfo();
 	}
 
 	private void getManifest(Class<?> clazz) {

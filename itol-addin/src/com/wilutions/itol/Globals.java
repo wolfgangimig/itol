@@ -25,6 +25,8 @@ import java.util.logging.Logger;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.DDAddinDll;
 import com.wilutions.com.JoaDll;
+import com.wilutions.fx.util.ManifestUtil;
+import com.wilutions.fx.util.ProgramVersionInfo;
 import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
@@ -58,6 +60,8 @@ public class Globals {
 	}
 
 	protected static void setThisAddin(OutlookAddinEx addin) {
+		ProgramVersionInfo versionInfo = ManifestUtil.getProgramVersionInfo(addin.getClass());
+		log.info("Addin=" + versionInfo.getName() + ", version=" + versionInfo.getVersion());
 		Globals.addin = addin;
 	}
 
@@ -311,13 +315,16 @@ public class Globals {
 	}
 	
 	private static void purgeDirectory(File dir) {
-		for (File f : dir.listFiles()) {
-			if (f.isDirectory()) {
-				purgeDirectory(f);
+		File[] files = dir.listFiles();
+		if (files != null) {
+			for (File f : files) {
+				if (f.isDirectory()) {
+					purgeDirectory(f);
+				}
+				f.delete();
 			}
-			f.delete();
+			dir.delete();
 		}
-		dir.delete();
 	}
 
 	public static void initLogging() {
