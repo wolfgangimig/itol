@@ -1,5 +1,7 @@
 package com.wilutions.itol;
 
+import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,6 +20,7 @@ import com.wilutions.mslib.outlook.Explorer;
 import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.Selection;
 
+import de.wim.liccheck.License;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -156,9 +159,25 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 	public void setIssueTaskPaneVisible(boolean visible) {
 		ensureIssuePaneInstance();
 		if (!issuePane.hasWindow() && visible) {
-			LicenseInstall licenseInstall = new LicenseInstall(Globals.getProductName());
-			boolean isDemo = licenseInstall.getInstalledLicense().isDemo();
-			String title = Globals.getResourceBundle().getString(isDemo ? "IssueTaskPane.title.demo" : "IssueTaskPane.title");
+			String title = "";
+			LicenseInstall licenseInstall = new LicenseInstall(Globals.getAppInfo().getConfig());
+			License license = licenseInstall.getInstalledLicense();
+			if (license.isDemo()) {
+				if (license.isValid()) {
+					String formatTitle = Globals.getResourceBundle().getString("IssueTaskPane.title.demo");
+					String expiresAt = license.getExpiresAt();
+					if (expiresAt.length() > 10) {
+						expiresAt = expiresAt.substring(0, 10);
+					}
+					title = MessageFormat.format(formatTitle, expiresAt);
+				}
+				else {
+					title = Globals.getResourceBundle().getString("IssueTaskPane.title.demo.expired");
+				}
+			}
+			else {
+				title = Globals.getResourceBundle().getString("IssueTaskPane.title");
+			}
 			Globals.getThisAddin().createTaskPaneWindowAsync(issuePane, title, explorer, (succ, ex) -> {
 				if (ex != null) {
 					MessageBox.show(explorer, "Error", ex.getMessage(), null);

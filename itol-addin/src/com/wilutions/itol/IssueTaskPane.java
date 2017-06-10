@@ -263,7 +263,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 		this.setPosition(Globals.getAppInfo().getConfig().getTaskPanePosition());
 		
-		LicenseInstall licenseInstall = new LicenseInstall(Globals.getProductName());
+		LicenseInstall licenseInstall = new LicenseInstall(Globals.getAppInfo().getConfig());
 		License license = licenseInstall.getInstalledLicense();
 		this.licenseValid = license.isValid();
 

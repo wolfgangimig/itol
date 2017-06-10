@@ -43,7 +43,6 @@ public class Globals {
 	private static volatile IssueService issueService;
 	private static volatile boolean issueServiceRunning;
 	private static Logger log = Logger.getLogger("Globals");
-	private static String PRODUCT_NAME = "ITOL";
 
 	private static AppInfo appInfo = new AppInfo();
 
@@ -380,7 +379,4 @@ public class Globals {
 		return Globals.getAppInfo().getConfig().getTempDir();
 	}
 
-	public static String getProductName() {
-		return PRODUCT_NAME;
-	}
 }
