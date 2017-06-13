@@ -25,6 +25,8 @@ import java.util.logging.Logger;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.DDAddinDll;
 import com.wilutions.com.JoaDll;
+import com.wilutions.fx.util.ManifestUtil;
+import com.wilutions.fx.util.ProgramVersionInfo;
 import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
@@ -41,7 +43,6 @@ public class Globals {
 	private static volatile IssueService issueService;
 	private static volatile boolean issueServiceRunning;
 	private static Logger log = Logger.getLogger("Globals");
-	private static String PRODUCT_NAME = "ITOL";
 
 	private static AppInfo appInfo = new AppInfo();
 
@@ -58,6 +59,8 @@ public class Globals {
 	}
 
 	protected static void setThisAddin(OutlookAddinEx addin) {
+		ProgramVersionInfo versionInfo = ManifestUtil.getProgramVersionInfo(addin.getClass());
+		log.info("Addin=" + versionInfo.getName() + ", version=" + versionInfo.getVersion());
 		Globals.addin = addin;
 	}
 
@@ -174,9 +177,7 @@ public class Globals {
  	OK...
  	CTRL-D
  	
- 	
- 	
- 	3.5. Konfigurationsdatei 
+ 	2.6. Konfigurationsdatei 
 
  	auth_param digest program /usr/lib/squid/digest_file_auth -c /etc/squid/passwd
  	auth_param digest realm SquidRealm
@@ -190,19 +191,22 @@ public class Globals {
  	http_port 3128
  	http_port 3129 intercept
  	
- 	
- 	
+
  	3. Squid neu starten
  	
  	sudo /etc/init.d/squid restart
  	
  	
- 	4. Verwendung mit Chrome
+ 	4. Proxy im Windows einrichten über Chrome
  	
  	Einstellungen - Suche nach "proxy" - Windows-Einstellungen öffnen - LAN-Einstellungen
  	Proxyserver anhaken, Adresse und Port eingeben
  	
- 	// -Djava.net.useSystemProxies=true
+ 	5. Java Programm
+ 	
+ 	Kommandozeilenparameter -Djava.net.useSystemProxies=true
+ 	
+ 	Authenticator s.u., User=squiduser, Pwd=squidpwd
  		
  */
 		
@@ -250,7 +254,9 @@ public class Globals {
 				// It can only be set on the command line.
 				String useSystemProxiesStr = System.getProperty("java.net.useSystemProxies");
 				if (useSystemProxiesStr == null || useSystemProxiesStr.isEmpty()) {
-					log.warning("Command line option -Djava.net.useSystemProxies=true has to be passed in order to use system proxies.");
+					String msg = "Command line option -Djava.net.useSystemProxies=true has to be passed in order to use system proxies.";
+					System.err.println(msg);
+					log.warning(msg);
 				}
 			}
 			else {
@@ -311,13 +317,16 @@ public class Globals {
 	}
 	
 	private static void purgeDirectory(File dir) {
-		for (File f : dir.listFiles()) {
-			if (f.isDirectory()) {
-				purgeDirectory(f);
+		File[] files = dir.listFiles();
+		if (files != null) {
+			for (File f : files) {
+				if (f.isDirectory()) {
+					purgeDirectory(f);
+				}
+				f.delete();
 			}
-			f.delete();
+			dir.delete();
 		}
-		dir.delete();
 	}
 
 	public static void initLogging() {
@@ -373,7 +382,4 @@ public class Globals {
 		return Globals.getAppInfo().getConfig().getTempDir();
 	}
 
-	public static String getProductName() {
-		return PRODUCT_NAME;
-	}
 }

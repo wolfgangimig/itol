@@ -4,6 +4,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.wilutions.com.reg.RegUtil;
+import com.wilutions.itol.db.Config;
+import com.wilutions.itol.db.Default;
 
 import de.wim.liccheck.License;
 import de.wim.liccheck.LicenseCheck;
@@ -18,9 +20,15 @@ public class LicenseInstall {
 	private final static String MANUFACTURER = "WILUTIONS";
 	private static Logger log = Logger.getLogger("License");
 	public String product;
+	public Config config;
 	
-	public LicenseInstall(String product) {
-		this.product = product;
+//	public LicenseInstall(String product) {
+//		this.product = product;
+//	}
+	
+	public LicenseInstall(Config config) {
+		this.product = config.getAppName();
+		this.config = config;
 	}
 
 	public boolean install(String licenseKey, boolean userNotMachine) throws Exception {
@@ -29,10 +37,16 @@ public class LicenseInstall {
 		License lic = check(licenseKey, LicenseCheck.Mode.Install);
 		if (log.isLoggable(Level.FINE)) log.fine("isValid=" + lic.isValid() + ", isDemo=" + lic.isDemo());
 		if (lic.isValid() && !lic.isDemo()) {
-			if (log.isLoggable(Level.FINE)) log.fine("lic.options=" + lic.getOptions());
-			String registryKey = getProductRegKey(userNotMachine);
-			RegUtil.setRegistryValue(registryKey, "", licenseKey);
-			if (log.isLoggable(Level.INFO)) log.info("Saved license into registry-key=" + registryKey);
+			if (config != null) {
+				config.setLicenseKey(licenseKey);
+				config.write();
+			}
+			else {
+				if (log.isLoggable(Level.FINE)) log.fine("lic.options=" + lic.getOptions());
+				String registryKey = getProductRegKey(userNotMachine);
+				RegUtil.setRegistryValue(registryKey, "", licenseKey);
+				if (log.isLoggable(Level.INFO)) log.info("Saved license into registry-key=" + registryKey);
+			}
 		}
 		if (log.isLoggable(Level.FINE)) log.fine(")install");
 		return lic.isValid();
@@ -40,14 +54,20 @@ public class LicenseInstall {
 	
 	public void uninstall(boolean userNotMachine) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("uninstall(userNotMachine=" + userNotMachine);
-		String registryKey = getProductRegKey(userNotMachine);
-		if (log.isLoggable(Level.FINE)) log.fine("regkey=" + registryKey);
-		String licenseKey = (String)RegUtil.getRegistryValue(registryKey, "", "");
-		if (log.isLoggable(Level.FINE)) log.fine("licenseKey=" + licenseKey);
-		if (!licenseKey.isEmpty()) {
-			if (log.isLoggable(Level.INFO)) log.info("Uninstall license=" + licenseKey + " found at registry-key=" + registryKey);
-			check(licenseKey, LicenseCheck.Mode.Uninstall);
-			RegUtil.deleteRegistryKey(registryKey);
+		if (config != null) {
+			config.setLicenseKey("");
+			config.write();
+		}
+		else {
+			String registryKey = getProductRegKey(userNotMachine);
+			if (log.isLoggable(Level.FINE)) log.fine("regkey=" + registryKey);
+			String licenseKey = (String)RegUtil.getRegistryValue(registryKey, "", "");
+			if (log.isLoggable(Level.FINE)) log.fine("licenseKey=" + licenseKey);
+			if (!licenseKey.isEmpty()) {
+				if (log.isLoggable(Level.INFO)) log.info("Uninstall license=" + licenseKey + " found at registry-key=" + registryKey);
+				check(licenseKey, LicenseCheck.Mode.Uninstall);
+				RegUtil.deleteRegistryKey(registryKey);
+			}
 		}
 		if (log.isLoggable(Level.FINE)) log.fine(")uninstall");
 	}
@@ -74,13 +94,19 @@ public class LicenseInstall {
 
 	public License getInstalledLicense() {
 		if (log.isLoggable(Level.FINE)) log.fine("getInstalledLicense(");
-		String registryKey = getProductRegKey(false);
-		String licenseKey = (String)RegUtil.getRegistryValue(registryKey, "", "");
-		if (log.isLoggable(Level.FINE)) log.fine("Read license from machine settings, registry-key=" + registryKey + ", license=" + licenseKey);
-		if (licenseKey.isEmpty()) {
-			registryKey = getProductRegKey(true);
+		String licenseKey = "";
+		if (config != null) {
+			licenseKey = config.getLicenseKey();
+		}
+		else {
+			String registryKey = getProductRegKey(false);
 			licenseKey = (String)RegUtil.getRegistryValue(registryKey, "", "");
-			if (log.isLoggable(Level.FINE)) log.fine("Read license from user settings, registry-key=" + registryKey + ", license=" + licenseKey);
+			if (log.isLoggable(Level.FINE)) log.fine("Read license from machine settings, registry-key=" + registryKey + ", license=" + licenseKey);
+			if (licenseKey.isEmpty()) {
+				registryKey = getProductRegKey(true);
+				licenseKey = (String)RegUtil.getRegistryValue(registryKey, "", "");
+				if (log.isLoggable(Level.FINE)) log.fine("Read license from user settings, registry-key=" + registryKey + ", license=" + licenseKey);
+			}
 		}
 		License lic = null;
 		try {

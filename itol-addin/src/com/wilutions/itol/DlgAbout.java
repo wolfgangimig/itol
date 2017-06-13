@@ -6,6 +6,9 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.wilutions.fx.util.ManifestUtil;
+import com.wilutions.fx.util.ProgramVersionInfo;
+
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -73,16 +76,11 @@ public class DlgAbout implements Initializable {
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		
-		String programName = ((ItolAddin)Globals.getThisAddin()).getProgramName();
-		lbProgramName.setText(programName);
-
-		String programTitle = ((ItolAddin)Globals.getThisAddin()).getProgramTitle();
-		lbProgramTitle.setText(programTitle);
-		
-		String programVersion = ((ItolAddin)Globals.getThisAddin()).getProgramVersion();
-		lbProgramVersion.setText(programVersion);
-		
-		
+		ProgramVersionInfo versionInfo = ManifestUtil.getProgramVersionInfo(Globals.getThisAddin().getClass());
+		lbProgramName.setText(versionInfo.getName());
+		lbProgramTitle.setText(versionInfo.getTitle());
+		lbProgramVersion.setText(versionInfo.getVersion());
+				
 		TableColumn<About3rdPartyLib, String> columnName = new TableColumn<>("Name");
 		columnName.setCellValueFactory(new PropertyValueFactory<About3rdPartyLib, String>("name"));
 		

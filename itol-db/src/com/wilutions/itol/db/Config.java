@@ -109,6 +109,7 @@ public class Config implements Serializable, Cloneable {
 	private int proxyServerPort;
 	private TaskPanePosition taskPanePosition;
 	private int maxHistoryItems = 100;
+	private String licenseKey = "";
 	
 	/**
 	 * Mail address of issue trackin sevice.
@@ -207,6 +208,7 @@ public class Config implements Serializable, Cloneable {
 		this.blacklist = new ArrayList<AttachmentBlacklistItem>(rhs.blacklist);
 		this.exportAttachmentsProgram = rhs.exportAttachmentsProgram;
 		this.serviceNotifcationMailAddress = rhs.serviceNotifcationMailAddress;
+		this.licenseKey = rhs.licenseKey;
 	}
 
 	public static <T extends Config> T read(String manufacturerName, String appName, Class<T> clazz) throws Exception {
@@ -264,7 +266,6 @@ public class Config implements Serializable, Cloneable {
 		// Write application related configuration.
 		File applicationConfigFile = getConfigFile(manufacturerName, appName, CONFIG_FILE_APPLICATION_WRITE);
 		try {
-			System.out.println("INFO: write configuration file=" + applicationConfigFile);
 			extractApplicationConfig().write(applicationConfigFile);
 		}
 		catch (Exception e) {
@@ -275,7 +276,6 @@ public class Config implements Serializable, Cloneable {
 		// Write user related configuration
 		File userConfigFile = getConfigFile(manufacturerName, appName, CONFIG_FILE_USER);
 		try {
-			System.out.println("INFO: Write configuration file=" + userConfigFile);
 			write(userConfigFile);
 		}
 		catch (Exception e) {
@@ -615,6 +615,11 @@ public class Config implements Serializable, Cloneable {
 		this.serviceNotifcationMailAddress = serviceNotifcationMailAddress;
 	}
 
-	
+	public String getLicenseKey() {
+		return licenseKey;
+	}	
 
+	public void setLicenseKey(String licenseKey) {
+		this.licenseKey = licenseKey;
+	}
 }

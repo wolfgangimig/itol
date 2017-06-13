@@ -30,7 +30,7 @@ public class DlgLicense {
 		
 		Stage owner = (Stage)taskPane.getWindow();
 		ResourceBundle resb = Globals.getResourceBundle();
-		LicenseInstall licenseInstall = new LicenseInstall(Globals.getProductName());
+		LicenseInstall licenseInstall = new LicenseInstall(Globals.getAppInfo().getConfig());
 		License license = licenseInstall.getInstalledLicense();
 		String expiresAtIso = license.getExpiresAt();
 		String licenseKey = license.toString();
