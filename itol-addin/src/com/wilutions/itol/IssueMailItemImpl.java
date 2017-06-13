@@ -1,16 +1,23 @@
 package com.wilutions.itol;
 
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
+import com.wilutions.itol.db.Default;
+import com.wilutions.mslib.outlook.AddressEntry;
 import com.wilutions.mslib.outlook.Attachment;
 import com.wilutions.mslib.outlook.Attachments;
+import com.wilutions.mslib.outlook.ExchangeUser;
 import com.wilutions.mslib.outlook.MailItem;
+import com.wilutions.mslib.outlook.OlAddressEntryUserType;
 import com.wilutions.mslib.outlook.OlBodyFormat;
 
 public class IssueMailItemImpl implements IssueMailItem {
 
+	private final static Logger log = Logger.getLogger("IssueMailItemImpl");
 	private final IDispatch mailItem;
 	private String subject;
 	private String body;
@@ -33,7 +40,8 @@ public class IssueMailItemImpl implements IssueMailItem {
 		this.body = mailItem.getBody();
 		this.entryId = mailItem.getEntryID();
 		this.from = mailItem.getSenderName();
-		this.setFromAddress(mailItem.getSenderEmailAddress());
+		this.setFromAddress(getSenderEmailAddress(mailItem));
+		// mailItem.getRecipients().Item(1).getAddressEntry().
 		this.to = mailItem.getReceivedByName();
 		this.receivedTime = mailItem.getReceivedTime();
 		this.htmlBody = mailItem.getHTMLBody();
@@ -51,14 +59,14 @@ public class IssueMailItemImpl implements IssueMailItem {
 	public String getBody() {
 		return body;
 	}
-	
+
 	@Override
 	public String getHTMLBody() {
 		return htmlBody;
 	}
-	
+
 	public OlBodyFormat getBodyFormat() {
-		return this.bodyFormat; 
+		return this.bodyFormat;
 	}
 
 	public String getEntryId() {
@@ -133,4 +141,38 @@ public class IssueMailItemImpl implements IssueMailItem {
 		this.fromAddress = fromAddress;
 	}
 
+	private String getSenderEmailAddress(MailItem mail) {
+		if (log.isLoggable(Level.FINE)) log.fine("getSenderEmailAddress(");
+		String senderEmailAddress = "";
+
+		String mailType = mail.getSenderEmailType();
+		if (log.isLoggable(Level.FINE)) log.fine("mailType=" + mailType);
+		
+		if (Default.value(mailType).equals("EX")) {
+			AddressEntry sender = mail.getSender();
+			if (log.isLoggable(Level.FINE)) log.fine("AddressEntry sender=" + sender);
+			if (sender != null) {
+
+				OlAddressEntryUserType userType = sender.getAddressEntryUserType();
+				if (log.isLoggable(Level.FINE)) log.fine("sender.addressEntryUserType=" + userType);
+				
+				if (userType == OlAddressEntryUserType.olExchangeUserAddressEntry
+						|| userType == OlAddressEntryUserType.olExchangeRemoteUserAddressEntry) {
+					ExchangeUser exchUser = sender.GetExchangeUser();
+					if (log.isLoggable(Level.FINE)) log.fine("exchUser=" + exchUser);
+
+					if (exchUser != null) {
+						senderEmailAddress = exchUser.getPrimarySmtpAddress();
+					}
+				}
+			}
+		}
+
+		if (Default.value(senderEmailAddress).isEmpty()) {
+			senderEmailAddress = mail.getSenderEmailAddress();
+		}
+
+		if (log.isLoggable(Level.FINE)) log.fine(")getSenderEmailAddress=" + senderEmailAddress);
+		return senderEmailAddress;
+	}
 }
