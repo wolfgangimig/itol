@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.text.MessageFormat;
-import java.util.Properties;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -25,6 +24,7 @@ import java.util.logging.Logger;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.DDAddinDll;
 import com.wilutions.com.JoaDll;
+import com.wilutions.com.reg.RegUtil;
 import com.wilutions.fx.util.ManifestUtil;
 import com.wilutions.fx.util.ProgramVersionInfo;
 import com.wilutions.itol.db.Config;
@@ -52,10 +52,6 @@ public class Globals {
 
 	public static void setAppInfo(AppInfo config) {
 		appInfo = config;
-		
-		// Set DDAddin product name. It finds the license key under 
-		// HKCU/Software/WILUTIONS/productName/License
-		DDAddinDll.setProductName("DDAddin-" + config.getAppName());
 	}
 
 	protected static void setThisAddin(OutlookAddinEx addin) {
@@ -354,20 +350,26 @@ public class Globals {
 				Logger.getLogger("").setLevel(Level.SEVERE);
 			}
 
-			
-			// Initialize DDAddin Logfile
-			{
-				File ddaddinLogFile = new File(new File(logFile).getParent(), "itol-ddaddin.log");
-				String ddaddinLogLevel = logLevel.equals("FINE") ? "DEBUG" : "INFO";
-				DDAddinDll.openLogFile(ddaddinLogFile.getAbsolutePath(), ddaddinLogLevel, true);
-			}
-			
 			// Initialize JOA Logfile
+			// Remark: Another instance runs in Outlook.exe (other process)
 			{
 				File joaLogFile = new File(new File(logFile).getParent(), "itol-joa.log");
 				String joaLogLevel = logLevel.equals("FINE") ? "DEBUG" : "INFO";
 				JoaDll.nativeInitLogger(joaLogFile.getAbsolutePath(), joaLogLevel, true);
 			}
+			
+			// Initialize DDAddin Logfile
+			// Remark: DDAddin runs in Outlook.exe (other process)
+			{
+				File ddaddinLogFile = new File(new File(logFile).getParent(), "itol-ddaddin.log");
+				String ddaddinLogLevel = logLevel.equals("FINE") ? "DEBUG" : "INFO";
+				DDAddinDll.openLogFile(ddaddinLogFile.getAbsolutePath(), ddaddinLogLevel, true);
+			}
+
+			// Initialize logging for DDAddin and JOA running in Outlook.exe.
+			setLogFileForHelperAddin("DnD to HTML5 Addin for Microsoft Outlook", logFile, logLevel, "outlook-ddaddin.log");
+			setLogFileForHelperAddin("JOA", logFile, logLevel, "outlook-joa.log");
+			
 
 		}
 		catch (Throwable e) {
@@ -382,4 +384,15 @@ public class Globals {
 		return Globals.getAppInfo().getConfig().getTempDir();
 	}
 
+	private static void setLogFileForHelperAddin(String name, String logFile, String logLevel, String addinLog) {
+		String regKey = "HKCU\\Software\\" + getAppInfo().getManufacturerName() + "\\" + name;
+		if (RegUtil.getRegistryValue(regKey, "LogFile", "").equals("")) {
+			File joaLogFile = new File(new File(logFile).getParent(), addinLog);
+			RegUtil.setRegistryValue(regKey, "LogFile", joaLogFile.getAbsolutePath());
+			String logLevelKey = logLevel.equals("FINE") ? "DEBUG" : "INFO";
+			RegUtil.setRegistryValue(regKey, "LogLevel", logLevelKey);
+			RegUtil.setRegistryValue(regKey, "LogAppend", "true");
+		}
+
+	}
 }
