@@ -900,12 +900,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	}
 	
 	private void updateTabAttachmentsTitle() {
-		int nbOfNewAttachments = observableAttachments.countNewAttachments();
-		StringBuilder tabTitle = new StringBuilder(resb.getString("tpAttachments.text"));
-		if (nbOfNewAttachments != 0) {
-			tabTitle.append(" (+").append(nbOfNewAttachments).append(")");
-		}
-		tpAttachments.setText(tabTitle.toString());
+		Platform.runLater(() -> {
+			int nbOfNewAttachments = observableAttachments.countNewAttachments();
+			StringBuilder tabTitle = new StringBuilder(resb.getString("tpAttachments.text"));
+			if (nbOfNewAttachments != 0) {
+				tabTitle.append(" (+").append(nbOfNewAttachments).append(")");
+			}
+			tpAttachments.setText(tabTitle.toString());
+		});
 	}
 	
 	private void copySelectedAttachmentsToClipboard() {
