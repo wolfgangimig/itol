@@ -13,6 +13,9 @@ package com.wilutions.itol;
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryUsage;
 import java.net.URI;
 import java.net.URL;
 import java.text.MessageFormat;
@@ -279,13 +282,28 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		}
 	}
 
+	private void logUsedMem() {
+		System.gc();
+		long freeMemory = Runtime.getRuntime().freeMemory();
+		long totalMemroy = Runtime.getRuntime().totalMemory();
+		log.info("Runtime: used memory=" + ((totalMemroy - freeMemory) / 1000 / 1000) + "MB");
+		List<MemoryPoolMXBean> memoryPools = ManagementFactory.getPlatformMXBeans(MemoryPoolMXBean.class);
+		for (MemoryPoolMXBean memoryPool : memoryPools) {
+			String name = memoryPool.getName();
+			MemoryUsage memoryUsage = memoryPool.getUsage();
+			log.info("Pool: " + name + ", memoryUsage=" + memoryUsage);
+		}
+	}
+	
 	private void internalSetMailItem(IssueMailItem mailItem, ProgressCallback cb, AsyncResult<Boolean> asyncResult) {
 		long t1 = System.currentTimeMillis();
 		this.mailItem = mailItem;
 		this.tookNotesFromMail = false;
-		
+
 		log.info("Start initialize with mail item " + mailItem + " ---------------");
 
+		logUsedMem();
+		
 		AsyncResult<Boolean> outerResult = (succ, ex) -> {
 			asyncResult.setAsyncResult(succ, ex);
 			long t2 = System.currentTimeMillis();
