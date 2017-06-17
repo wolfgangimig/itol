@@ -30,6 +30,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.management.RuntimeErrorException;
+
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
@@ -283,15 +285,37 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	}
 
 	private void logUsedMem() {
-		System.gc();
 		long freeMemory = Runtime.getRuntime().freeMemory();
 		long totalMemroy = Runtime.getRuntime().totalMemory();
 		log.info("Runtime: used memory=" + ((totalMemroy - freeMemory) / 1000 / 1000) + "MB");
 		List<MemoryPoolMXBean> memoryPools = ManagementFactory.getPlatformMXBeans(MemoryPoolMXBean.class);
+		boolean lowMemoryInOnePool = false;
 		for (MemoryPoolMXBean memoryPool : memoryPools) {
 			String name = memoryPool.getName();
 			MemoryUsage memoryUsage = memoryPool.getUsage();
-			log.info("Pool: " + name + ", memoryUsage=" + memoryUsage);
+			boolean lowMem = false;
+			try {
+				lowMem = memoryPool.isUsageThresholdExceeded();
+				lowMemoryInOnePool = lowMemoryInOnePool | lowMem;
+			}
+			catch (UnsupportedOperationException ignored) {}
+			log.log(lowMem ? Level.WARNING : Level.INFO, "Pool: " + name + ", memoryUsage=" + memoryUsage);
+		}
+	}
+	
+	/**
+	 * Test on low memory.
+	 * ITJ-54: Workaround for memory leak in Javafx WebView.
+	 */
+	private void testMem() {
+		final int TEST_MEMORY_SIZE = 10 * 1000 * 1000;
+		try {
+			byte[] buf = new byte[TEST_MEMORY_SIZE];
+			log.fine("testMem buf[0]=" + buf[0]);
+		}
+		catch (OutOfMemoryError e) {
+			log.log(Level.SEVERE, "Not enough memory to continue.", e);
+			throw new RuntimeException(resb.getString("msg.outOfMem"));
 		}
 	}
 	
@@ -313,20 +337,26 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		};
 
 		Platform.runLater(() -> {
-			
-			cb.incrProgress(0.1);
 
-			detectIssueModifiedStop();
-
-			updateIssueFromMailItem(cb.createChild(0.8), (succ, ex) -> {
-				if (succ) {
-					initialUpdate(cb.createChild(0.1), outerResult);
-				}
-				else {
-					outerResult.setAsyncResult(false, ex);
-				}
-			});
-
+			try {
+				testMem();
+	
+				cb.incrProgress(0.1);
+	
+				detectIssueModifiedStop();
+	
+				updateIssueFromMailItem(cb.createChild(0.8), (succ, ex) -> {
+					if (succ) {
+						initialUpdate(cb.createChild(0.1), outerResult);
+					}
+					else {
+						outerResult.setAsyncResult(false, ex);
+					}
+				});
+			}
+			catch (Throwable e) {
+				showMessageBoxError(e.getMessage());
+			}
 		});
 	}
 
@@ -1342,20 +1372,27 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			if (ex == null && succ) {
 
 				Platform.runLater(() -> {
-					ProgressCallback cb = createProgressCallback("Show issue");
-					
-					// Show that reading issue has started
-					cb.incrProgress(0.1);
-					
-					bnAssignSelection_select(false);
-					
-					String issueId = edIssueId.getText();
-					internalShowIssue(issueId, cb.createChild(0.9), (succ1, ex1) -> {
-						cb.setFinished();
-						if (ex1 != null) {
-							showMessageBoxError(ex1.toString());
-						}
-					});
+					try {
+						testMem();
+						
+						ProgressCallback cb = createProgressCallback("Show issue");
+						
+						// Show that reading issue has started
+						cb.incrProgress(0.1);
+						
+						bnAssignSelection_select(false);
+						
+						String issueId = edIssueId.getText();
+						internalShowIssue(issueId, cb.createChild(0.9), (succ1, ex1) -> {
+							cb.setFinished();
+							if (ex1 != null) {
+								showMessageBoxError(ex1.toString());
+							}
+						});
+					}
+					catch (Throwable e) {
+						showMessageBoxError(e.toString());
+					}
 				});
 			}
 		});
