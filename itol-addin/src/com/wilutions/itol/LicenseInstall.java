@@ -54,21 +54,24 @@ public class LicenseInstall {
 	
 	public void uninstall(boolean userNotMachine) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("uninstall(userNotMachine=" + userNotMachine);
+		String licenseKey = "";
 		if (config != null) {
+			licenseKey = config.getLicenseKey();
 			config.setLicenseKey("");
 			config.write();
 		}
 		else {
 			String registryKey = getProductRegKey(userNotMachine);
 			if (log.isLoggable(Level.FINE)) log.fine("regkey=" + registryKey);
-			String licenseKey = (String)RegUtil.getRegistryValue(registryKey, "", "");
-			if (log.isLoggable(Level.FINE)) log.fine("licenseKey=" + licenseKey);
-			if (!licenseKey.isEmpty()) {
-				if (log.isLoggable(Level.INFO)) log.info("Uninstall license=" + licenseKey + " found at registry-key=" + registryKey);
-				check(licenseKey, LicenseCheck.Mode.Uninstall);
-				RegUtil.deleteRegistryKey(registryKey);
-			}
+			licenseKey = (String)RegUtil.getRegistryValue(registryKey, "", "");
+			RegUtil.deleteRegistryKey(registryKey);
 		}
+		
+		if (!licenseKey.isEmpty()) {
+			if (log.isLoggable(Level.INFO)) log.info("Uninstall license=" + licenseKey);
+			check(licenseKey, LicenseCheck.Mode.Uninstall);
+		}
+
 		if (log.isLoggable(Level.FINE)) log.fine(")uninstall");
 	}
 	
