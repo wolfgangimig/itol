@@ -8,7 +8,7 @@ Example screenshot:
 ## Preferences
 * Windows 7 or newer
 * Outlook 2010 or 2016 is required. Outlook Express is not supported.
-* Redmine 2.6.x or Redmine 3.0.0. See below "Working with Redmine VM image...".
+* Redmine 2.6.x or newer.
 
 ## Install
 * Uninstall previous ITOL version.
