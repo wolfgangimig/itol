@@ -18,7 +18,10 @@ import java.util.Date;
 import javafx.scene.image.Image;
 
 public class Attachment implements Cloneable {
-
+	
+	public final static String OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT  = "http://schemas.microsoft.com/mapi/proptag/0x3712001E";
+	public final static String OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT_MIME_TYPE = "http://schemas.microsoft.com/mapi/proptag/0x370E001E";
+			
 	private String id;
 	private String subject;
 	private String contentType;

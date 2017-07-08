@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
@@ -1598,10 +1599,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 					updateIssueChangedMembers(srv, progressCallback.createChild(0.8));
 
 					initialUpdate(progressCallback.createChild(0.1), (succ, ex) -> {
-						if (succ) {
-							maybeSendReplyWithNotes(prevIssue);
-						}
 						progressCallback.setFinished();
+						if (succ) {
+							BackgTask.run(() -> {
+								maybeSendReplyWithNotes(prevIssue);
+							});
+						}
 					});
 
 				}
@@ -1852,50 +1855,137 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		
 		if (!prevIssue.isNew()) {
 			if (!tookNotesFromMail) {
+				
+				// Get configuration property ID for reply address.
 				String mailToPropId = Globals.getAppInfo().getConfig().getAutoReplyField();  
 				if (log.isLoggable(Level.FINE)) log.fine("mailToPropId=" + mailToPropId);
 				if (!mailToPropId.isEmpty()) {
+
+					// Get reply address.
 					String mailTo = issue.getPropertyString(mailToPropId, "");
 					if (log.isLoggable(Level.FINE)) log.fine("mailTo=" + mailTo);
 					if (!mailTo.isEmpty()) {
-						String lastComment = prevIssue.getPropertyString(Property.NOTES, "");
-						if (log.isLoggable(Level.FINE)) log.fine("lastComment=" + lastComment);
-						if (!lastComment.isEmpty()) {
-							if (log.isLoggable(Level.FINE)) log.fine("start sendReplyWithNotes in background");
-							BackgTask.run(() -> {
-								sendReplyWithNotes(issue, mailTo, lastComment, createProgressCallback("Prepare reply"));
-							});
-						}
+
+						// Ask user whether a reply mail should be prepared.
+						querySendReplyAsync(mailTo, (succ, ex) -> {
+							if (succ) {
+									
+								@SuppressWarnings("unchecked")
+								CompletableFuture<History> fhistory = (CompletableFuture<History>)issue.getPropertyValue(Property.HISTORY, new History());
+	
+								fhistory.thenAccept((history) -> {
+									String lastComment = history.getLastComment();
+									if (log.isLoggable(Level.FINE)) log.fine("lastComment=" + lastComment);
+									if (!lastComment.isEmpty()) {
+										if (log.isLoggable(Level.FINE)) log.fine("start sendReplyWithNotes in background");
+										sendReplyWithNotes(issue, mailTo, lastComment, createProgressCallback("Prepare reply"));
+									}
+								});
+							}
+						});
 					}
+					
 				}
 			}
 		}
 		if (log.isLoggable(Level.FINE)) log.fine(")maybeSendReplyWithNotes");
+	}
+	
+	private void querySendReplyAsync(String mailTo, AsyncResult<Boolean> asyncResult) {
+		String title = resb.getString("MessageBox.title.confirm");
+		String text = MessageFormat.format(resb.getString("MessageBox.querySendReply.text"), mailTo);
+		String yes = resb.getString("Button.Yes");
+		String no = resb.getString("Button.No");
+		Object owner = this.getDialogOwner();
+		com.wilutions.joa.fx.MessageBox.create(owner).title(title).text(text).button(1, yes).button(0, no)
+				.bdefault().show((btn, ex) -> {
+					Boolean succ = btn != null && btn != 0;
+					asyncResult.setAsyncResult(succ, ex);
+				});
 	}
 
 	private void sendReplyWithNotes(Issue issue, String mailTo, String lastComment, ProgressCallback cb) {
 		if (log.isLoggable(Level.FINE)) log.fine("sendReplyWithNotes(issue=" + issue + ", mailTo=" + mailTo + ", lastComment=" + lastComment);
 		try {
 			IssueService srv = Globals.getIssueService();
-			MailInfo mailInfo = srv.replyToComment(issue, mailTo, lastComment, cb);
+			MailInfo mailInfo = srv.replyToComment(issue, mailTo, lastComment, cb.createChild(0.1));
 
 			// Create MailItem object with subject, body, TO,...
 			Application application = Globals.getThisAddin().getApplication();
 			MailItem mailItem = Dispatch.as(application.CreateItem(OlItemType.olMailItem), MailItem.class);
-
 			mailItem.setTo(mailInfo.getTO());
 			mailItem.setCC(mailInfo.getCC());
 			mailItem.setBCC(mailInfo.getBCC());
 			mailItem.setSubject(mailInfo.getSubject());
-			mailItem.setHTMLBody(mailInfo.getHtmlBody());
-			
-			// Attachments
-			List<Attachment> attachments = mailInfo.getAttachments();
-			addAttachmentsToReply(mailItem, attachments, cb);
+			cb.incrProgress(0.1);
 
+			// Compute total size of attachments to be added.
+			List<Attachment> attachments = mailInfo.getAttachments();
+			double totalProgress = attachments.stream().collect(Collectors.summarizingLong((att) -> att.getContentLength())).getSum();
+			ProgressCallback downloadAttachmentsProgress = cb.createChild(0.8);
+			downloadAttachmentsProgress.setTotal(totalProgress);
+
+			com.wilutions.mslib.outlook.Attachments mailAttachments = mailItem.getAttachments().as(com.wilutions.mslib.outlook.Attachments.class);
+
+			// Find Attachment-ID in mail body and replace with file name or embedded image.
+			// Attachment-ID is between History.ATTACHMENT_MARKER_BEGIN and History.ATTACHMENT_MARKER_END.
+			StringBuilder mailBody = new StringBuilder(mailInfo.getHtmlBody());
+			int startPos = 0;
+			while (true) {
+				
+				int p = mailBody.indexOf(History.ATTACHMENT_MARKER_BEGIN, startPos);
+				if (p < 0) break;
+				
+				int e = mailBody.indexOf(History.ATTACHMENT_MARKER_END, p);
+				if (e < 0) break;
+
+				String attachmentId = mailBody.substring(p + History.ATTACHMENT_MARKER_BEGIN.length(), e);
+
+				// Delete attachment ID from mail body.
+				mailBody.replace(p, e + History.ATTACHMENT_MARKER_END.length(), "");
+				int embedAttachmentAtPos = p;
+				
+				// Find attachment object with this ID.
+				Optional<Attachment> oatt = mailInfo.getAttachments().stream().filter((att) -> att.getId().equals(attachmentId)).findAny();
+				if (oatt.isPresent()) {
+					Attachment attachment = oatt.get();
+					
+					if (log.isLoggable(Level.FINE)) log.fine("download " + attachment);
+					URI uri = attachmentHelper.downloadAttachment(attachment, cb.createChild("Download " + attachment.getFileName(), attachment.getContentLength(), cb.getTotal()));
+					File file = new File(uri);
+
+					if (log.isLoggable(Level.FINE)) log.fine("mailAttachment.Add " + file.getAbsolutePath());
+					com.wilutions.mslib.outlook.Attachment mailAttachment = mailAttachments.Add(file.getAbsolutePath(), OlAttachmentType.olByValue, embedAttachmentAtPos, attachment.getFileName());
+					
+					// Embedded?
+					// https://stackoverflow.com/questions/4196160/vsto-outlook-embed-image-mailitem
+					boolean isEmbedded = !attachment.getThumbnailUrl().isEmpty();
+					if (isEmbedded) {
+						
+						String cid = History.ATTACHMENT_MARKER_BEGIN + attachment.getId();
+						
+						// Insert reference into mail body.
+						String attachmentRef = MessageFormat.format("<img src=\"cid:{0}\" >", cid);
+						mailBody.insert(embedAttachmentAtPos, attachmentRef);
+						startPos = embedAttachmentAtPos + attachmentRef.length();
+						
+						// Tell Outlook that image should be embedded.
+						mailAttachment.getPropertyAccessor().SetProperty(Attachment.OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT, cid);
+						mailAttachment.getPropertyAccessor().SetProperty(Attachment.OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT_MIME_TYPE, attachment.getContentType());
+					}
+					else {
+						mailBody.insert(embedAttachmentAtPos, attachment.getFileName());
+						startPos = embedAttachmentAtPos + attachment.getFileName().length();
+					}
+				}
+			}
+
+			// Set mail body, maybe with attachment names or references.
+			mailItem.setHTMLBody(mailBody.toString());
+			
 			// Show Inspector window
 			if (log.isLoggable(Level.FINE)) log.fine("mailItem.Display");
-			mailItem.Display(false); 
+			mailItem.Display(false);
 		}
 		catch (Exception e) {
 			log.log(Level.SEVERE, "Failed to build reply mail.", e);
@@ -1905,25 +1995,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			cb.setFinished();
 		}
 		if (log.isLoggable(Level.FINE)) log.fine(")sendReplyWithNotes");
-	}
-	
-	private void addAttachmentsToReply(MailItem mailItem, List<Attachment> attachments, ProgressCallback cb) throws Exception {
-		if (log.isLoggable(Level.FINE)) log.fine("addAttachmentsToReply(" + attachments);
-		
-		// Compute total size of attachments to be added.
-		double totalProgress = attachments.stream().collect(Collectors.summarizingLong((att) -> att.getContentLength())).getSum();
-		cb.setTotal(totalProgress);
-
-		com.wilutions.mslib.outlook.Attachments mailAttachments = mailItem.getAttachments().as(com.wilutions.mslib.outlook.Attachments.class);
-		int index = 0;
-		for (Attachment attachment : attachments) {
-			if (log.isLoggable(Level.FINE)) log.fine("download " + attachment);
-			URI uri = attachmentHelper.downloadAttachment(attachment, cb.createChild("Download " + attachment.getFileName(), attachment.getContentLength(), cb.getTotal()));
-			File file = new File(uri);
-			if (log.isLoggable(Level.FINE)) log.fine("mailAttachment.Add " + file.getAbsolutePath());
-			mailAttachments.Add(file.getAbsolutePath(), OlAttachmentType.olByValue, ++index, attachment.getFileName());
-		}
-		if (log.isLoggable(Level.FINE)) log.fine(")addAttachmentsToReply");
 	}
 	
 	private void bnAssignSelection_select(boolean v) {

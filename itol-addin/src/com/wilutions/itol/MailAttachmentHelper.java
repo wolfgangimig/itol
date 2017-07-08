@@ -201,8 +201,8 @@ public class MailAttachmentHelper {
 					// embedded in the mail body.
 					// https://social.msdn.microsoft.com/Forums/vstudio/en-US/d6d339d2-ebc3-4332-9801-15a53020df94/embedded-images-attachments-with-html-based-emails?forum=vsto
 					PropertyAccessor mattProps = matt.getPropertyAccessor();
-	                Object contentId = mattProps.GetProperty("http://schemas.microsoft.com/mapi/proptag/0x3712001E");
-	                Object mimeType = matt.getPropertyAccessor().GetProperty("http://schemas.microsoft.com/mapi/proptag/0x370E001E");
+	                Object contentId = mattProps.GetProperty(Attachment.OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT);
+	                Object mimeType = matt.getPropertyAccessor().GetProperty(Attachment.OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT_MIME_TYPE);
 	                if (log.isLoggable(Level.FINE)) log.fine("contentId=" + contentId + ", mimeType=" + mimeType);
 	                
 					boolean isEmbeddedAttachment = contentId != null && !contentId.equals("");

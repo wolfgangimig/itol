@@ -14,7 +14,14 @@ public class MailInfo {
 	private String BCC;
 	private String subject;
 	private String textBody;
+	
+	
+	/**
+	 * HTML body.
+	 * Contains attachment references between History.ATTACHMENT_MARKER_BEGIN + att.getId() + History.ATTACHMENT_MARKER_END.
+	 */
 	private String htmlBody;
+	
 	private List<Attachment> attachments;
 	
 	public MailInfo() {
