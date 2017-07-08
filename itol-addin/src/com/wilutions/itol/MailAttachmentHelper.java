@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import javax.xml.bind.DatatypeConverter;
 
+import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.Dispatch;
 import com.wilutions.itol.db.Attachment;
@@ -39,6 +40,7 @@ import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.MsgFileFormat;
 import com.wilutions.itol.db.ProgressCallback;
+import com.wilutions.itol.db.ProgressCallbackFactory;
 import com.wilutions.mslib.outlook.Application;
 import com.wilutions.mslib.outlook.MailItem;
 import com.wilutions.mslib.outlook.OlAttachmentType;
@@ -514,11 +516,26 @@ public class MailAttachmentHelper {
 		return type.getId();
 	}
 
-	public void showAttachment(Attachment att, ProgressCallback cb) throws Exception {
+	public void showAttachmentAsync(Attachment att, ProgressCallbackFactory cbFact, AsyncResult<Boolean> asyncResult) {
 		// Download the entire file into a temp dir. Opening the URL with Desktop.browse()
 		// would start a browser first, which in turn downloads the file. 
-		URI url = downloadAttachment(att, cb); 
-		IssueApplication.showDocument(url.toString());
+		
+		ProgressCallback cb = cbFact.createProgressCallback("Show selected attachment");
+		BackgTask.run(() -> {
+			try {
+				URI url = downloadAttachment(att, cb); 
+				IssueApplication.showDocument(url.toString());
+				asyncResult.setAsyncResult(Boolean.TRUE, null);
+			}
+			catch (Exception e) {
+				log.log(Level.WARNING, "Failed to show attachment=" + att, e);
+				asyncResult.setAsyncResult(Boolean.FALSE, e);
+			}
+			finally {
+				cb.setFinished();
+			}
+		});
+
 	}
 
 	public URI downloadAttachment(Attachment att, ProgressCallback cb) throws Exception {

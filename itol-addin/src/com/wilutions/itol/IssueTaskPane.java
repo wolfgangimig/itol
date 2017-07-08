@@ -30,8 +30,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.management.RuntimeErrorException;
-
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.ComException;
@@ -114,7 +112,7 @@ import javafx.scene.web.HTMLEditor;
 import javafx.stage.Window;
 import javafx.util.Duration;
 
-public class IssueTaskPane extends TaskPaneFX implements Initializable, ProgressCallbackFactory {
+public class IssueTaskPane extends TaskPaneFX implements Initializable, ProgressCallbackFactory, ShowAttachmentHelper {
 
 	private volatile Issue issue = new Issue();
 
@@ -784,10 +782,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		}
 	}
 
-	private void setBnUpdateEnabled(boolean enable) {
-		bnUpdate.setDisable(!enable);
-	}
-
 	private void saveAttachments() {
 		issue.setAttachments(observableAttachments.getObservableList());
 	}
@@ -796,9 +790,16 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		if (modified) {
 			bnAssignSelection_select(false);
 		}
-		boolean enabled = modified || issue.isNew() || issue.isNewComment();
-		boolean hasSubject = !issue.getSubject().isEmpty();
-		setBnUpdateEnabled(enabled && hasSubject);
+
+		// ITJ-56: If demo is expired, bnUpdate should be enabled
+		if (isLicenseValid()) {
+			boolean existingUnmodified = !modified && !issue.isNew() && !issue.isNewComment();
+			boolean missingSubject = issue.getSubject().isEmpty();
+			bnUpdate.setDisable(existingUnmodified || missingSubject);
+		}
+		else {
+			bnUpdate.setDisable(false);
+		}
 	}
 
 	private void initIssueId() {
@@ -1168,16 +1169,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	private void showSelectedIssueAttachment() {
 		Attachment att = tabAttachments.getSelectionModel().getSelectedItem();
 		if (att != null) {
-			ProgressCallback cb = createProgressCallback("Show selected attachment");
-			BackgTask.run(() -> {
-				try {
-					attachmentHelper.showAttachment(att, cb);
-				}
-				catch (Exception e) {
-					showMessageBoxError(e.toString());
-				}
-				finally {
-					cb.setFinished();
+			attachmentHelper.showAttachmentAsync(att, this, (succ, ex) -> {
+				if (ex != null) {
+					showMessageBoxError(ex.toString());
 				}
 			});
 		}
@@ -2036,5 +2030,38 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	
 	public void setNextTabDisable(boolean v) {
 		bnNextPage.setDisable(v);
+	}
+
+	@Override
+	public void showAttachment(String url) {
+		// ITJ-55: In WebView, download attachment before open to have same behavior as in attachment tab.
+		// url=https://wilutions.atlassian.net/secure/attachment/11800/Re_+Webseite+auffrischen%21.msg
+		String urlLC = url.toLowerCase();
+		if (urlLC.startsWith("http:") || urlLC.startsWith("https:")) {
+			String attresid = "/secure/attachment/";
+			int p = urlLC.indexOf(attresid);
+			if (p >= 0) {
+				p += attresid.length();
+				int e = urlLC.indexOf("/", p);
+				if (e >= 0) {
+					String attIdStr = urlLC.substring(p, e);
+					for (Attachment att : issue.getAttachments()) {
+						if (att.getId().equals(attIdStr)) {
+							attachmentHelper.showAttachmentAsync(att, this, (succ, ex) -> {
+								if (ex != null) {
+									showMessageBoxError(ex.toString());
+								}
+							});
+							// Found valid attachment.
+							return;
+						}
+					}
+				}
+			}
+		}
+		
+		// The url does not link to an attachment (e.g. a mailto: link). 
+		// Open browser to navigate to the URL. 
+		IssueApplication.showDocument(url);
 	}
 }

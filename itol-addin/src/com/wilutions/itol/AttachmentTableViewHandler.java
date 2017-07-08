@@ -391,13 +391,7 @@ public class AttachmentTableViewHandler {
 					
 					// If image is clicked, show full attachment and hide tooltip.
 					imageView.setOnMouseClicked((_ignore) -> {
-						BackgTask.run(() -> {
-							try {
-								attachmentHelper.showAttachment(attachment, progressCallbackFactory.createProgressCallback("Show attachment"));
-							} catch (Exception e) {
-								log.log(Level.WARNING, "Failed to show attachment=" + attachment, e);
-							}
-						});
+						attachmentHelper.showAttachmentAsync(attachment, progressCallbackFactory, (succ, ex) -> {});
 					});
 					
 					this.show(tooltip, x, y);

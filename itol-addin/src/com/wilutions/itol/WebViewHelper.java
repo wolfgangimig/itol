@@ -1,5 +1,9 @@
 package com.wilutions.itol;
 
+import java.net.URI;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -16,7 +20,9 @@ import javafx.scene.web.WebView;
 
 public class WebViewHelper {
 
-	public static void addClickHandlerToWebView(WebView webView) {
+	private final static Logger log = Logger.getLogger("WebViewHelper");
+
+	public static void addClickHandlerToWebView(WebView webView, ShowAttachmentHelper showAttachmentHelper) {
 		
 		WebEngine webEngine = webView.getEngine();
 		webEngine.getLoadWorker().stateProperty().addListener(new ChangeListener<Worker.State>() {
@@ -36,7 +42,7 @@ public class WebViewHelper {
 								Platform.runLater(() -> {
 									String href = ((Element)target).getAttribute("href");
 									if (href != null && !href.isEmpty()) {
-										IssueApplication.showDocument(href);
+										showAttachmentHelper.showAttachment(href);
 									}
 								});
 							}
