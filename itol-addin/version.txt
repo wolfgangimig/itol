@@ -4,6 +4,17 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+1.0.3 2017-07-09
+
+- ITJ-51: Restrict allowed dock position to left and right.
+
+- ITJ-57: Embed attachments with thumbnail (image type) into reply mail.
+
+- ITJ-55: If attachment link clicked in history, download attachment and open instead of
+  delegating this step to the browser.
+  
+- ITJ-56: If test period is expired, button "License..." is enabled. 
+
 1.0.2 2017-06-25
 
 - First release. 

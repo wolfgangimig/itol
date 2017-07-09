@@ -62,6 +62,7 @@ import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.ribbon.RibbonButton;
 import com.wilutions.mslib.office.CustomTaskPane;
 import com.wilutions.mslib.office.IRibbonUI;
+import com.wilutions.mslib.office.MsoCTPDockPositionRestrict;
 import com.wilutions.mslib.office._CustomTaskPane;
 import com.wilutions.mslib.outlook.Application;
 import com.wilutions.mslib.outlook.MailItem;
@@ -567,7 +568,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 	@Override
 	public void showAsync(final CustomTaskPane taskPane, AsyncResult<Boolean> asyncResult) throws ComException {
-		super.showAsync(taskPane, asyncResult);
+		super.showAsync(taskPane, (succ,ex) -> {
+			
+			// Restrict docking position to left or right. 
+			if (succ) {
+				BackgTask.run(() -> taskPane.setDockPositionRestrict(MsoCTPDockPositionRestrict.msoCTPDockPositionRestrictNoHorizontal));
+			}
+			
+			asyncResult.setAsyncResult(succ, ex);
+		});
 	}
 
 	@Override
