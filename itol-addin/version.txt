@@ -6,6 +6,8 @@ Version History
 
 1.0.3 2017-07-09
 
+- ITJ-50: Remove RE: FW: ... from issue summary.
+
 - ITJ-51: Restrict allowed dock position to left and right.
 
 - ITJ-57: Embed attachments with thumbnail (image type) into reply mail.

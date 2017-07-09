@@ -385,6 +385,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 				}
 
 				if (issue == null) {
+					
+					subject = makeIssueSubjectFromMailSubject(subject);
 
 					// ... no issue ID: create blank issue
 					String description = makeDescriptionFromMailBody();
@@ -425,6 +427,17 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueFromMailItem");
 	}
 
+	private String makeIssueSubjectFromMailSubject(String subject) {
+		// ITJ-50: Remove RE: AW: ... from issue summary
+		subject = subject.trim();
+		if (subject.length() >= 3) {
+			if (Character.isUpperCase(subject.charAt(0)) && Character.isUpperCase(subject.charAt(1)) && subject.charAt(2) == ':') {
+				subject = subject.substring(3).trim();
+			}
+		}
+		return subject;
+	}
+	
 	private String makeDescriptionFromMailBody() throws Exception, IOException {
 		String textBody = mailItem.getBody().replace("\r\n", "\n");
 		String description = textBody;
@@ -570,7 +583,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	public void showAsync(final CustomTaskPane taskPane, AsyncResult<Boolean> asyncResult) throws ComException {
 		super.showAsync(taskPane, (succ,ex) -> {
 			
-			// Restrict docking position to left or right. 
+			// ITJ-51: Restrict docking position to left or right. 
 			if (succ) {
 				BackgTask.run(() -> taskPane.setDockPositionRestrict(MsoCTPDockPositionRestrict.msoCTPDockPositionRestrictNoHorizontal));
 			}
