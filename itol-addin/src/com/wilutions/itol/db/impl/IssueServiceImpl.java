@@ -24,13 +24,13 @@ import java.util.Set;
 
 import com.wilutions.itol.IssueSubjectId;
 import com.wilutions.itol.db.Attachment;
-import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.DescriptionTextEditor;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.IssuePropertyEditor;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.MailInfo;
+import com.wilutions.itol.db.Profile;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.PropertyClass;
 
@@ -181,12 +181,12 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
-	public Config getConfig() {
-		return new Config();
+	public Profile getProfile() {
+		return new Profile();
 	}
 
 	@Override
-	public void setConfig(Config config) {
+	public void setProfile(Profile config) {
 		// TODO Auto-generated method stub
 		
 	}

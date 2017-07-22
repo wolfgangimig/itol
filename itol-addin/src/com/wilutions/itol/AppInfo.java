@@ -11,16 +11,10 @@
 package com.wilutions.itol;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.wilutions.itol.db.Config;
 
 public class AppInfo {
-	
-	private String serviceFactoryClass;
-	
-	private List<String> serviceFactoryParams = new ArrayList<String>();
 	
 	private Config config = new Config();
 
@@ -30,22 +24,6 @@ public class AppInfo {
 	
 	private File appDir;
 	
-	public String getServiceFactoryClass() {
-		return serviceFactoryClass;
-	}
-
-	public void setServiceFactoryClass(String serviceFactoryClass) {
-		this.serviceFactoryClass = serviceFactoryClass;
-	}
-
-	public List<String> getServiceFactoryParams() {
-		return serviceFactoryParams;
-	}
-
-	public void setServiceFactoryParams(List<String> serviceFactoryParams) {
-		this.serviceFactoryParams = serviceFactoryParams;
-	}
-
 	public Config getConfig() {
 		return config;
 	}

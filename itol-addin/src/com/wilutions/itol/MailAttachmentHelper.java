@@ -34,11 +34,11 @@ import com.wilutions.com.BackgTask;
 import com.wilutions.com.Dispatch;
 import com.wilutions.itol.db.Attachment;
 import com.wilutions.itol.db.AttachmentBlacklistItem;
-import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.Issue;
 import com.wilutions.itol.db.MsgFileFormat;
+import com.wilutions.itol.db.Profile;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackFactory;
 import com.wilutions.mslib.outlook.Application;
@@ -512,7 +512,7 @@ public class MailAttachmentHelper {
 	}
 
 	private static String getConfigMsgFileExt() {
-		IdName type = Globals.getAppInfo().getConfig().getMsgFileFormat();
+		IdName type = Globals.getAppInfo().getConfig().getCurrentProfile().getMsgFileFormat();
 		return type.getId();
 	}
 
@@ -755,7 +755,7 @@ public class MailAttachmentHelper {
 		// Get destination directory
 		File exportDirectory = null;
 		{
-			String exportDirectoryName = Globals.getAppInfo().getConfig().getExportAttachmentsDirectory();
+			String exportDirectoryName = Globals.getAppInfo().getConfig().getCurrentProfile().getExportAttachmentsDirectory();
 			
 			// Build sub-directory: issue ID or NEW-<now>
 			String subdir = issue.getId();
@@ -836,16 +836,16 @@ public class MailAttachmentHelper {
 	 */
 	private void openExportDirectory(Issue issue, File exportDirectory) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("openExportDirectory(issue=" + issue + ", exportDirectory=" + exportDirectory);
-		String exportProgram = Globals.getAppInfo().getConfig().getExportAttachmentsProgram();
+		String exportProgram = Globals.getAppInfo().getConfig().getCurrentProfile().getExportAttachmentsProgram();
 		if (Default.value(exportProgram).isEmpty()) {
 			String url = exportDirectory.toURI().toString();
 			IssueApplication.showDocument(url);
 		}
 		else {
 			String cmd = exportProgram
-					.replace(Config.PLACEHODER_EXPORT_DIRECTORY, exportDirectory.getAbsolutePath())
-					.replace(Config.PLACEHODER_ISSUE_ID, issue.getId())
-					.replace(Config.PLACEHODER_ISSUE_ID, issue.getProject().getId());
+					.replace(Profile.PLACEHODER_EXPORT_DIRECTORY, exportDirectory.getAbsolutePath())
+					.replace(Profile.PLACEHODER_ISSUE_ID, issue.getId())
+					.replace(Profile.PLACEHODER_ISSUE_ID, issue.getProject().getId());
 			try {
 				log.info("Open export directory: " + cmd); 
 				Runtime.getRuntime().exec(cmd);
@@ -1042,7 +1042,7 @@ public class MailAttachmentHelper {
 	private boolean isBlacklistAttachment(Attachment att) throws Exception {
 		boolean ret = false;
 		long size = att.getContentLength();
-		for (AttachmentBlacklistItem blackItem : Globals.getAppInfo().getConfig().getBlacklist()) {
+		for (AttachmentBlacklistItem blackItem : Globals.getAppInfo().getConfig().getCurrentProfile().getBlacklist()) {
 			
 			// For performance reasons, check the size first before saving the attachment and 
 			// computing the MD5 hash. 
@@ -1067,13 +1067,13 @@ public class MailAttachmentHelper {
 		if (log.isLoggable(Level.INFO)) log.info("Add blacklist item=" + item);
 		
 		boolean found = false;
-		for (AttachmentBlacklistItem blackItem : Globals.getAppInfo().getConfig().getBlacklist()) {
+		for (AttachmentBlacklistItem blackItem : Globals.getAppInfo().getConfig().getCurrentProfile().getBlacklist()) {
 			found = blackItem.getHash().equals(hash);
 			if (found) break;
 		}
 		
 		if (!found) {
-			Globals.getAppInfo().getConfig().getBlacklist().add(item);
+			Globals.getAppInfo().getConfig().getCurrentProfile().getBlacklist().add(item);
 		}
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")addBlacklistItem");
 	}

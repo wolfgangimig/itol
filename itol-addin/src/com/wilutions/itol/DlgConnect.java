@@ -11,6 +11,7 @@ import com.wilutions.com.BackgTask;
 import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.HttpClient;
 import com.wilutions.itol.db.PasswordEncryption;
+import com.wilutions.itol.db.Profile;
 import com.wilutions.joa.fx.ModalDialogFX;
 
 import javafx.application.Platform;
@@ -196,20 +197,21 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 	}
 
 	private void updateData(boolean save) {
+		Profile profile = config.getCurrentProfile();
 		if (save) {
-			config.setServiceUrl(edUrl.getText());
-			config.setUserName("");
-			config.setEncryptedPassword("");
-			config.setCredentials("");
+			profile.setServiceUrl(edUrl.getText());
+			profile.setUserName("");
+			profile.setEncryptedPassword("");
+			profile.setCredentials("");
 			String pwd = edPassword.getText();
 			if (pwd.isEmpty()) {
-				config.setCredentials(edUserName.getText());
+				profile.setCredentials(edUserName.getText());
 			}
 			else {
-				config.setUserName(edUserName.getText());
-				config.setEncryptedPassword(PasswordEncryption.encrypt(edPassword.getText()));
+				profile.setUserName(edUserName.getText());
+				profile.setEncryptedPassword(PasswordEncryption.encrypt(edPassword.getText()));
 			}
-			config.setProxyServerEnabled(ckProxyEnabled.isSelected());
+			profile.setProxyServerEnabled(ckProxyEnabled.isSelected());
 			
 			{
 				String proxyServerAndPort = cbProxyServer.getEditor().getText();
@@ -218,36 +220,36 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 					String proxyServer = proxyServerAndPort.substring(0, p);
 					String proxyPortStr = proxyServerAndPort.substring(p+1);
 					int proxyPort = Integer.parseInt(proxyPortStr);
-					config.setProxyServer(proxyServer);
-					config.setProxyServerPort(proxyPort);
+					profile.setProxyServer(proxyServer);
+					profile.setProxyServerPort(proxyPort);
 				}
 				else {
 					// Assume DlgConnect.Proxy.server.default is selected, use default settings.
-					config.setProxyServer("");
-					config.setProxyServerPort(0);
+					profile.setProxyServer("");
+					profile.setProxyServerPort(0);
 				}
 			}
 			
-			config.setProxyServerUserName(edProxyUserName.getText());
-			config.setProxyServerEncryptedUserPassword(PasswordEncryption.encrypt(edProxyPassword.getText()));
+			profile.setProxyServerUserName(edProxyUserName.getText());
+			profile.setProxyServerEncryptedUserPassword(PasswordEncryption.encrypt(edProxyPassword.getText()));
 		}
 		else {
-			String url = config.getServiceUrl();
+			String url = profile.getServiceUrl();
 			if (url.isEmpty()) url = "http://server:port";
 			edUrl.setText(url);
 
-			String apiKey = config.getCredentials();
+			String apiKey = profile.getCredentials();
 			// 1b5d44de5539ef39c6b3ef0befc2e71234af3d81
 			if (apiKey.isEmpty()) {
-				edUserName.setText(config.getUserName());
-				edPassword.setText(PasswordEncryption.decrypt(config.getEncryptedPassword()));
+				edUserName.setText(profile.getUserName());
+				edPassword.setText(PasswordEncryption.decrypt(profile.getEncryptedPassword()));
 			}
 			else {
 				edUserName.setText(apiKey);
 			}
 
 			{
-				String proxyServerAndPort = config.getProxyServer() + ":" + config.getProxyServerPort();
+				String proxyServerAndPort = profile.getProxyServer() + ":" + profile.getProxyServerPort();
 				boolean useSystemSettings = proxyServerAndPort.equals(":0"); 
 				if (useSystemSettings) { 
 					cbProxyServer.getSelectionModel().select(0);
@@ -257,10 +259,10 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 					cbProxyServer.getEditor().setText(proxyServerAndPort);
 				}
 			}
-			edProxyUserName.setText(config.getProxyServerUserName());
-			String proxyPassword = config.getProxyServerEncryptedUserPassword();
+			edProxyUserName.setText(profile.getProxyServerUserName());
+			String proxyPassword = profile.getProxyServerEncryptedUserPassword();
 			edProxyPassword.setText(PasswordEncryption.decrypt(proxyPassword));
-			ckProxyEnabled.setSelected(config.isProxyServerEnabled());
+			ckProxyEnabled.setSelected(profile.isProxyServerEnabled());
 			
 			enableProxySettings();
 		}

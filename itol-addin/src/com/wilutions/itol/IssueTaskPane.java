@@ -50,6 +50,7 @@ import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.MailBodyConversion;
 import com.wilutions.itol.db.MailInfo;
 import com.wilutions.itol.db.MsgFileFormat;
+import com.wilutions.itol.db.Profile;
 import com.wilutions.itol.db.ProgressCallback;
 import com.wilutions.itol.db.ProgressCallbackFactory;
 import com.wilutions.itol.db.ProgressCallbackImpl;
@@ -95,12 +96,14 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -441,7 +444,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	private String makeDescriptionFromMailBody() throws Exception, IOException {
 		String textBody = mailItem.getBody().replace("\r\n", "\n");
 		String description = textBody;
-		if (Globals.getAppInfo().getConfig().getMailBodyConversion().equals(MailBodyConversion.MARKUP)) {
+		if (Globals.getAppInfo().getConfig().getCurrentProfile().getMailBodyConversion().equals(MailBodyConversion.MARKUP)) {
 			String htmlBody = mailItem.getHTMLBody();
 			String markup = Globals.getIssueService().convertHtmlBodyToMarkup(htmlBody);
 			if (markup.length() > textBody.length()/2) {
@@ -452,7 +455,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	}
 
 	private void assignMailAdressToAutoReplyField() {
-		String autoReplyField = Globals.getAppInfo().getConfig().getAutoReplyField();
+		String autoReplyField = Globals.getAppInfo().getConfig().getCurrentProfile().getAutoReplyField();
 		if (!Default.value(autoReplyField).isEmpty()) {
 			String from = mailItem.getFromAddress();
 			issue.setPropertyString(autoReplyField, from);
@@ -474,7 +477,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			// Check whether it is a notification mail from issue service.
 			String fromAddress = Default.value(mailItem.getFromAddress());
 			log.info("fromAddress=" + fromAddress);
-			boolean isNotification = fromAddress.equalsIgnoreCase(Globals.getAppInfo().getConfig().getServiceNotifcationMailAddress());
+			boolean isNotification = fromAddress.equalsIgnoreCase(Globals.getAppInfo().getConfig().getCurrentProfile().getServiceNotifcationMailAddress());
 
 			if (log.isLoggable(Level.FINE)) log.fine("issue.lastModified=" + lastModified + ", newMail=" + newMail + ", receivedTime=" + receivedTime + ", fromAddress=" + fromAddress);
 			
@@ -616,6 +619,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			settingsImage.setFitHeight(16);
 			settingsImage.setFitWidth(16);
 			bnExtra.setGraphic(settingsImage);
+			
+			updateProfilesInMenuExtra();
 
 			edSubject.requestFocus();
 			
@@ -1172,7 +1177,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	}
 
 	private boolean isInjectIssueId() {
-		boolean ret = Globals.getAppInfo().getConfig().isInjectIssueIdIntoMailSubject();
+		boolean ret = Globals.getAppInfo().getConfig().getCurrentProfile().isInjectIssueIdIntoMailSubject();
 		return ret;
 	}
 
@@ -1705,7 +1710,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		// Therefore, we have to create the issue before uploading attachments.
 		List<Attachment> deferredAttachments = null;
 		if (isNew && isInjectIssueId()) {
-			IdName type = Globals.getAppInfo().getConfig().getMsgFileFormat();
+			IdName type = Globals.getAppInfo().getConfig().getCurrentProfile().getMsgFileFormat();
 			if (type == MsgFileFormat.MSG) {
 				modifiedProperties.remove(Property.ATTACHMENTS);
 				deferredAttachments = issue.getAttachments();
@@ -1879,7 +1884,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			if (!tookNotesFromMail) {
 				
 				// Get configuration property ID for reply address.
-				String mailToPropId = Globals.getAppInfo().getConfig().getAutoReplyField();  
+				String mailToPropId = Globals.getAppInfo().getConfig().getCurrentProfile().getAutoReplyField();  
 				if (log.isLoggable(Level.FINE)) log.fine("mailToPropId=" + mailToPropId);
 				if (!mailToPropId.isEmpty()) {
 
@@ -2156,5 +2161,59 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		// The url does not link to an attachment (e.g. a mailto: link). 
 		// Open browser to navigate to the URL. 
 		IssueApplication.showDocument(url);
+	}
+	
+	private void updateProfilesInMenuExtra() {
+		List<MenuItem> items = bnExtra.getItems();
+		
+		// Add menu itemms for profiles between first and second separator.
+		final int startSeparatorIndex = 1;
+		int beginIndex = 0, endIndex = 0;
+		int separatorCount = 0;
+		for (int i = 0; i < items.size(); i++) {
+			MenuItem mi = items.get(i);
+			if (mi instanceof SeparatorMenuItem) {
+				separatorCount++;
+				if (startSeparatorIndex == separatorCount) { // first separator?
+					beginIndex = i+2;
+				}
+				else if (startSeparatorIndex + 1 == separatorCount) { // second separator?
+					endIndex = i;
+					break;
+				}
+			}
+		}
+		
+		// Remove existing menu items for profiles.
+		int removeCount = endIndex - beginIndex;
+		for (int i = 0; i < removeCount; i++) {
+			items.remove(beginIndex);
+		}
+		
+		// Insert menu items for profiles.
+		ToggleGroup toggleGroup = new ToggleGroup();
+		List<Profile> profiles = Globals.getAppInfo().getConfig().getProfiles();
+		Profile currentProfile = Globals.getAppInfo().getConfig().getCurrentProfile();
+		for (int i = 0; i < profiles.size(); i++) {
+			Profile profile = profiles.get(i);
+			RadioMenuItem mi = new RadioMenuItem();
+			mi.setText(profile.getProfileName());
+			mi.setToggleGroup(toggleGroup);
+			mi.setSelected(profile == currentProfile);
+			mi.setUserData(profile);
+			items.add(beginIndex + i, mi);
+		}
+		
+		// Re-initialize if profile is changed.
+		toggleGroup.selectedToggleProperty().addListener((obj, oldValue, newValue) -> {
+			Profile profile = (Profile)newValue.getUserData();
+			Globals.getAppInfo().getConfig().setCurrentProfile(profile);
+			try {
+				Globals.initialize(false);
+			} catch (Exception e1) {
+				log.log(Level.SEVERE, "Failed to switch to profile=" + profile.getProfileName(), e1);
+				showMessageBoxError(e1.toString());
+			}
+		});
 	}
 }

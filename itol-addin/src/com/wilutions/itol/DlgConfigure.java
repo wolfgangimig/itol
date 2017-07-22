@@ -16,6 +16,7 @@ import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.MailBodyConversion;
 import com.wilutions.itol.db.MsgFileFormat;
+import com.wilutions.itol.db.Profile;
 import com.wilutions.joa.fx.ModalDialogFX;
 
 import javafx.collections.FXCollections;
@@ -146,8 +147,10 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	public void onOK() {
 		updateData(true);
 		
+		Profile profile = config.getCurrentProfile();
+		
 		try {
-			File dir = new File(config.getExportAttachmentsDirectory());
+			File dir = new File(profile.getExportAttachmentsDirectory());
 			dir.mkdirs();
 			if (!dir.exists() || !dir.isDirectory()) {
 				String textf = resb.getString("msg.config.invalidExportDir");
@@ -189,7 +192,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 		cbMailBody.getItems().add(new IdName(MailBodyConversion.TEXT.toString(), resb.getString("DlgConfigure.MailBody.text")));
 		cbMailBody.getSelectionModel().select(0);
 
-		cbExportAttachmentsProgram.getItems().addAll(Config.EXPORT_PROROGRAM_EXPLORER, Config.EXPORT_PROGRAM_CMD, Config.EXPORT_PROGRAM_TOTALCMD);
+		cbExportAttachmentsProgram.getItems().addAll(Profile.EXPORT_PROROGRAM_EXPLORER, Profile.EXPORT_PROGRAM_CMD, Profile.EXPORT_PROGRAM_TOTALCMD);
 				
 		updateData(false);
 	}
@@ -214,28 +217,29 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	}
 
 	private void updateData(boolean save) {
+		Profile profile = config.getCurrentProfile();
 		if (save) {
 			config.setLogFile(edLogFile.getText());
 			config.setLogLevel(cbLogLevel.getSelectionModel().getSelectedItem().getId());
-			config.setMsgFileFormat(autoCompletionAttachMailAs.getSelectedItem());
-			config.setInjectIssueIdIntoMailSubject(ckInsertIssueId.isSelected());
-			config.setExportAttachmentsDirectory(edExportAttachmentsDirectory.getText());
-			config.setAutoReplyField(edAutoReplyField.getText());
-			config.setServiceNotifcationMailAddress(edServiceNotificationMailAddress.getText().trim());
+			profile.setMsgFileFormat(autoCompletionAttachMailAs.getSelectedItem());
+			profile.setInjectIssueIdIntoMailSubject(ckInsertIssueId.isSelected());
+			profile.setExportAttachmentsDirectory(edExportAttachmentsDirectory.getText());
+			profile.setAutoReplyField(edAutoReplyField.getText());
+			profile.setServiceNotifcationMailAddress(edServiceNotificationMailAddress.getText().trim());
 			
 			String mailBodyConversionId = cbMailBody.getSelectionModel().getSelectedItem().getId();
-			config.setMailBodyConversion(MailBodyConversion.valueOf(mailBodyConversionId));
+			profile.setMailBodyConversion(MailBodyConversion.valueOf(mailBodyConversionId));
 
 			ObservableList<AttachmentBlacklistItem> blacklistItems = tvBlacklist.getItems();
-			config.setBlacklist(blacklistItems);
+			profile.setBlacklist(blacklistItems);
 			
-			config.setExportAttachmentsProgram(cbExportAttachmentsProgram.getEditor().getText());
+			profile.setExportAttachmentsProgram(cbExportAttachmentsProgram.getEditor().getText());
 		}
 		else {
 			edLogFile.setText(config.getLogFile());
 			cbLogLevel.getSelectionModel().select(new IdName(config.getLogLevel(), ""));
 
-			String fileTypeId = config.getMsgFileFormat().getId();	
+			String fileTypeId = profile.getMsgFileFormat().getId();	
 			for (IdName item : MsgFileFormat.FORMATS) {
 				if (item.getId().equals(fileTypeId)) {
 					autoCompletionAttachMailAs.select(item);
@@ -243,18 +247,18 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 				}
 			}
 
-			IdName mailBodyConversionItem = new IdName(config.getMailBodyConversion().toString(), "");
+			IdName mailBodyConversionItem = new IdName(profile.getMailBodyConversion().toString(), "");
 			cbMailBody.getSelectionModel().select(mailBodyConversionItem);
 			
-			ckInsertIssueId.setSelected(config.getInjectIssueIdIntoMailSubject());
-			edExportAttachmentsDirectory.setText(config.getExportAttachmentsDirectory());
-			edAutoReplyField.setText(config.getAutoReplyField());
-			edServiceNotificationMailAddress.setText(config.getServiceNotifcationMailAddress());
+			ckInsertIssueId.setSelected(profile.getInjectIssueIdIntoMailSubject());
+			edExportAttachmentsDirectory.setText(profile.getExportAttachmentsDirectory());
+			edAutoReplyField.setText(profile.getAutoReplyField());
+			edServiceNotificationMailAddress.setText(profile.getServiceNotifcationMailAddress());
 			
-			ObservableList<AttachmentBlacklistItem> blacklistItems = FXCollections.observableArrayList(config.getBlacklist());
+			ObservableList<AttachmentBlacklistItem> blacklistItems = FXCollections.observableArrayList(profile.getBlacklist());
 			tvBlacklist.setItems(blacklistItems);
 			
-			cbExportAttachmentsProgram.getEditor().setText(config.getExportAttachmentsProgram());
+			cbExportAttachmentsProgram.getEditor().setText(profile.getExportAttachmentsProgram());
 		}
 	}
 

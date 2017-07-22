@@ -48,6 +48,12 @@
                     <items>
                       <MenuItem mnemonicParsing="false" onAction="#onSaveAsDefault" text="%mnSaveAsDefaults.text" />
                         <SeparatorMenuItem mnemonicParsing="false" />
+                        <Menu mnemonicParsing="false" text="Profiles">
+                          <items>
+                            <MenuItem mnemonicParsing="false" text="Edit Profile.s..." />
+                          </items>
+                        </Menu>
+                        <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" onAction="#onConfigure" text="%mnConfigure" />
                         <MenuItem mnemonicParsing="false" onAction="#onConnect" text="%mnConnect" />
                         <SeparatorMenuItem mnemonicParsing="false" />

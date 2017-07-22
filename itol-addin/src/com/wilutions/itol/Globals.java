@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -27,10 +28,10 @@ import com.wilutions.com.JoaDll;
 import com.wilutions.com.reg.RegUtil;
 import com.wilutions.fx.util.ManifestUtil;
 import com.wilutions.fx.util.ProgramVersionInfo;
-import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
 import com.wilutions.itol.db.PasswordEncryption;
+import com.wilutions.itol.db.Profile;
 import com.wilutions.itol.db.ProgressCallbackImpl;
 import com.wilutions.joa.OfficeAddinUtil;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
@@ -93,15 +94,18 @@ public class Globals {
 
 	private static void internalInitIssueService() throws Exception {
 		try {
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "getService");
-			Class<?> clazz = Class.forName(appInfo.getServiceFactoryClass());
+			String serviceFactoryClass = appInfo.getConfig().getCurrentProfile().getServiceFactoryClass();
+			List<String> serviceFactoryParams = appInfo.getConfig().getCurrentProfile().getServiceFactoryParams();
+			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "getService class=" + serviceFactoryClass);
+			
+			Class<?> clazz = Class.forName(serviceFactoryClass);
 			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
-			issueService = fact.getService(appInfo.getAppDir(), appInfo.getServiceFactoryParams());
+			issueService = fact.getService(appInfo.getAppDir(), serviceFactoryParams);
 			
 			initProxy();
 
 			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
-			issueService.setConfig(appInfo.getConfig());
+			issueService.setProfile(appInfo.getConfig().getCurrentProfile());
 
 			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initializing...");
 			issueService.initialize(new ProgressCallbackImpl());
@@ -206,12 +210,12 @@ public class Globals {
  		
  */
 		
-		Config config = appInfo.getConfig();
-		String proxyHost = config.getProxyServer();
-		boolean proxyServerEnabled = config.isProxyServerEnabled(); 
-		int proxyPort = config.getProxyServerPort();
-		final String proxyUserName = config.getProxyServerUserName(); 
-		final String proxyPassword = PasswordEncryption.decrypt(config.getProxyServerEncryptedUserPassword());
+		Profile profile = appInfo.getConfig().getCurrentProfile();
+		String proxyHost = profile.getProxyServer();
+		boolean proxyServerEnabled = profile.isProxyServerEnabled(); 
+		int proxyPort = profile.getProxyServerPort();
+		final String proxyUserName = profile.getProxyServerUserName(); 
+		final String proxyPassword = PasswordEncryption.decrypt(profile.getProxyServerEncryptedUserPassword());
 
 		if (proxyServerEnabled) {
 			log.info("Initialize proxy: proxyHost=" + proxyHost + ", proxyPort=" + proxyPort + ", proxyUser=" + proxyUserName);
@@ -381,7 +385,7 @@ public class Globals {
 	}
 
 	public static File getTempDir() {
-		return Globals.getAppInfo().getConfig().getTempDir();
+		return Globals.getAppInfo().getConfig().getCurrentProfile().getTempDir();
 	}
 
 	private static void setLogFileForHelperAddin(String name, String logFile, String logLevel, String addinLog) {

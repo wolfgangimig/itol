@@ -14,13 +14,11 @@ import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.wilutions.com.ComException;
 import com.wilutions.com.reg.RegUtil;
-import com.wilutions.itol.db.impl.IssueServiceFactory_JS;
 import com.wilutions.joa.AddinApplication;
 
 import javafx.stage.Stage;
@@ -37,8 +35,6 @@ public class IssueApplication extends AddinApplication {
 		// System.getProperty("sun.arch.data.model") + "bit";
 		appConfig.setAppName("Issue Tracker for Microsoft Outlook");
 		appConfig.setManufacturerName("WILUTIONS");
-		appConfig.setServiceFactoryClass(IssueServiceFactory_JS.class.getName());
-		appConfig.setServiceFactoryParams(Arrays.asList(IssueServiceFactory_JS.DEFAULT_SCIRPT));
 		appConfig.setAppDir(getAppDir());
 		
 		Globals.initLogging();
@@ -169,7 +165,7 @@ public class IssueApplication extends AddinApplication {
 
 	private static boolean isPotentiallyDangerousFile(File file) {
 		String ext_1 = MailAttachmentHelper.getFileExt(file.getName()).toLowerCase() + ".";
-		return Globals.getAppInfo().getConfig().getExtensionsAlwaysOpenAsText().contains(ext_1);
+		return Globals.getAppInfo().getConfig().getCurrentProfile().getExtensionsAlwaysOpenAsText().contains(ext_1);
 	}
 
 }

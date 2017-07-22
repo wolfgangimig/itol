@@ -15,8 +15,8 @@ import java.util.List;
 
 public interface IssueService {
 	
-	Config getConfig();
-	void setConfig(Config config);
+	Profile getProfile();
+	void setProfile(Profile profile);
 	
 	void initialize(ProgressCallback cb) throws Exception;
 	
