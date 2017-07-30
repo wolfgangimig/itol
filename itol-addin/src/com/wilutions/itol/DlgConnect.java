@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.URL;
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.wilutions.com.BackgTask;
-import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.HttpClient;
+import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.PasswordEncryption;
 import com.wilutions.itol.db.Profile;
 import com.wilutions.joa.fx.ModalDialogFX;
@@ -17,7 +19,6 @@ import com.wilutions.joa.fx.ModalDialogFX;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -25,15 +26,12 @@ import javafx.fxml.JavaFXBuilderFactory;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 
-public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable {
+public class DlgConnect extends ModalDialogFX<Profile> implements Initializable {
 
-	private Config config;
+	private Profile profile;
 	private ResourceBundle resb;
 	private Scene scene;
 	private SimpleBooleanProperty connectionInProcess = new SimpleBooleanProperty();
@@ -52,24 +50,9 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 	@FXML
 	ProgressBar pgProgress;
 	
-	@FXML
-	Label lbProxyServer;
-	@FXML
-	ComboBox<String> cbProxyServer;
-	@FXML
-	Label lbProxyUserName;
-	@FXML
-	TextField edProxyUserName;
-	@FXML
-	Label lbProxyPassword;
-	@FXML
-	TextField edProxyPassword;
-	@FXML
-	CheckBox ckProxyEnabled;
-	
-	public DlgConnect() {
+	public DlgConnect(Profile profile) {
 		this.resb = Globals.getResourceBundle();
-		this.config = (Config)Globals.getAppInfo().getConfig().clone();
+		this.profile = (Profile)profile.clone();
 		setTitle(resb.getString("DlgConnect.Caption"));
 	}
 
@@ -128,39 +111,77 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 			}
 		});
 
+		// Connect to service in background thread.
 		BackgTask.run(() -> {
-			if (connect(this, config)) {
-				Platform.runLater(() -> {
-					setResult(true);
-					close();
-				});
+			
+			// Detect service type if dialog was opened for a new connection. 
+			// Therefore, loop over supported service factory classes.
+			
+			// Collect supported service factory classes for new connection or choose
+			// the service factory class for an existing profile.
+			List<String> serviceFactoryClasses = profile.getServiceFactoryClass().isEmpty() ? 
+					Profile.SERVICE_FACTORY_CLASSES : Arrays.asList(profile.getServiceFactoryClass());
+			
+			for (int i = 0; i < serviceFactoryClasses.size(); i++) {
+				
+				// Try with service factory class.
+				String serviceFactoryClass = serviceFactoryClasses.get(i);
+				profile.setServiceFactoryClass(serviceFactoryClass);
+				
+				// Connect to service.
+				// On success, the service might have created its extended profile object.
+				boolean lastTry = i == serviceFactoryClasses.size()-1;
+				Profile acceptedProfile = connect(profile, lastTry);
+				if (acceptedProfile != null) {
+					
+					// Success: close dialog.
+					Platform.runLater(() -> {
+						finish(acceptedProfile);
+					});
+					
+					break;
+				}
 			}
 		});
 	}
 
-	protected boolean connect(Object ownerWindow, Config config) {
+	/**
+	 * Connect to profile.
+	 * @param profile Profile object.
+	 * @param lastTry false, if errors should be ignored. If true, a message box is displayed on error.
+	 * @return Accepted profile object (maybe replaced by an extended object created by the service).
+	 */
+	protected Profile connect(Profile profile, boolean lastTry) {
 		long id = connectionProcessId.get();
-		boolean succ = false;
+		Profile acceptedProfile = null;
 		try {
-			Globals.getAppInfo().setConfig(config);
-			Globals.initialize(false);
 			
-			config.write();
+			// Create and connect to issue service.
+			IssueService issueService = Globals.createIssueService(profile);
 			
-			succ = true;
+			// Issue service might have created an extended profile (e.g. JiraProfile).
+			// Return this updated profile.
+			acceptedProfile = issueService.getProfile();
 		}
 		catch (Throwable e) {
-			if (e instanceof InterruptedIOException) {
+			if (!lastTry) {
+				// Ignore error, if not last try
+			}
+			else if (e instanceof InterruptedIOException) {
 			}
 			else if (connectionInProcess.getValue() && id == connectionProcessId.get()) {
 				String msg = e.getMessage();
-				if (msg.contains("401") || msg.contains("403")) {
+				
+				// Authentication failed?
+				boolean authFailed = msg.contains("401") || msg.contains("403");
+				if (authFailed) {
 					msg = resb.getString("msg.connection.authentication.failed");
 				}
+				
+				// Show error
 				String textf = resb.getString("msg.connection.error");
 				String text = MessageFormat.format(textf, msg);
-				MessageBox.error(ownerWindow, text, (ignored, ex) -> {
-
+				MessageBox.error(this, text, (ignored, ex) -> {
 				});
 			}
 		}
@@ -169,7 +190,7 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 				connectionInProcess.setValue(false);
 			}
 		}
-		return succ;
+		return acceptedProfile;
 	}
 
 	@FXML
@@ -190,14 +211,10 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 		bnOK.managedProperty().bind(Bindings.not(connectionInProcess));
 		pgProgress.visibleProperty().bind(connectionInProcess);
 		
-		cbProxyServer.getItems().add(resb.getString("DlgConnect.Proxy.server.default"));
-		cbProxyServer.getSelectionModel().select(0);
-
 		updateData(false);
 	}
 
 	private void updateData(boolean save) {
-		Profile profile = config.getCurrentProfile();
 		if (save) {
 			profile.setServiceUrl(edUrl.getText());
 			profile.setUserName("");
@@ -211,27 +228,9 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 				profile.setUserName(edUserName.getText());
 				profile.setEncryptedPassword(PasswordEncryption.encrypt(edPassword.getText()));
 			}
-			profile.setProxyServerEnabled(ckProxyEnabled.isSelected());
-			
-			{
-				String proxyServerAndPort = cbProxyServer.getEditor().getText();
-				int p = proxyServerAndPort.indexOf(':');
-				if (p >= 0) {
-					String proxyServer = proxyServerAndPort.substring(0, p);
-					String proxyPortStr = proxyServerAndPort.substring(p+1);
-					int proxyPort = Integer.parseInt(proxyPortStr);
-					profile.setProxyServer(proxyServer);
-					profile.setProxyServerPort(proxyPort);
-				}
-				else {
-					// Assume DlgConnect.Proxy.server.default is selected, use default settings.
-					profile.setProxyServer("");
-					profile.setProxyServerPort(0);
-				}
+			if (profile.isNew()) {
+				profile.initProfileNameFromServiceUrl();
 			}
-			
-			profile.setProxyServerUserName(edProxyUserName.getText());
-			profile.setProxyServerEncryptedUserPassword(PasswordEncryption.encrypt(edProxyPassword.getText()));
 		}
 		else {
 			String url = profile.getServiceUrl();
@@ -248,36 +247,8 @@ public class DlgConnect extends ModalDialogFX<Boolean> implements Initializable 
 				edUserName.setText(apiKey);
 			}
 
-			{
-				String proxyServerAndPort = profile.getProxyServer() + ":" + profile.getProxyServerPort();
-				boolean useSystemSettings = proxyServerAndPort.equals(":0"); 
-				if (useSystemSettings) { 
-					cbProxyServer.getSelectionModel().select(0);
-				}
-				else {
-					cbProxyServer.getSelectionModel().select(-1);
-					cbProxyServer.getEditor().setText(proxyServerAndPort);
-				}
-			}
-			edProxyUserName.setText(profile.getProxyServerUserName());
-			String proxyPassword = profile.getProxyServerEncryptedUserPassword();
-			edProxyPassword.setText(PasswordEncryption.decrypt(proxyPassword));
-			ckProxyEnabled.setSelected(profile.isProxyServerEnabled());
-			
-			enableProxySettings();
 		}
 	}
 	
-	private void enableProxySettings() {
-		boolean disable = !ckProxyEnabled.isSelected();
-		cbProxyServer.setDisable(disable);
-		edProxyUserName.setDisable(disable);
-		edProxyPassword.setDisable(disable);
-	}
-	
-	@FXML
-	private void onCheckProxyEnabled(ActionEvent event) {
-		enableProxySettings();
-	}
 
 }

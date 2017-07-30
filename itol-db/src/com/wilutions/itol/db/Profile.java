@@ -3,19 +3,34 @@ package com.wilutions.itol.db;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-public class Profile {
+public class Profile implements SerializableProfile {
 	
 	/**
 	 * Default temp directory.
 	 * Value: %TEMP%\ITOL
 	 */
 	public final static String DEFAULT_TEMP_DIR = new File(System.getProperty("java.io.tmpdir"), "ITOL").getAbsolutePath();
+	
+	public final static String JIRA_SERVICE_CLASS = "com.wilutions.jiraddin.IssueServiceFactoryImpl";
+	
+	public final static List<String> SERVICE_FACTORY_CLASSES = Arrays.asList(JIRA_SERVICE_CLASS);
+	
+	/**
+	 * Issue service.
+	 * After the profile has been loaded, the program tries to connect to the specified server.
+	 * If the connection is successful, a reference to the service is set in this variable.
+	 * This variable and {@link IssueService#getProfile()} defines a bidirectional connection between
+	 * a profile and an issue service object.
+	 */
+	private transient IssueService issueService;
 	
 	/**
 	 * Profile file version.
@@ -29,13 +44,13 @@ public class Profile {
 	private Boolean injectIssueIdIntoMailSubject = Boolean.FALSE;
 	private IdName msgFileFormat = MsgFileFormat.DEFAULT;
 	private int nbOfSuggestions = 20;
-	private String proxyServer = "";
-	private boolean proxyServerEnabled;
-	private int proxyServerPort;
 	private int maxHistoryItems = 100;
 	private String serviceFactoryClass = "";
 	private List<String> serviceFactoryParams = new ArrayList<String>(0);
-	
+	private String defaultProject;
+	private String defaultIssueType;
+	private String defaultPriority;
+
 	/**
 	 * Mail address of issue trackin sevice.
 	 * The body of this mails is not used as comment when assigning to the ITOL dialog. 
@@ -111,8 +126,6 @@ public class Profile {
 	private String encryptedPassword = "";
 	private String credentials = "";
 	private String exportAttachmentsDirectory = "";
-	private String proxyServerUserName = "";
-	private String proxyServerEncryptedUserPassword = "";
 	
 	private transient File tempDirForSession;
 
@@ -120,9 +133,13 @@ public class Profile {
 		getTempDir();
 		getExportAttachmentsDirectory();
 		exportAttachmentsProgram = EXPORT_PROROGRAM_DEFAULT;
-		userName = proxyServerUserName = System.getProperty("user.name");
+		userName = System.getProperty("user.name");
 	}
 	
+	public Profile(Profile profile) {
+		copyFrom(profile);
+	}
+
 	@Override
 	public Object clone() {
 		Profile profile = new Profile();
@@ -132,6 +149,8 @@ public class Profile {
 	
 	protected void copyFrom(Profile rhs) {
 		this.version = rhs.version;
+		this.profileName = rhs.profileName;
+		this.serviceFactoryClass = rhs.serviceFactoryClass;
 		this.serviceUrl = rhs.serviceUrl;
 		this.issueIdMailSubjectFormat = rhs.issueIdMailSubjectFormat;
 		this.injectIssueIdIntoMailSubject = rhs.injectIssueIdIntoMailSubject;
@@ -141,11 +160,6 @@ public class Profile {
 		this.nbOfSuggestions = rhs.nbOfSuggestions;
 		this.exportAttachmentsDirectory = rhs.exportAttachmentsDirectory;
 		this.credentials = rhs.credentials;
-		this.proxyServerUserName = rhs.proxyServerUserName;
-		this.proxyServerEncryptedUserPassword = rhs.proxyServerEncryptedUserPassword;
-		this.proxyServer = rhs.proxyServer;
-		this.proxyServerEnabled = rhs.proxyServerEnabled;
-		this.proxyServerPort = rhs.proxyServerPort;
 		this.autoReplyField = rhs.autoReplyField;
 		this.extensionsAlwaysOpenAsText = rhs.extensionsAlwaysOpenAsText;
 		this.maxHistoryItems = rhs.maxHistoryItems;
@@ -153,6 +167,9 @@ public class Profile {
 		this.blacklist = new ArrayList<AttachmentBlacklistItem>(rhs.blacklist);
 		this.exportAttachmentsProgram = rhs.exportAttachmentsProgram;
 		this.serviceNotifcationMailAddress = rhs.serviceNotifcationMailAddress;
+		this.defaultProject = rhs.defaultProject;
+		this.defaultIssueType = rhs.defaultIssueType;
+		this.defaultPriority = rhs.defaultPriority;
 	}
 
 	void unsetUserRelatedValues() {
@@ -160,8 +177,6 @@ public class Profile {
 		setEncryptedPassword(null);
 		setExportAttachmentsDirectory(null);
 		setCredentials(null);
-		setProxyServerUserName(null);
-		setProxyServerEncryptedUserPassword(null);
 	}
 
 	protected void copyNotEmptyFields(Object userConfig, Class<?> clazz) {
@@ -288,46 +303,6 @@ public class Profile {
 		this.credentials = credentials;
 	}
 
-	public String getProxyServer() {
-		return  Default.value(proxyServer);
-	}
-
-	public void setProxyServer(String proxyServer) {
-		this.proxyServer = proxyServer;
-	}
-
-	public boolean isProxyServerEnabled() {
-		return proxyServerEnabled;
-	}
-
-	public void setProxyServerEnabled(boolean proxyServerEnabled) {
-		this.proxyServerEnabled = proxyServerEnabled;
-	}
-
-	public int getProxyServerPort() {
-		return proxyServerPort;
-	}
-
-	public void setProxyServerPort(int proxyServerPort) {
-		this.proxyServerPort = proxyServerPort;
-	}
-
-	public String getProxyServerUserName() {
-		return  Default.value(proxyServerUserName);
-	}
-
-	public void setProxyServerUserName(String proxyServerUserName) {
-		this.proxyServerUserName = proxyServerUserName;
-	}
-
-	public String getProxyServerEncryptedUserPassword() {
-		return  Default.value(proxyServerEncryptedUserPassword);
-	}
-
-	public void setProxyServerEncryptedUserPassword(String proxyServerEncryptedUserPassword) {
-		this.proxyServerEncryptedUserPassword = proxyServerEncryptedUserPassword;
-	}
-
 	public String getAutoReplyField() {
 		return  Default.value(autoReplyField);
 	}
@@ -414,7 +389,7 @@ public class Profile {
 	}
 
 	public String getServiceFactoryClass() {
-		return serviceFactoryClass;
+		return Default.value(serviceFactoryClass);
 	}
 
 	public void setServiceFactoryClass(String serviceFactoryClass) {
@@ -422,11 +397,63 @@ public class Profile {
 	}
 
 	public List<String> getServiceFactoryParams() {
-		return serviceFactoryParams;
+		return Default.value(serviceFactoryParams);
 	}
 
 	public void setServiceFactoryParams(List<String> serviceFactoryParams) {
 		this.serviceFactoryParams = serviceFactoryParams;
 	}
 
+	public void initProfileNameFromServiceUrl() {
+		try {
+			URL url = new URL(getServiceUrl());
+			setProfileName(url.getHost());
+		}
+		catch (Exception ignored) {}
+	}
+	
+	public IssueService getIssueService() {
+		return issueService;
+	}
+	
+	public void setIssueService(IssueService issueService) {
+		this.issueService = issueService;
+	}
+	
+	public void setConnected(boolean ignored) {
+	}
+	
+	public boolean isConnected() {
+		return getIssueService() != null;
+	}
+	
+	public String getDefaultProject() {
+		return Default.value(defaultProject);
+	}
+
+	public void setDefaultProject(String defaultProject) {
+		this.defaultProject = defaultProject;
+	}
+
+	public String getDefaultIssueType() {
+		return Default.value(defaultIssueType);
+	}
+
+	public void setDefaultIssueType(String defaultIssueType) {
+		this.defaultIssueType = defaultIssueType;
+	}
+
+	public String getDefaultPriority() {
+		return Default.value(defaultPriority);
+	}
+
+	public void setDefaultPriority(String defaultPriority) {
+		this.defaultPriority = defaultPriority;
+	}
+	
+
+	@Override
+	public String toString() {
+		return getProfileName();
+	}
 }

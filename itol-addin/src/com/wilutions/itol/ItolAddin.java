@@ -11,14 +11,15 @@
 package com.wilutions.itol;
 
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.wilutions.com.AsyncResult;
+import com.wilutions.com.BackgTask;
 import com.wilutions.com.CoClass;
 import com.wilutions.com.ComException;
-import com.wilutions.fx.util.ManifestUtil;
-import com.wilutions.fx.util.ProgramVersionInfo;
+import com.wilutions.itol.db.Default;
 import com.wilutions.joa.DeclAddin;
 import com.wilutions.joa.LoadBehavior;
 import com.wilutions.joa.OfficeApplication;
@@ -26,6 +27,7 @@ import com.wilutions.joa.outlook.ex.ExplorerWrapper;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
 import com.wilutions.joa.outlook.ex.Wrapper;
+import com.wilutions.joa.ribbon.RibbonButton;
 import com.wilutions.mslib.office.IRibbonControl;
 import com.wilutions.mslib.office.IRibbonUI;
 import com.wilutions.mslib.outlook.Explorer;
@@ -37,6 +39,7 @@ import com.wilutions.mslib.outlook.OlObjectClass;
 public class ItolAddin extends OutlookAddinEx {
 
 	private Logger log = Logger.getLogger("ItolAddin");
+	private ResourceBundle resb = Globals.getResourceBundle();
 
 	public ItolAddin() {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "ItolAddin(");
@@ -56,60 +59,119 @@ public class ItolAddin extends OutlookAddinEx {
 	 */
 	public void showIssuePane(IRibbonControl control, Wrapper context, Boolean pressed) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "showIssuePane(");
+		
+		// This CompletableFuture is completed, if the connections to all issue services are checked.   
+		CompletableFuture<Boolean> allIssueServicesConnected = Globals.getAllIssueServicesConnected();
+		Object msgboxOwner = context.getWrappedObject();
+		
+		// Task pane should be shown?
+		boolean showTaskPane = Default.value(pressed);
+		if (showTaskPane) {
+			
+			// Wrap the function that shows the task pane into an AsyncResult.
+			// So I do not have to duplicate this lines.
+			AsyncResult<Integer> showTaskPaneResult = (btn, ex) -> {
+				BackgTask.run(() -> {
+					if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "setIssueTaskPaneVisible(" + pressed + ")");
+					
+					// Exporer or Inspector wrapper.
+					MyWrapper wrapper = ((MyWrapper) context);
+					
+					// Success, if not "cancel" clicked. 
+					boolean succ = btn != 0;
 
-		if (Globals.isIssueServiceRunning()) {
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "setIssueTaskPaneVisible(" + pressed + ")");
-			((MyWrapper) context).setIssueTaskPaneVisible(pressed);
-		}
-		else if (pressed) {
-			Object owner = context.getWrappedObject(); 
-			internalConnect(owner, (succ, ex) -> {
-				if (succ) {
-					((MyWrapper) context).setIssueTaskPaneVisible(pressed);
+					// Show or hide task pane
+					wrapper.setIssueTaskPaneVisible(succ);
+					
+					// Update ribbon button state.
+					RibbonButton bnNewIssue = (RibbonButton)wrapper.getRibbonControls().get("bnNewIssue");
+					bnNewIssue.setPressed(succ);
+					getRibbon().InvalidateControl("bnNewIssue");
+				});
+			};
+			
+			// Already all connections checked?
+			if (allIssueServicesConnected.isDone()) {
+				com.wilutions.joa.fx.MessageBox.Builder msgb = null;
+				
+				try {
+					// CF is true, if all connections succeeded.
+					// CF is false, if at least one connection is failed.
+					boolean oneFailed = !allIssueServicesConnected.get();
+					if (oneFailed) {
+						
+						// Hack: to avoid that a message box is shown every time
+						// the button is pressed, just set all completed.
+						allIssueServicesConnected.complete(true);
+						
+						// Show message box: "... one connection has failed ..."
+						String title = resb.getString("MessageBox.title.info");
+						String ok = resb.getString("Button.OK");
+						String text = resb.getString("msg.connection.oneFailed");
+						msgb = com.wilutions.joa.fx.MessageBox.create(msgboxOwner).title(title).text(text).button(1, ok).bdefault();
+					}
+					
 				}
-			});
+				catch (Throwable ex) {
+					
+					// CF completed exceptionally: none of the connections could be established.
+					String title = resb.getString("MessageBox.title.error");
+					String ok = resb.getString("Button.OK");
+					String text = resb.getString("msg.connection.allFailed");
+					msgb = com.wilutions.joa.fx.MessageBox.create(msgboxOwner).title(title).text(text).button(1, ok).bdefault();
+				}
+				
+				// Show message box with info or error as defined above.
+				// Or show task pane immediately.
+				if (msgb != null) {
+					msgb.show(showTaskPaneResult);
+				}
+				// Empty configuration?
+				else if (Globals.getAppInfo().getConfig().getProfiles().isEmpty()) {
+					
+					// Show profiles dialog. 
+					DlgProfiles dlg = new DlgProfiles();
+					dlg.showAsync(msgboxOwner, (config, ex) -> {
+						
+						// Configuration still empty?
+						boolean empty = Globals.getAppInfo().getConfig().getProfiles().isEmpty();
+						showTaskPaneResult.setAsyncResult(empty ? 0 : 1, ex);
+					});
+				}
+				else {
+					showTaskPaneResult.setAsyncResult(1, null);
+				}
+			}
+			else {
+				
+				// Not all connections have been checked at this time.
+				// The user should wait.
+				
+				String title = resb.getString("MessageBox.title.confirm");
+				String yes = resb.getString("Button.Yes");
+				String no = resb.getString("Button.No");
+				String text = resb.getString("msg.connection.stillConnecting");
+				com.wilutions.joa.fx.MessageBox.create(msgboxOwner).title(title).text(text).button(1, yes).button(0, no)
+					.bdefault().show((btn, ex) -> {
+						boolean succ = btn != null && btn != 0;
+						if (succ) {
+							// User wants to check connection status again.
+							// Recursive call.
+							showIssuePane(control, context, pressed);
+						}
+						else {
+							// User wants to continue -> show task pane. 
+							showTaskPaneResult.setAsyncResult(1, null);
+						}
+				});
+			}
+		}
+		else {
+			// Hide task pane.
+			((MyWrapper) context).setIssueTaskPaneVisible(false);
 		}
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")showIssuePane");
-	}
-
-	
-	protected void internalConnect(Object owner, AsyncResult<Boolean> asyncResult) {
-		onConnect(owner, (succ, ex) -> {
-			if (ex != null) {
-				ResourceBundle resb = Globals.getResourceBundle();
-				String msg = resb.getString("Error.NotConnected");
-				log.log(Level.SEVERE, msg, ex);
-				msg += "\n" + ex.getMessage();
-				MessageBox.error(owner, msg, null);
-			}
-			if (asyncResult != null) {
-				asyncResult.setAsyncResult(succ != null && succ && ex == null, null);
-			}
-		});
-	}
-
-	protected void onConnect(Object owner, AsyncResult<Boolean> asyncResult) {
-		DlgConnect dlg = new DlgConnect();
-		dlg.showAsync(owner, asyncResult);
-	}
-
-	protected void internalConfigure(Object owner, AsyncResult<Boolean> asyncResult) {
-		onConfigure(owner, (succ, ex) -> {
-			if (ex != null) {
-				log.log(Level.SEVERE, "Configuration failed", ex);
-				MessageBox.error(owner, ex.getMessage(), null);
-			}
-			if (asyncResult != null) {
-				asyncResult.setAsyncResult(succ != null && succ && ex == null, null);
-			}
-		});
-	}
-	
-	protected void onConfigure(Object owner, AsyncResult<Boolean> asyncResult) {
-		DlgConfigure dlg = new DlgConfigure();
-		dlg.showAsync(owner, asyncResult);
-
 	}
 
 	@Override

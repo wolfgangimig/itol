@@ -1,7 +1,6 @@
 package com.wilutions.itol;
 
 import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="307.0" prefWidth="660.0" spacing="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.DlgProfiles">
+   <children>
+      <VBox prefHeight="400.0" prefWidth="407.0" HBox.hgrow="ALWAYS">
+         <children>
+            <TableView fx:id="tviewProfiles" prefHeight="276.0" prefWidth="404.0" VBox.vgrow="ALWAYS">
+              <columns>
+                <TableColumn fx:id="tcolType" maxWidth="150.0" minWidth="50.0" prefWidth="75.0" text="%DlgProfiles.type" />
+                  <TableColumn fx:id="tcolStatus" maxWidth="100.0" prefWidth="75.0" text="%DlgProfiles.connected" />
+                <TableColumn fx:id="tcolName" maxWidth="200.0" minWidth="100.0" prefWidth="200.0" text="%DlgProfiles.profileName" />
+                  <TableColumn fx:id="tcolUserName" prefWidth="150.0" text="%DlgProfiles.userName" />
+              </columns>
+            </TableView>
+         </children>
+      </VBox>
+      <VBox prefHeight="287.0" prefWidth="113.0" spacing="10.0" HBox.hgrow="NEVER">
+         <children>
+            <Button fx:id="bnNew" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onNew" text="%DlgProfiles.new" />
+            <Button fx:id="bnEdit" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onEdit" text="%DlgProfiles.edit" />
+            <Button fx:id="bnConfigure" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onConfigure" text="%DlgProfiles.options" />
+            <Button fx:id="bnDelete" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onDelete" text="%DlgProfiles.delete" />
+            <Button fx:id="bnCancel" cancelButton="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onCancel" text="%DlgProfiles.close" />
+         </children>
+      </VBox>
+   </children>
+   <padding>
+      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+   </padding>
+</HBox>

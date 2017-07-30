@@ -1,4 +1,4 @@
-package com.wilutions.itol;
+package com.wilutions.itol.db;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

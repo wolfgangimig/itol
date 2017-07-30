@@ -11,14 +11,21 @@
 package com.wilutions.itol;
 
 import java.awt.Desktop;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URI;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.wilutions.com.ComException;
 import com.wilutions.com.reg.RegUtil;
+import com.wilutions.fx.util.ManifestUtil;
+import com.wilutions.itol.db.Config;
+import com.wilutions.itol.db.Profile;
 import com.wilutions.joa.AddinApplication;
 
 import javafx.stage.Stage;
@@ -36,8 +43,6 @@ public class IssueApplication extends AddinApplication {
 		appConfig.setAppName("Issue Tracker for Microsoft Outlook");
 		appConfig.setManufacturerName("WILUTIONS");
 		appConfig.setAppDir(getAppDir());
-		
-		Globals.initLogging();
 	}
 
 	private static File getAppDir() {
@@ -53,7 +58,7 @@ public class IssueApplication extends AddinApplication {
 		boolean finished = super.parseCommandLine(args);
 		if (!finished) {
 			try {
-				initIssueService();
+				initIssueServices();
 			}
 			catch (IOException e) {
 				throw e;
@@ -66,26 +71,66 @@ public class IssueApplication extends AddinApplication {
 		return finished;
 	}
 
-	private void initIssueService() throws Exception {
+	private void initIssueServices() throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(");
 		Globals.initialize(true);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")initIssueService");
 	}
 
 	public static void main(String[] args) {
-
-		Globals.initLogging();
+		
+		// Redirect STDOUT and STDERR for packaged application,
+		// because output on this streams do not appear for packed application on the console.
+		log.info("app.dir=" + RegUtil.getAppPathIfSelfContained());
+		if (RegUtil.getAppPathIfSelfContained() != null) {
+			File stdoutFile = new File(Profile.DEFAULT_TEMP_DIR, "itol-stdout.txt");
+			File stderrFile = new File(Profile.DEFAULT_TEMP_DIR, "itol-stderr.txt");
+			try {
+				System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(stdoutFile))));
+				System.setErr(new PrintStream(new BufferedOutputStream(new FileOutputStream(stderrFile))));
+			} catch (FileNotFoundException e1) {
+				e1.printStackTrace();
+			}
+		}
+		
 		String javaHome = System.getProperty("java.home");
 		log.info("java.home=" + javaHome);
 		for (Object key : System.getProperties().keySet()) {
 			log.info(key + "=" + System.getProperty((String) key));
 		}
 
-		log.info("app.dir=" + RegUtil.getAppPathIfSelfContained());
-
 		try {
-			log.info("call main");
-			AddinApplication.main(IssueApplication.class, IssueApplication.class, args);
+			AppInfo appInfo = new AppInfo();
+			
+			appInfo.setManufacturerName("WILUTIONS");
+			appInfo.setAppName(ManifestUtil.getProgramName(IssueApplication.class));
+			appInfo.setAppDir(RegUtil.getAppPathIfSelfContained());
+			
+			// Read configuration
+			Config config = Config.read(appInfo.getManufacturerName(), appInfo.getAppName());
+			appInfo.setConfig(config);
+
+			// Maybe initialize a new profile if the configuration is empty.
+//			Profile profile = config.getCurrentProfile();
+//			if (profile.isNew()) {
+//				profile.setServiceFactoryClass(Profile.JIRA_SERVICE_CLASS);
+//				profile.setProfileName("JIRA");
+//				config.setCurrentProfile(profile);
+//			}
+			
+//			try {
+//				config.write();
+//			}
+//			catch (Throwable e) {
+//				e.printStackTrace();
+//			}
+
+			
+			Globals.setAppInfo(appInfo);
+			Globals.initProxy();
+			Globals.initLogging();
+
+			main(IssueApplication.class, IssueApplication.class, args);
 		}
 		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to excecute main.", e);

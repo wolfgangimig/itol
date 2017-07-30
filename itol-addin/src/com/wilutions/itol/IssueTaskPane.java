@@ -40,6 +40,7 @@ import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.Attachment;
+import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.Default;
 import com.wilutions.itol.db.DefaultSuggest;
 import com.wilutions.itol.db.History;
@@ -1804,38 +1805,38 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		}
 	}
 
-	@FXML
-	public void onConnect() {
-		ItolAddin addin = (ItolAddin) Globals.getThisAddin();
-		Window owner = this.getWindow();
-		addin.internalConnect(owner, null);
-	}
-
-	@FXML
-	public void onConfigure() {
-		ItolAddin addin = (ItolAddin) Globals.getThisAddin();
-		Window owner = this.getWindow();
-		addin.internalConfigure(owner, (succ, ex) -> {
-			if (succ) {
-				ProgressCallback cb = createProgressCallback("Re-connect");
-				try {
-					cb.incrProgress(0.5);
-					Globals.initialize(false); // Re-connect in background.
-					cb.incrProgress(0.5);
-				}
-				catch (Exception e) {
-					log.log(Level.WARNING, "Re-connect to server failed.", e);
-					String msg = e.getMessage();
-					String textf = resb.getString("msg.connection.error");
-					String text = MessageFormat.format(textf, msg);
-					showMessageBoxError(text);
-				}
-				finally {
-					cb.setFinished();
-				}
-			}
-		});
-	}
+//	@FXML
+//	public void onConnect() {
+//		ItolAddin addin = (ItolAddin) Globals.getThisAddin();
+//		Window owner = this.getWindow();
+//		addin.internalConnect(owner, null);
+//	}
+//
+//	@FXML
+//	public void onConfigure() {
+//		ItolAddin addin = (ItolAddin) Globals.getThisAddin();
+//		Window owner = this.getWindow();
+//		addin.internalConfigure(owner, (succ, ex) -> {
+//			if (succ) {
+//				ProgressCallback cb = createProgressCallback("Re-connect");
+//				try {
+//					cb.incrProgress(0.5);
+//					Globals.initialize(false); // Re-connect in background.
+//					cb.incrProgress(0.5);
+//				}
+//				catch (Exception e) {
+//					log.log(Level.WARNING, "Re-connect to server failed.", e);
+//					String msg = e.getMessage();
+//					String textf = resb.getString("msg.connection.error");
+//					String text = MessageFormat.format(textf, msg);
+//					showMessageBoxError(text);
+//				}
+//				finally {
+//					cb.setFinished();
+//				}
+//			}
+//		});
+//	}
 
 	/**
 	 * Comment editor of JIRA addin binds to this value.
@@ -2192,8 +2193,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		
 		// Insert menu items for profiles.
 		ToggleGroup toggleGroup = new ToggleGroup();
-		List<Profile> profiles = Globals.getAppInfo().getConfig().getProfiles();
-		Profile currentProfile = Globals.getAppInfo().getConfig().getCurrentProfile();
+		Config config = Globals.getAppInfo().getConfig();
+		List<Profile> profiles = config.getProfiles();
+		Profile currentProfile = config.getCurrentProfile();
 		for (int i = 0; i < profiles.size(); i++) {
 			Profile profile = profiles.get(i);
 			RadioMenuItem mi = new RadioMenuItem();
@@ -2201,19 +2203,39 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			mi.setToggleGroup(toggleGroup);
 			mi.setSelected(profile == currentProfile);
 			mi.setUserData(profile);
+			mi.setDisable(!profile.isConnected());
 			items.add(beginIndex + i, mi);
 		}
 		
-		// Re-initialize if profile is changed.
+		// Set current service.
 		toggleGroup.selectedToggleProperty().addListener((obj, oldValue, newValue) -> {
-			Profile profile = (Profile)newValue.getUserData();
-			Globals.getAppInfo().getConfig().setCurrentProfile(profile);
-			try {
-				Globals.initialize(false);
-			} catch (Exception e1) {
-				log.log(Level.SEVERE, "Failed to switch to profile=" + profile.getProfileName(), e1);
-				showMessageBoxError(e1.toString());
+			if (newValue != null) {
+				Profile profile = (Profile)newValue.getUserData();
+				config.setCurrentProfile(profile);
 			}
 		});
+	}
+	
+	@FXML
+	public void onEditProfiles() {
+		Window owner = this.getWindow();
+		DlgProfiles dlg = new DlgProfiles();
+		dlg.showAsync(owner, (config, ex) -> {
+			updateProfilesInMenuExtra();
+		});
+	}
+	
+	@FXML 
+	public void onEditLogging() {
+		Window owner = this.getWindow();
+		DlgLogging dlg = new DlgLogging();
+		dlg.showAsync(owner, (succ, ex) -> {});
+	}
+	
+	@FXML
+	public void onEditProxySettings() {
+		Window owner = this.getWindow();
+		DlgProxySettings dlg = new DlgProxySettings();
+		dlg.showAsync(owner, (succ, ex) -> {});
 	}
 }

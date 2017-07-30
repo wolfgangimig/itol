@@ -12,7 +12,6 @@ import com.wilutions.fx.acpl.AutoCompletionBinding;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
 import com.wilutions.itol.db.AttachmentBlacklistItem;
-import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.IdName;
 import com.wilutions.itol.db.MailBodyConversion;
 import com.wilutions.itol.db.MsgFileFormat;
@@ -42,9 +41,8 @@ import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
 import javafx.util.Callback;
 
-public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializable {
+public class DlgConfigure extends ModalDialogFX<Profile> implements Initializable {
 
-	private Config config;
 	private ResourceBundle resb;
 	private Scene scene;
 
@@ -58,10 +56,6 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	TextField edAutoReplyField;
 	@FXML
 	TextField edExportAttachmentsDirectory;
-	@FXML
-	TextField edLogFile;
-	@FXML
-	ChoiceBox<IdName> cbLogLevel;
 	@FXML
 	CheckBox ckInsertIssueId;
 	@FXML
@@ -82,10 +76,11 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	TextField edServiceNotificationMailAddress;
 
 	private AutoCompletionBinding<IdName> autoCompletionAttachMailAs;
+	private Profile profile;
 
-	public DlgConfigure() {
+	public DlgConfigure(Profile profile) {
 		this.resb = Globals.getResourceBundle();
-		this.config = (Config)Globals.getAppInfo().getConfig().clone();
+		this.profile = profile;
 		setTitle(resb.getString("DlgConfigure.Caption"));
 	}
 
@@ -147,8 +142,6 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	public void onOK() {
 		updateData(true);
 		
-		Profile profile = config.getCurrentProfile();
-		
 		try {
 			File dir = new File(profile.getExportAttachmentsDirectory());
 			dir.mkdirs();
@@ -158,11 +151,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 				throw new FileNotFoundException(text);
 			}
 			
-			Globals.getAppInfo().setConfig(config);
-			
-			config.write();
-			
-			finish(true);
+			finish(profile);
 			
 		} catch (Exception e) {
 			
@@ -183,10 +172,6 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	public void initialize(URL location, ResourceBundle resb) {
 
 		initAutoCompletionAttachMailAs(resb);
-		
-		cbLogLevel.getItems().add(new IdName("INFO", resb.getString("DlgConnect.LogLevel.Info")));
-		cbLogLevel.getItems().add(new IdName("FINE", resb.getString("DlgConnect.LogLevel.Debug")));
-		cbLogLevel.getSelectionModel().select(0);
 		
 		cbMailBody.getItems().add(new IdName(MailBodyConversion.MARKUP.toString(), resb.getString("DlgConfigure.MailBody.markup")));
 		cbMailBody.getItems().add(new IdName(MailBodyConversion.TEXT.toString(), resb.getString("DlgConfigure.MailBody.text")));
@@ -217,10 +202,7 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 	}
 
 	private void updateData(boolean save) {
-		Profile profile = config.getCurrentProfile();
 		if (save) {
-			config.setLogFile(edLogFile.getText());
-			config.setLogLevel(cbLogLevel.getSelectionModel().getSelectedItem().getId());
 			profile.setMsgFileFormat(autoCompletionAttachMailAs.getSelectedItem());
 			profile.setInjectIssueIdIntoMailSubject(ckInsertIssueId.isSelected());
 			profile.setExportAttachmentsDirectory(edExportAttachmentsDirectory.getText());
@@ -236,9 +218,6 @@ public class DlgConfigure extends ModalDialogFX<Boolean> implements Initializabl
 			profile.setExportAttachmentsProgram(cbExportAttachmentsProgram.getEditor().getText());
 		}
 		else {
-			edLogFile.setText(config.getLogFile());
-			cbLogLevel.getSelectionModel().select(new IdName(config.getLogLevel(), ""));
-
 			String fileTypeId = profile.getMsgFileFormat().getId();	
 			for (IdName item : MsgFileFormat.FORMATS) {
 				if (item.getId().equals(fileTypeId)) {

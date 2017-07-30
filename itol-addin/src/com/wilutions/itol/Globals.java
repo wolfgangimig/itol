@@ -10,30 +10,25 @@
  */
 package com.wilutions.itol;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
-import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Handler;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import com.wilutions.com.BackgTask;
 import com.wilutions.com.DDAddinDll;
-import com.wilutions.com.JoaDll;
 import com.wilutions.com.reg.RegUtil;
 import com.wilutions.fx.util.ManifestUtil;
 import com.wilutions.fx.util.ProgramVersionInfo;
 import com.wilutions.itol.db.IssueService;
 import com.wilutions.itol.db.IssueServiceFactory;
-import com.wilutions.itol.db.PasswordEncryption;
+import com.wilutions.itol.db.LoggerConfig;
 import com.wilutions.itol.db.Profile;
 import com.wilutions.itol.db.ProgressCallbackImpl;
-import com.wilutions.joa.OfficeAddinUtil;
 import com.wilutions.joa.outlook.ex.OutlookAddinEx;
 
 public class Globals {
@@ -41,8 +36,14 @@ public class Globals {
 	private static OutlookAddinEx addin;
 	private static MailExport mailExport = new MailExport();
 	private static ResourceBundleNoThrow resb;
-	private static volatile IssueService issueService;
-	private static volatile boolean issueServiceRunning;
+	
+	/**
+	 * CF that is completed if all connections have been checked.
+	 * true: if all connections are successful OR if a message box has already been shown about failed connections.
+	 * false: if at least one connection has failed.
+	 * exception: if none of the connections succeeded.
+	 */
+	private static final CompletableFuture<Boolean> allIssueServicesConnected = new CompletableFuture<>();
 	private static Logger log = Logger.getLogger("Globals");
 
 	private static AppInfo appInfo = new AppInfo();
@@ -61,18 +62,14 @@ public class Globals {
 		Globals.addin = addin;
 	}
 
-	private static void initIssueService(boolean async) throws Exception {
+	public static void initialize(boolean async) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(");
-
-		Globals.issueServiceRunning = false;
-
-		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "initIssueService(" );
 
 		try {
 			if (async) {
 				BackgTask.run(() -> {
 					try {
-						internalInitIssueService();
+						internalInitIssueServices();
 					}
 					catch (Throwable e) {
 
@@ -80,7 +77,7 @@ public class Globals {
 				});
 			}
 			else {
-				internalInitIssueService();
+				internalInitIssueServices();
 			}
 		}
 		catch (Exception e) {
@@ -91,197 +88,98 @@ public class Globals {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")initIssueService");
 
 	}
+	
+	public static IssueService createIssueService(Profile profile) throws Exception {
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "createIssueService(" + profile);
 
-	private static void internalInitIssueService() throws Exception {
-		try {
-			String serviceFactoryClass = appInfo.getConfig().getCurrentProfile().getServiceFactoryClass();
-			List<String> serviceFactoryParams = appInfo.getConfig().getCurrentProfile().getServiceFactoryParams();
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "getService class=" + serviceFactoryClass);
-			
-			Class<?> clazz = Class.forName(serviceFactoryClass);
-			IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
-			issueService = fact.getService(appInfo.getAppDir(), serviceFactoryParams);
-			
-			initProxy();
+		String serviceFactoryClass = profile.getServiceFactoryClass();
+		List<String> serviceFactoryParams = profile.getServiceFactoryParams();
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "getService class=" + serviceFactoryClass);
+		
+		Class<?> clazz = Class.forName(serviceFactoryClass);
+		IssueServiceFactory fact = (IssueServiceFactory) clazz.newInstance();
+		IssueService issueService = fact.getService(appInfo.getAppDir(), serviceFactoryParams);
+		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
+		issueService.setProfile(profile);
 
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "issueService.setConfig");
-			issueService.setProfile(appInfo.getConfig().getCurrentProfile());
-
-			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initializing...");
-			issueService.initialize(new ProgressCallbackImpl());
-			if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initialized.");
-			System.out.println("Issue service initialized.");
-
-			issueServiceRunning = true;
-		}
-		catch (Exception e) {
-			log.log(Level.SEVERE, "Failed to initialize issue service", e);
-			throw e;
-		}
+		if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initializing...");
+		issueService.initialize(new ProgressCallbackImpl());
+		if (log.isLoggable(Level.INFO)) log.log(Level.INFO, "Issue service initialized.");
+		
+		System.out.println("Initialized issue service for profile=" + profile);
+		issueService.getProfile().setIssueService(issueService);
+		
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")createIssueService");
+		return issueService;
 	}
 
-	private static void initProxy() {
+	/**
+	 * Connects to all profiles.
+	 * @throws Exception If connection to any profile failed.
+	 */
+	private static void internalInitIssueServices() throws Exception {
+		List<Profile> profiles = getAppInfo().getConfig().getProfiles();
+		List<CompletableFuture<Profile>> profilesCompletedList = new ArrayList<>();
 		
-	
-/*
- * http://www.pcwelt.de/ratgeber/Mit-Squid-als-Proxy-Server-schneller-im-Netzwerk-surfen-5896242.html
- * https://blog.mafr.de/2013/06/16/setting-up-a-web-proxy-with-squid/
- * 
- 	
- 	1. Installieren:
- 	
- 	1.1. Squid installieren
- 	
- 	sudo apt install squid
- 	
- 	1.2. Apache Hilfsmittel installieren, damit Kennwort-Datenbank erstellt werden kann
- 	
- 	sudo apt-get install apache2-utils 
- 	
- 	
- 	2. Konfigurieren
- 	
- 	2.1. Original-Konfigurationsdatei sichern
- 	
- 	sudo cp /etc/squid/squid.conf /etc/squid/squid.conf.original
- 	
- 	2.2. Zugriffsrechte auf Konfigdatei für alle
- 	
- 	sudo chmod ugo+rwx ./squid.conf
- 	
- 	2.3. Zugriffsrechte auf Logdateien
- 	
- 	sudo chmod ugo+rwx /var/log/squid/access.log
- 	sudo chmod ugo+rwx /var/log/squid/cache.log
- 	
- 	2.4. User für Basic-Authentication erstellen
-
- 	Mit Basic-Authentication kann man sich über Java nicht mit dem Proxy verbinden. 
- 	Deshalb besser 2.5.
-
- 	sudo htpasswd -c /etc/squid/passwords squiduser
- 	> squidpwd
- 	
- 	2.5. Digest Authentication
- 	
- 	cd /etc/squid
- 	sudo touch passwd
- 	sudo chown proxy.proxy passwd
- 	sudo chmod 640 passwd
- 	sudo htdigest -c /etc/squid/passwd SquidRealm squiduser
- 	> squidpwd
- 	
- 	Prüfen:
- 	sudo /usr/lib/squid/digest_file_auth /etc/squid/passwd
- 	>"squiduser":"SquidRealm"
- 	OK...
- 	CTRL-D
- 	
- 	2.6. Konfigurationsdatei 
-
- 	auth_param digest program /usr/lib/squid/digest_file_auth -c /etc/squid/passwd
- 	auth_param digest realm SquidRealm
- 	auth_param digest children 2
-
-	acl auth_users proxy_auth REQUIRED
-	
-	http_access allow auth_users
-	http_access deny all
-
- 	http_port 3128
- 	http_port 3129 intercept
- 	
-
- 	3. Squid neu starten
- 	
- 	sudo /etc/init.d/squid restart
- 	
- 	
- 	4. Proxy im Windows einrichten über Chrome
- 	
- 	Einstellungen - Suche nach "proxy" - Windows-Einstellungen öffnen - LAN-Einstellungen
- 	Proxyserver anhaken, Adresse und Port eingeben
- 	
- 	5. Java Programm
- 	
- 	Kommandozeilenparameter -Djava.net.useSystemProxies=true
- 	
- 	Authenticator s.u., User=squiduser, Pwd=squidpwd
- 		
- */
-		
-		Profile profile = appInfo.getConfig().getCurrentProfile();
-		String proxyHost = profile.getProxyServer();
-		boolean proxyServerEnabled = profile.isProxyServerEnabled(); 
-		int proxyPort = profile.getProxyServerPort();
-		final String proxyUserName = profile.getProxyServerUserName(); 
-		final String proxyPassword = PasswordEncryption.decrypt(profile.getProxyServerEncryptedUserPassword());
-
-		if (proxyServerEnabled) {
-			log.info("Initialize proxy: proxyHost=" + proxyHost + ", proxyPort=" + proxyPort + ", proxyUser=" + proxyUserName);
-				
-			Authenticator.setDefault(new Authenticator() {
-			    @Override
-			    protected PasswordAuthentication getPasswordAuthentication() {
-			    	PasswordAuthentication ret = null;
-			        if (getRequestorType() == RequestorType.PROXY) {
-			        	
-			        	String requestingHost = getRequestingHost();
-			        	int requestingPort = getRequestingPort();
-			            String prot = getRequestingProtocol().toLowerCase();
-			            
-			            log.info("Proxy authentication: requestingHost=" + requestingHost + ", requestingProtocol=" + prot + ", requestingPort=" + requestingPort 
-			            		+ ", proxyHost=" + proxyHost + ", proxyPort=" + proxyPort + ", proxyUser=" + proxyUserName);
-						
-			            if (proxyHost.isEmpty()) {
-		                    ret = new PasswordAuthentication(proxyUserName, proxyPassword.toCharArray());
-			            }
-			            else {
-			            	if (requestingHost.equalsIgnoreCase(proxyHost)) {
-				                if (proxyPort == requestingPort) {
-				                    ret = new PasswordAuthentication(proxyUserName, proxyPassword.toCharArray());
-				                }
-				            }
-			            }
-			        }
-			        return ret;
-			    }
-			});
-
-			if (proxyHost.isEmpty()) {
-				// Use system proxies.
-				// Check whether the program was started with this option.
-				// It can only be set on the command line.
-				String useSystemProxiesStr = System.getProperty("java.net.useSystemProxies");
-				if (useSystemProxiesStr == null || useSystemProxiesStr.isEmpty()) {
-					String msg = "Command line option -Djava.net.useSystemProxies=true has to be passed in order to use system proxies.";
-					System.err.println(msg);
-					log.warning(msg);
+		// Connect to profiles asynchronously.
+		for (int i = 0; i < profiles.size(); i++) {
+			final int profileIndex = i;
+			CompletableFuture<Profile> profileCompleted = CompletableFuture.supplyAsync(() -> {
+				Profile profile = profiles.get(profileIndex);
+				try {
+					// Connect.
+					IssueService issueService = createIssueService(profile);
+					
+					// Replace profile object in array
+					Profile acceptedProfile = issueService.getProfile();
+					synchronized(profiles) {
+						profiles.set(profileIndex, acceptedProfile);
+					}
+					
+					return acceptedProfile;
 				}
-			}
-			else {
-				System.setProperty("http.proxyHost", proxyHost); 
-				System.setProperty("http.proxyPort", Integer.toString(proxyPort));
-				System.setProperty("https.proxyHost", proxyHost); 
-				System.setProperty("https.proxyPort", Integer.toString(proxyPort));
-			}
-			
+				catch (RuntimeException e) {
+					log.log(Level.SEVERE, "Failed to initialize issue service for profile=" + profile, e);
+					throw e;
+				}
+				catch (Exception e) {
+					log.log(Level.SEVERE, "Failed to initialize issue service for profile=" + profile, e);
+					throw new RuntimeException(e);
+				}
+			});
+			profilesCompletedList.add(profileCompleted);
+		}
+		
+		// Wait for all profiles connected or failed.
+		if (profilesCompletedList.isEmpty()) {
+			allIssueServicesConnected.complete(true);
 		}
 		else {
-			log.info("Proxy not used.");
+			CompletableFuture<Void> allProfilesCompleted = CompletableFuture.allOf(profilesCompletedList.toArray(new CompletableFuture[0]));
+			allProfilesCompleted.handle((_void, ex) -> {
+				
+				// If all connections failed, complete the member allIssueServicesConnected exceptionally.
+				// If at least one connection is established, complete either with true or false.
+				// If all profiles are connected, complete with true.
+				// If one profile failed, complete with false.
+				boolean succ = ex == null;
+				Throwable ex2 = null;
+				if (!succ) {
+					Optional<Profile> anyConnectedProfileOpt = profiles.stream().filter((p) -> p.isConnected()).findAny();
+					ex2 = anyConnectedProfileOpt.isPresent() ? null : ex;
+				}
+				if (ex2 != null) {
+					allIssueServicesConnected.completeExceptionally(ex);
+				}
+				else {
+					allIssueServicesConnected.complete(succ);
+				}
+				return 0;
+			});
 		}
-		
 	}
 
-	public static boolean isIssueServiceRunning() {
-		return issueServiceRunning;
-	}
-	
-	public static void initialize(boolean async) throws Exception {
-		initLogging();
-		initIssueService(async);
-	}
-	
 	public static OutlookAddinEx getThisAddin() {
 		return addin;
 	}
@@ -290,9 +188,12 @@ public class Globals {
 		return mailExport;
 	}
 
-	public static IssueService getIssueService() throws IOException {
+	public static IssueService getIssueService() throws Exception {
+		IssueService issueService = null;
+		Profile profile = getAppInfo().getConfig().getCurrentProfile();
+		issueService = profile.getIssueService();
 		if (issueService == null) {
-			throw new IOException("Issue service not initialized.");
+			throw new IOException("No issue service connected.");
 		}
 		return issueService;
 	}
@@ -328,75 +229,50 @@ public class Globals {
 			dir.delete();
 		}
 	}
+	
+	public static void initProxy() {
+		getAppInfo().getConfig().getProxyServer().init();
+	}
 
 	public static void initLogging() {
-		try {
-			ClassLoader classLoader = Globals.class.getClassLoader();
-			String logprops = OfficeAddinUtil.getResourceAsString(classLoader, "com/wilutions/itol/logging.properties");
-
-			String logLevel = getAppInfo().getConfig().getLogLevel();
-			String logFile = getAppInfo().getConfig().getLogFile();
-
-			if (logLevel != null && !logLevel.isEmpty() && logFile != null && !logFile.isEmpty()) {
-				logFile = logFile.replace('\\', '/');
-				logprops = MessageFormat.format(logprops, logLevel, logFile);
-				ByteArrayInputStream istream = new ByteArrayInputStream(logprops.getBytes());
-				LogManager.getLogManager().readConfiguration(istream);
-
-				for (Handler handler : Logger.getLogger("").getHandlers()) {
-					handler.setFormatter(new LogFormatter());
-				}
-
-				Logger log = Logger.getLogger(Globals.class.getName());
-				log.info("Logger initialized");
-			}
-			else {
-				Logger.getLogger("").setLevel(Level.SEVERE);
-			}
-
-			// Initialize JOA Logfile
-			// Remark: Another instance runs in Outlook.exe (other process)
-			{
-				File joaLogFile = new File(new File(logFile).getParent(), "itol-joa.log");
-				String joaLogLevel = logLevel.equals("FINE") ? "DEBUG" : "INFO";
-				JoaDll.nativeInitLogger(joaLogFile.getAbsolutePath(), joaLogLevel, true);
-			}
-			
-			// Initialize DDAddin Logfile
-			// Remark: DDAddin runs in Outlook.exe (other process)
-			{
-				File ddaddinLogFile = new File(new File(logFile).getParent(), "itol-ddaddin.log");
-				String ddaddinLogLevel = logLevel.equals("FINE") ? "DEBUG" : "INFO";
-				DDAddinDll.openLogFile(ddaddinLogFile.getAbsolutePath(), ddaddinLogLevel, true);
-			}
-
-			// Initialize logging for DDAddin and JOA running in Outlook.exe.
-			setLogFileForHelperAddin("DnD to HTML5 Addin for Microsoft Outlook", logFile, logLevel, "outlook-ddaddin.log");
-			setLogFileForHelperAddin("JOA", logFile, logLevel, "outlook-joa.log");
-			
-
+		LoggerConfig loggerConfig = getAppInfo().getConfig().getLoggerConfig();
+		loggerConfig.init();
+		
+		if (addin != null) {
+			ProgramVersionInfo versionInfo = ManifestUtil.getProgramVersionInfo(addin.getClass());
+			log.info("Addin=" + versionInfo.getName() + ", version=" + versionInfo.getVersion());
 		}
-		catch (Throwable e) {
-			System.out.println("Logger configuration not found or inaccessible. " + e);
+		
+		String logFileNameWithoutExt = new File(loggerConfig.getFile()).getName();
+		{
+			int p = logFileNameWithoutExt.lastIndexOf('.');
+			if (p >= 0) logFileNameWithoutExt = logFileNameWithoutExt.substring(0, p);
 		}
-		finally {
-		}
-
+		
+		// Initialize logging for DDAddin and JOA running in Outlook.exe.
+		// Has only an effect after Outlook is re-started.
+		String file = loggerConfig.getFile();
+		String level = loggerConfig.getLevel();
+		setLogFileForHelperAddin("DnD to HTML5 Addin for Microsoft Outlook", file, level, logFileNameWithoutExt + "-outlook-ddaddin.log", loggerConfig.isAppend());
+		setLogFileForHelperAddin("JOA\\JoaUtilAddin", file, level, logFileNameWithoutExt + "-outlook-joa.log", loggerConfig.isAppend());
 	}
+
+	private static void setLogFileForHelperAddin(String name, String logFile, String logLevel, String addinLog, boolean append) {
+		String regKey = "HKCU\\Software\\" + getAppInfo().getManufacturerName() + "\\" + name;
+		String joaLogFile = new File(new File(logFile).getParent(), addinLog).getAbsolutePath();
+		RegUtil.setRegistryValue(regKey, "LogFile", joaLogFile);
+		String logLevelKey = logLevel.equals("FINE") ? "DEBUG" : "INFO";
+		RegUtil.setRegistryValue(regKey, "LogLevel", logLevelKey);
+		RegUtil.setRegistryValue(regKey, "LogAppend", Boolean.toString(append));
+	}
+
 
 	public static File getTempDir() {
 		return Globals.getAppInfo().getConfig().getCurrentProfile().getTempDir();
 	}
-
-	private static void setLogFileForHelperAddin(String name, String logFile, String logLevel, String addinLog) {
-		String regKey = "HKCU\\Software\\" + getAppInfo().getManufacturerName() + "\\" + name;
-		if (RegUtil.getRegistryValue(regKey, "LogFile", "").equals("")) {
-			File joaLogFile = new File(new File(logFile).getParent(), addinLog);
-			RegUtil.setRegistryValue(regKey, "LogFile", joaLogFile.getAbsolutePath());
-			String logLevelKey = logLevel.equals("FINE") ? "DEBUG" : "INFO";
-			RegUtil.setRegistryValue(regKey, "LogLevel", logLevelKey);
-			RegUtil.setRegistryValue(regKey, "LogAppend", "true");
-		}
-
+	
+	public static CompletableFuture<Boolean> getAllIssueServicesConnected() {
+		return allIssueServicesConnected;
 	}
+
 }
