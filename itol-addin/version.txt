@@ -4,6 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+1.0.4 2017-07-30
+
+- ITJ-6: Support server profiles.
+
 1.0.3 2017-07-09
 
 - ITJ-50: Remove RE: FW: ... from issue summary.
