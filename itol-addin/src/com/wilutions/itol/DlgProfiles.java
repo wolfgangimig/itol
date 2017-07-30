@@ -161,8 +161,12 @@ public class DlgProfiles extends ModalDialogFX<Config> implements Initializable 
 
 	@FXML
 	public void onConfigure() {
-		Profile selectedProfile = tviewProfiles.getSelectionModel().getSelectedItem();
-		DlgConfigure dlg = new DlgConfigure(selectedProfile);
+		int selectedIndex = tviewProfiles.getSelectionModel().getSelectedIndex();
+		if (selectedIndex < 0)
+			return;
+
+		Profile profile = profiles.get(selectedIndex);
+		DlgConfigure dlg = new DlgConfigure(profile);
 		dlg.showAsync(this, (updatedProfile, ex) -> {
 			if (updatedProfile != null) {
 				
@@ -170,6 +174,10 @@ public class DlgProfiles extends ModalDialogFX<Config> implements Initializable 
 				if (updatedProfile.getIssueService() != null) {
 					updatedProfile.getIssueService().setProfile(updatedProfile);
 				}
+				
+				// Replace new profile in list and save config.
+				profiles.set(selectedIndex, updatedProfile);
+				updateData(true);
 			}
 		});
 	}
