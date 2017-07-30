@@ -83,4 +83,8 @@ public class IssueMailItemBlank implements IssueMailItem {
 		return "";
 	}
 
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return new IssueMailItemBlank();
+	}
 }

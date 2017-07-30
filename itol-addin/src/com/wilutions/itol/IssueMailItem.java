@@ -29,4 +29,6 @@ public interface IssueMailItem {
 	
 	public boolean isNew();
 
+	public Object clone() throws CloneNotSupportedException;
+
 }

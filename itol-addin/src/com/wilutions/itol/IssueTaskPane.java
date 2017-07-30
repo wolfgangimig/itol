@@ -283,7 +283,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		// Task pane initialized?
 		if (bnAssignSelection != null) {
 			if (bnAssignSelection_isSelected()) {
-				internalSetMailItem(mailItem, createProgressCallback("Set mail item"), (succ, ex) -> {});
+				internalSetMailItem(mailItem, createProgressCallback("Set mail item"), (succ, ex) -> {
+					detectIssueModifiedContinue();
+				});
 			}
 		}
 	}
@@ -348,7 +350,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 				cb.incrProgress(0.1);
 	
 				detectIssueModifiedStop();
-	
+				
 				updateIssueFromMailItem(cb.createChild(0.8), (succ, ex) -> {
 					if (succ) {
 						initialUpdate(cb.createChild(0.1), outerResult);
@@ -363,7 +365,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			}
 		});
 	}
-
+	
 	private void updateIssueFromMailItem(ProgressCallback cb, AsyncResult<Boolean> asyncResult) {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "updateIssueFromMailItem(");
 
@@ -395,9 +397,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 					// ... no issue ID: create blank issue
 					String description = makeDescriptionFromMailBody();
 					issue = srv.createIssue(subject, description, null, null, cb);
-					
-					assignMailAdressToAutoReplyField();
 
+					assignMailAdressToAutoReplyField();
+					
 					Thread.sleep(300);
 				}
 
@@ -659,11 +661,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	}
 
 	private void initDetectIssueModified() {
-		detectIssueModifiedTimer = new Timeline(new KeyFrame(Duration.seconds(0.1), new EventHandler<ActionEvent>() {
+		double seconds = 0.1;
+		detectIssueModifiedTimer = new Timeline(new KeyFrame(Duration.seconds(seconds), new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
 				
-				if (detectIssueModifiedLock) return;
+				boolean debugLock = false; 
+				if (debugLock || detectIssueModifiedLock) return;
 				
 				try {
 					updateData(true);
@@ -1315,7 +1319,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	}
 
 	private void queryDiscardChangesAsync(AsyncResult<Boolean> asyncResult) {
-		if (modified) {
+		boolean debugAlwaysModified = false;
+		if (debugAlwaysModified || modified) {
 			detectIssueModifiedStop();
 			String title = resb.getString("MessageBox.title.confirm");
 			String text = resb.getString("MessageBox.queryDiscardChanges.text");
@@ -1326,7 +1331,6 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 					.bdefault().show((btn, ex) -> {
 						Boolean succ = btn != null && btn != 0;
 						asyncResult.setAsyncResult(succ, ex);
-						detectIssueModifiedContinue();
 					});
 		}
 		else {
@@ -1356,11 +1360,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 							IssueTaskPane.this.setMailItem(mailItem);
 						}
 						catch (Throwable e) {
-	
+							detectIssueModifiedContinue();
 						}
 					}
 					else {
 						bnAssignSelection_select(false);
+						detectIssueModifiedContinue();
 					}
 				});
 			});
@@ -1410,11 +1415,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 							cb.setFinished();
 							if (ex1 != null) {
 								showMessageBoxError(ex1.toString());
+								detectIssueModifiedContinue();
 							}
 						});
 					}
 					catch (Throwable e) {
 						showMessageBoxError(e.toString());
+						detectIssueModifiedContinue();
 					}
 				});
 			}
@@ -2210,10 +2217,62 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		// Set current service.
 		toggleGroup.selectedToggleProperty().addListener((obj, oldValue, newValue) -> {
 			if (newValue != null) {
-				Profile profile = (Profile)newValue.getUserData();
-				config.setCurrentProfile(profile);
+				BackgTask.run(() -> {
+					Profile profile = (Profile)newValue.getUserData();
+					switchProfile(profile);
+				});
 			}
 		});
+	}
+
+	/**
+	 * Switch profile.
+	 * @param profile
+	 */
+	private void switchProfile(Profile profile) {
+		
+		// Given profile is not already the current profile?
+		Config config = Globals.getAppInfo().getConfig();
+		if (profile != config.getCurrentProfile()) {
+
+			// If the input fields are modified, let the user confirm to switch.
+			queryDiscardChangesAsync((succ, ex) -> {
+		
+				// Confirmed?
+				if (succ) {
+					ProgressCallback cb = createProgressCallback("Switch profile");
+					try {
+						
+						config.setCurrentProfile(profile);
+						
+						System.out.println();
+						
+						// Observed that mailItem.getAttachments() hangs in MailAttachmentHelper.
+						// Getting a new MailItem from Outlook solves the problem.
+						mailItem = (IssueMailItem)mailItem.clone(); 
+						internalSetMailItem(mailItem, cb.createChild(0.9), (_ignored, _ignored2) -> {
+							System.out.println("issue=" + System.identityHashCode(issue) + " #atts=" + issue.getAttachments().size());
+							cb.setFinished();
+						});
+						
+					}
+					catch (Throwable e) {
+						String text = e.toString();
+						log.log(Level.SEVERE, text, e);
+						showMessageBoxError(text);
+						cb.setFinished();
+						detectIssueModifiedContinue();
+					}
+				}
+
+				// Select the menu item that belongs to the current profile.
+				for (MenuItem menuItem : bnExtra.getItems()) {
+					if (menuItem.getUserData() == config.getCurrentProfile()) {
+						((RadioMenuItem)menuItem).setSelected(true);
+					}
+				}
+			});
+		}
 	}
 	
 	@FXML

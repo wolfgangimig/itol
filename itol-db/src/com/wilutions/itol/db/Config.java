@@ -314,9 +314,11 @@ public class Config implements Serializable, Cloneable {
 	 * @return Profile object.
 	 */
 	public Profile getCurrentProfile() {
-		currentProfileIndex = Math.max(0, currentProfileIndex);
-		Profile profile = currentProfileIndex < profiles.size() ? profiles.get(currentProfileIndex) : new Profile();
-		return profile;
+		Profile ret = new Profile();
+		if (currentProfileIndex >= 0 && currentProfileIndex < profiles.size()) {
+			ret = profiles.get(currentProfileIndex);
+		}
+		return ret;
 	}
 
 	/**

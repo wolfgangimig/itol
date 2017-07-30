@@ -80,7 +80,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 		IDispatch disp = getSelectedExplorerItem();
 		if (disp != null) {
 			MailItem mailItem = disp.as(MailItem.class);
-			ret = new IssueMailItemImpl(mailItem);
+			ret = new IssueMailItemImpl(mailItem, this);
 		}
 		return ret;
 	}
@@ -210,7 +210,7 @@ public class MyExplorerWrapper extends ExplorerWrapper implements MyWrapper {
 					if (mailItem != null) {
 						Object mailId = mailItem._get("EntryID");
 						if (!mailId.equals(lastEntryID)) {
-							IssueMailItemImpl mailItemImpl = new IssueMailItemImpl(mailItem.as(MailItem.class));
+							IssueMailItemImpl mailItemImpl = new IssueMailItemImpl(mailItem.as(MailItem.class), this);
 							lastEntryID = mailId;
 							Platform.runLater(() -> {
 								issuePane.setMailItem(mailItemImpl);

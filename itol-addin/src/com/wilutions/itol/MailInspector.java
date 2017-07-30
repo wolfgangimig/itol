@@ -50,7 +50,7 @@ public class MailInspector extends InspectorWrapper implements MyWrapper {
 
 	@Override
 	public IssueMailItem getSelectedItem() {
-		return new IssueMailItemImpl(currentItem.as(MailItem.class));
+		return new IssueMailItemImpl(currentItem.as(MailItem.class), this);
 	}
 
 	public void setIssueTaskPaneVisible(boolean visible) {

@@ -931,7 +931,7 @@ public class MailAttachmentHelper {
 				// Create MailItem object from file.
 				if (log.isLoggable(Level.FINE)) log.fine("OpenSharedItem(" + tempFile + ")");
 				mailItemDisp = Dispatch.as(outlookApplication.getSession().OpenSharedItem(mailFile.getAbsolutePath()), MailItem.class);
-				mailItem = new IssueMailItemImpl(mailItemDisp);
+				mailItem = new IssueMailItemImpl(mailItemDisp, null);
 				break;
 			}
 			catch (Exception e) {

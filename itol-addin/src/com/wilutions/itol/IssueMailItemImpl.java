@@ -28,9 +28,16 @@ public class IssueMailItemImpl implements IssueMailItem {
 	private String to;
 	private Date receivedTime;
 	private OlBodyFormat bodyFormat;
+	private MyWrapper inspectorOrExplorer;
 
-	IssueMailItemImpl(MailItem mailItem) {
+	/**
+	 * Constructor
+	 * @param mailItem Outlook mail object.
+	 * @param inspectorOrExplorer Inspector or explorer or null.
+	 */
+	IssueMailItemImpl(MailItem mailItem, MyWrapper inspectorOrExplorer) {
 		this.mailItem = mailItem;
+		this.inspectorOrExplorer = inspectorOrExplorer;
 		// this.subject = (String)mailItem._get("Subject");
 		// this.body = (String)mailItem._get("Body");
 		// this.entryId = (String)mailItem._get("EntryID");
@@ -46,6 +53,12 @@ public class IssueMailItemImpl implements IssueMailItem {
 		this.receivedTime = mailItem.getReceivedTime();
 		this.htmlBody = mailItem.getHTMLBody();
 		this.bodyFormat = mailItem.getBodyFormat();
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		if (inspectorOrExplorer == null) throw new CloneNotSupportedException("Cannot clone mail item without a reference to an explorer or inspector.");
+		return inspectorOrExplorer.getSelectedItem();
 	}
 
 	public String getSubject() {
