@@ -83,6 +83,8 @@ public class Config implements Serializable, Cloneable {
 
 	public Config() {
 		taskPanePosition = new TaskPanePosition();
+		taskPanePosition.setDockPosition(MsoCTPDockPosition.msoCTPDockPositionRight);
+		taskPanePosition.setWidth(600);
 		proxyServer = new ProxyServer();
 		loggerConfig = new LoggerConfig();
 	}
