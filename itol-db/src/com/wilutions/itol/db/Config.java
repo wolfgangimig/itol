@@ -75,7 +75,7 @@ public class Config implements Serializable, Cloneable {
 	private List<Profile> profiles = new ArrayList<Profile>();
 	private String licenseKey;
 	private int currentProfileIndex;
-	private ProxyServer proxyServer;
+	private ProxyServerConfig proxyServerConfig;
 	private LoggerConfig loggerConfig;
 
 	// Only user related options.
@@ -85,7 +85,7 @@ public class Config implements Serializable, Cloneable {
 		taskPanePosition = new TaskPanePosition();
 		taskPanePosition.setDockPosition(MsoCTPDockPosition.msoCTPDockPositionRight);
 		taskPanePosition.setWidth(600);
-		proxyServer = new ProxyServer();
+		proxyServerConfig = new ProxyServerConfig();
 		loggerConfig = new LoggerConfig();
 	}
 
@@ -260,7 +260,7 @@ public class Config implements Serializable, Cloneable {
 			this.profiles.add((Profile) profile.clone());
 		}
 		this.taskPanePosition = rhs.taskPanePosition;
-		this.proxyServer.copyFrom(rhs.proxyServer);
+		this.proxyServerConfig.copyFrom(rhs.proxyServerConfig);
 		this.loggerConfig.copyFrom(rhs.loggerConfig);
 	}
 
@@ -268,7 +268,7 @@ public class Config implements Serializable, Cloneable {
 		for (Profile profile : profiles) {
 			profile.unsetUserRelatedValues();
 		}
-		proxyServer.unsetUserRelatedValues();
+		proxyServerConfig.unsetUserRelatedValues();
 		loggerConfig.unsetUserRelatedValues();
 	}
 
@@ -333,6 +333,7 @@ public class Config implements Serializable, Cloneable {
 			currentProfileIndex = profiles.indexOf(profile);
 			if (currentProfileIndex < 0) {
 				profiles.add(profile);
+				currentProfileIndex = profiles.size()-1;
 			}
 		}
 	}
@@ -357,12 +358,12 @@ public class Config implements Serializable, Cloneable {
 		this.profiles = profiles;
 	}
 
-	public ProxyServer getProxyServer() {
-		return proxyServer;
+	public ProxyServerConfig getProxyServer() {
+		return proxyServerConfig;
 	}
 
-	public void setProxyServer(ProxyServer proxyServer) {
-		this.proxyServer = proxyServer;
+	public void setProxyServer(ProxyServerConfig proxyServer) {
+		this.proxyServerConfig = proxyServer;
 	}
 
 	public LoggerConfig getLoggerConfig() {

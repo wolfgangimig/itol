@@ -656,7 +656,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		}
 		catch (Throwable e) {
 			log.log(Level.WARNING, "", e);
-			showMessageBoxError(e.toString());
+			Platform.runLater(() -> {
+				showMessageBoxError(e.toString());
+			});
 		}
 	}
 
@@ -1311,7 +1313,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		detectIssueModifiedStop();
 		String title = resb.getString("MessageBox.title.error");
 		String ok = resb.getString("Button.OK");
-		Window owner = this.getWindow();
+		Object owner = this; //.getDialogOwner();
 		com.wilutions.joa.fx.MessageBox.create(owner).title(title).text(text).button(1, ok).bdefault()
 				.show((btn, ex) -> {
 					detectIssueModifiedContinue();

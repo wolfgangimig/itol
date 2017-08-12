@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.PasswordEncryption;
-import com.wilutions.itol.db.ProxyServer;
+import com.wilutions.itol.db.ProxyServerConfig;
 import com.wilutions.joa.fx.ModalDialogFX;
 
 import javafx.beans.binding.Bindings;
@@ -118,7 +118,7 @@ public class DlgProxySettings extends ModalDialogFX<Boolean> implements Initiali
 
 	private void updateData(boolean save) {
 		
-		ProxyServer proxy = config.getProxyServer();
+		ProxyServerConfig proxy = config.getProxyServer();
 		if (save) {
 			
 			proxy.setEnabled(ckProxyEnabled.isSelected());

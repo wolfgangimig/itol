@@ -9,7 +9,7 @@ import java.util.logging.Logger;
  * Proxy server configuration and initialization.
  *
  */
-public class ProxyServer implements Serializable {
+public class ProxyServerConfig implements Serializable {
 	
 	private static final long serialVersionUID = 797602390235105742L;
 	private final static Logger log = Logger.getLogger("ProxyServer");
@@ -20,10 +20,10 @@ public class ProxyServer implements Serializable {
 	private String userName = System.getProperty("user.name"); 
 	private String encryptedPassword;
 	
-	public ProxyServer() {
+	public ProxyServerConfig() {
 	}
 	
-	protected void copyFrom(ProxyServer rhs) {
+	protected void copyFrom(ProxyServerConfig rhs) {
 		this.host = rhs.host;
 		this.enabled = rhs.enabled;
 		this.port = rhs.port;
