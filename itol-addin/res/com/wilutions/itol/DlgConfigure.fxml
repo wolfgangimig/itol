@@ -87,7 +87,7 @@
                               </VBox>
                            </children>
                         </HBox>
-                        <Label text="%DlgConfigure.Attachments.blacklist.add.hint" />
+                        <Label text="%DlgConfigure.Attachments.blacklist.add.hint" wrapText="true" />
                      </children>
                   </VBox>
                </content>
