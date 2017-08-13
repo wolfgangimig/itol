@@ -8,6 +8,8 @@ Version History
 
 - ITJ-6: Support server profiles.
 
+- ITJ-59: Detect whether project has a Service Desk.
+
 1.0.3 2017-07-09
 
 - ITJ-50: Remove RE: FW: ... from issue summary.
