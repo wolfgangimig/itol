@@ -671,6 +671,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 				boolean debugLock = false; 
 				if (debugLock || detectIssueModifiedLock) return;
 				
+				// Observed after switched to other profile.
+				if (issue == null) return;
+				
 				try {
 					updateData(true);
 
