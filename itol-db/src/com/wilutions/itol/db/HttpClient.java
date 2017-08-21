@@ -50,6 +50,7 @@ public class HttpClient {
 	private final static Logger log = Logger.getLogger(HttpClient.class.getName());
 
 	public final static int CONNECT_TIMEOUT_SECONDS = 10;
+	public final static int READ_TIMEOUT_SECONDS = 30;
 
 	static {
 
@@ -88,6 +89,7 @@ public class HttpClient {
 			conn = (HttpURLConnection) (url.openConnection());
 
 			conn.setConnectTimeout(CONNECT_TIMEOUT_SECONDS * 1000);
+			conn.setReadTimeout(READ_TIMEOUT_SECONDS * 1000);
 
 			conn.setRequestMethod(method);
 			conn.setDoOutput(content != null);
