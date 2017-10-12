@@ -55,7 +55,7 @@ public class Profile implements SerializableProfile {
 	 * Mail address of issue trackin sevice.
 	 * The body of this mails is not used as comment when assigning to the ITOL dialog. 
 	 */
-	private String serviceNotifcationMailAddress;
+	private String serviceNotifcationMailAddress = "";
 	
 	/**
 	 * Convert HTML mail body to markup.
