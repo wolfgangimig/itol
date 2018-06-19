@@ -35,7 +35,8 @@ public class LoggerConfig {
 			String logLevel = getLevel();
 			if (!logLevel.isEmpty() && !logFile.isEmpty()) {
 				logFile = logFile.replace('\\', '/');
-				logprops = MessageFormat.format(logprops, logLevel, logFile, isAppend());
+				String jutilLevel = logLevel.equals(LEVEL_DEBUG) ? "FINE" : "INFO";
+				logprops = MessageFormat.format(logprops, jutilLevel, logFile, isAppend());
 				ByteArrayInputStream istream = new ByteArrayInputStream(logprops.getBytes());
 				LogManager.getLogManager().readConfiguration(istream);
 
@@ -47,7 +48,7 @@ public class LoggerConfig {
 				log.info("Logger initialized");
 			}
 			else {
-				Logger.getLogger("").setLevel(Level.SEVERE);
+				Logger.getLogger("").setLevel(Level.INFO);
 			}
 			
 			String logFileNameWithoutExt = new File(logFile).getName();
@@ -60,8 +61,7 @@ public class LoggerConfig {
 			// Remark: Another instance runs in Outlook.exe (other process)
 			{
 				File joaLogFile = new File(new File(logFile).getParent(), logFileNameWithoutExt + "-joa.log");
-				String joaLogLevel = logLevel.equals("FINE") ? "DEBUG" : "INFO";
-				JoaDll.nativeInitLogger(joaLogFile.getAbsolutePath(), joaLogLevel, isAppend());
+				JoaDll.nativeInitLogger(joaLogFile.getAbsolutePath(), logLevel, isAppend());
 			}
 			
 		}
