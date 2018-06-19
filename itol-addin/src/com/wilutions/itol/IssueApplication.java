@@ -13,13 +13,15 @@ package com.wilutions.itol;
 import java.awt.Desktop;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 import com.wilutions.com.ComException;
 import com.wilutions.com.reg.RegUtil;
@@ -28,6 +30,7 @@ import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.Profile;
 import com.wilutions.joa.AddinApplication;
 
+import javafx.application.Application;
 import javafx.stage.Stage;
 
 public class IssueApplication extends AddinApplication {
@@ -35,22 +38,15 @@ public class IssueApplication extends AddinApplication {
 	private static Logger log = Logger.getLogger(IssueApplication.class.getName());
 
 	static {
+		
 		System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %2$s %5$s%6$s%n");
 		
-		AppInfo appConfig = Globals.getAppInfo();
-		// config.appName = "Issue Tracker for Microsoft Outlook " +
-		// System.getProperty("sun.arch.data.model") + "bit";
-		appConfig.setAppName("Issue Tracker for Microsoft Outlook");
-		appConfig.setManufacturerName("WILUTIONS");
-		appConfig.setAppDir(getAppDir());
-	}
+		SimpleFormatter fmt = new SimpleFormatter();
 
-	private static File getAppDir() {
-		File ret = RegUtil.getAppPathIfSelfContained();
-		if (ret == null) {
-			ret = new File(System.getProperty("user.dir"));
-		}
-		return ret;
+		 StreamHandler sh = new StreamHandler(System.out, fmt);
+		 log.setUseParentHandlers(false);
+		 log.addHandler(sh);
+		
 	}
 
 	public boolean parseCommandLine(String[] args) throws ComException, IOException {
@@ -76,23 +72,15 @@ public class IssueApplication extends AddinApplication {
 		Globals.initialize(true);
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")initIssueService");
 	}
-
+	
 	public static void main(String[] args) {
-		
-		// Redirect STDOUT and STDERR for packaged application,
-		// because output on this streams do not appear for packed application on the console.
-		log.info("app.dir=" + RegUtil.getAppPathIfSelfContained());
-		if (RegUtil.getAppPathIfSelfContained() != null) {
-			File stdoutFile = new File(Profile.DEFAULT_TEMP_DIR, "itol-stdout.txt");
-			File stderrFile = new File(Profile.DEFAULT_TEMP_DIR, "itol-stderr.txt");
-			try {
-				System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(stdoutFile))));
-				System.setErr(new PrintStream(new BufferedOutputStream(new FileOutputStream(stderrFile))));
-			} catch (FileNotFoundException e1) {
-				e1.printStackTrace();
-			}
-		}
-		
+		main(IssueApplication.class, IssueApplication.class, args);
+	}
+
+	public static void main(Class<? extends AddinApplication> mainClass, Class<? extends Application> fxappClass, String[] args) {
+	
+		log.info("Application args=" + Arrays.toString(args));
+				
 		String javaHome = System.getProperty("java.home");
 		log.info("java.home=" + javaHome);
 		for (Object key : System.getProperties().keySet()) {
@@ -103,8 +91,11 @@ public class IssueApplication extends AddinApplication {
 			AppInfo appInfo = new AppInfo();
 			
 			appInfo.setManufacturerName("WILUTIONS");
-			appInfo.setAppName(ManifestUtil.getProgramName(IssueApplication.class));
+			appInfo.setAppName(ManifestUtil.getProgramName(mainClass));
 			appInfo.setAppDir(RegUtil.getAppPathIfSelfContained());
+			
+			log.info("appInfo.appName=" + appInfo.getAppName());
+			log.info("appInfo.appDir=" + appInfo.getAppDir());
 			
 			// Read configuration
 			Config config = Config.read(appInfo.getManufacturerName(), appInfo.getAppName());
@@ -130,7 +121,7 @@ public class IssueApplication extends AddinApplication {
 			Globals.initProxy();
 			Globals.initLogging();
 
-			main(IssueApplication.class, IssueApplication.class, args);
+			AddinApplication.main(mainClass, fxappClass, args);
 		}
 		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to excecute main.", e);
@@ -139,6 +130,20 @@ public class IssueApplication extends AddinApplication {
 		log.info("main finished");
 
 		Globals.releaseResources();
+	}
+
+	@SuppressWarnings("unused")
+	private static void redirectStdStreamsToFile() {
+		File stdoutFile = new File(Profile.DEFAULT_TEMP_DIR, "itol-stdout.txt");
+		File stderrFile = new File(Profile.DEFAULT_TEMP_DIR, "itol-stderr.txt");
+		try {
+			System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(stdoutFile))));
+			System.out.println("STDOUT started.");
+			System.setErr(new PrintStream(new BufferedOutputStream(new FileOutputStream(stderrFile))));
+			System.out.println("STDERR started.");
+		} catch (Throwable e1) {
+			e1.printStackTrace();
+		}
 	}
 
 	@Override
