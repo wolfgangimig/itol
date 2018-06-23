@@ -154,18 +154,10 @@ public class IssueApplication extends AddinApplication {
 	}
 
 	@Override
-	protected void register(boolean userNotMachine, String execPath) {
+	protected void register(boolean userNotMachine, String exePath) {
 		try {
-			super.register(userNotMachine, execPath);
-			
-			String linkName = registerAutostart(true, execPath);
-			log.fine("autostart link=" + linkName);
-
-//			if (linkName != null && linkName.length() != 0) {
-//				showDocument(linkName);
-//				showDocument("http://www.wilutions.com/joa/itol/installed.html");
-//			}
-
+			super.register(userNotMachine, exePath);
+			registerAutostart(userNotMachine, true, exePath);
 		}
 		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to register Addin", e);
@@ -175,15 +167,8 @@ public class IssueApplication extends AddinApplication {
 	@Override
 	protected void unregister(boolean userNotMachine, String exePath) {
 		try {
-			String linkName = registerAutostart(false, exePath);
-			log.fine("autostart link=" + linkName);
-
-//			if (linkName != null && linkName.length() != 0) {
-//				showDocument("http://www.wilutions.com/joa/itol/uninstalled.html");
-//			}
-
+			registerAutostart(userNotMachine, false, exePath);
 			super.unregister(userNotMachine, exePath);
-
 		}
 		catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to register Addin", e);
