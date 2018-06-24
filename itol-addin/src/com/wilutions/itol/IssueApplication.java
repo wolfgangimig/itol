@@ -154,9 +154,9 @@ public class IssueApplication extends AddinApplication {
 	}
 
 	@Override
-	protected void register(boolean userNotMachine, String exePath) {
+	protected void register(boolean userNotMachine, String licenseKey, String exePath) {
 		try {
-			super.register(userNotMachine, exePath);
+			super.register(userNotMachine, licenseKey, exePath);
 			registerAutostart(userNotMachine, true, exePath);
 		}
 		catch (Throwable e) {
