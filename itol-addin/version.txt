@@ -4,7 +4,7 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
-1.0.4 
+1.0.4 2018-06-28
 
 - ITJ-67: Create MSI with Visual Studio Setup Project.
 
