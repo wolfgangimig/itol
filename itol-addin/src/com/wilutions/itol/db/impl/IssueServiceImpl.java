@@ -192,6 +192,11 @@ public class IssueServiceImpl implements IssueService {
 	}
 
 	@Override
+	public void releasePropertyEditors(Object parent) {
+		// TODO Auto-generated method stub
+	}
+	
+	@Override
 	public IssuePropertyEditor getPropertyEditor(Object ownerWindow, Issue issue, String propertyId) throws IOException {
 		// TODO Auto-generated method stub
 		return null;

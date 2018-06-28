@@ -6,6 +6,10 @@ Version History
 
 1.0.4 
 
+- ITJ-67: Create MSI with Visual Studio Setup Project.
+
+- ITJ-66: Editing issue properties conflicted if inspector and explorer windows show ITOL task panes.
+
 - ITJ-61: Cannot OK configuration dialog for initial configuration.
   If entry "Server Mail Address" is missing in a new configuration, the configuration dialog cannot be closed. 
 

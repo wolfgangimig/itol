@@ -38,6 +38,8 @@ public interface IssueService {
 //
 //	List<IdName> getMilestones(Issue issue) throws Exception;
 
+	void releasePropertyEditors(Object parent);
+	
 	IssuePropertyEditor getPropertyEditor(Object parent, Issue issue, String propertyId) throws Exception;
 
 	List<IdName> getSubtaskTypes(Issue issue) throws Exception;

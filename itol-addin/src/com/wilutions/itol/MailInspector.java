@@ -15,7 +15,6 @@ import java.util.ResourceBundle;
 
 import com.wilutions.com.ComException;
 import com.wilutions.com.IDispatch;
-import com.wilutions.joa.fx.MessageBox;
 import com.wilutions.joa.outlook.ex.InspectorWrapper;
 import com.wilutions.joa.outlook.ex.Wrapper;
 import com.wilutions.joa.ribbon.RibbonButton;
@@ -54,22 +53,14 @@ public class MailInspector extends InspectorWrapper implements MyWrapper {
 	}
 
 	public void setIssueTaskPaneVisible(boolean visible) {
-
 		if (issuePane == null) {
 			issuePane = new IssueTaskPane(this);
 		}
-
-		if (!issuePane.hasWindow() && visible) {
-			String title = Globals.getResourceBundle().getString("IssueTaskPane.title");
-			Globals.getThisAddin().createTaskPaneWindowAsync(issuePane, title, inspector, (succ, ex) -> {
-				if (ex != null) {
-					MessageBox.show(inspector, "Error", ex.getMessage(), null);
-				}
-			});
-		}
-		else {
-			issuePane.setVisible(visible);
-		}
+		issuePane.createOrShowAsync(inspector, visible, (succ, ex) -> {
+			if (succ && visible) {
+				
+			}
+		});
 	}
 
 	public boolean isIssueTaskPaneVisible() {
@@ -79,6 +70,11 @@ public class MailInspector extends InspectorWrapper implements MyWrapper {
 	@Override
 	public void onClose() throws ComException {
 		if (issuePane != null) {
+			
+			// Always save visible state as false. 
+			// Feels to be better UX not to show the task pane when a mail inspector is displayed.
+			issuePane.setVisible(false); 
+			
 			issuePane.close();
 		}
 		super.onClose();

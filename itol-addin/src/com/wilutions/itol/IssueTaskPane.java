@@ -555,6 +555,11 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 		attachmentHelper.releaseResources();
 		
+		try {
+			Globals.getIssueService().releasePropertyEditors(this);
+		} catch (Exception ignored) {
+		}
+		
 		inspectorOrExplorer = null;
 		mailItem = null;
 	}
@@ -583,6 +588,65 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		catch (Throwable e) {
 			throw new IllegalStateException("Cannot create scene.", e);
 		}
+	}
+	
+	/**
+	 * Create or show task pane.
+	 * Creates the task pane if it does not have a window, or shows, or hides the window.
+	 * @param explorerOrInspector Explorer or Inspector window
+	 * @param visible true, if task pane should be created or shown.
+	 * @param asyncResult Callback, succ=true if no exception has occurred.
+	 */
+	public void createOrShowAsync(Object explorerOrInspector, boolean visible, AsyncResult<Boolean> asyncResult) {
+		
+		// Lambda function that shows or hides the task pane.
+		AsyncResult<Boolean> asyncResultSetVisible = (succ, ex) -> {
+			BackgTask.run(() -> {
+				if (ex == null) {
+					this.setVisible(visible, asyncResult);
+				}
+				else {
+					MessageBox.error(explorerOrInspector, ex.getMessage(), (btn, ex2) -> {
+						asyncResult.setAsyncResult(false, null);
+					});
+				}
+			});
+		};
+		
+		if (!hasWindow() && visible) {
+			createAsync(explorerOrInspector, asyncResultSetVisible);
+		}
+		else {
+			asyncResultSetVisible.setAsyncResult(visible, null);
+		}
+	}
+	
+	/**
+	 * Create task pane and set title.
+	 * @param explorerOrInspector
+	 * @param asyncResult
+	 */
+	private void createAsync(Object explorerOrInspector, AsyncResult<Boolean> asyncResult) {
+		String title = "";
+		LicenseInstall licenseInstall = new LicenseInstall(Globals.getAppInfo().getConfig());
+		License license = licenseInstall.getInstalledLicense();
+		if (license.isDemo()) {
+			if (license.isValid()) {
+				String formatTitle = Globals.getResourceBundle().getString("IssueTaskPane.title.demo");
+				String expiresAt = license.getExpiresAt();
+				if (expiresAt.length() > 10) {
+					expiresAt = expiresAt.substring(0, 10);
+				}
+				title = MessageFormat.format(formatTitle, expiresAt);
+			}
+			else {
+				title = Globals.getResourceBundle().getString("IssueTaskPane.title.demo.expired");
+			}
+		}
+		else {
+			title = Globals.getResourceBundle().getString("IssueTaskPane.title");
+		}
+		Globals.getThisAddin().createTaskPaneWindowAsync(this, title, explorerOrInspector, asyncResult);
 	}
 
 	@Override
