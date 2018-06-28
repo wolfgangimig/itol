@@ -125,7 +125,7 @@ public class DlgAbout implements Initializable {
 
 	@FXML
 	private void onHomepageClicked() {
-		IssueApplication.showDocument("http://www.wilutions.com");
+		IssueApplication.showDocument("https://www.wilutions.info");
 	}
 	
 	@FXML
