@@ -238,10 +238,8 @@ public class Globals {
 		LoggerConfig loggerConfig = getAppInfo().getConfig().getLoggerConfig();
 		loggerConfig.init();
 		
-		if (addin != null) {
-			ProgramVersionInfo versionInfo = ManifestUtil.getProgramVersionInfo(addin.getClass());
-			log.info("Addin=" + versionInfo.getName() + ", version=" + versionInfo.getVersion());
-		}
+		ProgramVersionInfo versionInfo = ManifestUtil.getProgramVersionInfo(Globals.class);
+		if (versionInfo != null) log.info("version=" + versionInfo.getVersion());
 		
 		String logFileNameWithoutExt = new File(loggerConfig.getFile()).getName();
 		{
