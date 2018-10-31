@@ -49,7 +49,7 @@ public class ByteOrderMark {
 
 	public static ByteOrderMark fromValue(byte[] bytes) {
 		for (int i = 0; i < BOMs.length; i++) {
-			if (BOMs[i].equals(bytes)) return BOMs[i];
+			if (BOMs[i].equals((Object)bytes)) return BOMs[i];
 		}
 		return null;
 	}

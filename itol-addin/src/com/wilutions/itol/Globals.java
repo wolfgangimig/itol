@@ -239,7 +239,7 @@ public class Globals {
 		loggerConfig.init();
 		
 		ProgramVersionInfo versionInfo = ManifestUtil.getProgramVersionInfo(Globals.class);
-		if (versionInfo != null) log.info("version=" + versionInfo.getVersion());
+		if (versionInfo != null) log.info("ITOL version=" + versionInfo.getVersion());
 		
 		String logFileNameWithoutExt = new File(loggerConfig.getFile()).getName();
 		{

@@ -38,6 +38,7 @@ public class HTMLEditorModifier extends Application {
         {
           if (candidate instanceof ComboBox)
           {
+              @SuppressWarnings("rawtypes")
               ComboBox cb = (ComboBox) candidate;
               System.out.println("cb=" + cb);
           }
@@ -115,7 +116,8 @@ public class HTMLEditorModifier extends Application {
                   {
                     if (candidate instanceof ComboBox)
                     {
-                        ComboBox cb = (ComboBox) candidate;
+                        @SuppressWarnings("rawtypes")
+						ComboBox cb = (ComboBox) candidate;
                         if (i == c)
                         {
                             nCb = cb;
@@ -250,7 +252,8 @@ public class HTMLEditorModifier extends Application {
               {
                 if (candidate instanceof ComboBox)
                 {
-                    ComboBox cb = (ComboBox) candidate;
+                    @SuppressWarnings("rawtypes")
+					ComboBox cb = (ComboBox) candidate;
                     if (i == c)
                     {
                         Node nCb = cb;

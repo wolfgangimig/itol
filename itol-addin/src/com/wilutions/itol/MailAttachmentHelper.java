@@ -956,7 +956,7 @@ public class MailAttachmentHelper {
 	
 	private File makeUniqueExportFileName(File dir, File tempFile, ProgressCallback cb) {
 		File destFile = tempFile;
-		if (!tempFile.getParent().equals(dir)) { // should always un-equal: export directory should not be the same as the temp directory.
+		if (!tempFile.getParentFile().equals(dir)) { // should always un-equal: export directory should not be the same as the temp directory.
 			for (int retries = 0; retries < 1000; retries++) {
 				destFile = makeTempFile(dir, tempFile.getName(), retries);
 				if (compareFiles(tempFile, destFile, cb)) {

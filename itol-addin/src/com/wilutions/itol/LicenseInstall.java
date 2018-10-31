@@ -5,7 +5,6 @@ import java.util.logging.Logger;
 
 import com.wilutions.com.reg.RegUtil;
 import com.wilutions.itol.db.Config;
-import com.wilutions.itol.db.Default;
 
 import de.wim.liccheck.License;
 import de.wim.liccheck.LicenseCheck;
