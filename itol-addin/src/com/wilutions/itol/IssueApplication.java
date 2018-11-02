@@ -26,6 +26,7 @@ import java.util.logging.StreamHandler;
 import com.wilutions.com.ComException;
 import com.wilutions.com.reg.RegUtil;
 import com.wilutions.fx.util.ManifestUtil;
+import com.wilutions.fx.util.ProgramVersionInfo;
 import com.wilutions.itol.db.Config;
 import com.wilutions.itol.db.Profile;
 import com.wilutions.joa.AddinApplication;
@@ -120,7 +121,10 @@ public class IssueApplication extends AddinApplication {
 			Globals.setAppInfo(appInfo);
 			Globals.initProxy();
 			Globals.initLogging();
-
+			
+			ProgramVersionInfo versionInfo = ManifestUtil.getProgramVersionInfo(mainClass);
+			if (versionInfo != null) log.info("ITOL version=" + versionInfo.getVersion());
+			
 			AddinApplication.main(mainClass, fxappClass, args);
 		}
 		catch (Throwable e) {

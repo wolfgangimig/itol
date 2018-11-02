@@ -21,7 +21,7 @@ sourceSets {
 
 jar {
     manifest {
-        attributes 'Implementation-Title': 'Gradle Quickstart',
+        attributes 'Implementation-Title': 'itol-addin',
                    'Implementation-Version': version
     }
 }
