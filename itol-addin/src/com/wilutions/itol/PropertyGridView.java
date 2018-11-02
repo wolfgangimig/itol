@@ -3,14 +3,12 @@ package com.wilutions.itol;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
@@ -80,6 +78,13 @@ public class PropertyGridView {
 	private final ResourceBundle resb = Globals.getResourceBundle();
 	private Node firstControl;
 	private Logger log = Logger.getLogger("PropertyGridView");
+	
+	/**
+	 * Maximum number of items for choice box.
+	 * A choice box node is created for a select list, if the list has less than 
+	 * this number of items. If the list is larger, an auto-completion box is created.
+	 */
+	private final static int MAX_CHOICEBOX_ITEMS = 5;
 
 	private final List<PropertyNode> propNodes = new ArrayList<>();
 
@@ -235,10 +240,6 @@ public class PropertyGridView {
 		PropertyNode propNode = makeIssuePropertyEditor(issue, pclass);
 		if (propNode == null) {
 			
-			List<IdName> selectList = pclass.getSelectList();
-			Suggest<IdName> suggest = pclass.getAutoCompletionSuggest();
-			if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList + ", suggest=" + suggest);
-	
 			Property prop = issue.getCurrentUpdate().getProperty(pclass.getId());
 			if (prop != null && prop.getValue() == null) {
 				Object defaultValue = pclass.getDefaultValue();
@@ -267,26 +268,7 @@ public class PropertyGridView {
 			// break;
 			case PropertyClass.TYPE_ID_NAME:
 			{
-				if (selectList != null) {
-					if (pclass.isArray()) {
-						propNode = makeChoiceBoxForPropertyArray(issue, pclass);
-					}
-					else {
-						propNode = makeChoiceBoxForProperty(issue, pclass);
-					}
-				}
-				else if (suggest != null) {
-					if (pclass.isArray()) {
-						propNode = makeAutoCompletionNodeArray(issue, pclass);
-					}
-					else {
-						propNode = makeAutoCompletionNode(issue, pclass);
-					}
-				}
-				else {
-					// IdName field without selection list - unsupported
-					log.warning("Unsupported property class " + pclass + ".");
-				}
+				propNode = makeSelectBoxForProperty(issue, pclass);
 			}
 			break;
 			default:
@@ -321,6 +303,38 @@ public class PropertyGridView {
 		}
 		
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")addProperty");
+	}
+
+	private PropertyNode makeSelectBoxForProperty(Issue issue, PropertyClass pclass) {
+		
+		PropertyNode propNode = null;
+		List<IdName> selectList = pclass.getSelectList();
+		Suggest<IdName> suggest = pclass.getAutoCompletionSuggest();
+		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "selectList=" + selectList + ", suggest=" + suggest);
+
+		// Create a choice box node for small select lists.
+		if (selectList != null && (suggest == null || selectList.size() < MAX_CHOICEBOX_ITEMS)) {
+			if (pclass.isArray()) {
+				propNode = makeChoiceBoxForPropertyArray(issue, pclass);
+			}
+			else {
+				propNode = makeChoiceBoxForProperty(issue, pclass);
+			}
+		}
+		// Create an auto-completion box for large select lists.
+		else if (suggest != null) {
+			if (pclass.isArray()) {
+				propNode = makeAutoCompletionNodeArray(issue, pclass);
+			}
+			else {
+				propNode = makeAutoCompletionNode(issue, pclass);
+			}
+		}
+		else {
+			// IdName field without selection list - unsupported
+			log.warning("Unsupported property class " + pclass + ".");
+		}
+		return propNode;
 	}
 
 	private class AutoCompletionNodeArray_FirstButton extends Button {
@@ -791,8 +805,7 @@ public class PropertyGridView {
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "makeAutoCompletionNode(" + pclass.getId());
 		String recentCaption = resb.getString("autocomplete.recentCaption");
 		String suggestionsCaption = resb.getString("autocomplete.suggestionsCaption");
-		List<IdName> recentItems = pclass.getSelectList();
-		if (recentItems == null) recentItems = new ArrayList<IdName>();
+		List<IdName> recentItems = new ArrayList<IdName>();
 		ExtractImage<IdName> extractImage = (item) -> item.getImage();
 
 		AutoCompletionComboBox<IdName> comboBox = AutoCompletions.createAutoCompletionNode(extractImage, recentCaption,

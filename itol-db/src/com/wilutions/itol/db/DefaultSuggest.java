@@ -25,6 +25,12 @@ public class DefaultSuggest<T> implements Suggest<T> {
 	protected Function<T, String> toStringFunction;
 
 	/**
+	 * Limit select list to keep auto completion menu small.
+	 * Menu does not handle smoothly if it cannot be displayed below the edit box. 
+	 */
+	private static final int MAX_SUGGESTIONS = 5;
+	
+	/**
 	 * Constructor.
 	 * 
 	 * @param allItems
@@ -114,6 +120,10 @@ public class DefaultSuggest<T> implements Suggest<T> {
 
 			// Cut the list at the item that does not contain the text.
 			ret = matches.subList(0, endIdx);
+		}
+		
+		if (ret.size() > MAX_SUGGESTIONS) {
+			ret = new ArrayList<T>(ret).subList(0, MAX_SUGGESTIONS);
 		}
 
 		return ret;

@@ -344,8 +344,8 @@ public class AutoCompletions {
 
 		double menuWidth = control.getNode().getBoundsInParent().getWidth();
 
-		boolean isRecentListAvailable = recentItems != null;
-		if (isRecentListAvailable) {
+		boolean showRecentList = recentItems != null && editText.isEmpty();
+		if (showRecentList) {
 
 			// Menu header "Recent"
 			items.add(makeHeaderMenuItem(recentCaption, menuWidth));
@@ -455,11 +455,7 @@ public class AutoCompletions {
 		double x = window.getX() + node.localToScene(0, 0).getX() + node.getScene().getX();
 		double y = window.getY() + node.localToScene(0, 0).getY() + node.getScene().getY()
 				+ node.getBoundsInLocal().getHeight();
-		// + node.getBoundsInParent().getHeight();
 		popup.show(window, x, y);
-//		double ht = popup.getHeight();
-//		double wd = popup.getWidth();
-//		System.out.println("popup.height=" + ht + ", width=" + wd + ", #items=" + popup.getItems().size());
 	}
 
 	private static <T> AutoCompletionControl<T> createAutoCompletionControl(final ComboBox<T> cbox,
