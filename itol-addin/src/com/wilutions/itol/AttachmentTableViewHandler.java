@@ -511,6 +511,7 @@ public class AttachmentTableViewHandler {
 		if (log.isLoggable(Level.FINE)) log.fine("copy(");
 		try {
 			// http://stackoverflow.com/questions/31798646/can-java-system-clipboard-copy-a-file
+			@SuppressWarnings("unused")
 			final String FILE_URL_PREFIX = MailAttachmentHelper.FILE_URL_PREFIX;
 			List<File> files = new ArrayList<File>();
 			for (Attachment att : table.getSelectionModel().getSelectedItems()) {

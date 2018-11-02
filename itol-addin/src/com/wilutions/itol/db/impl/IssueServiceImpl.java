@@ -71,7 +71,9 @@ public class IssueServiceImpl implements IssueService {
 //		return Arrays.asList(new IdName(1, "9.00.014"), new IdName(2, "8.00.050"), new IdName(3, "10.000.001"));
 //	}
 
+	@SuppressWarnings("unused")
 	private final static List<IdName> assignees;
+	@SuppressWarnings("unused")
 	private final static Set<Integer> ASSIGNEES_FOR_DOCUMENTATION = new HashSet<Integer>(Arrays.asList(2, 3, 4, 5, 6));
 
 	static {
@@ -125,7 +127,7 @@ public class IssueServiceImpl implements IssueService {
 
 	@Override
 	public void validateIssue(Issue iss) {
-		if (iss.getType().equals(String.valueOf(TYPE_DOCUMENTATION))) {
+		if (iss.getType().getId().equals(String.valueOf(TYPE_DOCUMENTATION))) {
 
 
 		}

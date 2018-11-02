@@ -13,6 +13,7 @@ import com.wilutions.mslib.outlook.Explorer;
 public class DlgNewIssue extends ModalDialogFX<Boolean> {
 	
 	private MailInspector mailInspector;
+	@SuppressWarnings("unused")
 	private IssueMailItem mailItem;
 	private boolean modal;
 	

@@ -95,6 +95,7 @@ public class DlgAbout implements Initializable {
 					@Override
 					protected void updateItem(String license, boolean empty) {
 						super.updateItem(license, empty);
+						@SuppressWarnings("unchecked")
 						TableRow<About3rdPartyLib> row = getTableRow();
 						if (row != null) {
 							About3rdPartyLib lib = row.getItem();

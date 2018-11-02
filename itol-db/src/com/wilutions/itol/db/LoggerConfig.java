@@ -8,8 +8,6 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import com.sun.javafx.geom.transform.GeneralTransform3D;
-import com.wilutions.com.DDAddinDll;
 import com.wilutions.com.JoaDll;
 import com.wilutions.joa.OfficeAddinUtil;
 

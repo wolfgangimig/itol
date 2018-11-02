@@ -1,7 +1,5 @@
 package com.wilutions.itol;
 
-import java.net.URI;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.Document;
@@ -20,6 +18,7 @@ import javafx.scene.web.WebView;
 
 public class WebViewHelper {
 
+	@SuppressWarnings("unused")
 	private final static Logger log = Logger.getLogger("WebViewHelper");
 
 	public static void addClickHandlerToWebView(WebView webView, ShowAttachmentHelper showAttachmentHelper) {

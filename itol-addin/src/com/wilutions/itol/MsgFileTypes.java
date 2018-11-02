@@ -109,6 +109,7 @@ public class MsgFileTypes {
 		return ret;
 	}
 	
+	@SuppressWarnings("unused")
 	private static RibbonListItem makeRibbonListItem(IdName idn, String fileName) {
 		return new RibbonListItem(idn.getId(), idn.getName(), fileName);
 	}
