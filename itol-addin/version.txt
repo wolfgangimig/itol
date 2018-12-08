@@ -4,6 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+1.0.7 2018-12-08
+
+- ITJ-72: Fix drag and drop mails and attachments from Outlook by using OEM version 2.0.7 of DDAddin.
+
 1.0.6 2018-11-02
 
 - ITJ-71: Fix ClassCastException when connecting to JIRA.
