@@ -4,9 +4,11 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
-1.0.7 2018-12-08
+1.0.7 2018-12-17
 
-- ITJ-72: Fix drag and drop mails and attachments from Outlook by using OEM version 2.0.7 of DDAddin.
+- ITJ-72: Allow mail item copied to clipboard to be pasted as issue attachment.
+          Fix drag and drop mails and attachments from Outlook.
+          Use DDAddin 2.0.8.
 
 1.0.6 2018-11-02
 
