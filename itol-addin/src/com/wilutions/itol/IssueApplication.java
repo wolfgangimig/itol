@@ -182,26 +182,32 @@ public class IssueApplication extends AddinApplication {
 	}
 
 	public static void showDocument(String url) {
+		if (log.isLoggable(Level.FINE)) log.fine("showDocument(" + url);
 		try {
-			if (url.startsWith("file:/")) {
+			if (url.startsWith(MailAttachmentHelper.FILE_URL_PREFIX)) {
 				File file = new File(new URI(url));
+				if (log.isLoggable(Level.FINE)) log.fine("file=" + file);
 				
 				// Open potentially dangerous files with notepad. 
 				if (file.isFile() && isPotentiallyDangerousFile(file)) {
+					if (log.isLoggable(Level.FINE)) log.fine("open with notepad");
 					ProcessBuilder pb = new ProcessBuilder("notepad.exe", file.getAbsolutePath());
 					pb.start();
 				}
 				else {
 					// AWT opens the file more reliably than JavaFX
+					if (log.isLoggable(Level.FINE)) log.fine("Desktop.open");
 					Desktop.getDesktop().open(file);
 				}
 			}
 			else {
+				if (log.isLoggable(Level.FINE)) log.fine("Desktop.browse");
 				Desktop.getDesktop().browse(new URI(url));
 			}
 		} catch (Exception e) {
 			log.log(Level.WARNING, "Failed to opent document=" + url, e);
 		}
+		if (log.isLoggable(Level.FINE)) log.fine(")showDocument");
 	}
 
 	private static boolean isPotentiallyDangerousFile(File file) {

@@ -517,6 +517,8 @@ public class MailAttachmentHelper {
 	}
 
 	public void showAttachmentAsync(Attachment att, ProgressCallbackFactory cbFact, AsyncResult<Boolean> asyncResult) {
+		if (log.isLoggable(Level.FINE)) log.fine("showAttachmentAsync(att=" + att);
+		
 		// Download the entire file into a temp dir. Opening the URL with Desktop.browse()
 		// would start a browser first, which in turn downloads the file. 
 		
@@ -536,6 +538,7 @@ public class MailAttachmentHelper {
 			}
 		});
 
+		if (log.isLoggable(Level.FINE)) log.fine(")showAttachmentAsync");
 	}
 
 	public URI downloadAttachment(Attachment att, ProgressCallback cb) throws Exception {
@@ -551,7 +554,7 @@ public class MailAttachmentHelper {
 				if (log.isLoggable(Level.FINE)) log.fine("already downloaded file=" + att.getLocalFile());
 				url = att.getLocalFile().toURI().toString();
 			}
-			else {
+			else try {
 				if (log.isLoggable(Level.FINE)) log.fine("download from url=" + url);
 				String fileName = Globals.getIssueService().downloadAttachment(url, cb);
 				File srcFile = new File(fileName);
@@ -570,6 +573,10 @@ public class MailAttachmentHelper {
 						}
 					}
 				}
+			}
+			catch (Exception e) {
+				log.log(Level.WARNING, "Failed to provide local file for attachment=" + att, e);
+				throw e;
 			}
 		}
 		if (cb != null) cb.setFinished();
