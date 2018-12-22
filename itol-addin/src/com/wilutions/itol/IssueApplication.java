@@ -37,6 +37,8 @@ import javafx.stage.Stage;
 public class IssueApplication extends AddinApplication {
 
 	private static Logger log = Logger.getLogger(IssueApplication.class.getName());
+	
+	private static IssueApplication instance;
 
 	static {
 		
@@ -48,6 +50,10 @@ public class IssueApplication extends AddinApplication {
 		 log.setUseParentHandlers(false);
 		 log.addHandler(sh);
 		
+	}
+	
+	public IssueApplication() {
+		instance = this;
 	}
 
 	public boolean parseCommandLine(String[] args) throws ComException, IOException {
@@ -195,9 +201,16 @@ public class IssueApplication extends AddinApplication {
 					pb.start();
 				}
 				else {
-					// AWT opens the file more reliably than JavaFX
-					if (log.isLoggable(Level.FINE)) log.fine("Desktop.open");
-					Desktop.getDesktop().open(file);
+					// ITJ-74: open with JavaFX if AWT fails.
+					// AWT fails on pcimig for PNG files with errro: "... no application assigned to file type...".
+					try {
+						if (log.isLoggable(Level.FINE)) log.fine("Desktop.open");
+						Desktop.getDesktop().open(file);
+					}
+					catch (Exception e) {
+						if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "Desktop.open failed", e);
+						instance.getHostServices().showDocument(url);
+					}
 				}
 			}
 			else {
