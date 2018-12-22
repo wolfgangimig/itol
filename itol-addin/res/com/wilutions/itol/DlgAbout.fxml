@@ -34,7 +34,7 @@
                   <Font size="24.0" />
                </font>
             </Label>
-            <Hyperlink onAction="#onHomepageClicked" text="www.wilutions.com" GridPane.rowIndex="3" />
+            <Hyperlink onAction="#onHomepageClicked" text="www.wilutions.info" GridPane.rowIndex="3" />
             <ImageView fitHeight="200.0" fitWidth="200.0" onMouseClicked="#onHomepageClicked" onMouseEntered="#onLogoEntered" onMouseExited="#onLogoExited" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="1" GridPane.hgrow="NEVER" GridPane.rowSpan="2147483647" GridPane.vgrow="ALWAYS">
                <image>
                   <Image url="@WI-Logo.png" />
