@@ -6,7 +6,9 @@ Version History
 
 1.0.7 2018-12-17
 
-- ITJ-72: Allow mail item copied to clipboard to be pasted as issue attachment.
+- ITJ-74: PNG and JPG attachments did not open on double-click in specific environments.
+
+- ITJ-72: Allow mail item to be added from clipboard as issue attachment.
           Fix drag and drop mails and attachments from Outlook.
           Use DDAddin 2.1.0.
 
