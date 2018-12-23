@@ -11,6 +11,8 @@ Version History
 - ITJ-72: Allow mail item to be added from clipboard as issue attachment.
           Fix drag and drop mails and attachments from Outlook.
           Use DDAddin 2.1.0.
+          
+- ITJ-75: Do not try to load debugging DLLs.
 
 1.0.6 2018-11-02
 
