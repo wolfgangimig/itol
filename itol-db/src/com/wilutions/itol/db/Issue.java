@@ -274,8 +274,12 @@ public class Issue implements Serializable {
 	}
 	
 	public Date getLastModified() {
-		Date ret = getLastUpdate().getCreateDate();
+		Date ret = currentUpdate.getLastModified();
 		return ret;
+	}
+	
+	public void setLastModified(Date date) {
+		currentUpdate.setLastModified(date);
 	}
 	
 	public Date getCreateDate() {

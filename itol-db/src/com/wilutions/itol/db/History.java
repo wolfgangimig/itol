@@ -1,5 +1,7 @@
 package com.wilutions.itol.db;
 
+import java.util.Date;
+
 /**
  * HTML views of comment and worklog history.
  *
@@ -39,9 +41,18 @@ public class History {
 	/**
 	 * Last comment or worklog entry.
 	 * This text is used in the reply mail that can be automatically send to the reporter.
+	 * If {link #flags} contains FLAG_COMMENTS_NEWER, this value belongs to the last comment.
+	 * Otherwise it belongs to the last worklog entry.
 	 * @see Config#getAutoReplyField().
 	 */
 	private String lastComment;
+	
+	/**
+	 * Last comment or worklog entry date.
+	 * If {link #flags} contains FLAG_COMMENTS_NEWER, this value belongs to the last comment.
+	 * Otherwise it belongs to the last worklog entry.
+	 */
+	private Date lastCommentDate;
 	
 	public String getCommentsHtml() {
 		if (commentsHtml == null) commentsHtml = "";
@@ -76,6 +87,14 @@ public class History {
 
 	public void setLastComment(String s) {
 		this.lastComment = s;
+	}
+
+	public Date getLastCommentDate() {
+		return lastCommentDate;
+	}
+
+	public void setLastCommentDate(Date lastCommentDate) {
+		this.lastCommentDate = lastCommentDate;
 	}
 
 }

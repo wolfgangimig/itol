@@ -181,7 +181,7 @@ public class IssueUpdate implements Serializable {
 	}
 
 	public void setLastModifiedIso(String iso) {
-		setCreateDate(Date.from(ZonedDateTime.parse(iso).toInstant()));
+		setLastModified(Date.from(ZonedDateTime.parse(iso).toInstant()));
 	}
 
 }
