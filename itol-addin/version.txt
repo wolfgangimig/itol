@@ -6,6 +6,8 @@ Version History
 
 1.0.7 2018-12-17
 
+- ITJ-79: Cascading fields could not be updated.
+
 - ITJ-78: Select history or worklog if mail to existing issue is older then last comment.
 
 - ITJ-77: Prevent horizontal scroll bar in history view.
