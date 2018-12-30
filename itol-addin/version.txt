@@ -6,6 +6,8 @@ Version History
 
 1.0.7 2018-12-17
 
+- ITJ-77: Prevent horizontal scroll bar in history view.
+
 - ITJ-74: PNG and JPG attachments did not open on double-click in specific environments.
 
 - ITJ-72: Allow mail item to be added from clipboard as issue attachment.
