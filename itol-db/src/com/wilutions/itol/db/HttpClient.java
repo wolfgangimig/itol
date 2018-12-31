@@ -54,7 +54,7 @@ public class HttpClient {
 		return CompletableFuture.supplyAsync(() -> send(surl, method, headers, content, cb), executor);
 	}
 
-	public static HttpResponse send(String surl, String method, String[] headers, Object content, ProgressCallback cb) {
+	private static HttpResponse send(String surl, String method, String[] headers, Object content, ProgressCallback cb) {
 		if (log.isLoggable(Level.FINE)) {
 			log.fine("send(" + method + ", surl=" + surl);
 			log.fine("headers=" + Arrays.toString(headers));
@@ -362,27 +362,33 @@ public class HttpClient {
 		return ret;
 	}
 
-	public static CompletableFuture<HttpResponse> postAsync(String url, String[] headers, String content, ProgressCallback cb, Executor executor) {
+	@SuppressWarnings("unused")
+	private static CompletableFuture<HttpResponse> postAsync(String url, String[] headers, String content, ProgressCallback cb, Executor executor) {
 		return sendAsync(url, "POST", headers, content, cb, executor);
 	}
 
-	public static HttpResponse post(String url, String[] headers, String content, ProgressCallback cb) {
+	@SuppressWarnings("unused")
+	private static HttpResponse post(String url, String[] headers, String content, ProgressCallback cb) {
 		return send(url, "POST", headers, content, cb);
 	}
 
-	public static CompletableFuture<HttpResponse> getAsync(String url, String[] headers, ProgressCallback cb, Executor executor) {
+	@SuppressWarnings("unused")
+	private static CompletableFuture<HttpResponse> getAsync(String url, String[] headers, ProgressCallback cb, Executor executor) {
 		return sendAsync(url, "GET", headers, null, cb, executor);
 	}
 
-	public static HttpResponse get(String url, String[] headers, ProgressCallback cb) {
+	@SuppressWarnings("unused")
+	private static HttpResponse get(String url, String[] headers, ProgressCallback cb) {
 		return send(url, "GET", headers, null, cb);
 	}
 
-	public static CompletableFuture<HttpResponse> uploadAsync(String url, String[] headers, File file, ProgressCallback cb, Executor executor) {
+	@SuppressWarnings("unused")
+	private static CompletableFuture<HttpResponse> uploadAsync(String url, String[] headers, File file, ProgressCallback cb, Executor executor) {
 		return sendAsync(url, "POST", headers, file, cb, executor);
 	}
 
-	public static HttpResponse upload(String url, String[] headers, File file, ProgressCallback cb) {
+	@SuppressWarnings("unused")
+	private static HttpResponse upload(String url, String[] headers, File file, ProgressCallback cb) {
 		return send(url, "POST", headers, file, cb);
 	}
 
