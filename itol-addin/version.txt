@@ -6,7 +6,7 @@ Version History
 
 1.0.7 2018-12-17
 
-- ITJ-81: Attachment thumbnail is vertically aligned right to the mouse position. Underlying row 
+- ITJ-81: Attachment thumbnail is vertically aligned next to the mouse position. Underlying row 
           is displayed with highlighted background.
 
 - ITJ-79: Cascading fields could not be updated.

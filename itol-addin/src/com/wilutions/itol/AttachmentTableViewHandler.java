@@ -438,6 +438,7 @@ public class AttachmentTableViewHandler {
 			if (!tooltip.isShowing()) {
 				// System.out.println("s.show tooltip=" + System.identityHashCode(tooltip));
 				
+				// ITJ-81: position thumbnail vertically aligned next to mouse position.
 				ImageView imageView = (ImageView)tooltip.getContent().get(0);
 				double ht = imageView.getImage().getHeight();
 				double xpos = x + 20;
