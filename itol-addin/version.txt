@@ -6,6 +6,9 @@ Version History
 
 1.0.7 2018-12-17
 
+- ITJ-81: Attachment thumbnail is vertically aligned right to the mouse position. Underlying row 
+          is displayed with highlighted background.
+
 - ITJ-79: Cascading fields could not be updated.
 
 - ITJ-78: Select history or worklog if mail to existing issue is older then last comment.

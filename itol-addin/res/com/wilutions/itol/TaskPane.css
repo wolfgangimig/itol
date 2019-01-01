@@ -112,3 +112,10 @@ Does not work nice for short scroll bars.
     -fx-padding: 0;
 }
 
+.attachment-row-tooltip-active {
+    -fx-background-color: lightskyblue;
+}
+
+.attachment-row-tooltip-active:selected {
+    -fx-background-color: lightskyblue;
+}
