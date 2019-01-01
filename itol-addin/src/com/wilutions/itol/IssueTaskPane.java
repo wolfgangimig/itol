@@ -1424,13 +1424,15 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			Platform.runLater(() -> {
 				queryDiscardChangesAsync((succ, ex) -> {
 					if (ex == null && succ) {
-						try {
-							IssueMailItem mailItem = inspectorOrExplorer.getSelectedItem();
-							IssueTaskPane.this.setMailItem(mailItem);
-						}
-						catch (Throwable e) {
-							detectIssueModifiedContinue();
-						}
+						BackgTask.run(() -> {
+							try {
+								IssueMailItem mailItem = inspectorOrExplorer.getSelectedItem();
+								IssueTaskPane.this.setMailItem(mailItem);
+							}
+							catch (Throwable e) {
+								detectIssueModifiedContinue();
+							}
+						});
 					}
 					else {
 						bnAssignSelection_select(false);
