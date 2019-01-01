@@ -45,6 +45,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.TransferMode;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Popup;
@@ -127,9 +128,14 @@ public class AttachmentTableViewHandler {
 							}
 						});
 						this.setOnMouseClicked((event) -> {
-							TableRow<Attachment> tableRow = getTableRow();
-							// System.out.println("Enter attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
-							activeTooltip.handleMouseEnter(tableRow, tooltip, event.getScreenX(), event.getScreenY());
+							if (event.getButton() == MouseButton.PRIMARY) {
+								TableRow<Attachment> tableRow = getTableRow();
+								// System.out.println("Enter attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
+								activeTooltip.handleMouseEnter(tableRow, tooltip, event.getScreenX(), event.getScreenY());
+							}
+							else {
+								activeTooltip.hide();
+							}
 						});
 						// Hide tooltip if mouse leaves this cell 
 						this.setOnMouseExited((event) -> {
