@@ -262,6 +262,9 @@ public class Config implements Serializable, Cloneable {
 		this.taskPanePosition = rhs.taskPanePosition;
 		this.proxyServerConfig.copyFrom(rhs.proxyServerConfig);
 		this.loggerConfig.copyFrom(rhs.loggerConfig);
+		
+		// ITJ-64: License key was not stored into application.json.templ
+		this.licenseKey = rhs.licenseKey;
 	}
 
 	protected void unsetUserRelatedValues() {

@@ -23,6 +23,8 @@ Version History
           
 - ITJ-75: Do not try to load debugging DLLs.
 
+- ITJ-64: Save license key as application related configuration too (not only as user related configuration).
+
 1.0.6 2018-11-02
 
 - ITJ-71: Fix ClassCastException when connecting to JIRA.
