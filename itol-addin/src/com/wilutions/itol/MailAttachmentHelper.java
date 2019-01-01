@@ -682,66 +682,22 @@ public class MailAttachmentHelper {
 			ProgressCallback cbDownload = cb.createChild("Download " + att.getFileName(), 0.5);
 			URI url = downloadAttachment(att, cbDownload);
 			File tempFile = new File(url);
-
-			// Is the issue attachment a mail?
 			ProgressCallback cbSave = cb.createChild("Save " + att.getFileName(), 0.5);
-			boolean attachmentIsMail = tempFile.getName().toLowerCase().endsWith(MsgFileFormat.MSG.getId()); 
-			if (log.isLoggable(Level.FINE)) log.fine("attachmentIsMail=" + attachmentIsMail);
-			if (attachmentIsMail) {
 
-				try {
-					// Load mail into Outlook.MailItem object
-					IssueMailItem mailItem = loadMailItem(outlookApplication, tempFile);
-					IssueAttachments mailAtts = mailItem.getAttachments();
-					int nbOfAttachments = mailAtts.getCount();
-					cbSave.setTotal(nbOfAttachments + 1);
-					
-					// Export mail as RTF 
-					{
-						MailAtt matt = new MailAtt(mailItem, MsgFileFormat.RTF.getId());
-						File destFile = makeUniqueExportFileName(dir, new File(dir, matt.getFileName()), cbSave.createChild(0.5));
-						if (log.isLoggable(Level.INFO)) log.info("Export mail to destFile=" + destFile);
-						if (!destFile.exists()) {
-							mailItem.SaveAs(destFile.getAbsolutePath(), OlSaveAsType.olRTF);
-							destFile.setLastModified(mailItem.getReceivedTime().getTime());
-						}
-						cbSave.incrProgress(0.5);
-						
-						ret = destFile;
-					}
-					
-					// Export mail attachments
-					for (int i = 1; i <= nbOfAttachments; i++) {
-						com.wilutions.mslib.outlook.Attachment matt = mailAtts.getItem(i);
-						File destFile = makeUniqueExportFileName(dir, new File(dir, matt.getFileName()), cbSave.createChild(0.5));
-						if (log.isLoggable(Level.INFO)) log.info("Export mail attachment to destFile=" + destFile);
-						if (!destFile.exists()) {
-							matt.SaveAsFile(destFile.getAbsolutePath());
-							destFile.setLastModified(mailItem.getReceivedTime().getTime());
-						}
-						cbSave.incrProgress(0.5);
-					}
-					
-				}
-				catch (Exception e) {
-					log.log(Level.WARNING, "Failed to export mail " + tempFile, e);
-				}
-			}
-			else {
-				// Make unique file name
-				File destFile = makeUniqueExportFileName(dir, tempFile, cbSave.createChild(0.5));
-				if (log.isLoggable(Level.INFO)) log.info("Export issue attachment to destFile=" + destFile);
-
-				// Copy to dest dir.
-				if (!destFile.exists()) {
-					Files.copy(tempFile.toPath(), destFile.toPath());
-					destFile.setLastModified(att.getLastModified().getTime());
-				}
-				cbSave.incrProgress(0.5);
-				
-				ret = destFile;
-			}
+			// ITJ-83: Mail attachments nicht mehr in RTF konvertieren.
 			
+			// Make unique file name
+			File destFile = makeUniqueExportFileName(dir, tempFile, cbSave.createChild(0.5));
+			if (log.isLoggable(Level.INFO)) log.info("Export issue attachment to destFile=" + destFile);
+
+			// Copy to dest dir.
+			if (!destFile.exists()) {
+				Files.copy(tempFile.toPath(), destFile.toPath());
+				destFile.setLastModified(att.getLastModified().getTime());
+			}
+			cbSave.incrProgress(0.5);
+			
+			ret = destFile;
 		}
 		finally {
 			cb.setFinished();

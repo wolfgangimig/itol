@@ -6,6 +6,9 @@ Version History
 
 1.0.7 2018-12-17
 
+- ITJ-83: Do not export MSG attachment as RTF. It could be important to receive the
+          original MSG file. 
+
 - ITJ-81: Attachment thumbnail is vertically aligned next to the mouse position. Underlying row 
           is displayed with highlighted background.
 
