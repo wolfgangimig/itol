@@ -36,6 +36,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -119,26 +120,22 @@ public class AttachmentTableViewHandler {
 						// The fousedProperty listener below hides the tooltip, if the table
 						// looses the focus.
 						this.setOnMouseEntered((event) -> {
-							Attachment attachment = (Attachment)getTableRow().getItem();
-							if (attachment != null && table.isFocused()) { 
+							if (table.isFocused()) { 
+								TableRow<Attachment> tableRow = getTableRow();
 								// System.out.println("Enter attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
-								activeTooltip.handleMouseEnter(attachment, tooltip, event.getScreenX(), event.getScreenY());
+								activeTooltip.handleMouseEnter(tableRow, tooltip, event.getScreenX(), event.getScreenY());
 							}
 						});
 						this.setOnMouseClicked((event) -> {
-							Attachment attachment = (Attachment)getTableRow().getItem();
-							if (attachment != null) { 
-								// System.out.println("Enter attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
-								activeTooltip.handleMouseEnter(attachment, tooltip, event.getScreenX(), event.getScreenY());
-							}
+							TableRow<Attachment> tableRow = getTableRow();
+							// System.out.println("Enter attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
+							activeTooltip.handleMouseEnter(tableRow, tooltip, event.getScreenX(), event.getScreenY());
 						});
 						// Hide tooltip if mouse leaves this cell 
 						this.setOnMouseExited((event) -> {
-							Attachment attachment = (Attachment)getTableRow().getItem();
-							if (attachment != null) { 
-								// System.out.println("Exit attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
-								activeTooltip.handleMouseExit(tooltip);
-							}
+							TableRow<Attachment> tableRow = getTableRow();
+							// System.out.println("Exit attachment=" + attachment + " tooltip=" + System.identityHashCode(tooltip));
+							activeTooltip.handleMouseExit(tableRow, tooltip);
 						});
 					}
 
@@ -148,7 +145,8 @@ public class AttachmentTableViewHandler {
 						if (fileName != null) {
 							Attachment attachment = (Attachment)getTableRow().getItem();
 							if (attachment != null) { // att is null when table.getItems() is modified in IssueHtmlEditor - why?
-								String style = attachment.getId().isEmpty() ? "-fx-font-weight: bold;" : "fx-font-weight: normal;";
+								boolean isNew = attachment.getId().isEmpty();
+								String style = isNew ? "-fx-font-weight: bold;" : "fx-font-weight: normal;";
 								setStyle(style);
 								String str = MailAttachmentHelper.getFileName(fileName);
 								setText(str);
@@ -363,26 +361,46 @@ public class AttachmentTableViewHandler {
 		Popup tooltip = NO_TOOLTIP;
 		int refCount;
 		
+		/**
+		 * Table row where tooltip is shown.
+		 */
+		TableRow<Attachment> tableRow;
+		
+		/**
+		 * A table row is highlighted with this style, if the tooltip is displayed.
+		 * ITJ-81
+		 */
+		final static String TABLE_ROW_SHOWING_STYLE_CLASS = "attachment-row-tooltip-active";
+		
+		
 		public TooltipRefCount(Node owner, MailAttachmentHelper attachmentHelper, ProgressCallbackFactory progressCallbackFactory) {
 			this.owner = owner;
 			this.attachmentHelper = attachmentHelper;
 			this.progressCallbackFactory = progressCallbackFactory;
 		}
 		
-		public void handleMouseExit(Popup tooltip) {
-	    	this.hide(tooltip);
+		public void handleMouseExit(TableRow<Attachment> tableRow, Popup tooltip) {
+			Attachment attachment = tableRow.getItem();
+			if (attachment != null) {
+				this.hide(tooltip);
+			}
 		}
-
-		public void handleMouseEnter(Attachment attachment, Popup tooltip, double x, double y) {
+		
+		public void handleMouseEnter(TableRow<Attachment> tableRow, Popup tooltip, double x, double y) {
 			
-	    	if (tooltip.getContent().isEmpty()) {
+			Attachment attachment = tableRow.getItem();
+			if (attachment == null) { 
+				// nothing
+			}
+			else if (tooltip.getContent().isEmpty()) {
 				initThumbnailTooltip(attachment, tooltip, progressCallbackFactory, () -> {
 					
 					// Add mouse handlers to keep showing tooltip if mouse is over the image.
 					ImageView imageView = (ImageView)tooltip.getContent().get(0);
+					
 					imageView.setOnMouseEntered((_ignore) -> {
 						imageView.getScene().setCursor(Cursor.HAND);
-						this.show(tooltip, x, y);
+						this.show(tableRow, tooltip, x, y);
 					});
 					imageView.setOnMouseExited((_ignore) -> {
 						this.hide(tooltip);
@@ -394,31 +412,40 @@ public class AttachmentTableViewHandler {
 						attachmentHelper.showAttachmentAsync(attachment, progressCallbackFactory, (succ, ex) -> {});
 					});
 					
-					this.show(tooltip, x, y);
+					this.show(tableRow, tooltip, x, y);
 				});
 			}
 			else {
-				this.show(tooltip, x, y);
+				this.show(tableRow, tooltip, x, y);
 			}
 		}
 		
-		public void show(Popup newTooltip, double x, double y) { 
-			Popup oldTooltip = tooltip;
-			tooltip = newTooltip;
+		public void show(TableRow<Attachment> newTableRow, Popup newTooltip, double x, double y) { 
 			
 			// Hide previous tooltip if another one should be shown.
-			if (oldTooltip != newTooltip) {
+			if (tooltip != newTooltip) {
 				// System.out.println("s.hide oldTooltip=" + System.identityHashCode(oldTooltip));
-				oldTooltip.hide();
+				hide();
 				refCount = 0;
 			}
 
+			tooltip = newTooltip;
+			tableRow = newTableRow;
+			
 			// Increment number of showing calls for active tooltip.
 			refCount++;
 
 			if (!tooltip.isShowing()) {
 				// System.out.println("s.show tooltip=" + System.identityHashCode(tooltip));
-				tooltip.show(owner, x + 20, y);
+				
+				// ITJ-81: position thumbnail vertically aligned next to mouse position.
+				ImageView imageView = (ImageView)tooltip.getContent().get(0);
+				double ht = imageView.getImage().getHeight();
+				double xpos = x + 20;
+				double ypos = y - ht/2;
+				tooltip.show(owner, xpos, ypos);
+				
+				setRowStyle(tableRow, true);
 			}
 		}
 		
@@ -444,23 +471,42 @@ public class AttachmentTableViewHandler {
 							// Example: mouse is moved from table cell into image -> cell exit (refCount--), image enter (refCount++)
 							if (oldTooltip == tooltip && refCount == 0) {
 								// System.out.println("h.hide tooltip=" + System.identityHashCode(tooltip));
-								tooltip.hide();
+								hide();
 							}
 						}
 			    	}));
 			    	timeline.setCycleCount(1);
 			    	timeline.play();
+			    	
 				}
 			}
 			else {
 				refCount = 0;
 				// System.out.println("h.hide oldTooltip=" + System.identityHashCode(oldTooltip));
-				oldTooltip.hide();
+				hide();
 			}
 		}
 		
 		public void hide() {
 			tooltip.hide();
+			setRowStyle(tableRow, false);
+		}
+		
+		/**
+		 * Highlight table row.
+		 * ITJ-81
+		 * @param tableRow table row
+		 * @param showNotHide true, if row should be highlighted.
+		 */
+		private static void setRowStyle(TableRow<Attachment> tableRow, boolean showNotHide) {
+			if (tableRow != null) {
+				if (showNotHide) {
+					tableRow.getStyleClass().add(TABLE_ROW_SHOWING_STYLE_CLASS);
+				}
+				else {
+					tableRow.getStyleClass().remove(TABLE_ROW_SHOWING_STYLE_CLASS);
+				}
+			}
 		}
 	}
 	
