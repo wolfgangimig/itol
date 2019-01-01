@@ -197,17 +197,6 @@ public class MailAttachmentHelper {
 
 					OlAttachmentType attachmentType = matt.getType();
 					
-					// Get advanced attachment properties to find out, whether the attachment is
-					// embedded in the mail body.
-					// https://social.msdn.microsoft.com/Forums/vstudio/en-US/d6d339d2-ebc3-4332-9801-15a53020df94/embedded-images-attachments-with-html-based-emails?forum=vsto
-					PropertyAccessor mattProps = matt.getPropertyAccessor();
-	                Object contentId = mattProps.GetProperty(Attachment.OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT);
-	                Object mimeType = matt.getPropertyAccessor().GetProperty(Attachment.OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT_MIME_TYPE);
-	                if (log.isLoggable(Level.FINE)) log.fine("contentId=" + contentId + ", mimeType=" + mimeType);
-	                
-					boolean isEmbeddedAttachment = contentId != null && !contentId.equals("");
-					if (log.isLoggable(Level.FINE)) log.fine("isEmbeddedAttachment=" + isEmbeddedAttachment);
-
 					if (log.isLoggable(Level.FINE)) log.fine("attachmentType=" + attachmentType);
 
 					if (isRTFBody && attachmentType == OlAttachmentType.olOLE) {
@@ -218,7 +207,7 @@ public class MailAttachmentHelper {
 							attachments.add(mailAtt);
 						}
 					}
-					else if (addAttachments || isEmbeddedAttachment) {
+					else {
 						if (log.isLoggable(Level.FINE)) log.fine("add attachment");
 						attatt.setLastModified(mailItem.getReceivedTime());
 						attachments.add(attatt);
@@ -336,17 +325,45 @@ public class MailAttachmentHelper {
 
 		private MailAttAtt(com.wilutions.mslib.outlook.Attachment matt) {
 			this.matt = matt;
+						
+			PropertyAccessor mattProps = matt.getPropertyAccessor();
+			String contentType = (String)matt.getPropertyAccessor().GetProperty(Attachment.OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT_MIME_TYPE);
+
 			String fname = "";
 			try {
 				fname = matt.getFileName();
+				
+				// Get advanced attachment properties to find out, whether the attachment is embedded in the mail body.
+				// https://social.msdn.microsoft.com/Forums/vstudio/en-US/d6d339d2-ebc3-4332-9801-15a53020df94/embedded-images-attachments-with-html-based-emails?forum=vsto
+				String cid = (String)mattProps.GetProperty(Attachment.OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT); 
+				boolean isEmbedded = cid != null && !cid.equals("");
+				if (isEmbedded) {
+					
+					// File names of embedded attachments are extracted from Outlook's content ID.
+					// In com.wilutions.jiraaddin.markup.MarkupHelper.processIMG, the file name is found in the 
+					// content ID before the last @. 
+					// Usually, an @ is found in the content ID. But ITJ-60 shows a mail example, where
+					// no file name is included. In this case, the entire contentID is used as file name.
+					
+					int p = cid.lastIndexOf('@');
+					if (p < 0) p = cid.length();
+					fname = cid.substring(0, p);
+					
+					// Get file extension from content type.
+					if (!fname.contains(".")) {
+						String ext = ContentTypes.getFileExt(contentType);
+						fname += ext;
+					}
+				}
 			}
 			catch (Exception e) {
 				// Attachments embedded in a RTF mail body throw an exception here.
 				fname = String.valueOf(System.identityHashCode(matt)); 
 			}
+			
 			super.setSubject(fname);
 			super.setFileName(fname);
-			super.setContentType(getFileContentType(new File(getTempDir(), fname)));
+			super.setContentType(contentType);
 			super.setContentLength(matt.getSize());
 			super.setLastModified(new Date());
 		}
@@ -393,6 +410,7 @@ public class MailAttachmentHelper {
 			}
 			return thurl;
 		}
+		
 	}
 
 	/**
@@ -881,6 +899,7 @@ public class MailAttachmentHelper {
 	 * @return MailItem object
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unused")
 	private IssueMailItem loadMailItem(Application outlookApplication, File tempFile) throws Exception {
 		if (log.isLoggable(Level.FINE)) log.fine("loadMailItem(" + tempFile);
 		IssueMailItem mailItem = null;

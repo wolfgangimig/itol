@@ -6,6 +6,9 @@ Version History
 
 1.0.7 2018-12-17
 
+- ITJ-60: Embedded images were not be displayed in preview for particular mails.
+          In detail: images were not shown, if their content IDs do not contain a file name.
+
 - ITJ-83: Do not export MSG attachment as RTF. It could be important to receive the
           original MSG file. 
 
