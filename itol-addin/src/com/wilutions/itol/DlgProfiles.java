@@ -28,6 +28,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
+import javafx.stage.Window;
 import javafx.util.Callback;
 
 public class DlgProfiles extends ModalDialogFX<Config> implements Initializable {
@@ -288,6 +289,12 @@ public class DlgProfiles extends ModalDialogFX<Config> implements Initializable 
 				tviewProfiles.getSelectionModel().select(profile);
 			}
 		}
+	}
+
+	@FXML
+	public void onEditProxySettings() {
+		DlgProxySettings dlg = new DlgProxySettings();
+		dlg.showAsync(this, (succ, ex) -> {});
 	}
 
 }

@@ -21,6 +21,7 @@
       </VBox>
       <VBox prefHeight="287.0" prefWidth="113.0" spacing="10.0" HBox.hgrow="NEVER">
          <children>
+            <Button fx:id="bnProxy" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onEditProxySettings" text="%DlgProfiles.proxy" />
             <Button fx:id="bnNew" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onNew" text="%DlgProfiles.new" />
             <Button fx:id="bnEdit" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onEdit" text="%DlgProfiles.edit" />
             <Button fx:id="bnConfigure" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onConfigure" text="%DlgProfiles.options" />

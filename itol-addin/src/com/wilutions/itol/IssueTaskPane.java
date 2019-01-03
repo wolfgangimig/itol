@@ -2362,10 +2362,4 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		dlg.showAsync(owner, (succ, ex) -> {});
 	}
 	
-	@FXML
-	public void onEditProxySettings() {
-		Window owner = this.getWindow();
-		DlgProxySettings dlg = new DlgProxySettings();
-		dlg.showAsync(owner, (succ, ex) -> {});
-	}
 }

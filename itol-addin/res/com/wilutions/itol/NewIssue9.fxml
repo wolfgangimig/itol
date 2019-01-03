@@ -52,7 +52,6 @@
                           <items>
                             <MenuItem mnemonicParsing="false" onAction="#onEditProfiles" text="%mnEditProfiles" />
                               <MenuItem mnemonicParsing="false" onAction="#onEditLogging" text="%mnLogging" />
-                              <MenuItem mnemonicParsing="false" onAction="#onEditProxySettings" text="%mnProxy" />
                           </items>
                         </Menu>
                         <SeparatorMenuItem mnemonicParsing="false" />
