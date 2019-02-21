@@ -1306,6 +1306,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			}
 			catch (Exception e) {
 				log.log(Level.WARNING, "Failed to export attachments of issue=" + issue, e);
+				showMessageBoxError(e.toString());
 			}
 		});
 	}
