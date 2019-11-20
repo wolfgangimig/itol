@@ -33,6 +33,9 @@ public class MsgFileTypes {
 		ret = ret.replaceAll("[\\<\\>\\:\\\"/\\\\|?*]", "_");
 		ret = ret.replace("  ", " ");
 		ret = ret.replace(" .", ".");
+		ret = ret.replace("\t", " ");
+		ret = ret.replace("\r", " ");
+		ret = ret.replace("\n", " ");
 		if (ret.length() > 200) {
 			ret = ret.substring(0, 200);
 		}

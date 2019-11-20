@@ -4,6 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+2.0.1 2019-11-18
+
+- 
+
 2.0.0 2019-01-03
 
 - ITJ-72: Allow mail item to be added from clipboard as issue attachment.
