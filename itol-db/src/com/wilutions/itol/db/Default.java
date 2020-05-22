@@ -21,6 +21,10 @@ public class Default {
 		return v != null && v.booleanValue();
 	}
 
+	public static int value(Integer v) {
+		return v != null ? v.intValue() : 0;
+	}
+
 	public static <T> List<T> value(List<T> v) {
 		return v != null ? v : new ArrayList<T>(0);
 	}

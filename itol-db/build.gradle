@@ -1,9 +1,18 @@
 import org.gradle.plugins.ide.eclipse.model.AccessRule
 
+plugins {
+  id 'org.openjfx.javafxplugin'
+}
+
+javafx {
+    version = "13"
+    modules = [ 'javafx.controls', 'javafx.web' ]
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 13
 version = '1.0'
 
 sourceSets {
@@ -43,9 +52,7 @@ dependencies {
 
 	compile project(":joa")
 	
-	//compile group: 'org.controlsfx', name: 'controlsfx', version: '8.40.10' 
-
-    testCompile group: 'junit', name: 'junit', version: '4.+'
+	testCompile group: 'junit', name: 'junit', version: '4.+'
 }
 
 test {

@@ -27,7 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.xml.bind.DatatypeConverter;
+import org.apache.commons.codec.binary.Hex;
 
 import com.wilutions.com.AsyncResult;
 import com.wilutions.com.BackgTask;
@@ -1017,7 +1017,7 @@ public class MailAttachmentHelper {
 	public static String getFileChecksum(File file) throws Exception {
 		byte[] b = Files.readAllBytes(Paths.get(file.toURI()));
 		byte[] hash = MessageDigest.getInstance("MD5").digest(b);
-		String ret = DatatypeConverter.printHexBinary(hash);
+		String ret = Hex.encodeHexString(hash);
 		return ret;
 	}
 

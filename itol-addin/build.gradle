@@ -1,9 +1,18 @@
 import org.gradle.plugins.ide.eclipse.model.AccessRule
 
+plugins {
+  id 'org.openjfx.javafxplugin'
+}
+
+javafx {
+    version = "13"
+    modules = [ 'javafx.controls', 'javafx.web', 'javafx.fxml', 'javafx.swing' ]
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 13
 version = '1.0'
 
 sourceSets {
@@ -32,7 +41,6 @@ eclipse {
             whenMerged {
                 def jre = entries.find { it.path.contains 'org.eclipse.jdt.launching.JRE_CONTAINER' }
                 jre.accessRules.add(new AccessRule('0', 'javafx/**'))
-                jre.accessRules.add(new AccessRule('0', 'com/sun/javafx/**'))
             }
         }
     }
@@ -51,7 +59,7 @@ dependencies {
 	compile project(":joa")
 	
 	// UI controls http://fxexperience.com/controlsfx/
-	compile group: 'org.controlsfx', name: 'controlsfx', version: '8.40.12'
+	compile group: 'org.controlsfx', name: 'controlsfx', version: '11.0.1'
 	compile group: 'com.google.code.gson', name: 'gson', version: '2.8.0'
 
     compile("commons-logging:commons-logging:1.1.1")

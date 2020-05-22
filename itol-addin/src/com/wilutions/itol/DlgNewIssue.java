@@ -45,7 +45,7 @@ public class DlgNewIssue extends ModalDialogFX<Boolean> {
 		        
 		        Scene scene = taskPane.createScene();
 
-				scene.impl_preferredSize();
+				// TODO ITJ-87 scene.impl_preferredSize();
 				double sceneWidth = scene.getWidth();
 				double sceneHeight = scene.getHeight();
 				

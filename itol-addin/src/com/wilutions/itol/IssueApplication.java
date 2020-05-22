@@ -86,12 +86,13 @@ public class IssueApplication extends AddinApplication {
 
 	public static void main(Class<? extends AddinApplication> mainClass, Class<? extends Application> fxappClass, String[] args) {
 	
-		log.info("Application args=" + Arrays.toString(args));
-				
-		String javaHome = System.getProperty("java.home");
-		log.info("java.home=" + javaHome);
-		for (Object key : System.getProperties().keySet()) {
-			log.info(key + "=" + System.getProperty((String) key));
+		if (log.isLoggable(Level.FINE)) {
+			log.log(Level.FINE, "Application args=" + Arrays.toString(args));
+			String javaHome = System.getProperty("java.home");
+			log.log(Level.FINE, "java.home=" + javaHome);
+			for (Object key : System.getProperties().keySet()) {
+				log.log(Level.FINE, key + "=" + System.getProperty((String) key));
+			}
 		}
 
 		try {
@@ -101,8 +102,10 @@ public class IssueApplication extends AddinApplication {
 			appInfo.setAppName(ManifestUtil.getProgramName(mainClass));
 			appInfo.setAppDir(RegUtil.getAppPathIfSelfContained());
 			
-			log.info("appInfo.appName=" + appInfo.getAppName());
-			log.info("appInfo.appDir=" + appInfo.getAppDir());
+			if (log.isLoggable(Level.FINE)) {
+				log.log(Level.FINE,"appInfo.appName=" + appInfo.getAppName());
+				log.log(Level.FINE,"appInfo.appDir=" + appInfo.getAppDir());
+			}
 			
 			// Read configuration
 			Config config = Config.read(appInfo.getManufacturerName(), appInfo.getAppName());

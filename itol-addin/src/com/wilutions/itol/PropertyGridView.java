@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 import org.controlsfx.control.CheckComboBox;
 
-import com.sun.javafx.scene.control.skin.TextAreaSkin;
+import javafx.scene.control.skin.TextAreaSkin;
 import com.wilutions.fx.acpl.AutoCompletionComboBox;
 import com.wilutions.fx.acpl.AutoCompletions;
 import com.wilutions.fx.acpl.ExtractImage;
@@ -651,12 +651,13 @@ public class PropertyGridView {
 				textArea.addEventFilter(KeyEvent.KEY_PRESSED, (e) -> {
 					if (e.getCode().equals(KeyCode.TAB)) {
 						TextAreaSkin skin = (TextAreaSkin)textArea.getSkin();
-			            if (e.isShiftDown()) {
-			                skin.getBehavior().traversePrevious();
-			            }
-			            else {
-			                skin.getBehavior().traverseNext();
-			            }
+						// TODO ITJ-87 
+//			            if (e.isShiftDown()) {
+//			                skin.getBehavior().traversePrevious();
+//			            }
+//			            else {
+//			                skin.getBehavior().traverseNext();
+//			            }
 			            e.consume();
 					}
 				});

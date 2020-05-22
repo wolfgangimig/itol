@@ -127,6 +127,7 @@ public class ProxyServerConfig implements Serializable {
  */
 		
 		if (enabled) {
+			
 			log.info("Initialize proxy: host=" + host + ", proxyPort=" + port + ", proxyUser=" + userName);
 			
 			Authenticator.setDefault(new Authenticator() {

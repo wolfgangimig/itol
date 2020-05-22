@@ -78,7 +78,7 @@ public class ItolAddin extends OutlookAddinEx {
 					MyWrapper wrapper = ((MyWrapper) context);
 					
 					// Success, if not "cancel" clicked. 
-					boolean succ = btn != 0;
+					boolean succ = Default.value(btn) != 0;
 
 					// Show or hide task pane
 					wrapper.setIssueTaskPaneVisible(succ);
@@ -113,6 +113,8 @@ public class ItolAddin extends OutlookAddinEx {
 					
 				}
 				catch (Throwable ex) {
+					
+					log.log(Level.SEVERE, "Failed to show task pane.", ex);
 					
 					// CF completed exceptionally: none of the connections could be established.
 					String title = resb.getString("MessageBox.title.error");

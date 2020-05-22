@@ -1,6 +1,6 @@
 package com.wilutions.fx.acpl;
 
-import com.sun.javafx.scene.control.skin.TextFieldSkin;
+import javafx.scene.control.skin.TextFieldSkin;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -54,7 +54,7 @@ class TextFieldSkinWithImage extends TextFieldSkin {
 		}
 	}
 
-	@Override
+	// @Override ITJ-87 TODO
 	protected int translateCaretPosition(int cp) {
 		final double h = getSkinnable().getHeight();
 		final double fullHeight = h + snappedTopInset() + snappedBottomInset();
@@ -63,7 +63,7 @@ class TextFieldSkinWithImage extends TextFieldSkin {
 		return Math.max(0, cp - offs);
 	}
 
-	@Override
+	// @Override
 	protected Point2D translateCaretPosition(Point2D p) {
 		int cp = translateCaretPosition((int)p.getX());
 		Point2D p1 = new Point2D(cp, p.getY());

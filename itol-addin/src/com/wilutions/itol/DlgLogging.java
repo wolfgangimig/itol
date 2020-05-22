@@ -109,7 +109,7 @@ public class DlgLogging extends ModalDialogFX<Boolean> implements Initializable 
 	public void initialize(URL location, ResourceBundle resb) {
 
 		cbLogLevel.getItems().add(new IdName("INFO", resb.getString("DlgLogging.LogLevel.Info")));
-		cbLogLevel.getItems().add(new IdName("FINE", resb.getString("DlgLogging.LogLevel.Debug")));
+		cbLogLevel.getItems().add(new IdName("DEBUG", resb.getString("DlgLogging.LogLevel.Debug")));
 		cbLogLevel.getSelectionModel().select(0);
 		
 		updateData(false);
