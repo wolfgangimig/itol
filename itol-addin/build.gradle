@@ -59,7 +59,8 @@ dependencies {
     compile("commons-codec:commons-codec:1.+")
 	compile("commons-io:commons-io:2.+")
 	
-	compile name: 'license', version: '1.0'
+  // ITJ-90: use as project to simplify build process
+	compile project(":license")	
 	compile name: 'bypshttp-ov'
 }
 

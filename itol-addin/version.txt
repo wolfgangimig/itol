@@ -4,6 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+2.0.2 2020-05-23
+
+- ITJ-90: Adopt to incompatible changes in JIRA cloud API.
+
 2.0.1 2020-01-04
 
 - ITJ-86: A mail with a TAB character in its subject could not be assigned.

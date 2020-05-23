@@ -61,7 +61,7 @@ public interface IssueService {
 	String injectIssueIdIntoMailSubject(String subject, Issue iss) throws Exception;
 
 	IdName getCurrentUser() throws Exception;
-
+	
 	String getShowIssueUrl(String issueId) throws Exception;
 
 	Issue updateIssue(Issue iss, List<String> modifiedProperties, List<String> warningMessages, ProgressCallback cb) throws Exception;
@@ -78,6 +78,14 @@ public interface IssueService {
 	
 	String convertHtmlBodyToMarkup(String htmlBody) throws Exception;
 	
+	/**
+	 * Get encoded mention for given user.
+	 * ITJ-90
+	 * @param idn User object
+	 * @return Encoded mention for user to be used in comments etc.
+	 */
+	String getUserAsMention(IdName idn);
+
 //
 //	FindIssuesResult findFirstIssues(FindIssuesInfo findInfo, int idx, int max) throws Exception;
 //

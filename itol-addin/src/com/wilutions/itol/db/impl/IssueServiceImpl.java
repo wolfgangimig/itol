@@ -292,5 +292,11 @@ public class IssueServiceImpl implements IssueService {
 		return null;
 	}
 
+	@Override
+	public String getUserAsMention(IdName idn) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 }
