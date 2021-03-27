@@ -4,6 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+2.0.3 2021-03
+
+- ITJ-99: Updated DDAddin 2.7.2
+
 2.0.2 2020-05-23
 
 - ITJ-90: Adopt to incompatible changes in JIRA cloud API.
