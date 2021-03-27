@@ -12,6 +12,9 @@ Version History
 
 - ITJ-95: Optionally suggest project by analyzing mail subject.
 
+- ITJ-92: If a mail is assigned to an existing issue, its mail body is always appended to the
+  issue comments. Before: body was only appended if newer than the last comment.
+
 2.0.2 2020-05-23
 
 - ITJ-90: Adopt to incompatible changes in JIRA cloud API.

@@ -484,9 +484,9 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 			if (log.isLoggable(Level.FINE)) log.fine("issue.lastModified=" + lastModified + ", newMail=" + newMail + ", receivedTime=" + receivedTime + ", fromAddress=" + fromAddress);
 			
-			// Set reply description (without original message) as issue
-			// notes, if the mail is newer than the last update.
-			if (!isNotification && (newMail || lastModified.before(receivedTime))) {
+			// Set reply description (without original message) as issue notes.
+			// ITJ-92: mail description is always assigned now - not only if newer
+			if (!isNotification) {
 				
 				String description = makeDescriptionFromMailBody();
 				
