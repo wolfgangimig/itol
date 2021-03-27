@@ -8,7 +8,9 @@ Version History
 
 - ITJ-99: Updated DDAddin 2.7.2
 
-- ITJ-97: For new issues, assign current user as "assignee"
+- ITJ-97: For new issues, assign current user as "assignee".
+
+- ITJ-95: Optionally suggest project by analyzing mail subject.
 
 2.0.2 2020-05-23
 

@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import java.lang.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="428.0" prefWidth="651.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.DlgConfigure">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="428.0" prefWidth="651.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wilutions.itol.DlgConfigure">
    <children>
       <TabPane>
          <tabs>
@@ -18,6 +30,7 @@
                     </columnConstraints>
                     <rowConstraints>
                       <RowConstraints vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                         <RowConstraints vgrow="SOMETIMES" />
                         <RowConstraints vgrow="ALWAYS" />
                         <RowConstraints maxHeight="162.0" minHeight="84.0" prefHeight="99.0" vgrow="ALWAYS" />
@@ -27,27 +40,28 @@
             
                         <Label text="%DlgConfigure.MailSubject" GridPane.rowIndex="0" />
                         <CheckBox fx:id="ckInsertIssueId" mnemonicParsing="false" text="%DlgConfigure.ckIssueIdIntoMailSubject" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                        <CheckBox fx:id="ckSuggestProject" mnemonicParsing="false" text="%DlgConfigure.ckSuggestProjectFromMailSubject" GridPane.columnIndex="1" GridPane.rowIndex="1" />
             
-                        <Label text="%DlgConfigure.MailBody" GridPane.rowIndex="1" />
-                        <ChoiceBox fx:id="cbMailBody" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" />
+                        <Label text="%DlgConfigure.MailBody" GridPane.rowIndex="2" />
+                        <ChoiceBox fx:id="cbMailBody" prefWidth="150.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" />
             
-                        <Label text="%DlgConfigure.AttachMailAs" wrapText="true" GridPane.rowIndex="2" GridPane.valignment="TOP" />
-                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="2">
+                        <Label text="%DlgConfigure.AttachMailAs" wrapText="true" GridPane.rowIndex="3" GridPane.valignment="TOP" />
+                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="3">
                            <children>
                               <ComboBox fx:id="cbAttachMailAs" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" />
                               <Label text="%DlgConfigure.AttachMailAs.tooltip" wrapText="true" VBox.vgrow="ALWAYS" />
                            </children>
                         </VBox>
             
-                        <Label text="%DlgConfigure.AutoReplyAddressField" wrapText="true" GridPane.rowIndex="3" GridPane.valignment="TOP" />
-                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="3">
+                        <Label text="%DlgConfigure.AutoReplyAddressField" wrapText="true" GridPane.rowIndex="4" GridPane.valignment="TOP" />
+                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="4">
                            <children>
                               <TextField fx:id="edAutoReplyField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                               <Label text="%DlgConfigure.AutoReplyAddressField.tooltip" wrapText="true" />
                            </children>
                         </VBox>
-                        <Label text="%DlgConfigure.IssueServiceMailAddress" GridPane.rowIndex="4" GridPane.valignment="TOP" />
-                        <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                        <Label text="%DlgConfigure.IssueServiceMailAddress" GridPane.rowIndex="5" GridPane.valignment="TOP" />
+                        <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="5">
                            <children>
                               <TextField fx:id="edServiceNotificationMailAddress" promptText="jira@wilutions.atlassian.net" />
                               <Label text="%DlgConfigure.IssueServiceMailAddress.tooltip" wrapText="true" />

@@ -74,6 +74,10 @@ public class DlgConfigure extends ModalDialogFX<Profile> implements Initializabl
 	ComboBox<String> cbExportAttachmentsProgram;
 	@FXML
 	TextField edServiceNotificationMailAddress;
+	
+	// ITJ-95: optionaly suggest project
+	@FXML
+	CheckBox ckSuggestProject;
 
 	private AutoCompletionBinding<IdName> autoCompletionAttachMailAs;
 	private Profile profile;
@@ -216,6 +220,8 @@ public class DlgConfigure extends ModalDialogFX<Profile> implements Initializabl
 			profile.setBlacklist(blacklistItems);
 			
 			profile.setExportAttachmentsProgram(cbExportAttachmentsProgram.getEditor().getText());
+			
+			profile.setSuggestProject(ckSuggestProject.isSelected());
 		}
 		else {
 			String fileTypeId = profile.getMsgFileFormat().getId();	
@@ -238,6 +244,8 @@ public class DlgConfigure extends ModalDialogFX<Profile> implements Initializabl
 			tvBlacklist.setItems(blacklistItems);
 			
 			cbExportAttachmentsProgram.getEditor().setText(profile.getExportAttachmentsProgram());
+			
+			ckSuggestProject.setSelected(profile.isSuggestProject());
 		}
 	}
 

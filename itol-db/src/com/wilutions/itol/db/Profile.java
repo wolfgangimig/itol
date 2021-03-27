@@ -50,6 +50,12 @@ public class Profile implements SerializableProfile {
 	private String defaultProject;
 	private String defaultIssueType;
 	private String defaultPriority;
+	
+	/**
+	 * For new issues, suggest the project by analyzing the mail subject.
+	 * ITJ-95
+	 */
+	private boolean suggestProject = true;
 
 	/**
 	 * Mail address of issue trackin sevice.
@@ -170,6 +176,7 @@ public class Profile implements SerializableProfile {
 		this.defaultProject = rhs.defaultProject;
 		this.defaultIssueType = rhs.defaultIssueType;
 		this.defaultPriority = rhs.defaultPriority;
+		this.suggestProject = rhs.suggestProject;
 	}
 
 	void unsetUserRelatedValues() {
@@ -455,5 +462,13 @@ public class Profile implements SerializableProfile {
 	@Override
 	public String toString() {
 		return getProfileName();
+	}
+
+	public boolean isSuggestProject() {
+		return suggestProject;
+	}
+
+	public void setSuggestProject(boolean suggestProject) {
+		this.suggestProject = suggestProject;
 	}
 }
