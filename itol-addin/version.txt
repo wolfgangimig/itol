@@ -14,6 +14,9 @@ Version History
 
 - ITJ-92: If a mail is assigned to an existing issue, its mail body is always appended to the
   issue comments. Before: body was only appended if newer than the last comment.
+  
+- ITJ-100: For a test mail, a non-embedded mail attachment was added named by its attachment ID instead of 
+  its original file name.
 
 2.0.2 2020-05-23
 

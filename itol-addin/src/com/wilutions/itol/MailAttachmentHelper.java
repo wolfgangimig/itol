@@ -337,6 +337,10 @@ public class MailAttachmentHelper {
 				// https://social.msdn.microsoft.com/Forums/vstudio/en-US/d6d339d2-ebc3-4332-9801-15a53020df94/embedded-images-attachments-with-html-based-emails?forum=vsto
 				String cid = (String)mattProps.GetProperty(Attachment.OUTLOOK_MAPI_PROPTAG_EMBEDDED_ATTCHMENT); 
 				boolean isEmbedded = cid != null && !cid.equals("");
+				
+				// ITJ-100: attachment embedded, if file name is found in CID
+				isEmbedded &= cid.contains(fname);
+				
 				if (isEmbedded) {
 					
 					// File names of embedded attachments are extracted from Outlook's content ID.
