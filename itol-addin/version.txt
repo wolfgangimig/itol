@@ -10,10 +10,14 @@ Version History
 
 - ITJ-97: For new issues, assign current user as "assignee".
 
-- ITJ-95: Optionally suggest project by analyzing mail subject.
+- ITJ-95: New configuration option allows to control whether the project should be extracted from the mail subject.
 
-- ITJ-92: If a mail is assigned to an existing issue, its mail body is always appended to the
-  issue comments. Before: body was only appended if newer than the last comment.
+- ITJ-92: For a mail assigned to an existing issue, the mail body is added as a new comment.
+
+- ITJ-93: New menu item in "Assign" menu: "Assign body" to explicitly assign the mail body as issue description (new issue)
+  or issue comment (existing issue). 
+  
+- ITJ-98: A default due date can be assigned to new issues. 
   
 - ITJ-100: For a test mail, a non-embedded mail attachment was added named by its attachment ID instead of 
   its original file name.

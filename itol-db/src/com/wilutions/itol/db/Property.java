@@ -78,6 +78,12 @@ public class Property {
 	 */
 	public static final String HISTORY = "IssueProperty.History";
 	
+	/**
+	 * Property ID for due date.
+	 * ITJ-98
+	 */
+	public static final String DUE_DATE = "duedate";
+	
 	public static final String URL = "url";
 	public static final String USER_NAME = "userName";
 	public static final String PASSWORD = "userPwd";

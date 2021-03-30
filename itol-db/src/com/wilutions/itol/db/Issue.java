@@ -290,7 +290,7 @@ public class Issue implements Serializable {
 	public void setCreateDate(Date date) {
 		currentUpdate.setCreateDate(date);
 	}
-
+	
 	@Override
 	public String toString() {
 		return "[id=" + id + ", subject=" + getSubject() + "]";

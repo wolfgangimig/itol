@@ -464,9 +464,94 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 			issue.setPropertyString(autoReplyField, from);
 		}
 	}
+	
+	/**
+	 * Menüeintrag "Text übernehmen".
+	 * Überschreibe die Beschreibung (Neues Issue) oder den Kommentar (existierendes Issue) mit dem 
+	 * Mail Body.
+	 * ITJ-93
+	 */
+	public void onAssignMailBody() {
+		
+		// Message-Box zum Nachfragen.
+		String title = resb.getString("MessageBox.title.confirm");
+		boolean isNew = issue.isNew();
+		String resId = isNew ? "mnAssignBodyOfSelectedMail.query.new" : "mnAssignBodyOfSelectedMail.query.existing";
+		String text = resb.getString(resId);
+		String yes = resb.getString("Button.Yes");
+		String no = resb.getString("Button.No");
+		Object owner = this.getDialogOwner();
+		com.wilutions.joa.fx.MessageBox.create(owner).title(title).text(text).button(1, yes).button(0, no)
+				.bdefault().show((btn, ex) -> {
+					
+					// Ja geklickt?
+					boolean isYes = btn != null && btn != 0;
+					if (isYes) {
+						
+						// Text übernehmen.
+						
+						updateDataAsync(true)
+						.thenCompose(v -> assignMailBodyToIssueDescriptionAsync(issue, null))
+						.thenCompose(v -> updateDataAsync(false));
+					}
+				});
 
-	private Issue tryReadIssue(IssueService srv, String subject, String issueId, ProgressCallback cb)
-			throws IOException {
+	}
+	
+	/**
+	 * UpdateData asynchron ausführen.
+	 * ITJ-93
+	 * @param save
+	 * @return
+	 */
+	private CompletableFuture<Void> updateDataAsync(boolean save) {
+		CompletableFuture<Void> ret = new CompletableFuture<>();
+		Platform.runLater(() -> {
+			try {
+				updateData(save);
+				ret.complete(null);
+			} catch (Throwable e) {
+				ret.completeExceptionally(e);
+			}
+		});
+		
+		return ret;
+	}
+	
+	/**
+	 * Mail body in die Beschreibung oder den Kommentar übernehmen.
+	 * ITJ-93
+	 * @param issue
+	 * @param subject
+	 * @return
+	 */
+	private CompletableFuture<Void> assignMailBodyToIssueDescriptionAsync(Issue issue, String subject)  {
+		CompletableFuture<Void> ret = new CompletableFuture<>();
+		BackgTask.run(() -> {
+			try {
+				String description = makeDescriptionFromMailBody();
+				
+				if (!issue.isNew()) {
+					
+					String subject1 = subject != null ? subject : mailItem.getSubject();
+					
+					description = IssueDescriptionParser.stripOriginalMessageFromReply(mailItem.getFrom(),
+							mailItem.getTo(), subject1, description);
+				}
+				
+				String propKey = issue.isNew() ? Property.DESCRIPTION : Property.NOTES;
+				issue.setPropertyString(propKey, description);
+				
+				ret.complete(null);
+			}
+			catch (Throwable e) {
+				ret.completeExceptionally(e);
+			}
+		});
+		return ret;
+	}
+
+	private Issue tryReadIssue(IssueService srv, String subject, String issueId, ProgressCallback cb) {
 		if (log.isLoggable(Level.FINE)) log.fine("tryReadIssue(" + issueId);
 
 		Issue ret = null;
@@ -484,18 +569,13 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 			if (log.isLoggable(Level.FINE)) log.fine("issue.lastModified=" + lastModified + ", newMail=" + newMail + ", receivedTime=" + receivedTime + ", fromAddress=" + fromAddress);
 			
-			// Set reply description (without original message) as issue notes.
-			// ITJ-92: mail description is always assigned now - not only if newer
-			if (!isNotification) {
+			// Set reply description (without original message) as issue
+			// notes, if the mail is newer than the last update.
+			if (!isNotification && (newMail || lastModified.before(receivedTime))) {
 				
-				String description = makeDescriptionFromMailBody();
+				// Mail body zuweisen
+				assignMailBodyToIssueDescriptionAsync(issue, subject).get();
 				
-				String replyDescription = IssueDescriptionParser.stripOriginalMessageFromReply(mailItem.getFrom(),
-						mailItem.getTo(), subject, description);
-
-				// Set NEW NOTES property from mail description
-				issue.setPropertyString(Property.NOTES, replyDescription);
-
 				// Mail attachments are automatically added in initialUpdate() later.
 				// So not required: attachmentHelper.initialUpdate(mailItem, issue);
 
@@ -509,6 +589,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 				autoIssueModifications.add(() -> {
 					Platform.runLater(() -> tabpIssue.getSelectionModel().select(tpNotes) );
 				});
+
 			}
 
 			ret = issue;
@@ -2119,6 +2200,12 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		try {
 			ObservableList<MenuItem> items = bnAssignSelection.getItems();
 			items.remove(1, items.size());
+			
+			MenuItem mnAssignBodyOfSelectedMail = new MenuItem();
+			mnAssignBodyOfSelectedMail.setText(resb.getString("mnAssignBodyOfSelectedMail.text"));
+			mnAssignBodyOfSelectedMail.setOnAction((e) -> onAssignMailBody());
+			items.add(mnAssignBodyOfSelectedMail);
+			
 			if (!issue.isNew()) {
 				
 				IssueService srv = Globals.getIssueService();
@@ -2134,9 +2221,7 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 					MenuItem mnCreateSubtask = new MenuItem();
 					mnCreateSubtask.setText(MessageFormat.format(resourceText, subtaskType.getName()));
 					mnCreateSubtask.setGraphic(new ImageView(subtaskType.getImage()));
-					mnCreateSubtask.setOnAction((e) -> {
-						onCreateSubtask(subtaskType);
-					});
+					mnCreateSubtask.setOnAction((e) -> onCreateSubtask(subtaskType));
 					items.add(mnCreateSubtask);
 				}
 			}

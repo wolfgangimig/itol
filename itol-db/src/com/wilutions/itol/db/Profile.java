@@ -52,6 +52,12 @@ public class Profile implements SerializableProfile {
 	private String defaultPriority;
 	
 	/**
+	 * Default due days for new issue.
+	 * ITJ-98
+	 */
+	private int defaultDueDays;
+	
+	/**
 	 * For new issues, suggest the project by analyzing the mail subject.
 	 * ITJ-95
 	 */
@@ -470,5 +476,13 @@ public class Profile implements SerializableProfile {
 
 	public void setSuggestProject(boolean suggestProject) {
 		this.suggestProject = suggestProject;
+	}
+
+	public int getDefaultDueDays() {
+		return defaultDueDays;
+	}
+
+	public void setDefaultDueDays(int defaultDueDays) {
+		this.defaultDueDays = defaultDueDays;
 	}
 }
