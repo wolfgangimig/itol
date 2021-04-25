@@ -4,10 +4,12 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
-2.0.3 2021-03
+2.0.4 2021-04-25
 
-- ITJ-89: Do not try to forward transitions that show a screen. Instead, save all other modified data
+- ITJ-101, ITJ-89: Do not try to forward transitions that show a screen. Instead, save all other modified data
   and open the issue in Jira to forward the transition.
+
+2.0.3 2021-03-31
 
 - ITJ-99: Updated DDAddin 2.7.2
 
