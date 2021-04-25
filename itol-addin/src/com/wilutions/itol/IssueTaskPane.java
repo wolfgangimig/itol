@@ -1457,8 +1457,10 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 	/**
 	 * Display a message box with an error message.
 	 * @param text
+	 * @return CompletableFuture with button ID
 	 */
-	public void showMessageBoxError(String text) {
+	public CompletableFuture<Integer> showMessageBoxError(String text) {
+		CompletableFuture<Integer> ret = new CompletableFuture<>();
 		detectIssueModifiedStop();
 		String title = resb.getString("MessageBox.title.error");
 		String ok = resb.getString("Button.OK");
@@ -1466,7 +1468,14 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 		com.wilutions.joa.fx.MessageBox.create(owner).title(title).text(text).button(1, ok).bdefault()
 				.show((btn, ex) -> {
 					detectIssueModifiedContinue();
+					if (ex != null) {
+						ret.completeExceptionally(ex);
+					}
+					else {
+						ret.complete(btn);
+					}
 				});
+		return ret;
 	}
 
 	private void queryDiscardChangesAsync(AsyncResult<Boolean> asyncResult) {
@@ -1881,7 +1890,8 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 		// Create issue
 		List<String> warnings = new ArrayList<String>();
-		issue = srv.updateIssue(issue, modifiedProperties, warnings, progressCallback);
+		List<Runnable> additionalActions = new ArrayList<>();
+		issue = srv.updateIssue(issue, modifiedProperties, warnings, additionalActions, progressCallback);
 
 		// Inject the issue ID into Outlook's mail object
 		if (isNew && isInjectIssueId()) {
@@ -1905,17 +1915,22 @@ public class IssueTaskPane extends TaskPaneFX implements Initializable, Progress
 
 			// Upload
 			issue.setAttachments(deferredAttachments);
-			issue = srv.updateIssue(issue, modifiedProperties, warnings, progressCallback);
+			issue = srv.updateIssue(issue, modifiedProperties, warnings, additionalActions, progressCallback);
 		}
 		
+		CompletableFuture<Integer> cfMsgBox = CompletableFuture.completedFuture(1);
 		if (!warnings.isEmpty()) {
 			StringBuilder msg = new StringBuilder();
 			for (String warn : warnings) {
 				msg.append("\n").append(warn);
 			}
 			String text = MessageFormat.format(resb.getString("Warning.SomeDataNotUpdated"), msg.toString());
-			showMessageBoxError(text);
+			cfMsgBox = showMessageBoxError(text);
 		}
+		
+		// Forward issue transition in Jira if a dialog must be shown. 
+		// ITJ-89
+		cfMsgBox.thenRun(() -> additionalActions.forEach(Runnable::run));
 
 		if (log.isLoggable(Level.FINE)) log.log(Level.FINE, ")updateIssueChangedMembers");
 	}

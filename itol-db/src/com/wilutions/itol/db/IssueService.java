@@ -64,7 +64,7 @@ public interface IssueService {
 	
 	String getShowIssueUrl(String issueId) throws Exception;
 
-	Issue updateIssue(Issue iss, List<String> modifiedProperties, List<String> warningMessages, ProgressCallback cb) throws Exception;
+	Issue updateIssue(Issue iss, List<String> modifiedProperties, List<String> warningMessages, List<Runnable> additionalActions, ProgressCallback cb) throws Exception;
 
 	Issue readIssue(String issueId, ProgressCallback cb) throws Exception;
 	
