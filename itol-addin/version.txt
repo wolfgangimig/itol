@@ -4,6 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+2.0.5 2022-04-09
+
+- ITJ-102: Fix NullPointerExceptions when reading issue types without fields.
+
 2.0.4 2021-04-25
 
 - ITJ-101, ITJ-89: Do not try to forward transitions that show a screen. Instead, save all other modified data
