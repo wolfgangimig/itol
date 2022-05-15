@@ -170,7 +170,7 @@ public class IssueApplication extends AddinApplication {
 			registerAutostart(userNotMachine, true, exePath);
 		}
 		catch (Throwable e) {
-			log.log(Level.SEVERE, "Failed to register Addin", e);
+			log.log(Level.INFO, "Failed to register Addin", e);
 			e.printStackTrace();
 			System.exit(1);
 		}

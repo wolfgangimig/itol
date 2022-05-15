@@ -4,6 +4,10 @@ http://www.wilutions.com/joa/itol.html
 
 Version History
 
+2.0.6 2022-05-15
+
+- ITJ-103: Create setup by Visual Studio 2022
+
 2.0.5 2022-04-09
 
 - ITJ-102: Fix NullPointerExceptions when reading issue types without fields.
